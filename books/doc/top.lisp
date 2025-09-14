@@ -287,6 +287,8 @@
   (include-book "system/random" :dir :system)
   (include-book "std/util/defretgen" :dir :system)
 
+  (include-book "projects/atomic-stobjs/top" :dir :system)
+
   ) ;; end progn so we can see total include-book time
 
 
