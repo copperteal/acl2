@@ -30,3 +30,4 @@
 (in-package "ACL2")
 
 (include-book "symbolicate")
+(include-book "with-books")
