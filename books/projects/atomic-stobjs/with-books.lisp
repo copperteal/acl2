@@ -63,19 +63,31 @@
      ,@(%with-books-includes include-specs)
      ,@body))
 
+
 (defxdoc with-books
   :parents (books-reference include-book)
-  :short "Evaluate forms with locally included books."
-  :long "<p>Example:
-@({(with-books ((\"std/lists/top\" :dir :system))
+  :short "Evaluate events with locally included books."
+  :long "@({
+Example:
+
+(with-books ((\"std/lists/sets\" :dir :system))
   (defthm set-equiv-of-append
-    (set-equiv (append x y) (append y x))))})
+    (set-equiv (append x y) (append y x))))
+
 expands to
-@({(encapsulate ()
+
+(encapsulate ()
   (local
     (include-book \"std/lists/top\" :dir :system))
   (defthm set-equiv-of-append
-    (set-equiv (append x y) (append y x))))})</p>
+    (set-equiv (append x y) (append y x))))
 
-<p>In @(call with-books), @('include-specs') must be a literal list of include
-specs.  An include spec is the @('cdr') of an @(see include-book) form.</p>")
+General Form:
+(with-books include-specs
+  body)
+})
+
+<p>where @('include-specs') must be a literal list of ``include
+specifications.''  An include specification is the @('cdr') of an @(tsee
+include-book) form.  @('Body') must be the valid body of a trivial @(tsee
+encapsulate).</p>")
