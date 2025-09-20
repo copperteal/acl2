@@ -31,3 +31,4 @@
 
 (include-book "symbolicate")
 (include-book "with-books")
+(include-book "ordinals")
