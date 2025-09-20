@@ -49,9 +49,11 @@
      "")))
 
 (local
-  (defthm stringp-of-%symbolicate-coerce
+  (thm ; ensure `%SYMBOLICATE-COERCE' is known to return a string
     (stringp (%symbolicate-coerce expr))
-    :rule-classes nil))
+    :hints
+    (("Goal"
+      :in-theory '((:t %symbolicate-coerce))))))
 
 (defwarrant %symbolicate-coerce)
 
@@ -83,19 +85,35 @@
 (defxdoc symbolicate
   :parents (symbols)
   :short "Concatenate strings and symbols to construct a symbol."
-  :long "<p>@(call symbolicate) evaluates each @('expr'), converts any symbol to a
-string, converts any non-symbol, non-string to the empty string, and
-concatenates these strings.  @('symbolicate') returns a symbol whose name is
-that concatenation and whose package is determined by evaluating @('witness').
-If @('witness') is a string, it is taken as the package name.  If @('witness')
-is a symbol, its package name is used.  If @('witness') is not a symbol or a
-string, @('symbolicate') expands to @('nil').</p>
+  :long "@({
+Examples:
 
-<h3>Examples</h3>
-<p>@({
-(symbolicate \"ACL2\" 'hello \" world\") == ACL2::|HELLO world|
-(defun foo () \"SOME-STRING\")
-(symbolicate 'str::witness (foo) \"-suffix\") == STR::|SOME-STRING-suffix|
-(defun bar () \"STR\")
-(symbolicate (bar) (foo) 2 '-baz) == STR::SOME-STRING-BAZ
-})</p>")
+ACL2 !>(symbolicate \"ACL2\" 'hello \" world\")
+|HELLO world|
+
+ACL2 !>(defun foo () \"SOME-STRING\")
+...
+
+ACL2 !>(symbolicate 'str::witness (foo) \"-suffix\")
+STR::|SOME-STRING-suffix|
+
+ACL2 !>(defun bar () \"STR\")
+...
+
+ACL2 !>(symbolicate (bar) (foo) 2 '-baz)
+STR::SOME-STRING-BAZ
+
+General Form
+(symbolicate witness expr1 ... exprn)
+})
+
+<p>@('Symbolicate') evaluates each of its arguments.  If @('witness') is a
+string, it is taken as a <see topic=\"@(url packages)\">package</see> name.  If
+@('witness') is a symbol, its package name is used.  Otherwise, the
+@('symbolicate') form expands to @('nil').  For each @('expri'), if @('expri')
+is a string, it is preserved; if @('expri') is a symbol, it is replaced by its
+name; otherwise, @('expri') is replaced with the empty string.  After this
+evaluation, @('symbolicate') concatenates the strings resulting from @('expr1
+... exprn') and interns a symbol with that name in the package derived from
+@('witness').  The @('symbolicate') form expands to this symbol (assuming
+@('witness') evaluated to a string or symbol).</p>")
