@@ -27,9 +27,67 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "SET")
 
-(include-book "symbolicate")
-(include-book "with-books")
-(include-book "symbolic-ordinals")
-(include-book "osets")
+(include-book "std/osets/top" :dir :system)
+
+(defsection auxiliary-delete-theorems
+  :extension delete
+
+  "<p>The following theorem is available in
+@('[books]/projects/atomic-stobjs/osets').</p>"
+
+  (local
+    (in-theory
+      (enable delete
+              insert
+              head
+              tail
+              emptyp
+              setp)))
+
+  (defthm delete-of-insert-diff
+    (implies (not (equal a b))
+             (equal (delete a (insert b x))
+                    (insert b (delete a x))))))
+
+(defsection auxiliary-mergesort-theorems
+  :extension mergesort
+
+  "<p>The following theorems are available in
+@('[books]/projects/atomic-stobjs/osets').</p>"
+
+  (local
+    (in-theory
+      (enable mergesort)))
+
+  (defthm emptyp-of-mergesort
+    (equal (emptyp (mergesort x))
+           (atom x)))
+
+  (defthm mergesort-of-cons
+    (equal (mergesort (cons x y))
+           (insert x (mergesort y))))
+
+  (local
+    (defthm cardinality-of-mergesort-lemma
+      (implies (setp x)
+               (<= (cardinality (insert a x)) (1+ (len x))))
+      :rule-classes :linear
+      :hints
+      (("Goal"
+        :induct (len x)
+        :in-theory (enable insert-cardinality
+                           cardinality
+                           tail)))))
+
+  (defthm cardinality-of-mergesort
+    (<= (cardinality (mergesort x)) (len x))
+    :rule-classes :linear
+    :hints
+    (("Goal"
+      :in-theory (enable insert-cardinality))))
+
+  (defthm mergesort-of-remove
+    (equal (mergesort (remove x l))
+           (delete x (mergesort l)))))
