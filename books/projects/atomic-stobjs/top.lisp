@@ -32,3 +32,4 @@
 (include-book "symbolicate")
 (include-book "with-books")
 (include-book "symbolic-ordinals")
+(include-book "osets")
