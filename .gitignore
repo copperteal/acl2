@@ -46,3 +46,4 @@ devel-check.out
 *.certdep
 !universal-dependency.certdep
 gitlog-all.txt
+.dir-locals-2.el
