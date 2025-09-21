@@ -33,3 +33,4 @@
 (include-book "with-books")
 (include-book "symbolic-ordinals")
 (include-book "osets")
+(include-book "omaps")
