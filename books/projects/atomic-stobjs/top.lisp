@@ -34,3 +34,4 @@
 (include-book "symbolic-ordinals")
 (include-book "osets")
 (include-book "omaps")
+(include-book "type-spec")
