@@ -34,7 +34,7 @@
 (defsection auxiliary-delete-theorems
   :extension delete
 
-  "<p>The following theorem is available in
+  "<p>The following theorems are available in
 @('[books]/projects/atomic-stobjs/osets').</p>"
 
   (local
@@ -49,7 +49,13 @@
   (defthm delete-of-insert-diff
     (implies (not (equal a b))
              (equal (delete a (insert b x))
-                    (insert b (delete a x))))))
+                    (insert b (delete a x)))))
+
+  (defthm delete-of-head-when-not-emptyp
+    (implies (and (equal x y)
+                  (not (emptyp y)))
+             (equal (delete (head x) y)
+                    (tail y)))))
 
 (defsection auxiliary-mergesort-theorems
   :extension mergesort
