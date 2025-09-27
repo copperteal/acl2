@@ -30,7 +30,8 @@
 (in-package "SET")
 
 (include-book "std/osets/top" :dir :system)
-(include-book "projects/atomic-stobjs/total-order" :dir :system)
+
+(include-book "total-order")
 
 ;;; NOTE: Enable `DOUBLE-CONTAINMENT' and `PICK-A-POINT-SUBSET-STRATEGY' to
 ;;; automate equality proofs for osets.

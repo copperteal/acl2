@@ -30,7 +30,8 @@
 (in-package "ACL2")
 
 (include-book "xdoc/top" :dir :system)
-(include-book "projects/atomic-stobjs/symbolicate" :dir :system)
+
+(include-book "symbolicate")
 
 (defun make-predicate-suffix (string-or-symbol)
   ;; TODO: Mention reference to CTL2 in XDOC

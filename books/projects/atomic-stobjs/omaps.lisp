@@ -30,8 +30,9 @@
 (in-package "OMAP")
 
 (include-book "std/omaps/top" :dir :system)
-(include-book "projects/atomic-stobjs/total-order" :dir :system)
-(include-book "projects/atomic-stobjs/osets" :dir :system)
+
+(include-book "total-order")
+(include-book "osets")
 
 (in-theory
   (e/d (
