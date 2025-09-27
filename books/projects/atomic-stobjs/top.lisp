@@ -29,14 +29,23 @@
 
 (in-package "ACL2")
 
-;;; ensure certification
-(local (include-book "symbolicate"))
-(local (include-book "with-books"))
-(local (include-book "symbolic-ordinals"))
-(local (include-book "total-order"))
-(local (include-book "osets"))
-(local (include-book "omaps"))
-(local (include-book "type-spec"))
-(local (include-book "macros"))
-; (local (include-book "lists")) ; TODO: delete?
-(local (include-book "std"))
+
+;;;; Ensure Dependency Certification
+;;; cert.pl ensures these are built
+#||
+(include-book "xdoc/top" :dir :system)
+(include-book "std/top" :dir :system)
+(include-book "projects/apply/top" :dir :system)
+(include-book "misc/total-order" :dir :system)
+
+(include-book "symbolicate")
+(include-book "with-books")
+(include-book "symbolic-ordinals")
+(include-book "total-order")
+(include-book "osets")
+(include-book "omaps")
+(include-book "type-spec")
+(include-book "macros")
+(include-book "lists")
+(include-book "std")
+||#

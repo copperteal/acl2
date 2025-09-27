@@ -29,10 +29,10 @@
 
 (in-package "ACL2")
 
-(include-book ; `HONS-REMOVE-DUPLICATES'
-  "std/lists/remove-duplicates" :dir :system)
-(include-book ; `ALIST-KEYS'
-  "std/alists/alist-keys" :dir :system)
+;;; `HONS-REMOVE-DUPLICATES'
+(include-book "std/lists/remove-duplicates" :dir :system)
+;;; `ALIST-KEYS'
+(include-book "std/alists/alist-keys" :dir :system)
 
 (local
   (include-book "std/lists/top" :dir :system))
@@ -176,11 +176,11 @@
                   (resize-list list n0 default-value))))
 
 (defthmd resize-list-is-take
-    (implies (and (integerp n)
-                  (< 0 n)
-                  (<= n (len list)))
-             (equal (resize-list list n default-value)
-                    (take n list)))
+  (implies (and (integerp n)
+                (< 0 n)
+                (<= n (len list)))
+           (equal (resize-list list n default-value)
+                  (take n list)))
   :hints
   (("Goal"
     :induct (nth n list))
@@ -191,12 +191,12 @@
              (take n list)))))
 
 (defthmd resize-list-is-append-repeat
-    (implies (and (integerp n)
-                  (<= 0 n)
-                  (< (len list) n))
-             (equal (resize-list list n default-value)
-                    (append list (repeat (+ n (- (len list)))
-                                         default-value))))
+  (implies (and (integerp n)
+                (<= 0 n)
+                (< (len list) n))
+           (equal (resize-list list n default-value)
+                  (append list (repeat (+ n (- (len list)))
+                                       default-value))))
   :hints
   (("Goal"
     :induct (nth n list))
