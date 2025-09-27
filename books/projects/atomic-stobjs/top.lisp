@@ -36,3 +36,4 @@
 (include-book "osets")
 (include-book "omaps")
 (include-book "type-spec")
+(include-book "macros")
