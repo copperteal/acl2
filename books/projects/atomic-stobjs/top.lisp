@@ -29,11 +29,14 @@
 
 (in-package "ACL2")
 
-(include-book "symbolicate")
-(include-book "with-books")
-(include-book "symbolic-ordinals")
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
-(include-book "type-spec")
-(include-book "macros")
+;;; ensure certification
+(local (include-book "symbolicate"))
+(local (include-book "with-books"))
+(local (include-book "symbolic-ordinals"))
+(local (include-book "total-order"))
+(local (include-book "osets"))
+(local (include-book "omaps"))
+(local (include-book "type-spec"))
+(local (include-book "macros"))
+; (local (include-book "lists")) ; TODO: delete?
+(local (include-book "std"))
