@@ -33,6 +33,37 @@
 
 (include-book "total-order")
 
+;;; NOTE: Enable `DOUBLE-CONTAINMENT' and `PICK-A-POINT-SUBSET-STRATEGY' to
+;;; automate equality proofs for osets.
+
+(in-theory
+  (e/d (
+        head-insert
+        tail-insert
+        head-tail-order
+        ;; insert-induction-case
+        head-minimal
+        head-minimal-2
+        ;; subset-in
+        ;; subset-in-2
+        setp-of-cons
+        insert-cardinality
+        delete-cardinality
+        in-mergesort
+        )
+       (
+        use-weak-insert-induction
+        (:t setp-type) ; (:t setp)
+        (:t emptyp-type) ; (:t emptyp)
+        ;; insert-when-emptyp
+        head-of-insert-a-nil ; head-insert
+        tail-of-insert-a-nil ; tail-insert
+        (:t in-type) ; (:t in)
+        (:t subset-type) ; (:t subset)
+        (:t cardinality-type) ; (:t cardinality)
+        intersect-cardinality-subset-2 ; lhs equal
+        )))
+
 (defsection auxiliary-delete-theorems
   :extension delete
 
@@ -41,13 +72,10 @@
 
   (local
     (in-theory
-      (enable delete
-              insert
-              head
-              tail
-              emptyp
-              setp)))
+      (enable double-containment
+              pick-a-point-subset-strategy)))
 
+  ;; TODO: Make "example usage" of std/osets using this theorem.
   (defthm delete-of-insert-diff
     (implies (not (equal a b))
              (equal (delete a (insert b x))
@@ -73,28 +101,17 @@
     (equal (emptyp (mergesort x))
            (atom x)))
 
+  (defthm mergesort-of-atom
+    (implies (atom x)
+             (not (mergesort x))))
+
   (defthm mergesort-of-cons
     (equal (mergesort (cons x y))
            (insert x (mergesort y))))
 
-  (local
-    (defthm cardinality-of-mergesort-lemma
-      (implies (setp x)
-               (<= (cardinality (insert a x)) (1+ (len x))))
-      :rule-classes :linear
-      :hints
-      (("Goal"
-        :induct (len x)
-        :in-theory (enable insert-cardinality
-                           cardinality
-                           tail)))))
-
   (defthm cardinality-of-mergesort
     (<= (cardinality (mergesort x)) (len x))
-    :rule-classes :linear
-    :hints
-    (("Goal"
-      :in-theory (enable insert-cardinality))))
+    :rule-classes :linear)
 
   (defthm mergesort-of-remove
     (equal (mergesort (remove x l))
