@@ -29,8 +29,10 @@
 
 (in-package "OMAP")
 
-(include-book "osets")
 (include-book "std/omaps/top" :dir :system)
+
+(include-book "total-order")
+(include-book "osets")
 
 (defsection auxiliary-emptyp-theorems
   :extension emptyp
@@ -127,12 +129,6 @@
                   (not (assoc key map)))
              (equal (delete key map)
                     map)))
-
-  (local ; TODO: merge into misc/total-order
-    (defthm <<-implies-not-equal
-      (implies (<< x y)
-               (not (equal x y)))
-      :rule-classes :forward-chaining))
 
   (defthm delete-of-tail
     (implies (and (not (emptyp map))
@@ -301,12 +297,6 @@
     (implies (not (emptyp map))
              (equal (size (tail map))
                     (1- (size map)))))
-
-  (local ; TODO: merge into misc/total-order
-    (defthm <<-implies-not-equal
-      (implies (<< x y)
-               (not (equal x y)))
-      :rule-classes :forward-chaining))
 
   (local
     (defthm size-of-update-when-assoc

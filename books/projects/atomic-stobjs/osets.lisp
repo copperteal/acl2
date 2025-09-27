@@ -31,6 +31,8 @@
 
 (include-book "std/osets/top" :dir :system)
 
+(include-book "total-order")
+
 (defsection auxiliary-delete-theorems
   :extension delete
 
