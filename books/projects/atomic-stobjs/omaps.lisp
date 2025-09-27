@@ -34,6 +34,13 @@
 (include-book "total-order")
 (include-book "osets")
 
+(in-theory
+  (e/d (
+        head-tail-order
+        )
+       (
+        )))
+
 (defsection auxiliary-emptyp-theorems
   :extension emptyp
 
@@ -62,12 +69,12 @@
     :hints
     (("Goal"
       :in-theory (enable delete
-                         mapp
-                         mfix
-                         emptyp
+                         update
                          head
                          tail
-                         update)))))
+                         emptyp
+                         mfix
+                         mapp)))))
 
 (defsection auxiliary-update-theorems
   :extension update
@@ -105,26 +112,19 @@
     (in-theory
       (enable delete)))
 
-  (defthmd delete-when-small
+  (defthm delete-when-small
     (implies (and (not (emptyp map))
                   (<< key (head-key map)))
              (equal (delete key map)
-                    map))
-    :hints
-    (("Goal"
-      :in-theory (enable head-tail-order))))
+                    map)))
 
-  (local
-    (in-theory
-      (enable delete-when-small)))
-
-  (defthmd delete-when-hit
+  (defthm delete-when-hit
     (implies (and (not (emptyp map))
                   (equal key (head-key map)))
              (equal (delete key map)
                     (tail map))))
 
-  (defthmd delete-when-not-assoc
+  (defthm delete-when-not-assoc
     (implies (and (mapp map)
                   (not (assoc key map)))
              (equal (delete key map)
