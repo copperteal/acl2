@@ -32,6 +32,7 @@
 (include-book "symbolicate")
 (include-book "with-books")
 (include-book "symbolic-ordinals")
+(include-book "total-order")
 (include-book "osets")
 (include-book "omaps")
 (include-book "type-spec")
