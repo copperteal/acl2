@@ -29,11 +29,11 @@
 
 (in-package "ACL2")
 
-(include-book "projects/atomic-stobjs/symbolicate" :dir :system)
-(include-book "projects/atomic-stobjs/with-books" :dir :system)
-(include-book "projects/atomic-stobjs/symbolic-ordinals" :dir :system)
-(include-book "projects/atomic-stobjs/total-order" :dir :system)
-(include-book "projects/atomic-stobjs/osets" :dir :system)
-(include-book "projects/atomic-stobjs/omaps" :dir :system)
-(include-book "projects/atomic-stobjs/type-spec" :dir :system)
-(include-book "projects/atomic-stobjs/macros" :dir :system)
+(include-book "symbolicate")
+(include-book "with-books")
+(include-book "symbolic-ordinals")
+(include-book "total-order")
+(include-book "osets")
+(include-book "omaps")
+(include-book "type-spec")
+(include-book "macros")
