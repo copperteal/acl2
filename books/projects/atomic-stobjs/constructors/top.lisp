@@ -27,16 +27,42 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "ATOMIC-STOBJS")
 
-#||
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
-(include-book "lists")
-(include-book "std")
+(include-book "stobj-copy")
+(include-book "define-array")
+(include-book "define-hash-table")
+(include-book "define-frame")
 
-(include-book "define-array-lemmas")
-(include-book "define-hash-table-lemmas")
-(include-book "define-frame-lemmas")
-||#
+(defconst *exports*
+  '(valid-array-dimensions-p
+    define-array$c
+    define-array$a
+    define-array$corr
+    define-array$abs
+    define-array
+    define-array-theorems
+
+    valid-hash-table-test-p
+    valid-hash-table-size-p
+    define-hash-table$c
+    define-hash-table$a
+    define-hash-table$corr
+    define-hash-table$abs
+    define-hash-table
+    define-hash-table-theorems
+
+    valid-frame-body-p
+    define-frame$c
+    define-frame$a
+    define-frame$corr
+    define-frame$abs
+    define-frame
+    define-frame-theorems
+
+    stobj-copier
+    stobj-copier-alist
+    stobj-coupled
+    stobj-coupled-alist
+    stobj-copier{rewrite}
+    define-stobj-copier))

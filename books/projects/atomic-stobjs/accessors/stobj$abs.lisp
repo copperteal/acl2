@@ -29,7 +29,6 @@
 
 (in-package "ACL2")
 
-(include-book "portcullis")
 (include-book "stobj")
 
 
@@ -65,14 +64,3 @@
 (defmacro atomic-stobj-accessors::stobj$abs-exports (stobj$abs)
   (declare (xargs :guard t))
   `(cdddr (atomic-stobj-accessors::stobj$abs-info ,stobj$abs)))
-
-
-;;;; `*STOBJ$ABS-SYMBOLS*'
-(defconst atomic-stobj-accessors::*stobj$abs-symbols*
-  '#!atomic-stobj-accessors
-  (stobj$abs-info
-   stobj$abs-p
-   stobj$abs-foundation
-   stobj$abs-recognizers
-   stobj$abs-creators
-   stobj$abs-exports))

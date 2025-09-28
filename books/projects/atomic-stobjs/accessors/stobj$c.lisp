@@ -29,7 +29,6 @@
 
 (in-package "ACL2")
 
-(include-book "portcullis")
 (include-book "stobj")
 
 
@@ -178,38 +177,3 @@
   `(let* ((interface (atomic-stobj-accessors::stobj-interface ,stobj$c))
           (n (floor (len interface) 4)))
      (nthcdr (* 3 n) interface)))
-
-
-;;;; `*STOBJ$C-SYMBOLS*'
-(defconst atomic-stobj-accessors::*stobj$c-symbols*
-  '#!atomic-stobj-accessors
-  (stobj$c-recognizer
-   stobj$c-creator
-   stobj$c-live-constant
-   stobj$c-array-p
-   stobj$c-array-contents-recognizer
-   stobj$c-array-length
-   stobj$c-array-resizer
-   stobj$c-array-accessor
-   stobj$c-array-updater
-   stobj$c-array-accessor-constant
-   stobj$c-hash-table-p
-   stobj$c-hash-table-contents-recognizer
-   stobj$c-hash-table-keys-recognizer
-   stobj$c-hash-table-accessor
-   stobj$c-hash-table-updater
-   stobj$c-hash-table-boundp
-   stobj$c-hash-table-getp
-   stobj$c-hash-table-remover
-   stobj$c-hash-table-count
-   stobj$c-hash-table-clear
-   stobj$c-hash-table-init
-   stobj$c-hash-table-keys
-   stobj$c-hash-table-keys-set
-   stobj$c-hash-table-accessor-constant
-   stobj$c-hash-table-keys-constant
-   stobj$c-frame-p
-   stobj$c-frame-recognizers
-   stobj$c-frame-accessors
-   stobj$c-frame-updaters
-   stobj$c-frame-accessor-constants))

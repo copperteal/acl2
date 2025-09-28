@@ -33,11 +33,3 @@
 (include-book "stobj$c")
 (include-book "stobj$a")
 (include-book "stobj$abs")
-
-
-;;;; `*SYMBOLS*'
-(defconst *symbols*
-  (union-eq *stobj-symbols*
-            *stobj$c-symbols*
-            *stobj$a-symbols*
-            *stobj$abs-symbols*))

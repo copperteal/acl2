@@ -29,8 +29,6 @@
 
 (in-package "ACL2")
 
-(include-book "portcullis")
-
 
 ;;;; `STOBJ$A'
 (make-event
@@ -333,64 +331,3 @@
 (defmacro atomic-stobj-accessors::stobj$a-frame-view (stobj$a)
   (declare (xargs :guard t))
   `(first (eighth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
-
-
-;;;; `*STOBJ$A-SYMBOLS*'
-(defconst atomic-stobj-accessors::*stobj$a-symbols*
-  (union-eq
-   '#!atomic-stobj-accessors
-   (stobj$a
-    stobj$a-property-alist
-    stobj$a-lookup-alist)
-   '#!atomic-stobj-accessors
-   (stobj$a-property-alist
-    stobj$a-property
-    stobj$a-p
-    stobj$a-recognizer
-    stobj$a-creator
-    stobj$a-fixer
-    stobj$a-equal
-    stobj$a-interface
-    stobj$a-lookup-alist
-    stobj$a-lookup
-    stobj$a-array-p
-    stobj$a-array-element-recognizer
-    stobj$a-array-element-fixer
-    stobj$a-array-element
-    stobj$a-array-initial-element
-    stobj$a-array-resizablep
-    stobj$a-array-default-length
-    stobj$a-array-length
-    stobj$a-array-resizer
-    stobj$a-array-accessor
-    stobj$a-array-updater
-    stobj$a-hash-table-p
-    stobj$a-hash-table-key-recognizer
-    stobj$a-hash-table-key-fixer
-    stobj$a-hash-table-key
-    stobj$a-hash-table-default-key
-    stobj$a-hash-table-val-recognizer
-    stobj$a-hash-table-val-fixer
-    stobj$a-hash-table-val
-    stobj$a-hash-table-default-val
-    stobj$a-hash-table-test
-    stobj$a-hash-table-copyable
-    stobj$a-hash-table-accessor
-    stobj$a-hash-table-updater
-    stobj$a-hash-table-boundp
-    stobj$a-hash-table-getp
-    stobj$a-hash-table-remover
-    stobj$a-hash-table-count
-    stobj$a-hash-table-clear
-    stobj$a-hash-table-init
-    stobj$a-hash-table-keys
-    stobj$a-hash-table-keys-set
-    stobj$a-frame-p
-    stobj$a-frame-recognizers
-    stobj$a-frame-fixers
-    stobj$a-frame-fields
-    stobj$a-frame-initial-elements
-    stobj$a-frame-stobjs
-    stobj$a-frame-accessors
-    stobj$a-frame-updaters
-    stobj$a-frame-view)))

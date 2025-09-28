@@ -29,8 +29,6 @@
 
 (in-package "ACL2")
 
-(include-book "portcullis")
-
 
 ;;;; `STOBJ'
 (defmacro atomic-stobj-accessors::stobj-p (stobj)
@@ -66,14 +64,3 @@
 (defmacro atomic-stobj-accessors::stobj-live-constant (stobj)
   (declare (xargs :guard t))
   `(cdddr (getpropc ,stobj 'stobj)))
-
-
-;;;; `*STOBJ-SYMBOLS*'
-(defconst atomic-stobj-accessors::*stobj-symbols*
-  '#!atomic-stobj-accessors
-  (stobj
-   stobj-p
-   stobj-recognizer
-   stobj-creator
-   stobj-interface
-   stobj-live-constant))
