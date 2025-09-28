@@ -177,45 +177,35 @@
                (delete key0 map)
                (update key1 val (delete key0 map)))))
 
-  (local
-    (defthm delete-of-delete-when-same
-      (implies (equal key0 key1)
-               (equal (delete key0 (delete key1 map))
-                      (delete key0 map)))
-      :hints
-      (("Goal"
-        :in-theory (enable mapp
-                           mfix
-                           emptyp
-                           head
-                           tail
-                           update)))))
+  (defthm delete-of-delete-when-same
+    (implies (equal key0 key1)
+             (equal (delete key0 (delete key1 map))
+                    (delete key0 map)))
+    :hints
+    (("Goal"
+      :in-theory (enable mapp
+                         mfix
+                         emptyp
+                         head
+                         tail
+                         update))))
 
-  (local
-    (defthm delete-of-delete-when-diff
-      (implies (not (equal key0 key1))
-               (equal (delete key0 (delete key1 map))
-                      (delete key1 (delete key0 map))))
-      :rule-classes
-      ((:rewrite :loop-stopper ((key0 key1 delete))))
-      :hints
-      (("Goal"
-        :induct (size map)
-        :in-theory (enable size
-                           mapp
-                           mfix
-                           emptyp
-                           head
-                           tail
-                           update)))))
-
-  (defthm delete-of-delete
-    (equal (delete key0 (delete key1 map))
-           (if (equal key0 key1)
-               (delete key0 map)
-               (delete key1 (delete key0 map))))
+  (defthm delete-of-delete-when-diff
+    (implies (not (equal key0 key1))
+             (equal (delete key0 (delete key1 map))
+                    (delete key1 (delete key0 map))))
     :rule-classes
-    ((:rewrite :loop-stopper ((key0 key1 delete))))))
+    ((:rewrite :loop-stopper ((key0 key1 delete))))
+    :hints
+    (("Goal"
+      :induct (size map)
+      :in-theory (enable size
+                         mapp
+                         mfix
+                         emptyp
+                         head
+                         tail
+                         update)))))
 
 (defsection auxiliary-assoc-theorems
   :extension assoc

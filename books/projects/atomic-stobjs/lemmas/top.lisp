@@ -35,4 +35,8 @@
 (include-book "omaps")
 (include-book "lists")
 (include-book "std")
+
+(include-book "define-array-lemmas")
+(include-book "define-hash-table-lemmas")
+(include-book "define-frame-lemmas")
 ||#
