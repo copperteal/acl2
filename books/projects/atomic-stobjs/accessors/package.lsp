@@ -27,7 +27,7 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(defpkg "STOBJ-ACCESSORS"
+(defpkg "ATOMIC-STOBJ-ACCESSORS"
   (union-eq *common-lisp-symbols-from-main-lisp-package*
             *acl2-exports*
             '(acl2::stobj)))
