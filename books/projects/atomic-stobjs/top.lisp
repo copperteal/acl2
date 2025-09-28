@@ -42,6 +42,7 @@
 (include-book "utilities/top")
 (include-book "symbolic-ordinals")
 (include-book "type-spec")
+(include-book "test/top")
 ||#
 
 
