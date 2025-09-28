@@ -29,17 +29,8 @@
 
 (in-package "ACL2")
 
-
-;;;; Ensure Dependency Certification
-;;; cert.pl ensures these are built
 #||
-(include-book "xdoc/top" :dir :system)
-(include-book "std/top" :dir :system)
-(include-book "projects/apply/top" :dir :system)
-(include-book "misc/total-order" :dir :system)
-
-(include-book "lemmas/top")
-(include-book "utilties/top")
-(include-book "symbolic-ordinals")
-(include-book "type-spec")
+(include-book "macros")
+(include-book "symbolicate")
+(include-book "with-books")
 ||#
