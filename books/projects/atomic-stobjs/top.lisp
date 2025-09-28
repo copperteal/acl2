@@ -38,14 +38,8 @@
 (include-book "projects/apply/top" :dir :system)
 (include-book "misc/total-order" :dir :system)
 
-(include-book "symbolicate")
-(include-book "with-books")
+(include-book "lemmas/top")
+(include-book "utilties/top")
 (include-book "symbolic-ordinals")
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
 (include-book "type-spec")
-(include-book "macros")
-(include-book "lists")
-(include-book "std")
 ||#
