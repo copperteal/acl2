@@ -1,0 +1,3 @@
+*.lisp          diff
+*.lsp           diff
+*.acl2          diff
