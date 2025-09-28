@@ -29,21 +29,50 @@
 
 (in-package "ACL2")
 
-
-;;;; Ensure Dependency Certification
-;;; cert.pl ensures these are built
-#||
-(include-book "xdoc/top" :dir :system)
-(include-book "std/top" :dir :system)
-(include-book "projects/apply/top" :dir :system)
-(include-book "misc/total-order" :dir :system)
-
-(include-book "lemmas/top")
-(include-book "utilities/top")
-(include-book "symbolic-ordinals")
-(include-book "type-spec")
-||#
+(include-book "portcullis")
+(include-book "stobj")
 
 
-;;;; Actual Included Books
-(include-book "accessors/top")
+;;;; `STOBJ$ABS'
+(defmacro stobj-accessors::stobj$abs-info (stobj$abs)
+  (declare (xargs :guard t))
+  `(getpropc ,stobj$abs 'absstobj-info))
+
+(defmacro stobj-accessors::stobj$abs-p (stobj$abs)
+  (declare (xargs :guard t))
+  `(let ((stobj$abs ,stobj$abs))
+     (and (symbolp stobj$abs)
+          (stobj-p stobj$abs)
+          (let* ((absstobj-info (stobj-accessors::stobj$abs-info stobj$abs))
+                 (foundation (car absstobj-info))
+                 (exports (cdr absstobj-info)))
+            (and (symbolp foundation)
+                 (symbol-list-listp exports)
+                 (<= 2 (len exports)))))))
+
+(defmacro stobj-accessors::stobj$abs-foundation (stobj$abs)
+  (declare (xargs :guard t))
+  `(first (stobj-accessors::stobj$abs-info ,stobj$abs)))
+
+(defmacro stobj-accessors::stobj$abs-recognizers (stobj$abs)
+  (declare (xargs :guard t))
+  `(second (stobj-accessors::stobj$abs-info ,stobj$abs)))
+
+(defmacro stobj-accessors::stobj$abs-creators (stobj$abs)
+  (declare (xargs :guard t))
+  `(third (stobj-accessors::stobj$abs-info ,stobj$abs)))
+
+(defmacro stobj-accessors::stobj$abs-exports (stobj$abs)
+  (declare (xargs :guard t))
+  `(cdddr (stobj-accessors::stobj$abs-info ,stobj$abs)))
+
+
+;;;; `*STOBJ$ABS-SYMBOLS*'
+(defconst stobj-accessors::*stobj$abs-symbols*
+  '#!stobj-accessors
+  (stobj$abs-info
+   stobj$abs-p
+   stobj$abs-foundation
+   stobj$abs-recognizers
+   stobj$abs-creators
+   stobj$abs-exports))

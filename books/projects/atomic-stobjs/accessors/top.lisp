@@ -27,23 +27,17 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "STOBJ-ACCESSORS")
+
+(include-book "stobj")
+(include-book "stobj$c")
+(include-book "stobj$a")
+(include-book "stobj$abs")
 
 
-;;;; Ensure Dependency Certification
-;;; cert.pl ensures these are built
-#||
-(include-book "xdoc/top" :dir :system)
-(include-book "std/top" :dir :system)
-(include-book "projects/apply/top" :dir :system)
-(include-book "misc/total-order" :dir :system)
-
-(include-book "lemmas/top")
-(include-book "utilities/top")
-(include-book "symbolic-ordinals")
-(include-book "type-spec")
-||#
-
-
-;;;; Actual Included Books
-(include-book "accessors/top")
+;;;; `*SYMBOLS*'
+(defconst *symbols*
+  (union-eq *stobj-symbols*
+            *stobj$c-symbols*
+            *stobj$a-symbols*
+            *stobj$abs-symbols*))

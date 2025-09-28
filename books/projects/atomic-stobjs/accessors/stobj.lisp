@@ -29,21 +29,51 @@
 
 (in-package "ACL2")
 
-
-;;;; Ensure Dependency Certification
-;;; cert.pl ensures these are built
-#||
-(include-book "xdoc/top" :dir :system)
-(include-book "std/top" :dir :system)
-(include-book "projects/apply/top" :dir :system)
-(include-book "misc/total-order" :dir :system)
-
-(include-book "lemmas/top")
-(include-book "utilities/top")
-(include-book "symbolic-ordinals")
-(include-book "type-spec")
-||#
+(include-book "portcullis")
 
 
-;;;; Actual Included Books
-(include-book "accessors/top")
+;;;; `STOBJ'
+(defmacro stobj-accessors::stobj-p (stobj)
+  (declare (xargs :guard t))
+  `(let ((stobj ,stobj))
+     (and (symbolp stobj)
+          (let* ((stobj-property (getpropc stobj 'stobj))
+                 (indicator (first stobj-property))
+                 (top (second stobj-property))
+                 (interface (third stobj-property))
+                 (constant (cdddr stobj-property)))
+            (and (listp stobj-property) ; it's dotted
+                 (= (len stobj-property) 3)
+                 (eq indicator 'stobj-property)
+                 (consp top)
+                 (symbolp (car top))
+                 (symbolp (cdr top))
+                 (symbol-listp interface)
+                 (symbolp constant))))))
+
+(defmacro stobj-accessors::stobj-recognizer (stobj)
+  (declare (xargs :guard t))
+  `(caadr (getpropc ,stobj 'stobj)))
+
+(defmacro stobj-accessors::stobj-creator (stobj)
+  (declare (xargs :guard t))
+  `(cdadr (getpropc ,stobj 'stobj)))
+
+(defmacro stobj-accessors::stobj-interface (stobj)
+  (declare (xargs :guard t))
+  `(caddr (getpropc ,stobj 'stobj)))
+
+(defmacro stobj-accessors::stobj-live-constant (stobj)
+  (declare (xargs :guard t))
+  `(cdddr (getpropc ,stobj 'stobj)))
+
+
+;;;; `*STOBJ-SYMBOLS*'
+(defconst stobj-accessors::*stobj-symbols*
+  '#!stobj-accessors
+  (stobj
+   stobj-p
+   stobj-recognizer
+   stobj-creator
+   stobj-interface
+   stobj-live-constant))
