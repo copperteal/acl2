@@ -34,155 +34,155 @@
 
 
 ;;;; `STOBJ$C'
-(defmacro stobj-accessors::stobj$c-recognizer (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-recognizer (stobj$c)
   (declare (xargs :guard t))
-  `(stobj-accessors::stobj-recognizer ,stobj$c))
+  `(atomic-stobj-accessors::stobj-recognizer ,stobj$c))
 
-(defmacro stobj-accessors::stobj$c-creator (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-creator (stobj$c)
   (declare (xargs :guard t))
-  `(stobj-accessors::stobj-creator ,stobj$c))
+  `(atomic-stobj-accessors::stobj-creator ,stobj$c))
 
-(defmacro stobj-accessors::stobj$c-live-constant (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-live-constant (stobj$c)
   (declare (xargs :guard t))
-  `(stobj-accessors::stobj-live-constant ,stobj$c))
+  `(atomic-stobj-accessors::stobj-live-constant ,stobj$c))
 
 
 ;;;; `STOBJ$C-ARRAY'
-(defmacro stobj-accessors::stobj$c-array-p (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-p (stobj$c)
   (declare (xargs :guard t))
   ;; an undesirably brittle characterization
-  `(= (len (stobj-accessors::stobj-interface ,stobj$c)) 6))
+  `(= (len (atomic-stobj-accessors::stobj-interface ,stobj$c)) 6))
 
-(defmacro stobj-accessors::stobj$c-array-contents-recognizer (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-contents-recognizer (stobj$c)
   (declare (xargs :guard t))
-  `(first (stobj-accessors::stobj-interface ,stobj$c)))
+  `(first (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-array-length (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-length (stobj$c)
   (declare (xargs :guard t))
-  `(second (stobj-accessors::stobj-interface ,stobj$c)))
+  `(second (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-array-resizer (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-resizer (stobj$c)
   (declare (xargs :guard t))
-  `(third (stobj-accessors::stobj-interface ,stobj$c)))
+  `(third (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-array-accessor (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-accessor (stobj$c)
   (declare (xargs :guard t))
-  `(fourth (stobj-accessors::stobj-interface ,stobj$c)))
+  `(fourth (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-array-updater (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-updater (stobj$c)
   (declare (xargs :guard t))
-  `(fifth (stobj-accessors::stobj-interface ,stobj$c)))
+  `(fifth (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-array-accessor-constant (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-array-accessor-constant (stobj$c)
   (declare (xargs :guard t))
-  `(sixth (stobj-accessors::stobj-interface ,stobj$c)))
+  `(sixth (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
 
 ;;;; `STOBJ$C-HASH-TABLE'
-(defmacro stobj-accessors::stobj$c-hash-table-p (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-p (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
   ;; an undesirably brittle characterization
-  `(= (len (stobj-accessors::stobj-interface ,stobj$c)) ,(if copyable 14 10)))
+  `(= (len (atomic-stobj-accessors::stobj-interface ,stobj$c)) ,(if copyable 14 10)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-contents-recognizer (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-contents-recognizer (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable))
            (ignore copyable))
-  `(first (stobj-accessors::stobj-interface ,stobj$c)))
+  `(first (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-keys-recognizer (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-keys-recognizer (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  (and copyable `(second (stobj-accessors::stobj-interface ,stobj$c))))
+  (and copyable `(second (atomic-stobj-accessors::stobj-interface ,stobj$c))))
 
-(defmacro stobj-accessors::stobj$c-hash-table-accessor (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-accessor (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'third 'second) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'third 'second) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-updater (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-updater (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'fourth 'third) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'fourth 'third) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-boundp (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-boundp (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'fifth 'fourth) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'fifth 'fourth) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-getp (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-getp (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'sixth 'fifth) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'sixth 'fifth) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-remover (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-remover (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'seventh 'sixth) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'seventh 'sixth) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-count (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-count (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'eighth 'seventh) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'eighth 'seventh) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-clear (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-clear (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'ninth 'eighth) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'ninth 'eighth) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-init (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-init (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
-  `(,(if copyable 'tenth 'ninth) (stobj-accessors::stobj-interface ,stobj$c)))
+  `(,(if copyable 'tenth 'ninth) (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro stobj-accessors::stobj$c-hash-table-keys (stobj$c copyable)
-  (declare (xargs :guard (booleanp copyable)))
-  (and copyable
-       `(nth 10 (stobj-accessors::stobj-interface ,stobj$c))))
-
-(defmacro stobj-accessors::stobj$c-hash-table-keys-set (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-keys (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
   (and copyable
-       `(nth 11 (stobj-accessors::stobj-interface ,stobj$c))))
+       `(nth 10 (atomic-stobj-accessors::stobj-interface ,stobj$c))))
 
-(defmacro stobj-accessors::stobj$c-hash-table-accessor-constant (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-keys-set (stobj$c copyable)
+  (declare (xargs :guard (booleanp copyable)))
+  (and copyable
+       `(nth 11 (atomic-stobj-accessors::stobj-interface ,stobj$c))))
+
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-accessor-constant (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
   (if copyable
-      `(nth 12 (stobj-accessors::stobj-interface ,stobj$c))
-      `(tenth (stobj-accessors::stobj-interface ,stobj$c))))
+      `(nth 12 (atomic-stobj-accessors::stobj-interface ,stobj$c))
+      `(tenth (atomic-stobj-accessors::stobj-interface ,stobj$c))))
 
-(defmacro stobj-accessors::stobj$c-hash-table-keys-constant (stobj$c copyable)
+(defmacro atomic-stobj-accessors::stobj$c-hash-table-keys-constant (stobj$c copyable)
   (declare (xargs :guard (booleanp copyable)))
   (and copyable
-       `(nth 13 (stobj-accessors::stobj-interface ,stobj$c))))
+       `(nth 13 (atomic-stobj-accessors::stobj-interface ,stobj$c))))
 
 
 ;;;; `STOBJ$C-FRAME'
-(defmacro stobj-accessors::stobj$c-frame-p (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-frame-p (stobj$c)
   (declare (xargs :guard t))
   ;; an undesirably brittle characterization
-  `(zp (mod (len (stobj-accessors::stobj-interface ,stobj$c)) 4)))
+  `(zp (mod (len (atomic-stobj-accessors::stobj-interface ,stobj$c)) 4)))
 
-(defmacro stobj-accessors::stobj$c-frame-recognizers (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-frame-recognizers (stobj$c)
   (declare (xargs :guard t))
-  `(let* ((interface (stobj-accessors::stobj-interface ,stobj$c))
+  `(let* ((interface (atomic-stobj-accessors::stobj-interface ,stobj$c))
           (n (floor (len interface) 4)))
      (take n interface)))
 
-(defmacro stobj-accessors::stobj$c-frame-accessors (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-frame-accessors (stobj$c)
   (declare (xargs :guard t))
-  `(let* ((interface (stobj-accessors::stobj-interface ,stobj$c))
+  `(let* ((interface (atomic-stobj-accessors::stobj-interface ,stobj$c))
           (n (floor (len interface) 4)))
      ;; a segment of length 2n starting at n
      (evens (subseq-list interface n (* 3 n)))))
 
-(defmacro stobj-accessors::stobj$c-frame-updaters (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-frame-updaters (stobj$c)
   (declare (xargs :guard t))
-  `(let* ((interface (stobj-accessors::stobj-interface ,stobj$c))
+  `(let* ((interface (atomic-stobj-accessors::stobj-interface ,stobj$c))
           (n (floor (len interface) 4)))
      ;; a segment of length 2n starting at n
      (odds (subseq-list interface n (* 3 n)))))
 
-(defmacro stobj-accessors::stobj$c-frame-accessor-constants (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-frame-accessor-constants (stobj$c)
   (declare (xargs :guard t))
-  `(let* ((interface (stobj-accessors::stobj-interface ,stobj$c))
+  `(let* ((interface (atomic-stobj-accessors::stobj-interface ,stobj$c))
           (n (floor (len interface) 4)))
      (nthcdr (* 3 n) interface)))
 
 
 ;;;; `*STOBJ$C-SYMBOLS*'
-(defconst stobj-accessors::*stobj$c-symbols*
-  '#!stobj-accessors
+(defconst atomic-stobj-accessors::*stobj$c-symbols*
+  '#!atomic-stobj-accessors
   (stobj$c-recognizer
    stobj$c-creator
    stobj$c-live-constant
