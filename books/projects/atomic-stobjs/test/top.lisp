@@ -29,23 +29,21 @@
 
 (in-package "ACL2")
 
-
-;;;; Ensure Dependency Certification
-;;; cert.pl ensures these are built
 #||
-(include-book "xdoc/top" :dir :system)
-(include-book "std/top" :dir :system)
-(include-book "projects/apply/top" :dir :system)
-(include-book "misc/total-order" :dir :system)
+(include-book "define-array$c")
+(include-book "define-array$a")
+(include-book "define-array$abs")
+(include-book "define-array")
 
-(include-book "lemmas/top")
-(include-book "utilities/top")
-(include-book "symbolic-ordinals")
-(include-book "type-spec")
-(include-book "test/top")
+(include-book "define-hash-table$c")
+(include-book "define-hash-table$a")
+(include-book "define-hash-table$abs")
+(include-book "define-hash-table")
+
+(include-book "define-frame$c")
+(include-book "define-frame$a")
+(include-book "define-frame$abs")
+(include-book "define-frame")
+
+(include-book "stobj-copy")
 ||#
-
-
-;;;; Actual Included Books
-(include-book "accessors/top")
-(include-book "constructors/top")
