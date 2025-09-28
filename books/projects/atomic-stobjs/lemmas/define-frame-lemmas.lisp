@@ -27,16 +27,9 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "ATOMIC-STOBJS")
 
-#||
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
-(include-book "lists")
-(include-book "std")
+(deflabel define-frame-lemmas-begin)
 
-(include-book "define-array-lemmas")
-(include-book "define-hash-table-lemmas")
-(include-book "define-frame-lemmas")
-||#
+(in-theory
+  (current-theory 'define-frame-lemmas-begin))

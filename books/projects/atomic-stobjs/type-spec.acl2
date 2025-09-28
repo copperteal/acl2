@@ -28,15 +28,42 @@
 
 
 (in-package "ACL2")
+;;; This file allows these constants to be used in package definitions.
 
-#||
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
-(include-book "lists")
-(include-book "std")
+
+;;;; Constants
+(defconst *atomic-type-specifiers*
+  '(atom bit character complex cons double-float integer list nil null number
+    ratio rational real signed-byte standard-char string symbol t
+    unsigned-byte))
 
-(include-book "define-array-lemmas")
-(include-book "define-hash-table-lemmas")
-(include-book "define-frame-lemmas")
-||#
+(defconst *atomic-real-subtype-specifiers*
+  '(integer rational real)
+  ;; TODO: verify these work in stobjs
+  #|'(bit double-float integer ratio rational real
+  signed-byte unsigned-byte)|#)
+
+(defconst *compound-type-specifier-names*
+  '(and complex integer member mod not or rational real satisfies
+    signed-byte string unsigned-byte))
+
+(defconst *compound-real-type-specifier-names*
+  '(integer rational real)
+  ;; TODO: support these types
+  #|'(integer mod rational real signed-byte unsigned-byte)|#)
+
+(defconst *type-spec-symbols*
+  (union-eq '(*atomic-type-specifiers*
+              *atomic-real-subtype-specifiers*
+              *compound-type-specifier-names*
+              *compound-real-type-specifier-names*
+              interval-designator-p
+              acl2-type-spec-p
+              typep$runtime
+              typep$transform
+              typep$transform/member-fix
+              typep$)
+            *atomic-type-specifiers*
+            *atomic-real-subtype-specifiers*
+            *compound-type-specifier-names*
+            *compound-real-type-specifier-names*))

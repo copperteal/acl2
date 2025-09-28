@@ -32,28 +32,6 @@
 (include-book "projects/apply/top" :dir :system)
 
 
-;;;; Constants
-(defconst *atomic-type-specifiers*
-  '(atom bit character complex cons double-float integer list nil null number
-    ratio rational real signed-byte standard-char string symbol t
-    unsigned-byte))
-
-(defconst *atomic-real-subtype-specifiers*
-  '(integer rational real)
-  ;; TODO: verify these work in stobjs
-  #|'(bit double-float integer ratio rational real
-  signed-byte unsigned-byte)|#)
-
-(defconst *compound-type-specifier-names*
-  '(and complex integer member mod not or rational real satisfies
-    signed-byte string unsigned-byte))
-
-(defconst *compound-real-type-specifier-names*
-  '(integer rational real)
-  ;; TODO: support these types
-  #|'(integer mod rational real signed-byte unsigned-byte)|#)
-
-
 ;;;; `INTERVAL-DESIGNATOR-P'
 (defun interval-designator-p (designator type-spec)
   (declare (xargs :guard t))
@@ -735,22 +713,6 @@
 
 
 ;;;; Epilogue
-(defconst *type-spec-symbols*
-  (union-eq '(*atomic-type-specifiers*
-              *atomic-real-subtype-specifiers*
-              *compound-type-specifier-names*
-              *compound-real-type-specifier-names*
-              interval-designator-p
-              acl2-type-spec-p
-              typep$runtime
-              typep$transform
-              typep$transform/member-fix
-              typep$)
-            *atomic-type-specifiers*
-            *atomic-real-subtype-specifiers*
-            *compound-type-specifier-names*
-            *compound-real-type-specifier-names*))
-
 (in-theory
   (disable interval-designator-p
            acl2-type-spec-p

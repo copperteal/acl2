@@ -29,14 +29,72 @@
 
 (in-package "ACL2")
 
-#||
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
-(include-book "lists")
-(include-book "std")
+(defpkg "ATOMIC-STOBJS"
+  (union-eq *common-lisp-symbols-from-main-lisp-package*
+            *acl2-exports*
+            *type-spec-symbols*
+            atomic-stobj-accessors::*symbols*
+            '(package-witness-p
+              symbolicate
+              with-books
+              make-predicate-suffix
+              lprogn
+              coupled)
+            '(hons-remove-assoc
+              <<
+              symbol-list-listp
+              pairlis-x1
+              pairlis-x2
+              formals
+              alist-fix)
+            '(lst
+              n
+              default-value
+              l
+              key
+              val
+              i
+              j
+              rhs
+              lhs
+              k
+              v
+              %set
+              keys
+              ht-size
+              rehash-size
+              rehash-threshold
+              a
+              d
+              n1
+              n2
+              v1
+              v2
+              x
+              free
+              ac)))
 
-(include-book "define-array-lemmas")
-(include-book "define-hash-table-lemmas")
-(include-book "define-frame-lemmas")
-||#
+(defpkg "DEFINE-ARRAY"
+  (union-eq *common-lisp-symbols-from-main-lisp-package*
+            *acl2-exports*
+            '(lst
+              n
+              default-value
+              l
+              key
+              val
+              i)))
+
+(defpkg "DEFINE-HASH-TABLE"
+  (set-difference-eq
+   (union-eq *common-lisp-symbols-from-main-lisp-package*
+             *acl2-exports*
+             '(<<
+               forall))
+   '(boundp
+     count
+     hash-table)))
+
+(defpkg "DEFINE-FRAME"
+  (union-eq *common-lisp-symbols-from-main-lisp-package*
+            *acl2-exports*))
