@@ -33,7 +33,7 @@
 
 
 ;;;; `STOBJ'
-(defmacro stobj-accessors::stobj-p (stobj)
+(defmacro atomic-stobj-accessors::stobj-p (stobj)
   (declare (xargs :guard t))
   `(let ((stobj ,stobj))
      (and (symbolp stobj)
@@ -51,26 +51,26 @@
                  (symbol-listp interface)
                  (symbolp constant))))))
 
-(defmacro stobj-accessors::stobj-recognizer (stobj)
+(defmacro atomic-stobj-accessors::stobj-recognizer (stobj)
   (declare (xargs :guard t))
   `(caadr (getpropc ,stobj 'stobj)))
 
-(defmacro stobj-accessors::stobj-creator (stobj)
+(defmacro atomic-stobj-accessors::stobj-creator (stobj)
   (declare (xargs :guard t))
   `(cdadr (getpropc ,stobj 'stobj)))
 
-(defmacro stobj-accessors::stobj-interface (stobj)
+(defmacro atomic-stobj-accessors::stobj-interface (stobj)
   (declare (xargs :guard t))
   `(caddr (getpropc ,stobj 'stobj)))
 
-(defmacro stobj-accessors::stobj-live-constant (stobj)
+(defmacro atomic-stobj-accessors::stobj-live-constant (stobj)
   (declare (xargs :guard t))
   `(cdddr (getpropc ,stobj 'stobj)))
 
 
 ;;;; `*STOBJ-SYMBOLS*'
-(defconst stobj-accessors::*stobj-symbols*
-  '#!stobj-accessors
+(defconst atomic-stobj-accessors::*stobj-symbols*
+  '#!atomic-stobj-accessors
   (stobj
    stobj-p
    stobj-recognizer

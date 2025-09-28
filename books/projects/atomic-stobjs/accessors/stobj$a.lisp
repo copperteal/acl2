@@ -35,83 +35,83 @@
 ;;;; `STOBJ$A'
 (make-event
   `(progn
-     (table stobj-accessors::stobj$a nil nil
-            :guard (and (member key '(stobj-accessors::stobj$a-property-alist
-                                      stobj-accessors::stobj$a-lookup-alist))
+     (table atomic-stobj-accessors::stobj$a nil nil
+            :guard (and (member key '(atomic-stobj-accessors::stobj$a-property-alist
+                                      atomic-stobj-accessors::stobj$a-lookup-alist))
                         (plist-worldp val)))
-     (table stobj-accessors::stobj$a 'stobj-accessors::stobj$a-property-alist '())
-     (table stobj-accessors::stobj$a 'stobj-accessors::stobj$a-lookup-alist '())))
+     (table atomic-stobj-accessors::stobj$a 'atomic-stobj-accessors::stobj$a-property-alist '())
+     (table atomic-stobj-accessors::stobj$a 'atomic-stobj-accessors::stobj$a-lookup-alist '())))
 
-(defun stobj-accessors::stobj$a-property-alist (world)
+(defun atomic-stobj-accessors::stobj$a-property-alist (world)
   (declare (xargs :guard (plist-worldp world)
                   :verify-guards nil))
-  (cdr (assoc-eq 'stobj-accessors::stobj$a-property-alist
-                 (table-alist 'stobj-accessors::stobj$a world))))
+  (cdr (assoc-eq 'atomic-stobj-accessors::stobj$a-property-alist
+                 (table-alist 'atomic-stobj-accessors::stobj$a world))))
 
-(defmacro stobj-accessors::stobj$a-property (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-property (stobj$a)
   (declare (xargs :guard t))
   `(getprop ,stobj$a
-            'stobj-accessors::stobj$a
+            'atomic-stobj-accessors::stobj$a
             nil
             'current-acl2-world
-            (stobj-accessors::stobj$a-property-alist (w state))))
+            (atomic-stobj-accessors::stobj$a-property-alist (w state))))
 
-(defmacro stobj-accessors::stobj$a-p (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-p (stobj$a)
   (declare (xargs :guard t))
   `(let ((stobj$a ,stobj$a))
      (and (symbolp stobj$a)
-          (let* ((stobj$a-property (stobj-accessors::stobj$a-property stobj$a))
+          (let* ((stobj$a-property (atomic-stobj-accessors::stobj$a-property stobj$a))
                  (indicator (first stobj$a-property))
                  (top (second stobj$a-property))
                  (interface (third stobj$a-property)))
             (and (true-listp stobj$a-property)
                  (= (len stobj$a-property) 3)
-                 (eq indicator 'stobj-accessors::stobj$a-property)
+                 (eq indicator 'atomic-stobj-accessors::stobj$a-property)
                  (symbol-listp top)
                  (= (len top) 4)
                  (symbol-list-listp interface))))))
 
-(defmacro stobj-accessors::stobj$a-recognizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-recognizer (stobj$a)
   (declare (xargs :guard t))
-  `(first (second (stobj-accessors::stobj$a-property ,stobj$a))))
+  `(first (second (atomic-stobj-accessors::stobj$a-property ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-creator (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-creator (stobj$a)
   (declare (xargs :guard t))
-  `(second (second (stobj-accessors::stobj$a-property ,stobj$a))))
+  `(second (second (atomic-stobj-accessors::stobj$a-property ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-fixer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-fixer (stobj$a)
   (declare (xargs :guard t))
-  `(third (second (stobj-accessors::stobj$a-property ,stobj$a))))
+  `(third (second (atomic-stobj-accessors::stobj$a-property ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-equal (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-equal (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (second (stobj-accessors::stobj$a-property ,stobj$a))))
+  `(fourth (second (atomic-stobj-accessors::stobj$a-property ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-interface (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-interface (stobj$a)
   (declare (xargs :guard t))
-  `(third (stobj-accessors::stobj$a-property ,stobj$a)))
+  `(third (atomic-stobj-accessors::stobj$a-property ,stobj$a)))
 
-(defun stobj-accessors::stobj$a-lookup-alist (world)
+(defun atomic-stobj-accessors::stobj$a-lookup-alist (world)
   (declare (xargs :guard (plist-worldp world)
                   :verify-guards nil))
-  (cdr (assoc-eq 'stobj-accessors::stobj$a-lookup-alist
-                 (table-alist 'stobj-accessors::stobj$a world))))
+  (cdr (assoc-eq 'atomic-stobj-accessors::stobj$a-lookup-alist
+                 (table-alist 'atomic-stobj-accessors::stobj$a world))))
 
-(defmacro stobj-accessors::stobj$a-lookup (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$a-lookup (stobj$abs)
   (declare (xargs :guard t))
   `(getprop ,stobj$abs
-            'stobj-accessors::stobj$a
+            'atomic-stobj-accessors::stobj$a
             nil
             'current-acl2-world
-            (stobj-accessors::stobj$a-lookup-alist (w state))))
+            (atomic-stobj-accessors::stobj$a-lookup-alist (w state))))
 
 
 ;;;; `STOBJ$A-ARRAY'
-(defmacro stobj-accessors::stobj$a-array-p (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-p (stobj$a)
   (declare (xargs :guard t))
   `(let ((stobj$a ,stobj$a))
-     (and (stobj-accessors::stobj$a-p stobj$a)
-          (let* ((stobj$a-interface (stobj-accessors::stobj$a-interface stobj$a))
+     (and (atomic-stobj-accessors::stobj$a-p stobj$a)
+          (let* ((stobj$a-interface (atomic-stobj-accessors::stobj$a-interface stobj$a))
                  (elements (first stobj$a-interface))
                  (params (second stobj$a-interface))
                  (defuns (third stobj$a-interface)))
@@ -126,53 +126,53 @@
                  (symbol-listp defuns)
                  (= (len defuns) 4))))))
 
-(defmacro stobj-accessors::stobj$a-array-element-recognizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-element-recognizer (stobj$a)
   (declare (xargs :guard t))
-  `(first (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-element-fixer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-element-fixer (stobj$a)
   (declare (xargs :guard t))
-  `(second (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-element (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-element (stobj$a)
   (declare (xargs :guard t))
-  `(third (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(third (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-initial-element (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-initial-element (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(fourth (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-resizablep (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-resizablep (stobj$a)
   (declare (xargs :guard t))
-  `(first (second (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-default-length (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-default-length (stobj$a)
   (declare (xargs :guard t))
-  `(second (second (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-length (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-length (stobj$a)
   (declare (xargs :guard t))
-  `(first (third (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-resizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-resizer (stobj$a)
   (declare (xargs :guard t))
-  `(second (third (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-accessor (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-accessor (stobj$a)
   (declare (xargs :guard t))
-  `(third (third (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(third (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-array-updater (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-array-updater (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (third (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(fourth (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
 
 ;;;; `STOBJ$A-HASH-TABLE'
-(defmacro stobj-accessors::stobj$a-hash-table-p (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-p (stobj$a)
   (declare (xargs :guard t))
   `(let ((stobj$a ,stobj$a))
-     (and (stobj-accessors::stobj$a-p stobj$a)
-          (let* ((stobj$a-interface (stobj-accessors::stobj$a-interface stobj$a))
+     (and (atomic-stobj-accessors::stobj$a-p stobj$a)
+          (let* ((stobj$a-interface (atomic-stobj-accessors::stobj$a-interface stobj$a))
                  (keys (first stobj$a-interface))
                  (vals (second stobj$a-interface))
                  (params (third stobj$a-interface))
@@ -190,93 +190,93 @@
                  (symbol-listp defuns)
                  (= (len defuns) 10))))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-key-recognizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-key-recognizer (stobj$a)
   (declare (xargs :guard t))
-  `(first (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-key-fixer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-key-fixer (stobj$a)
   (declare (xargs :guard t))
-  `(second (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-key (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-key (stobj$a)
   (declare (xargs :guard t))
-  `(third (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(third (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-default-key (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-default-key (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (first (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(fourth (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-val-recognizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-val-recognizer (stobj$a)
   (declare (xargs :guard t))
-  `(first (second (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-val-fixer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-val-fixer (stobj$a)
   (declare (xargs :guard t))
-  `(second (second (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-val (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-val (stobj$a)
   (declare (xargs :guard t))
-  `(third (second (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(third (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-default-val (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-default-val (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (second (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(fourth (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-test (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-test (stobj$a)
   (declare (xargs :guard t))
-  `(first (third (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-copyable (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-copyable (stobj$a)
   (declare (xargs :guard t))
-  `(second (third (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-accessor (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-accessor (stobj$a)
   (declare (xargs :guard t))
-  `(first (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-updater (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-updater (stobj$a)
   (declare (xargs :guard t))
-  `(second (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(second (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-boundp (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-boundp (stobj$a)
   (declare (xargs :guard t))
-  `(third (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(third (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-getp (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-getp (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(fourth (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-remover (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-remover (stobj$a)
   (declare (xargs :guard t))
-  `(fifth (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(fifth (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-count (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-count (stobj$a)
   (declare (xargs :guard t))
-  `(sixth (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(sixth (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-clear (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-clear (stobj$a)
   (declare (xargs :guard t))
-  `(seventh (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(seventh (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-init (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-init (stobj$a)
   (declare (xargs :guard t))
-  `(eighth (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(eighth (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-keys (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-keys (stobj$a)
   (declare (xargs :guard t))
-  `(ninth (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(ninth (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro stobj-accessors::stobj$a-hash-table-keys-set (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-hash-table-keys-set (stobj$a)
   (declare (xargs :guard t))
-  `(tenth (fourth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(tenth (fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
 
 ;;;; `STOBJ$A-FRAME'
-(defmacro stobj-accessors::stobj$a-frame-p (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-p (stobj$a)
   (declare (xargs :guard t))
   `(let ((stobj$a ,stobj$a))
-     (and (stobj-accessors::stobj$a-p stobj$a)
-          (let* ((stobj$a-interface (stobj-accessors::stobj$a-interface stobj$a))
+     (and (atomic-stobj-accessors::stobj$a-p stobj$a)
+          (let* ((stobj$a-interface (atomic-stobj-accessors::stobj$a-interface stobj$a))
                  (recognizers (first stobj$a-interface))
                  (fixers (second stobj$a-interface))
                  (fields (third stobj$a-interface))
@@ -302,47 +302,47 @@
                  (= (len accessors) (len updaters))
                  (= (len extra) 1))))))
 
-(defmacro stobj-accessors::stobj$a-frame-recognizers (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-recognizers (stobj$a)
   (declare (xargs :guard t))
-  `(first (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(first (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-fixers (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-fixers (stobj$a)
   (declare (xargs :guard t))
-  `(second (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(second (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-fields (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-fields (stobj$a)
   (declare (xargs :guard t))
-  `(third (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(third (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-initial-elements (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-initial-elements (stobj$a)
   (declare (xargs :guard t))
-  `(fourth (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(fourth (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-stobjs (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-stobjs (stobj$a)
   (declare (xargs :guard t))
-  `(fifth (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(fifth (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-accessors (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-accessors (stobj$a)
   (declare (xargs :guard t))
-  `(sixth (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(sixth (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-updaters (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-updaters (stobj$a)
   (declare (xargs :guard t))
-  `(seventh (stobj-accessors::stobj$a-interface ,stobj$a)))
+  `(seventh (atomic-stobj-accessors::stobj$a-interface ,stobj$a)))
 
-(defmacro stobj-accessors::stobj$a-frame-view (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-frame-view (stobj$a)
   (declare (xargs :guard t))
-  `(first (eighth (stobj-accessors::stobj$a-interface ,stobj$a))))
+  `(first (eighth (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
 
 ;;;; `*STOBJ$A-SYMBOLS*'
-(defconst stobj-accessors::*stobj$a-symbols*
+(defconst atomic-stobj-accessors::*stobj$a-symbols*
   (union-eq
-   '#!stobj-accessors
+   '#!atomic-stobj-accessors
    (stobj$a
     stobj$a-property-alist
     stobj$a-lookup-alist)
-   '#!stobj-accessors
+   '#!atomic-stobj-accessors
    (stobj$a-property-alist
     stobj$a-property
     stobj$a-p

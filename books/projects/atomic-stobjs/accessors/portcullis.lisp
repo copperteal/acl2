@@ -27,4 +27,4 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "STOBJ-ACCESSORS")
+(in-package "ATOMIC-STOBJ-ACCESSORS")

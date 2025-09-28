@@ -34,42 +34,42 @@
 
 
 ;;;; `STOBJ$ABS'
-(defmacro stobj-accessors::stobj$abs-info (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$abs-info (stobj$abs)
   (declare (xargs :guard t))
   `(getpropc ,stobj$abs 'absstobj-info))
 
-(defmacro stobj-accessors::stobj$abs-p (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$abs-p (stobj$abs)
   (declare (xargs :guard t))
   `(let ((stobj$abs ,stobj$abs))
      (and (symbolp stobj$abs)
           (stobj-p stobj$abs)
-          (let* ((absstobj-info (stobj-accessors::stobj$abs-info stobj$abs))
+          (let* ((absstobj-info (atomic-stobj-accessors::stobj$abs-info stobj$abs))
                  (foundation (car absstobj-info))
                  (exports (cdr absstobj-info)))
             (and (symbolp foundation)
                  (symbol-list-listp exports)
                  (<= 2 (len exports)))))))
 
-(defmacro stobj-accessors::stobj$abs-foundation (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$abs-foundation (stobj$abs)
   (declare (xargs :guard t))
-  `(first (stobj-accessors::stobj$abs-info ,stobj$abs)))
+  `(first (atomic-stobj-accessors::stobj$abs-info ,stobj$abs)))
 
-(defmacro stobj-accessors::stobj$abs-recognizers (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$abs-recognizers (stobj$abs)
   (declare (xargs :guard t))
-  `(second (stobj-accessors::stobj$abs-info ,stobj$abs)))
+  `(second (atomic-stobj-accessors::stobj$abs-info ,stobj$abs)))
 
-(defmacro stobj-accessors::stobj$abs-creators (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$abs-creators (stobj$abs)
   (declare (xargs :guard t))
-  `(third (stobj-accessors::stobj$abs-info ,stobj$abs)))
+  `(third (atomic-stobj-accessors::stobj$abs-info ,stobj$abs)))
 
-(defmacro stobj-accessors::stobj$abs-exports (stobj$abs)
+(defmacro atomic-stobj-accessors::stobj$abs-exports (stobj$abs)
   (declare (xargs :guard t))
-  `(cdddr (stobj-accessors::stobj$abs-info ,stobj$abs)))
+  `(cdddr (atomic-stobj-accessors::stobj$abs-info ,stobj$abs)))
 
 
 ;;;; `*STOBJ$ABS-SYMBOLS*'
-(defconst stobj-accessors::*stobj$abs-symbols*
-  '#!stobj-accessors
+(defconst atomic-stobj-accessors::*stobj$abs-symbols*
+  '#!atomic-stobj-accessors
   (stobj$abs-info
    stobj$abs-p
    stobj$abs-foundation
