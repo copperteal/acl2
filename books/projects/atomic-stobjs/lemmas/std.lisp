@@ -32,7 +32,7 @@
 (local
   (include-book "std/basic/inductions" :dir :system))
 
-(include-book "with-books")
+(include-book "../utilities/with-books")
 
 (defun repeat (n x)
   ;; MAINTENANCE: Keep in sync with ("std/lists/repeat" :dir :system)
