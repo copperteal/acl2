@@ -32,8 +32,8 @@
 (defpkg "ATOMIC-STOBJS"
   (union-eq *common-lisp-symbols-from-main-lisp-package*
             *acl2-exports*
-            *type-spec-symbols*
-            atomic-stobj-accessors::*symbols*
+            *type-spec-exports*
+            atomic-stobj-accessors::*exports*
             '(package-witness-p
               symbolicate
               with-books

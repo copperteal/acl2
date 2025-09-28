@@ -52,7 +52,7 @@
   ;; TODO: support these types
   #|'(integer mod rational real signed-byte unsigned-byte)|#)
 
-(defconst *type-spec-symbols*
+(defconst *type-spec-exports*
   (union-eq '(*atomic-type-specifiers*
               *atomic-real-subtype-specifiers*
               *compound-type-specifier-names*

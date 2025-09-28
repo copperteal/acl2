@@ -35,8 +35,8 @@
             '(stobj)))
 
 
-;;;; `*SYMBOLS*'
-(defconst atomic-stobj-accessors::*stobj-symbols*
+;;;; `*EXPORTS*'
+(defconst atomic-stobj-accessors::*stobj-exports*
   '#!atomic-stobj-accessors
   (stobj
    stobj-p
@@ -45,7 +45,7 @@
    stobj-interface
    stobj-live-constant))
 
-(defconst atomic-stobj-accessors::*stobj$c-symbols*
+(defconst atomic-stobj-accessors::*stobj$c-exports*
   '#!atomic-stobj-accessors
   (stobj$c-recognizer
    stobj$c-creator
@@ -78,7 +78,7 @@
    stobj$c-frame-updaters
    stobj$c-frame-accessor-constants))
 
-(defconst atomic-stobj-accessors::*stobj$a-symbols*
+(defconst atomic-stobj-accessors::*stobj$a-exports*
   (union-eq
    '#!atomic-stobj-accessors
    (stobj$a
@@ -137,7 +137,7 @@
     stobj$a-frame-updaters
     stobj$a-frame-view)))
 
-(defconst atomic-stobj-accessors::*stobj$abs-symbols*
+(defconst atomic-stobj-accessors::*stobj$abs-exports*
   '#!atomic-stobj-accessors
   (stobj$abs-info
    stobj$abs-p
@@ -146,8 +146,8 @@
    stobj$abs-creators
    stobj$abs-exports))
 
-(defconst atomic-stobj-accessors::*symbols*
-  (union-eq atomic-stobj-accessors::*stobj-symbols*
-            atomic-stobj-accessors::*stobj$c-symbols*
-            atomic-stobj-accessors::*stobj$a-symbols*
-            atomic-stobj-accessors::*stobj$abs-symbols*))
+(defconst atomic-stobj-accessors::*exports*
+  (union-eq atomic-stobj-accessors::*stobj-exports*
+            atomic-stobj-accessors::*stobj$c-exports*
+            atomic-stobj-accessors::*stobj$a-exports*
+            atomic-stobj-accessors::*stobj$abs-exports*))
