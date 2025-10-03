@@ -1,5 +1,5 @@
 (ld "~/acl2-customization.lsp" :ld-missing-input-ok t)
-(include-book "type-spec")
+(ld "type-spec.acl2")
 (ld "accessors/package.lsp")
-(ld "constructors/package.lsp")
+(ld "package.lsp")
 (set-verify-guards-eagerness 2)
