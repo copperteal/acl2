@@ -75,15 +75,20 @@
               ac)))
 
 (defpkg "DEFINE-ARRAY"
-  (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*
-            '(lst
-              n
-              default-value
-              l
-              key
-              val
-              i)))
+  (set-difference-eq
+   (union-eq *common-lisp-symbols-from-main-lisp-package*
+             *acl2-exports*
+             '(lst
+               n
+               default-value
+               l
+               key
+               val
+               i
+               with-books))
+   '(length
+     set
+     vectorp)))
 
 (defpkg "DEFINE-HASH-TABLE"
   (set-difference-eq
