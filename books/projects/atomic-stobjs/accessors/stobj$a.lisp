@@ -104,8 +104,8 @@
             (atomic-stobj-accessors::stobj$a-lookup-alist (w state))))
 
 
-;;;; `STOBJ$A-ARRAY'
-(defmacro atomic-stobj-accessors::stobj$a-array-p (stobj$a)
+;;;; `STOBJ$A-VECTOR'
+(defmacro atomic-stobj-accessors::stobj$a-vector-p (stobj$a)
   (declare (xargs :guard t))
   `(let ((stobj$a ,stobj$a))
      (and (atomic-stobj-accessors::stobj$a-p stobj$a)
@@ -124,43 +124,43 @@
                  (symbol-listp defuns)
                  (= (len defuns) 4))))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-element-recognizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-element-recognizer (stobj$a)
   (declare (xargs :guard t))
   `(first (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-element-fixer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-element-fixer (stobj$a)
   (declare (xargs :guard t))
   `(second (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-element (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-element (stobj$a)
   (declare (xargs :guard t))
   `(third (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-initial-element (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-initial-element (stobj$a)
   (declare (xargs :guard t))
   `(fourth (first (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-resizablep (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-resizablep (stobj$a)
   (declare (xargs :guard t))
   `(first (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-default-length (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-default-length (stobj$a)
   (declare (xargs :guard t))
   `(second (second (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-length (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-length (stobj$a)
   (declare (xargs :guard t))
   `(first (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-resizer (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-resizer (stobj$a)
   (declare (xargs :guard t))
   `(second (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-accessor (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-accessor (stobj$a)
   (declare (xargs :guard t))
   `(third (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 
-(defmacro atomic-stobj-accessors::stobj$a-array-updater (stobj$a)
+(defmacro atomic-stobj-accessors::stobj$a-vector-updater (stobj$a)
   (declare (xargs :guard t))
   `(fourth (third (atomic-stobj-accessors::stobj$a-interface ,stobj$a))))
 

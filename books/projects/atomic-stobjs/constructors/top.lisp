@@ -30,18 +30,18 @@
 (in-package "ATOMIC-STOBJS")
 
 (include-book "stobj-copy")
-(include-book "define-array")
+(include-book "define-vector")
 (include-book "define-hash-table")
 (include-book "define-frame")
 
 (defconst *exports*
-  '(valid-array-dimensions-p
-    define-array$c
-    define-array$a
-    define-array$corr
-    define-array$abs
-    define-array
-    define-array-theorems
+  '(valid-vector-dimensions-p
+    define-vector$c
+    define-vector$a
+    define-vector$corr
+    define-vector$abs
+    define-vector
+    define-vector-theorems
 
     valid-hash-table-test-p
     valid-hash-table-size-p

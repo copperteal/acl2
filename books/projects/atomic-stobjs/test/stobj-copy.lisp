@@ -31,7 +31,7 @@
 
 (include-book "centaur/fty/basetypes" :dir :system)
 (include-book "../constructors/stobj-copy")
-(include-book "../constructors/define-array")
+(include-book "../constructors/define-vector")
 (include-book "../constructors/define-hash-table")
 (include-book "../constructors/define-frame")
 
@@ -74,7 +74,7 @@
 
 (atomic-stobjs::define-stobj-copier ht)
 
-(atomic-stobjs::define-array arr 17
+(atomic-stobjs::define-vector arr 17
   :element-type ht
   :element-recognizer htp
   :element-fixer ht-fix
@@ -119,7 +119,7 @@
 
 (atomic-stobjs::define-stobj-copier fr)
 
-(atomic-stobjs::define-array arr2 3
+(atomic-stobjs::define-vector arr2 3
   :element-type fr
   :element-recognizer frp
   :element-fixer fr-fix

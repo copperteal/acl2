@@ -27,9 +27,9 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "DEFINE-ARRAY")
+(in-package "DEFINE-VECTOR")
 
-(deflabel define-array-lemmas-begin)
+(deflabel define-vector-lemmas-begin)
 
 (encapsulate (((element-recognizer *) => *)
               ((recognizer *) => *))
@@ -89,4 +89,4 @@
            (recognizer (update-nth key val l))))
 
 (in-theory
-  (current-theory 'define-array-lemmas-begin))
+  (current-theory 'define-vector-lemmas-begin))

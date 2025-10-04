@@ -36,7 +36,7 @@
 (include-book "lists")
 (include-book "std")
 
-(include-book "define-array-lemmas")
+(include-book "define-vector-lemmas")
 (include-book "define-hash-table-lemmas")
 (include-book "define-frame-lemmas")
 ||#
