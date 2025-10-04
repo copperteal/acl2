@@ -239,7 +239,7 @@
 
                 (fi-bindings
                  (list `(lem-vector$c::default-length (lambda () ,default-length))
-                       `(lem-vector$c::value-recognizer
+                       `(lem-vector$c::element-recognizer
                          ,(if element-type-is-stobj
                               stobj-recognizer
                               `(lambda (value) ,(typep$transform 'value element-type))))
@@ -597,8 +597,8 @@
                                (("Goal"
                                  :by (:functional-instance
                                       ,(if resizable
-                                           'lem-vector$c::value-recognizer-of-accessor/resizable
-                                           'lem-vector$c::value-recognizer-of-accessor/fixed)
+                                           'lem-vector$c::element-recognizer-of-accessor/resizable
+                                           'lem-vector$c::element-recognizer-of-accessor/fixed)
                                       ,@fi-bindings))))))
 
                     (defthm ,accessor-of-creator
