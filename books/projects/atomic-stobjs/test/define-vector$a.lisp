@@ -106,96 +106,6 @@
   :resizable t)
 
 
-;;;; `DEFINE-VECTOR$A/INSTANCE'
-(defmacro define-vector$a/instance (element)
-  (declare (xargs :guard (symbolp element)))
-  (let* ((witness "ACL2")
-         (element-recognizer (symbolicate witness element '-recognizer))
-         (element-fixer (symbolicate witness element '-fixer))
-         (initial-element (symbolicate witness 'initial- element))
-
-         (booleanp-of-element-recognizer (symbolicate witness 'booleanp-of- element-recognizer))
-         (element-recognizer-of-initial-element (symbolicate witness element-recognizer '-of- initial-element))
-         (element-recognizer-of-element-fixer (symbolicate witness element-recognizer '-of- element-fixer))
-         (element-fixer-when-element-recognizer (symbolicate witness element-fixer '-of- element-recognizer))
-         (element-fixer-when-not-element-recognizer (symbolicate witness element-fixer '-when-not- element-recognizer)))
-    `(encapsulate (((,element-recognizer *) => *)
-                   ((,element-fixer *) => *)
-                   ((,initial-element) => *))
-       (local
-         (defun ,element-recognizer (,element)
-           (declare (xargs :guard t)
-                    (ignore ,element))
-           t))
-
-       (local
-         (defun ,initial-element ()
-           (declare (xargs :guard t))
-           t))
-
-       (local
-         (defun ,element-fixer (,element)
-           (declare (xargs :guard t))
-           (if (,element-recognizer ,element)
-               ,element
-               (,initial-element))))
-
-       (defthm ,booleanp-of-element-recognizer
-         (booleanp (,element-recognizer ,element)))
-
-       (defthm ,element-recognizer-of-initial-element
-         (,element-recognizer (,initial-element)))
-
-       (defthm ,element-recognizer-of-element-fixer
-         (,element-recognizer (,element-fixer ,element)))
-
-       (defthm ,element-fixer-when-element-recognizer
-         (implies (,element-recognizer ,element)
-                  (equal (,element-fixer ,element)
-                         ,element)))
-
-       (defthm ,element-fixer-when-not-element-recognizer
-         (implies (not (,element-recognizer ,element))
-                  (equal (,element-fixer ,element)
-                         (,initial-element)))))))
-
-(define-vector$a/instance elt-instance)
-
-
-;;;; Functional Instances
-(atomic-stobjs::define-vector$a arr$a/0 #xffff
-  :element-recognizer elt-instance-recognizer
-  :element-fixer elt-instance-fixer
-  :element elt-instance
-  :initial-element (initial-elt-instance)
-  :resizable t
-  :testp t)
-
-(atomic-stobjs::define-vector$a arr$a/1 0
-  :element-recognizer elt-instance-recognizer
-  :element-fixer elt-instance-fixer
-  :element elt-instance
-  :initial-element (initial-elt-instance)
-  :resizable t
-  :testp t)
-
-(atomic-stobjs::define-vector$a arr$a/2 #xffff
-  :element-recognizer elt-instance-recognizer
-  :element-fixer elt-instance-fixer
-  :element elt-instance
-  :initial-element (initial-elt-instance)
-  :resizable nil
-  :testp t)
-
-(atomic-stobjs::define-vector$a arr$a/3 0
-  :element-recognizer elt-instance-recognizer
-  :element-fixer elt-instance-fixer
-  :element elt-instance
-  :initial-element (initial-elt-instance)
-  :resizable nil
-  :testp t)
-
-
 ;;;; Concrete Tests
 (atomic-stobjs::define-vector$a arr/0 0)
 
