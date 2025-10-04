@@ -399,7 +399,7 @@
 (defthm resizer/fixed{type-prescription}
   (implies (recognizer/fixed vector)
            (and (true-listp (resizer/fixed length vector))
-       (consp (resizer/fixed length vector))))
+                (consp (resizer/fixed length vector))))
   :rule-classes :type-prescription)
 
 (defthm resizer/fixed-constraint

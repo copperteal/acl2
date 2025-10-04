@@ -46,33 +46,33 @@
   `(atomic-stobj-accessors::stobj-live-constant ,stobj$c))
 
 
-;;;; `STOBJ$C-ARRAY'
-(defmacro atomic-stobj-accessors::stobj$c-array-p (stobj$c)
+;;;; `STOBJ$C-VECTOR'
+(defmacro atomic-stobj-accessors::stobj$c-vector-p (stobj$c)
   (declare (xargs :guard t))
   ;; an undesirably brittle characterization
   `(= (len (atomic-stobj-accessors::stobj-interface ,stobj$c)) 6))
 
-(defmacro atomic-stobj-accessors::stobj$c-array-contents-recognizer (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-vector-contents-recognizer (stobj$c)
   (declare (xargs :guard t))
   `(first (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro atomic-stobj-accessors::stobj$c-array-length (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-vector-length (stobj$c)
   (declare (xargs :guard t))
   `(second (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro atomic-stobj-accessors::stobj$c-array-resizer (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-vector-resizer (stobj$c)
   (declare (xargs :guard t))
   `(third (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro atomic-stobj-accessors::stobj$c-array-accessor (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-vector-accessor (stobj$c)
   (declare (xargs :guard t))
   `(fourth (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro atomic-stobj-accessors::stobj$c-array-updater (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-vector-updater (stobj$c)
   (declare (xargs :guard t))
   `(fifth (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 
-(defmacro atomic-stobj-accessors::stobj$c-array-accessor-constant (stobj$c)
+(defmacro atomic-stobj-accessors::stobj$c-vector-accessor-constant (stobj$c)
   (declare (xargs :guard t))
   `(sixth (atomic-stobj-accessors::stobj-interface ,stobj$c)))
 

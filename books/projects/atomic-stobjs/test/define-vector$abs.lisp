@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/define-array")
+(include-book "../constructors/define-vector")
 (include-book "std/basic/nfix" :dir :system)
 
 (defun not-null (x)
@@ -49,89 +49,89 @@
            (equal (nfix x) 0)))
 
 
-(atomic-stobjs::define-array$c arr/0$c #xbabe)
+(atomic-stobjs::define-vector$c arr/0$c #xbabe)
 
-(atomic-stobjs::define-array$a arr/0$a #xbabe)
+(atomic-stobjs::define-vector$a arr/0$a #xbabe)
 
-(atomic-stobjs::define-array$corr arr/0
+(atomic-stobjs::define-vector$corr arr/0
   :logic arr/0$a
   :exec arr/0$c)
 
-(atomic-stobjs::define-array$abs arr/0
+(atomic-stobjs::define-vector$abs arr/0
   :logic arr/0$a
   :exec arr/0$c)
 
 
-(atomic-stobjs::define-array$c arr/1$c #xbabe
+(atomic-stobjs::define-vector$c arr/1$c #xbabe
   :resizable t)
 
-(atomic-stobjs::define-array$a arr/1$a #xbabe
+(atomic-stobjs::define-vector$a arr/1$a #xbabe
   :resizable t)
 
-(atomic-stobjs::define-array$corr arr/1
+(atomic-stobjs::define-vector$corr arr/1
   :logic arr/1$a
   :exec arr/1$c)
 
-(atomic-stobjs::define-array$abs arr/1
+(atomic-stobjs::define-vector$abs arr/1
   :logic arr/1$a
   :exec arr/1$c)
 
 
-(atomic-stobjs::define-array$c arr/2$c #xdead
+(atomic-stobjs::define-vector$c arr/2$c #xdead
   :element-type (member t nil)
   :initial-element t
   :resizable t)
 
-(atomic-stobjs::define-array$a arr/2$a #xdead
+(atomic-stobjs::define-vector$a arr/2$a #xdead
   :element-recognizer booleanp
   :element-fixer not-null
   :initial-element t
   :resizable t)
 
-(atomic-stobjs::define-array$corr arr/2
+(atomic-stobjs::define-vector$corr arr/2
   :logic arr/2$a
   :exec arr/2$c)
 
-(atomic-stobjs::define-array$abs arr/2
+(atomic-stobjs::define-vector$abs arr/2
   :logic arr/2$a
   :exec arr/2$c)
 
 
-(atomic-stobjs::define-array$c arr/3$c 0
+(atomic-stobjs::define-vector$c arr/3$c 0
   :element-type (member t nil)
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-array$a arr/3$a 0
+(atomic-stobjs::define-vector$a arr/3$a 0
   :element-recognizer booleanp
   :element-fixer not-null
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-array$corr arr/3
+(atomic-stobjs::define-vector$corr arr/3
   :logic arr/3$a
   :exec arr/3$c)
 
-(atomic-stobjs::define-array$abs arr/3
+(atomic-stobjs::define-vector$abs arr/3
   :logic arr/3$a
   :exec arr/3$c)
 
 
-(atomic-stobjs::define-array$c arr/4$c #xbeef
+(atomic-stobjs::define-vector$c arr/4$c #xbeef
   :element-type unsigned-byte
   :initial-element 0
   :resizable t)
 
-(atomic-stobjs::define-array$a arr/4$a #xbeef
+(atomic-stobjs::define-vector$a arr/4$a #xbeef
   :element-recognizer natp
   :element-fixer nfix
   :initial-element 0
   :resizable t)
 
-(atomic-stobjs::define-array$corr arr/4
+(atomic-stobjs::define-vector$corr arr/4
   :logic arr/4$a
   :exec arr/4$c)
 
-(atomic-stobjs::define-array$abs arr/4
+(atomic-stobjs::define-vector$abs arr/4
   :logic arr/4$a
   :exec arr/4$c)
