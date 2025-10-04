@@ -30,10 +30,10 @@
 (in-package "ACL2")
 
 #||
-(include-book "define-array$c")
-(include-book "define-array$a")
-(include-book "define-array$abs")
-(include-book "define-array")
+(include-book "define-vector$c")
+(include-book "define-vector$a")
+(include-book "define-vector$abs")
+(include-book "define-vector")
 
 (include-book "define-hash-table$c")
 (include-book "define-hash-table$a")

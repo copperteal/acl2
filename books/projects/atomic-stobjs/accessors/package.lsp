@@ -50,13 +50,13 @@
   (stobj$c-recognizer
    stobj$c-creator
    stobj$c-live-constant
-   stobj$c-array-p
-   stobj$c-array-contents-recognizer
-   stobj$c-array-length
-   stobj$c-array-resizer
-   stobj$c-array-accessor
-   stobj$c-array-updater
-   stobj$c-array-accessor-constant
+   stobj$c-vector-p
+   stobj$c-vector-contents-recognizer
+   stobj$c-vector-length
+   stobj$c-vector-resizer
+   stobj$c-vector-accessor
+   stobj$c-vector-updater
+   stobj$c-vector-accessor-constant
    stobj$c-hash-table-p
    stobj$c-hash-table-contents-recognizer
    stobj$c-hash-table-keys-recognizer
@@ -95,17 +95,17 @@
     stobj$a-interface
     stobj$a-lookup-alist
     stobj$a-lookup
-    stobj$a-array-p
-    stobj$a-array-element-recognizer
-    stobj$a-array-element-fixer
-    stobj$a-array-element
-    stobj$a-array-initial-element
-    stobj$a-array-resizablep
-    stobj$a-array-default-length
-    stobj$a-array-length
-    stobj$a-array-resizer
-    stobj$a-array-accessor
-    stobj$a-array-updater
+    stobj$a-vector-p
+    stobj$a-vector-element-recognizer
+    stobj$a-vector-element-fixer
+    stobj$a-vector-element
+    stobj$a-vector-initial-element
+    stobj$a-vector-resizablep
+    stobj$a-vector-default-length
+    stobj$a-vector-length
+    stobj$a-vector-resizer
+    stobj$a-vector-accessor
+    stobj$a-vector-updater
     stobj$a-hash-table-p
     stobj$a-hash-table-key-recognizer
     stobj$a-hash-table-key-fixer

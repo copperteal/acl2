@@ -74,7 +74,7 @@
               free
               ac)))
 
-(defpkg "DEFINE-ARRAY"
+(defpkg "DEFINE-VECTOR"
   (set-difference-eq
    (union-eq *common-lisp-symbols-from-main-lisp-package*
              *acl2-exports*

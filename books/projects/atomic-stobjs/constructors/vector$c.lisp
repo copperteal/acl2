@@ -38,8 +38,8 @@
 (include-book "../accessors/top")
 
 
-;;;; `ARRAY' Guard Predicates
-(defun valid-array-dimensions-p (dimensions)
+;;;; `VECTOR' Guard Predicates
+(defun valid-vector-dimensions-p (dimensions)
   ;; TODO: refactor into separate file
   (declare (xargs :guard t))
   (or (and (consp dimensions)
@@ -47,18 +47,18 @@
            (null (cdr dimensions)))
       (natp dimensions)))
 
-(defthm valid-array-dimensions-p{compound-recognizer}
+(defthm valid-vector-dimensions-p{compound-recognizer}
   ;; Q: Is this theorem useful?
-  (implies (valid-array-dimensions-p dimensions)
+  (implies (valid-vector-dimensions-p dimensions)
            (or (natp dimensions)
                (and (consp dimensions)
                     (true-listp dimensions))))
   :rule-classes :compound-recognizer)
 
 
-;;;; `DEFINE-ARRAY$C'
-(defmacro define-array$c
-    (array dimensions
+;;;; `DEFINE-VECTOR$C'
+(defmacro define-vector$c
+    (vector dimensions
      &key
        (element-type 't)
        (specialize-element-type 'nil)
@@ -81,8 +81,8 @@
 
        (debug 'nil))
 
-  (declare (xargs :guard (and (symbolp array)
-                              (valid-array-dimensions-p dimensions)
+  (declare (xargs :guard (and (symbolp vector)
+                              (valid-vector-dimensions-p dimensions)
                               (if (acl2-type-spec-p element-type)
                                   (typep$ initial-element element-type)
                                   ;; Q: What's the best macro-guard for a value
@@ -116,30 +116,30 @@
          (element-type-is-stobj (not (acl2-type-spec-p element-type)))
 
          (contents (or contents
-                       (symbolicate array array '-contents)))
-         (contents-recognizer-stobj-default (symbolicate array contents 'p))
+                       (symbolicate vector vector '-contents)))
+         (contents-recognizer-stobj-default (symbolicate vector contents 'p))
          (contents-recognizer (or contents-recognizer
-                                  (symbolicate array contents (make-predicate-suffix contents))))
-         (recognizer-stobj-default (symbolicate array array 'p))
+                                  (symbolicate vector contents (make-predicate-suffix contents))))
+         (recognizer-stobj-default (symbolicate vector vector 'p))
          (recognizer (or recognizer
-                         (symbolicate array array (make-predicate-suffix array))))
-         (creator-stobj-default (symbolicate array 'create- array))
+                         (symbolicate vector vector (make-predicate-suffix vector))))
+         (creator-stobj-default (symbolicate vector 'create- vector))
          (creator (or creator
-                      (symbolicate array 'create- array)))
+                      (symbolicate vector 'create- vector)))
          (fixer (or fixer
-                    (symbolicate array array '-fix)))
-         (length-stobj-default (symbolicate array contents '-length))
+                    (symbolicate vector vector '-fix)))
+         (length-stobj-default (symbolicate vector contents '-length))
          (length (or length
-                     (symbolicate array array '-length)))
-         (resizer-stobj-default (symbolicate array 'resize- contents))
+                     (symbolicate vector vector '-length)))
+         (resizer-stobj-default (symbolicate vector 'resize- contents))
          (resizer (or resizer
-                      (symbolicate array array '-resize)))
-         (accessor-stobj-default (symbolicate array contents 'i))
+                      (symbolicate vector vector '-resize)))
+         (accessor-stobj-default (symbolicate vector contents 'i))
          (accessor (or accessor
-                       (symbolicate array array '-ref)))
-         (updater-stobj-default (symbolicate array 'update- contents 'i))
+                       (symbolicate vector vector '-ref)))
+         (updater-stobj-default (symbolicate vector 'update- contents 'i))
          (updater (or updater
-                      (symbolicate array array '-set)))
+                      (symbolicate vector vector '-set)))
 
          (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
                                 `((,contents-recognizer-stobj-default ,contents-recognizer)))
@@ -163,11 +163,11 @@
                            :gag-mode t))
 
        (make-event
-         (let* ((array ',array)
+         (let* ((vector ',vector)
                 (dimensions ',dimensions)
                 (default-length (car dimensions))
                 (default-length-name
-                 (symbolicate array '* array '-default-length*))
+                 (symbolicate vector '* vector '-default-length*))
 
                 (element-type ',element-type)
                 (element-type-is-stobj (and ',element-type-is-stobj
@@ -180,7 +180,7 @@
                 (specialize-element-type ',specialize-element-type)
                 (initial-element ',initial-element)
                 (initial-element-name
-                 (symbolicate array '* array '-initial-element*))
+                 (symbolicate vector '* vector '-initial-element*))
                 (resizable ',resizable)
 
                 (inline ',inline)
@@ -197,18 +197,18 @@
                 (accessor ',accessor)
                 (updater ',updater)
 
-                (array-begin (symbolicate array array '-begin))
-                (array-end (symbolicate array array '-end))
+                (vector-begin (symbolicate vector vector '-begin))
+                (vector-end (symbolicate vector vector '-end))
 
                 (prologue
-                 `((deflabel ,array-begin)
+                 `((deflabel ,vector-begin)
 
                    (defconst ,default-length-name ',default-length)
 
                    ,@(and (not element-type-is-stobj)
                           `((defconst ,initial-element-name ',initial-element)))
 
-                   (defstobj ,array
+                   (defstobj ,vector
                      (,contents :type (array ,element-type ,dimensions)
                                 ,@(and (not element-type-is-stobj)
                                        `(:element-type
@@ -222,20 +222,20 @@
                      :non-memoizable ,(not memoizable)
                      :non-executable ,(not executable))))
 
-                (array-theorems (symbolicate array array '-theorems))
+                (vector-theorems (symbolicate vector vector '-theorems))
                 (epilogue
-                 `((deflabel ,array-end)
+                 `((deflabel ,vector-end)
 
-                   (deftheory-static ,array-theorems
+                   (deftheory-static ,vector-theorems
                      (set-difference-theories
                       (set-difference-theories
-                       (current-theory ',array-end)
-                       (current-theory ',array-begin))
-                      (function-theory ',array-end)))
+                       (current-theory ',vector-end)
+                       (current-theory ',vector-begin))
+                      (function-theory ',vector-end)))
 
                    (in-theory
-                     (union-theories (current-theory ',array-begin)
-                                     (theory ',array-theorems)))))
+                     (union-theories (current-theory ',vector-begin)
+                                     (theory ',vector-theorems)))))
 
                 (fi-bindings
                  (list `(lem-vector$c::default-length (lambda () ,default-length))
@@ -267,81 +267,81 @@
                        fi-bindings))
 
                 (contents-recognizer{type-prescription}
-                 (symbolicate array contents-recognizer '{type-prescription}))
+                 (symbolicate vector contents-recognizer '{type-prescription}))
                 (contents-recognizer{compound-recognizer}
-                 (symbolicate array contents-recognizer '{compound-recognizer}))
+                 (symbolicate vector contents-recognizer '{compound-recognizer}))
 
                 (recognizer{type-prescription}
-                 (symbolicate array recognizer '{type-prescription}))
+                 (symbolicate vector recognizer '{type-prescription}))
                 (recognizer{compound-recognizer}
-                 (symbolicate array recognizer '{compound-recognizer}))
+                 (symbolicate vector recognizer '{compound-recognizer}))
                 (recognizer-of-creator
-                 (symbolicate array recognizer '-of- creator))
+                 (symbolicate vector recognizer '-of- creator))
                 (recognizer-of-resizer
-                 (symbolicate array recognizer '-of- resizer))
+                 (symbolicate vector recognizer '-of- resizer))
                 (recognizer-of-updater
-                 (symbolicate array recognizer '-of- updater))
+                 (symbolicate vector recognizer '-of- updater))
 
                 (length{type-prescription}
-                 (symbolicate array length '{type-prescription}))
-                (length-of-creator (symbolicate array length '-of- creator))
-                (length-of-resizer (symbolicate array length '-of- resizer))
-                (length-of-updater (symbolicate array length '-of- updater))
-                (length{rewrite} (symbolicate array length '{rewrite}))
+                 (symbolicate vector length '{type-prescription}))
+                (length-of-creator (symbolicate vector length '-of- creator))
+                (length-of-resizer (symbolicate vector length '-of- resizer))
+                (length-of-updater (symbolicate vector length '-of- updater))
+                (length{rewrite} (symbolicate vector length '{rewrite}))
 
                 (resizer{type-prescription}
-                 (symbolicate array resizer '{type-prescription}))
-                (resizer-of-creator (symbolicate array resizer '-of-creator))
-                (resizer-of-length (symbolicate array resizer '-of- length))
+                 (symbolicate vector resizer '{type-prescription}))
+                (resizer-of-creator (symbolicate vector resizer '-of-creator))
+                (resizer-of-length (symbolicate vector resizer '-of- length))
                 (resizer-of-length-free
-                 (symbolicate array resizer-of-length '-free))
-                (resizer-of-resizer (symbolicate array resizer '-of- resizer))
+                 (symbolicate vector resizer-of-length '-free))
+                (resizer-of-resizer (symbolicate vector resizer '-of- resizer))
                 (resizer-of-updater
-                 (symbolicate array resizer '-of- updater))
+                 (symbolicate vector resizer '-of- updater))
                 (resizer-of-updater-keep
-                 (symbolicate array resizer-of-updater '-keep))
+                 (symbolicate vector resizer-of-updater '-keep))
                 (resizer-of-updater-drop
-                 (symbolicate array resizer-of-updater '-drop))
-                (resizer{rewrite} (symbolicate array resizer '{rewrite}))
+                 (symbolicate vector resizer-of-updater '-drop))
+                (resizer{rewrite} (symbolicate vector resizer '{rewrite}))
 
-                (typep$-of-accessor (symbolicate array 'typep$-of- accessor))
-                (accessor-of-creator (symbolicate array accessor '-of- creator))
+                (typep$-of-accessor (symbolicate vector 'typep$-of- accessor))
+                (accessor-of-creator (symbolicate vector accessor '-of- creator))
                 (accessor-of-resizer
-                 (symbolicate array accessor '-of- resizer))
+                 (symbolicate vector accessor '-of- resizer))
                 (accessor-of-resizer-inner
-                 (symbolicate array accessor-of-resizer '-inner))
+                 (symbolicate vector accessor-of-resizer '-inner))
                 (accessor-of-resizer-outer
-                 (symbolicate array accessor-of-resizer '-outer))
+                 (symbolicate vector accessor-of-resizer '-outer))
                 (accessor-of-updater
-                 (symbolicate array accessor '-of- updater))
+                 (symbolicate vector accessor '-of- updater))
                 (accessor-of-updater-same
-                 (symbolicate array accessor-of-updater '-same))
+                 (symbolicate vector accessor-of-updater '-same))
                 (accessor-of-updater-diff
-                 (symbolicate array accessor-of-updater '-diff))
+                 (symbolicate vector accessor-of-updater '-diff))
 
                 (updater{type-prescription}
-                 (symbolicate array updater '{type-prescription}))
-                (updater-of-creator (symbolicate array updater '-of- creator))
-                (updater-of-resizer (symbolicate array updater '-of- resizer))
+                 (symbolicate vector updater '{type-prescription}))
+                (updater-of-creator (symbolicate vector updater '-of- creator))
+                (updater-of-resizer (symbolicate vector updater '-of- resizer))
                 (updater-of-resizer-inner
-                 (symbolicate array updater-of-resizer '-inner))
+                 (symbolicate vector updater-of-resizer '-inner))
                 (updater-of-resizer-outer
-                 (symbolicate array updater-of-resizer '-outer))
-                (updater-of-accessor (symbolicate array updater '-of- accessor))
+                 (symbolicate vector updater-of-resizer '-outer))
+                (updater-of-accessor (symbolicate vector updater '-of- accessor))
                 (updater-of-accessor-free
-                 (symbolicate array updater-of-accessor '-free))
-                (updater-of-updater (symbolicate array updater '-of- updater))
+                 (symbolicate vector updater-of-accessor '-free))
+                (updater-of-updater (symbolicate vector updater '-of- updater))
                 (updater-of-updater-same
-                 (symbolicate array updater-of-updater '-same))
+                 (symbolicate vector updater-of-updater '-same))
                 (updater-of-updater-diff
-                 (symbolicate array updater-of-updater '-diff))
+                 (symbolicate vector updater-of-updater '-diff))
 
-                (fixer{type-prescription} (symbolicate array fixer '{type-prescription}))
-                (recognizer-of-fixer (symbolicate array recognizer '-of- fixer))
+                (fixer{type-prescription} (symbolicate vector fixer '{type-prescription}))
+                (recognizer-of-fixer (symbolicate vector recognizer '-of- fixer))
                 (fixer-when-recognizer
-                 (symbolicate array fixer '-when- recognizer))
+                 (symbolicate vector fixer '-when- recognizer))
                 (fixer-when-not-recognizer
-                 (symbolicate array fixer '-when-not- recognizer))
+                 (symbolicate vector fixer '-when-not- recognizer))
 
                 (body
                  `(with-books (("projects/atomic-stobjs/lemmas/vector$c" :dir :system))
@@ -367,7 +367,7 @@
 
                     ;; `RECOGNIZER'
                     (defthm ,recognizer{type-prescription}
-                      (booleanp (,recognizer ,array))
+                      (booleanp (,recognizer ,vector))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -378,9 +378,9 @@
                              ,@fi-bindings))))
 
                     (defthm ,recognizer{compound-recognizer}
-                      (implies (,recognizer ,array)
-                               (and (consp ,array)
-                                    (true-listp ,array)))
+                      (implies (,recognizer ,vector)
+                               (and (consp ,vector)
+                                    (true-listp ,vector)))
                       :rule-classes :compound-recognizer
                       :hints
                       (("Goal"
@@ -402,8 +402,8 @@
 
                     ,@(and resizable
                            `((defthm ,recognizer-of-resizer
-                               (implies (,recognizer ,array)
-                                        (,recognizer (,resizer length ,array)))
+                               (implies (,recognizer ,vector)
+                                        (,recognizer (,resizer length ,vector)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -413,14 +413,14 @@
                     (defthm ,recognizer-of-updater
                       (implies (and (natp index)
                                     (< index ,(if resizable
-                                                  `(,length ,array)
+                                                  `(,length ,vector)
                                                   default-length-name))
                                     ,@(and (not element-type-is-t)
                                            (if element-type-is-stobj
                                                `((,stobj-recognizer value))
                                                `(,(typep$transform 'value element-type))))
-                                    (,recognizer ,array))
-                               (,recognizer (,updater index value ,array)))
+                                    (,recognizer ,vector))
+                               (,recognizer (,updater index value ,vector)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -431,7 +431,7 @@
 
                     ;; `LENGTH'
                     (defthm ,length{type-prescription}
-                      (natp (,length ,array))
+                      (natp (,length ,vector))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -453,7 +453,7 @@
 
                             (defthm ,length-of-resizer
                               (implies (natp length)
-                                       (equal (,length (,resizer length ,array))
+                                       (equal (,length (,resizer length ,vector))
                                               length))
                               :hints
                               (("Goal"
@@ -463,9 +463,9 @@
 
                             (defthm ,length-of-updater
                               (implies (and (natp index)
-                                            (< index (,length ,array)))
-                                       (equal (,length (,updater index value ,array))
-                                              (,length ,array)))
+                                            (< index (,length ,vector)))
+                                       (equal (,length (,updater index value ,vector))
+                                              (,length ,vector)))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -473,14 +473,14 @@
                                      ,@fi-bindings)))))
 
                           `((defthm ,length{rewrite}
-                              (equal (,length ,array)
+                              (equal (,length ,vector)
                                      ,default-length-name))))
 
                     ;; `RESIZER'
                     (defthm ,resizer{type-prescription}
-                      (implies (,recognizer ,array)
-                               (and (true-listp (,resizer length ,array))
-                                    (consp (,resizer length ,array))))
+                      (implies (,recognizer ,vector)
+                               (and (true-listp (,resizer length ,vector))
+                                    (consp (,resizer length ,vector))))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -502,10 +502,10 @@
                                      ,@fi-bindings))))
 
                             (defthmd ,resizer-of-length-free
-                              (implies (and (equal length (,length ,array))
-                                            (,recognizer ,array))
-                                       (equal (,resizer length ,array)
-                                              ,array))
+                              (implies (and (equal length (,length ,vector))
+                                            (,recognizer ,vector))
+                                       (equal (,resizer length ,vector)
+                                              ,vector))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -513,9 +513,9 @@
                                      ,@fi-bindings))))
 
                             (defthm ,resizer-of-length
-                              (implies (,recognizer ,array)
-                                       (equal (,resizer (,length ,array) ,array)
-                                              ,array))
+                              (implies (,recognizer ,vector)
+                                       (equal (,resizer (,length ,vector) ,vector)
+                                              ,vector))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -526,10 +526,10 @@
                               (implies (and (natp length0)
                                             (natp length1)
                                             (or (<= length0 length1)
-                                                (<= (,length ,array) length1))
-                                            (,recognizer ,array))
-                                       (equal (,resizer length0 (,resizer length1 ,array))
-                                              (,resizer length0 ,array)))
+                                                (<= (,length ,vector) length1))
+                                            (,recognizer ,vector))
+                                       (equal (,resizer length0 (,resizer length1 ,vector))
+                                              (,resizer length0 ,vector)))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -539,11 +539,11 @@
                             (defthmd ,resizer-of-updater
                               (implies (and (natp index)
                                             (natp length)
-                                            (< index (,length ,array)))
-                                       (equal (,resizer length (,updater index value ,array))
+                                            (< index (,length ,vector)))
+                                       (equal (,resizer length (,updater index value ,vector))
                                               (if (< index length)
-                                                  (,updater index value (,resizer length ,array))
-                                                  (,resizer length ,array))))
+                                                  (,updater index value (,resizer length ,vector))
+                                                  (,resizer length ,vector))))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -554,9 +554,9 @@
                               (implies (and (natp index)
                                             (natp length)
                                             (< index length)
-                                            (< index (,length ,array)))
-                                       (equal (,resizer length (,updater index value ,array))
-                                              (,updater index value (,resizer length ,array))))
+                                            (< index (,length ,vector)))
+                                       (equal (,resizer length (,updater index value ,vector))
+                                              (,updater index value (,resizer length ,vector))))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -567,9 +567,9 @@
                               (implies (and (natp index)
                                             (natp length)
                                             (<= length index)
-                                            (< index (,length ,array)))
-                                       (equal (,resizer length (,updater index value ,array))
-                                              (,resizer length ,array)))
+                                            (< index (,length ,vector)))
+                                       (equal (,resizer length (,updater index value ,vector))
+                                              (,resizer length ,vector)))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -577,22 +577,22 @@
                                      ,@fi-bindings)))))
 
                           `((defthm ,resizer{rewrite}
-                              (equal (,resizer length ,array)
-                                     ,array))))
+                              (equal (,resizer length ,vector)
+                                     ,vector))))
 
                     ;; `ACCESSOR'
                     ,@(and (not element-type-is-t)
                            `((defthm ,typep$-of-accessor
                                (implies (and (natp index)
                                              (< index ,(if resizable
-                                                           `(,length ,array)
+                                                           `(,length ,vector)
                                                            default-length-name))
-                                             (,recognizer ,array))
+                                             (,recognizer ,vector))
                                         ,(if element-type-is-stobj
-                                             `(,stobj-recognizer (,accessor index ,array))
+                                             `(,stobj-recognizer (,accessor index ,vector))
                                              ;; TODO: check if this fails for member,
                                              ;; unsigned-byte, or signed-byte
-                                             (typep$transform `(,accessor index ,array) element-type)))
+                                             (typep$transform `(,accessor index ,vector) element-type)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -620,9 +620,9 @@
                                (implies (and (natp index)
                                              (natp length)
                                              (< index length))
-                                        (equal (,accessor index (,resizer length ,array))
-                                               (if (< index (,length ,array))
-                                                   (,accessor index ,array)
+                                        (equal (,accessor index (,resizer length ,vector))
+                                               (if (< index (,length ,vector))
+                                                   (,accessor index ,vector)
                                                    ,(if element-type-is-stobj
                                                         `(,stobj-creator)
                                                         initial-element-name))))
@@ -636,9 +636,9 @@
                                (implies (and (natp index)
                                              (natp length)
                                              (< index length)
-                                             (< index (,length ,array)))
-                                        (equal (,accessor index (,resizer length ,array))
-                                               (,accessor index ,array)))
+                                             (< index (,length ,vector)))
+                                        (equal (,accessor index (,resizer length ,vector))
+                                               (,accessor index ,vector)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -649,8 +649,8 @@
                                (implies (and (natp index)
                                              (natp length)
                                              (< index length)
-                                             (<= (,length ,array) index))
-                                        (equal (,accessor index (,resizer length ,array))
+                                             (<= (,length ,vector) index))
+                                        (equal (,accessor index (,resizer length ,vector))
                                                ,(if element-type-is-stobj
                                                     `(,stobj-creator)
                                                     initial-element-name)))
@@ -663,10 +663,10 @@
                     (defthmd ,accessor-of-updater
                       (implies (and (natp index0)
                                     (natp index1))
-                               (equal (,accessor index0 (,updater index1 value ,array))
+                               (equal (,accessor index0 (,updater index1 value ,vector))
                                       (if (equal index0 index1)
                                           value
-                                          (,accessor index0 ,array))))
+                                          (,accessor index0 ,vector))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -675,7 +675,7 @@
 
                     (defthm ,accessor-of-updater-same
                       (implies (equal index0 index1)
-                               (equal (,accessor index0 (,updater index1 value ,array))
+                               (equal (,accessor index0 (,updater index1 value ,vector))
                                       value))
                       :hints
                       (("Goal"
@@ -687,8 +687,8 @@
                       (implies (and (not (equal index0 index1))
                                     (natp index0)
                                     (natp index1))
-                               (equal (,accessor index0 (,updater index1 value ,array))
-                                      (,accessor index0 ,array)))
+                               (equal (,accessor index0 (,updater index1 value ,vector))
+                                      (,accessor index0 ,vector)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -697,9 +697,9 @@
 
                     ;; `UPDATER'
                     (defthm ,updater{type-prescription}
-                      (implies (,recognizer ,array)
-                               (and (true-listp (,updater index value ,array))
-                                    (consp (,updater index value ,array))))
+                      (implies (,recognizer ,vector)
+                               (and (true-listp (,updater index value ,vector))
+                                    (consp (,updater index value ,vector))))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -728,13 +728,13 @@
                                (implies (and (natp index)
                                              (natp length)
                                              (< index length)
-                                             (equal value (if (< index (,length ,array))
-                                                              (,accessor index ,array)
+                                             (equal value (if (< index (,length ,vector))
+                                                              (,accessor index ,vector)
                                                               ,(if element-type-is-stobj
                                                                    `(,stobj-creator)
                                                                    initial-element-name))))
-                                        (equal (,updater index value (,resizer length ,array))
-                                               (,resizer length ,array)))
+                                        (equal (,updater index value (,resizer length ,vector))
+                                               (,resizer length ,vector)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -742,13 +742,13 @@
                                       ,@fi-bindings))))
 
                              (defthm ,updater-of-resizer-inner
-                               (implies (and (equal value (,accessor index ,array))
+                               (implies (and (equal value (,accessor index ,vector))
                                              (natp index)
                                              (natp length)
                                              (< index length)
-                                             (< index (,length ,array)))
-                                        (equal (,updater index value (,resizer length ,array))
-                                               (,resizer length ,array)))
+                                             (< index (,length ,vector)))
+                                        (equal (,updater index value (,resizer length ,vector))
+                                               (,resizer length ,vector)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -762,9 +762,9 @@
                                              (natp index)
                                              (natp length)
                                              (< index length)
-                                             (<= (,length ,array) index))
-                                        (equal (,updater index value (,resizer length ,array))
-                                               (,resizer length ,array)))
+                                             (<= (,length ,vector) index))
+                                        (equal (,updater index value (,resizer length ,vector))
+                                               (,resizer length ,vector)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -772,14 +772,14 @@
                                       ,@fi-bindings))))))
 
                     (defthmd ,updater-of-accessor-free
-                      (implies (and (equal value (,accessor index ,array))
+                      (implies (and (equal value (,accessor index ,vector))
                                     (natp index)
                                     (< index ,(if resizable
-                                                  `(,length ,array)
+                                                  `(,length ,vector)
                                                   default-length-name))
-                                    (,recognizer ,array))
-                               (equal (,updater index value ,array)
-                                      ,array))
+                                    (,recognizer ,vector))
+                               (equal (,updater index value ,vector)
+                                      ,vector))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -792,11 +792,11 @@
                       (implies (and (equal index0 index1)
                                     (natp index0)
                                     (< index0 ,(if resizable
-                                                   `(,length ,array)
+                                                   `(,length ,vector)
                                                    default-length-name))
-                                    (,recognizer ,array))
-                               (equal (,updater index0 (,accessor index1 ,array) ,array)
-                                      ,array))
+                                    (,recognizer ,vector))
+                               (equal (,updater index0 (,accessor index1 ,vector) ,vector)
+                                      ,vector))
                       :hints
                       (("Goal"
                         :in-theory (disable ,updater-of-accessor-free)
@@ -808,8 +808,8 @@
 
                     (defthm ,updater-of-updater-same
                       (implies (equal index0 index1)
-                               (equal (,updater index0 value0 (,updater index1 value1 ,array))
-                                      (,updater index0 value0 ,array)))
+                               (equal (,updater index0 value0 (,updater index1 value1 ,vector))
+                                      (,updater index0 value0 ,vector)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -820,8 +820,8 @@
                       (implies (and (not (equal index0 index1))
                                     (natp index0)
                                     (natp index1))
-                               (equal (,updater index0 value0 (,updater index1 value1 ,array))
-                                      (,updater index1 value1 (,updater index0 value0 ,array))))
+                               (equal (,updater index0 value0 (,updater index1 value1 ,vector))
+                                      (,updater index1 value1 (,updater index0 value0 ,vector))))
                       :rule-classes
                       ((:rewrite :loop-stopper ((index0 index1 ,updater))))
                       :hints
@@ -831,16 +831,16 @@
                              ,@fi-bindings))))
 
                     ;; `FIXER'
-                    (defun-inline ,fixer (,array)
-                      (declare (xargs :stobjs ,array))
-                      (mbe :logic (if (,recognizer ,array)
-                                      ,array
+                    (defun-inline ,fixer (,vector)
+                      (declare (xargs :stobjs ,vector))
+                      (mbe :logic (if (,recognizer ,vector)
+                                      ,vector
                                       (,creator))
-                           :exec ,array))
+                           :exec ,vector))
 
                     (defthm ,fixer{type-prescription}
-                      (and (true-listp (,fixer ,array))
-                           (consp (,fixer ,array)))
+                      (and (true-listp (,fixer ,vector))
+                           (consp (,fixer ,vector)))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -851,7 +851,7 @@
                              ,@fi-bindings-with-fixer))))
 
                     (defthm ,recognizer-of-fixer
-                      (,recognizer (,fixer ,array))
+                      (,recognizer (,fixer ,vector))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -861,9 +861,9 @@
                              ,@fi-bindings-with-fixer))))
 
                     (defthm ,fixer-when-recognizer
-                      (implies (,recognizer ,array)
-                               (equal (,fixer ,array)
-                                      ,array))
+                      (implies (,recognizer ,vector)
+                               (equal (,fixer ,vector)
+                                      ,vector))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -873,8 +873,8 @@
                              ,@fi-bindings-with-fixer))))
 
                     (defthm ,fixer-when-not-recognizer
-                      (implies (not (,recognizer ,array))
-                               (equal (,fixer ,array) (,creator)))
+                      (implies (not (,recognizer ,vector))
+                               (equal (,fixer ,vector) (,creator)))
                       :hints
                       (("Goal"
                         :by (:functional-instance

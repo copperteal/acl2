@@ -82,7 +82,7 @@
             'acl2::current-acl2-world
             (stobj-coupled-alist (w state))))
 
-(defun make-array-copy-events (stobj$a %stobj stobj state)
+(defun make-vector-copy-events (stobj$a %stobj stobj state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp stobj$a)
                               (symbolp %stobj)
@@ -111,15 +111,15 @@
          (creator$a (stobj$a-creator stobj$a))
          (fixer$a (stobj$a-fixer stobj$a))
          (stobj$a-equal (stobj$a-equal stobj$a))
-         (length$a (stobj$a-array-length stobj$a))
-         (accessor$a (stobj$a-array-accessor stobj$a))
-         (updater$a (stobj$a-array-updater stobj$a))
-         (resizer$a (stobj$a-array-resizer stobj$a))
-         (resizablep (stobj$a-array-resizablep stobj$a))
+         (length$a (stobj$a-vector-length stobj$a))
+         (accessor$a (stobj$a-vector-accessor stobj$a))
+         (updater$a (stobj$a-vector-updater stobj$a))
+         (resizer$a (stobj$a-vector-resizer stobj$a))
+         (resizablep (stobj$a-vector-resizablep stobj$a))
 
-         (element-recognizer (stobj$a-array-element-recognizer stobj$a))
-         (element-fixer (stobj$a-array-element-fixer stobj$a))
-         (element (stobj$a-array-element stobj$a))
+         (element-recognizer (stobj$a-vector-element-recognizer stobj$a))
+         (element-fixer (stobj$a-vector-element-fixer stobj$a))
+         (element (stobj$a-vector-element stobj$a))
          (element-copier (stobj-copier element))
          (element-copier{rewrite} (stobj-copier{rewrite} element))
          (%element (car (getpropc element-copier 'formals)))
@@ -1243,15 +1243,15 @@
                   :verify-guards nil))
   (let* ((stobj$a (stobj$a-lookup stobj))
          (stobj$a-type (cond
-                         ((stobj$a-array-p stobj$a)
-                          'array)
+                         ((stobj$a-vector-p stobj$a)
+                          'vector)
                          ((stobj$a-hash-table-p stobj$a)
                           'hash-table)
                          ((stobj$a-frame-p stobj$a)
                           'frame))))
     (case stobj$a-type
-      (array
-       (make-array-copy-events stobj$a %stobj stobj state))
+      (vector
+       (make-vector-copy-events stobj$a %stobj stobj state))
       (hash-table
        (make-hash-table-copy-events stobj$a %stobj stobj state))
       (frame
