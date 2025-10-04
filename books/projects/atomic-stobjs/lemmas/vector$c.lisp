@@ -37,17 +37,7 @@
 (encapsulate (((default-length) => *)
               ((value-recognizer *) => *)
               ((initial-element) => *)
-              ((contents-recognizer *) => *)
-
-              ((recognizer/resizable *) => *)
-              ((recognizer/fixed *) => *)
-              ((creator) => *)
-              ((length/resizable *) => *)
-              ((length/fixed *) => *)
-              ((resizer/resizable * *) => *)
-              ((resizer/fixed * *) => *)
-              ((accessor * *) => *)
-              ((updater * * *) => *))
+              ((contents-recognizer *) => *))
   (local
     (defun default-length ()
       0))
@@ -84,8 +74,11 @@
                (equal contents nil)
                (and (value-recognizer (car contents))
                     (contents-recognizer (cdr contents)))))
-    :rule-classes :definition)
+    :rule-classes :definition))
 
+(encapsulate (((recognizer/resizable *) => *)
+              ((length/resizable *) => *)
+              ((resizer/resizable * *) => *))
   (local
     (defun recognizer/resizable (vector)
       (and (true-listp vector)
@@ -101,6 +94,35 @@
                 t))
     :rule-classes :rewrite)
 
+  (local
+    (defun length/resizable (vector)
+      (declare (xargs :guard (recognizer/resizable vector)))
+      (len (nth 0 vector))))
+
+  (defthm length/resizable-constraint
+    (equal (length/resizable vector)
+           (len (nth 0 vector))))
+
+  (local
+    (defun resizer/resizable (length vector)
+      (declare (xargs :guard (recognizer/resizable vector)))
+      (update-nth 0
+                  (resize-list (nth 0 vector)
+                               length
+                               (initial-element))
+                  vector)))
+
+  (defthm resizer/resizable-constraint
+    (equal (resizer/resizable length vector)
+           (update-nth 0
+                       (resize-list (nth 0 vector)
+                                    length
+                                    (initial-element))
+                       vector))))
+
+(encapsulate (((recognizer/fixed *) => *)
+              ((length/fixed *) => *)
+              ((resizer/fixed * *) => *))
   (local
     (defun recognizer/fixed (vector)
       (and (true-listp vector)
@@ -119,25 +141,6 @@
     :rule-classes :rewrite)
 
   (local
-    (defun creator ()
-      (list (make-list (default-length)
-                       :initial-element (initial-element)))))
-
-  (defthm creator-constraint
-    (equal (creator)
-           (list (make-list (default-length)
-                            :initial-element (initial-element)))))
-
-  (local
-    (defun length/resizable (vector)
-      (declare (xargs :guard (recognizer/resizable vector)))
-      (len (nth 0 vector))))
-
-  (defthm length/resizable-constraint
-    (equal (length/resizable vector)
-           (len (nth 0 vector))))
-
-  (local
     (defun length/fixed (vector)
       (declare (xargs :guard (recognizer/fixed vector))
                (ignore vector))
@@ -148,23 +151,6 @@
            (default-length)))
 
   (local
-    (defun resizer/resizable (length vector)
-      (declare (xargs :guard (recognizer/resizable vector)))
-      (update-nth 0
-                  (resize-list (nth 0 vector)
-                               length
-                               (initial-element))
-                  vector)))
-
-  (defthm resizer/resizable-constraint
-    (equal (resizer/resizable length vector)
-           (update-nth 0
-                       (resize-list (nth 0 vector)
-                                    length
-                                    (initial-element))
-                       vector)))
-
-  (local
     (defun resizer/fixed (length vector)
       (declare (xargs :guard (recognizer/fixed vector))
                (ignore length))
@@ -172,7 +158,20 @@
 
   (defthm resizer/fixed-constraint
     (equal (resizer/fixed length vector)
-           vector))
+           vector)))
+
+(encapsulate (((creator) => *)
+              ((accessor * *) => *)
+              ((updater * * *) => *))
+  (local
+    (defun creator ()
+      (list (make-list (default-length)
+                       :initial-element (initial-element)))))
+
+  (defthm creator-constraint
+    (equal (creator)
+           (list (make-list (default-length)
+                            :initial-element (initial-element)))))
 
   (local
     (defun accessor (index vector)
@@ -318,6 +317,10 @@
 
 
 ;;;; `LENGTH/FIXED'
+(defthm length/fixed{type-prescription}
+  (natp (length/fixed vector))
+  :rule-classes :type-prescription)
+
 (defthm length/fixed-constraint
   ;; harmless redundant event
   (equal (length/fixed vector)
@@ -325,16 +328,27 @@
 
 
 ;;;; `RESIZER/RESIZABLE'
+(defthm resizer/resizable{type-prescription}
+  (implies (recognizer/resizable vector)
+           (and (true-listp (resizer/resizable length vector))
+                (consp (resizer/resizable length vector))))
+  :rule-classes :type-prescription)
+
 (with-books (("std/lists/repeat" :dir :system))
   (defthm resizer/resizable-of-creator
     (implies (equal length (default-length))
              (equal (resizer/resizable length (creator))
                     (creator)))))
 
-(defthm resizer/resizable-of-length-free
+(defthm resizer/resizable-of-length/resizable-free
   (implies (and (equal length (length/resizable vector))
                 (recognizer/resizable vector))
            (equal (resizer/resizable length vector)
+                  vector)))
+
+(defthm resizer/resizable-of-length/resizable
+  (implies (recognizer/resizable vector)
+           (equal (resizer/resizable (length/resizable vector) vector)
                   vector)))
 
 (with-books (("std/lists/resize-list" :dir :system))
@@ -366,13 +380,28 @@
 (defthm resizer/resizable-of-updater-drop
   (implies (and (natp index)
                 (natp length)
-                (< length index)
+                (<= length index)
                 (< index (length/resizable vector)))
            (equal (resizer/resizable length (updater index value vector))
                   (resizer/resizable length vector))))
 
+(defthm resizer/resizable-of-updater
+  (implies (and (natp index)
+                (natp length)
+                (< index (length/resizable vector)))
+           (equal (resizer/resizable length (updater index value vector))
+                  (if (< index length)
+                      (updater index value (resizer/resizable length vector))
+                      (resizer/resizable length vector)))))
+
 
 ;;;; `RESIZER/FIXED'
+(defthm resizer/fixed{type-prescription}
+  (implies (recognizer/fixed vector)
+           (and (true-listp (resizer/fixed length vector))
+       (consp (resizer/fixed length vector))))
+  :rule-classes :type-prescription)
+
 (defthm resizer/fixed-constraint
   ;; harmless redundant event
   (equal (resizer/fixed length vector)
@@ -394,11 +423,10 @@
 
 (with-books (("std/lists/nth" :dir :system))
   (defthm accessor-of-creator
-    (equal (accessor index (creator))
-           (and (posp (default-length))
-                (or (zp index)
-                    (< index (default-length)))
-                (initial-element)))))
+    (implies (and (natp index)
+                  (< index (default-length)))
+             (equal (accessor index (creator))
+                    (initial-element)))))
 
 (with-books (("std/lists/resize-list" :dir :system))
   (defthm accessor-of-resizer/resizable-inner
@@ -419,6 +447,24 @@
              (equal (accessor index (resizer/resizable length vector))
                     (initial-element)))))
 
+(defthm accessor-of-resizer/resizable
+  (implies (and (natp index)
+                (natp length)
+                (< index length))
+           (equal (accessor index (resizer/resizable length vector))
+                  (if (< index (length/resizable vector))
+                      (accessor index vector)
+                      (initial-element))))
+  :hints
+  (("Goal"
+    :cases ((< index (length/resizable vector)))
+    :in-theory (disable accessor-of-resizer/resizable-outer
+                        accessor-of-resizer/resizable-inner))
+   ("Subgoal 2"
+    :use (:instance accessor-of-resizer/resizable-outer))
+   ("Subgoal 1"
+    :use (:instance accessor-of-resizer/resizable-inner))))
+
 (defthm accessor-of-updater-same
   (implies (equal index0 index1)
            (equal (accessor index0 (updater index1 value vector))
@@ -431,8 +477,35 @@
            (equal (accessor index0 (updater index1 value vector))
                   (accessor index0 vector))))
 
+(defthm accessor-of-updater
+  (implies (and (natp index0)
+                (natp index1))
+           (equal (accessor index0 (updater index1 value vector))
+                  (if (equal index0 index1)
+                      value
+                      (accessor index0 vector)))))
+
 
 ;;;; `UPDATER'
+(defthm updater{type-prescription}/resizable
+  (implies (recognizer/resizable vector)
+           (and (true-listp (updater index value vector))
+                (consp (updater index value vector))))
+  :rule-classes :type-prescription)
+
+(defthm updater{type-prescription}/fixed
+  (implies (recognizer/fixed vector)
+           (and (true-listp (updater index value vector))
+                (consp (updater index value vector))))
+  :rule-classes :type-prescription)
+
+(defthm updater-of-creator
+  (implies (and (equal value (initial-element))
+                (natp index)
+                (< index (default-length)))
+           (equal (updater index value (creator))
+                  (creator))))
+
 (defthm updater-of-resizer/resizable-inner
   (implies (and (equal value (accessor index vector))
                 (natp index)
@@ -448,6 +521,16 @@
                 (natp length)
                 (< index length)
                 (<= (length/resizable vector) index))
+           (equal (updater index value (resizer/resizable length vector))
+                  (resizer/resizable length vector))))
+
+(defthm updater-of-resizer/resizable
+  (implies (and (natp index)
+                (natp length)
+                (< index length)
+                (equal value (if (< index (length/resizable vector))
+                                 (accessor index vector)
+                                 (initial-element))))
            (equal (updater index value (resizer/resizable length vector))
                   (resizer/resizable length vector))))
 
@@ -467,6 +550,22 @@
                   (< index (default-length))
                   (recognizer/fixed vector))
              (equal (updater index value vector)
+                    vector)))
+
+  (defthm updater-of-accessor/resizable
+    (implies (and (equal index0 index1)
+                  (natp index0)
+                  (< index0 (length/resizable vector))
+                  (recognizer/resizable vector))
+             (equal (updater index0 (accessor index1 vector) vector)
+                    vector)))
+
+  (defthm updater-of-accessor/fixed
+    (implies (and (equal index0 index1)
+                  (natp index0)
+                  (< index0 (default-length))
+                  (recognizer/fixed vector))
+             (equal (updater index0 (accessor index1 vector) vector)
                     vector)))
 
   (defthm updater-of-updater-same
@@ -506,11 +605,21 @@
       vector
       (creator)))
 
+(defthm fixer/resizable{type-prescription}
+  (and (true-listp (fixer/resizable vector))
+       (consp (fixer/resizable vector)))
+  :rule-classes :type-prescription)
+
 (defun fixer/fixed (vector)
   (declare (xargs :guard (recognizer/fixed vector)))
   (if (recognizer/fixed vector)
       vector
       (creator)))
+
+(defthm fixer/fixed{type-prescription}
+  (and (true-listp (fixer/fixed vector))
+       (consp (fixer/fixed vector)))
+  :rule-classes :type-prescription)
 
 (defthm recognizer/resizable-of-fixer/resizable
   (recognizer/resizable (fixer/resizable vector)))
