@@ -36,10 +36,10 @@
 
 (encapsulate (((default-length) => *)
               ((element-recognizer *) => *)
-              ((initial-element) => *)
-              ((contents-recognizer *) => *))
+              ((initial-element) => *))
   (local
     (defun default-length ()
+      (declare (xargs :guard t))
       0))
 
   (defthm default-length-constraint
@@ -48,6 +48,7 @@
 
   (local
     (defun element-recognizer (value)
+      (declare (xargs :guard t))
       (integerp value)))
 
   (defthm element-recognizer-constraint
@@ -56,145 +57,73 @@
 
   (local
     (defun initial-element ()
+      (declare (xargs :guard t))
       0))
 
   (defthm initial-element-constraint
-    (element-recognizer (initial-element)))
+    (element-recognizer (initial-element))))
 
-  (local
-    (defun contents-recognizer (contents)
-      (if (atom contents)
-          (equal contents nil)
-          (and (element-recognizer (car contents))
-               (contents-recognizer (cdr contents))))))
+(defun contents-recognizer (contents)
+  (declare (xargs :guard t))
+  (if (atom contents)
+      (equal contents nil)
+      (and (element-recognizer (car contents))
+           (contents-recognizer (cdr contents)))))
 
-  (defthm contents-recognizer-constraint
-    (equal (contents-recognizer contents)
-           (if (atom contents)
-               (equal contents nil)
-               (and (element-recognizer (car contents))
-                    (contents-recognizer (cdr contents)))))
-    :rule-classes :definition))
+(defun recognizer/resizable (vector)
+  (declare (xargs :guard t))
+  (and (true-listp vector)
+       (= (cl:length vector) 1)
+       (contents-recognizer (nth 0 vector))
+       t))
 
-(encapsulate (((recognizer/resizable *) => *)
-              ((length/resizable *) => *)
-              ((resizer/resizable * *) => *))
-  (local
-    (defun recognizer/resizable (vector)
-      (and (true-listp vector)
-           (= (cl:length vector) 1)
-           (contents-recognizer (nth 0 vector))
-           t)))
+(defun recognizer/fixed (vector)
+  (declare (xargs :guard t))
+  (and (true-listp vector)
+       (= (cl:length vector) 1)
+       (contents-recognizer (nth 0 vector))
+       (equal (len (nth 0 vector)) (default-length))
+       t))
 
-  (defthm recognizer/resizable-constraint
-    (equal (recognizer/resizable vector)
-           (and (true-listp vector)
-                (= (cl:length vector) 1)
-                (contents-recognizer (nth 0 vector))
-                t))
-    :rule-classes :rewrite)
+(defun length/resizable (vector)
+  (declare (xargs :guard (recognizer/resizable vector)))
+  (len (nth 0 vector)))
 
-  (local
-    (defun length/resizable (vector)
-      (declare (xargs :guard (recognizer/resizable vector)))
-      (len (nth 0 vector))))
+(defun length/fixed (vector)
+  (declare (xargs :guard (recognizer/fixed vector))
+           (ignore vector))
+  (default-length))
 
-  (defthm length/resizable-constraint
-    (equal (length/resizable vector)
-           (len (nth 0 vector))))
+(defun resizer/resizable (length vector)
+  (declare (xargs :guard (recognizer/resizable vector)))
+  (update-nth 0
+              (resize-list (nth 0 vector)
+                           length
+                           (initial-element))
+              vector))
 
-  (local
-    (defun resizer/resizable (length vector)
-      (declare (xargs :guard (recognizer/resizable vector)))
-      (update-nth 0
-                  (resize-list (nth 0 vector)
-                               length
-                               (initial-element))
-                  vector)))
+(defun resizer/fixed (length vector)
+  (declare (xargs :guard (recognizer/fixed vector))
+           (ignore length))
+  vector)
 
-  (defthm resizer/resizable-constraint
-    (equal (resizer/resizable length vector)
-           (update-nth 0
-                       (resize-list (nth 0 vector)
-                                    length
-                                    (initial-element))
-                       vector))))
+(defun creator ()
+  (declare (xargs :guard t))
+  (list (make-list (default-length)
+                   :initial-element (initial-element))))
 
-(encapsulate (((recognizer/fixed *) => *)
-              ((length/fixed *) => *)
-              ((resizer/fixed * *) => *))
-  (local
-    (defun recognizer/fixed (vector)
-      (and (true-listp vector)
-           (= (cl:length vector) 1)
-           (contents-recognizer (nth 0 vector))
-           (equal (len (nth 0 vector)) (default-length))
-           t)))
+(defun accessor (index vector)
+  (declare (xargs :guard (and (recognizer/resizable vector)
+                              (natp index)
+                              (< index (length/resizable vector)))))
+  (nth index (nth 0 vector)))
 
-  (defthm recognizer/fixed-constraint
-    (equal (recognizer/fixed vector)
-           (and (true-listp vector)
-                (= (cl:length vector) 1)
-                (contents-recognizer (nth 0 vector))
-                (equal (len (nth 0 vector)) (default-length))
-                t))
-    :rule-classes :rewrite)
-
-  (local
-    (defun length/fixed (vector)
-      (declare (xargs :guard (recognizer/fixed vector))
-               (ignore vector))
-      (default-length)))
-
-  (defthm length/fixed-constraint
-    (equal (length/fixed vector)
-           (default-length)))
-
-  (local
-    (defun resizer/fixed (length vector)
-      (declare (xargs :guard (recognizer/fixed vector))
-               (ignore length))
-      vector))
-
-  (defthm resizer/fixed-constraint
-    (equal (resizer/fixed length vector)
-           vector)))
-
-(encapsulate (((creator) => *)
-              ((accessor * *) => *)
-              ((updater * * *) => *))
-  (local
-    (defun creator ()
-      (list (make-list (default-length)
-                       :initial-element (initial-element)))))
-
-  (defthm creator-constraint
-    (equal (creator)
-           (list (make-list (default-length)
-                            :initial-element (initial-element)))))
-
-  (local
-    (defun accessor (index vector)
-      (declare (xargs :guard (and (recognizer/resizable vector)
-                                  (natp index)
-                                  (< index (length/resizable vector)))))
-      (nth index (nth 0 vector))))
-
-  (defthm accessor-constraint
-    (equal (accessor index vector)
-           (nth index (nth 0 vector))))
-
-  (local
-    (defun updater (index value vector)
-      (declare (xargs :guard (and (recognizer/resizable vector)
-                                  (natp index)
-                                  (< index (length/resizable vector))
-                                  (element-recognizer value))))
-      (update-nth-array 0 index value vector)))
-
-  (defthm updater-constraint
-    (equal (updater index value vector)
-           (update-nth-array 0 index value vector))))
+(defun updater (index value vector)
+  (declare (xargs :guard (and (recognizer/resizable vector)
+                              (natp index)
+                              (< index (length/resizable vector))
+                              (element-recognizer value))))
+  (update-nth-array 0 index value vector))
 
 
 ;;;; `CONTENTS-RECOGNIZER'
@@ -600,7 +529,7 @@
 
 ;;;; `FIXER'
 (defun fixer/resizable (vector)
-  (declare (xargs :guard (recognizer/resizable vector)))
+  (declare (xargs :guard t))
   (if (recognizer/resizable vector)
       vector
       (creator)))
@@ -611,7 +540,7 @@
   :rule-classes :type-prescription)
 
 (defun fixer/fixed (vector)
-  (declare (xargs :guard (recognizer/fixed vector)))
+  (declare (xargs :guard t))
   (if (recognizer/fixed vector)
       vector
       (creator)))
