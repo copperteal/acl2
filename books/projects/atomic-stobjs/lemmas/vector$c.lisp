@@ -35,7 +35,7 @@
 (set-verify-guards-eagerness 2)
 
 (encapsulate (((default-length) => *)
-              ((value-recognizer *) => *)
+              ((element-recognizer *) => *)
               ((initial-element) => *)
               ((contents-recognizer *) => *))
   (local
@@ -47,11 +47,11 @@
     :rule-classes :type-prescription)
 
   (local
-    (defun value-recognizer (value)
+    (defun element-recognizer (value)
       (integerp value)))
 
-  (defthm value-recognizer-constraint
-    (booleanp (value-recognizer value))
+  (defthm element-recognizer-constraint
+    (booleanp (element-recognizer value))
     :rule-classes :type-prescription)
 
   (local
@@ -59,20 +59,20 @@
       0))
 
   (defthm initial-element-constraint
-    (value-recognizer (initial-element)))
+    (element-recognizer (initial-element)))
 
   (local
     (defun contents-recognizer (contents)
       (if (atom contents)
           (equal contents nil)
-          (and (value-recognizer (car contents))
+          (and (element-recognizer (car contents))
                (contents-recognizer (cdr contents))))))
 
   (defthm contents-recognizer-constraint
     (equal (contents-recognizer contents)
            (if (atom contents)
                (equal contents nil)
-               (and (value-recognizer (car contents))
+               (and (element-recognizer (car contents))
                     (contents-recognizer (cdr contents)))))
     :rule-classes :definition))
 
@@ -189,7 +189,7 @@
       (declare (xargs :guard (and (recognizer/resizable vector)
                                   (natp index)
                                   (< index (length/resizable vector))
-                                  (value-recognizer value))))
+                                  (element-recognizer value))))
       (update-nth-array 0 index value vector)))
 
   (defthm updater-constraint
@@ -214,7 +214,7 @@
   (defthm contents-recognizer-of-make-list-ac
     (equal (contents-recognizer (make-list-ac size element acc))
            (and (or (zp size)
-                    (value-recognizer element))
+                    (element-recognizer element))
                 (contents-recognizer acc)))))
 
 (local
@@ -226,7 +226,7 @@
   (defthm contents-recognizer-of-update-nth
     (implies (and (natp index)
                   (< index (len contents))
-                  (value-recognizer value)
+                  (element-recognizer value)
                   (contents-recognizer contents))
              (contents-recognizer (update-nth index value contents)))))
 
@@ -239,11 +239,11 @@
                     contents))))
 
 (local
-  (defthm value-recognizer-of-nth
+  (defthm element-recognizer-of-nth
     (implies (and (natp index)
                   (< index (len contents))
                   (contents-recognizer contents))
-             (value-recognizer (nth index contents)))))
+             (element-recognizer (nth index contents)))))
 
 
 ;;;; `RECOGNIZER/RESIZABLE'
@@ -267,7 +267,7 @@
 (defthm recognizer/resizable-of-updater
   (implies (and (natp index)
                 (< index (length/resizable vector))
-                (value-recognizer value)
+                (element-recognizer value)
                 (recognizer/resizable vector))
            (recognizer/resizable (updater index value vector))))
 
@@ -289,7 +289,7 @@
 (defthm recognizer/fixed-of-updater
   (implies (and (natp index)
                 (< index (default-length))
-                (value-recognizer value)
+                (element-recognizer value)
                 (recognizer/fixed vector))
            (recognizer/fixed (updater index value vector))))
 
@@ -409,17 +409,17 @@
 
 
 ;;;; `ACCESSOR'
-(defthm value-recognizer-of-accessor/resizable
+(defthm element-recognizer-of-accessor/resizable
   (implies (and (natp index)
                 (< index (length/resizable vector))
                 (recognizer/resizable vector))
-           (value-recognizer (accessor index vector))))
+           (element-recognizer (accessor index vector))))
 
-(defthm value-recognizer-of-accessor/fixed
+(defthm element-recognizer-of-accessor/fixed
   (implies (and (natp index)
                 (< index (default-length))
                 (recognizer/fixed vector))
-           (value-recognizer (accessor index vector))))
+           (element-recognizer (accessor index vector))))
 
 (with-books (("std/lists/nth" :dir :system))
   (defthm accessor-of-creator
