@@ -27,24 +27,974 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "LEM-VECTOR$A")
 
 (include-book "../utilities/with-books")
 (local
   (include-book "std"))
 (set-verify-guards-eagerness 2) ; TODO: propagate
 
-;; (encapsulate (((default-length) => *)
-;;               ((element-recognizer *) => *)
-;;               ((element-fixer *) => *)
-;;               ((initial-element) => *)
-;;               ((contents-recognizer *) => *)
+(encapsulate (((default-length) => *)
+              ((element-recognizer *) => *)
+              ((initial-element) => *)
+              ((element-fixer *) => *))
+  (local
+    (defun default-length ()
+      (declare (xargs :guard t))
+      0))
 
-;;               recognizer
-;;               creator
-;;               fixer
-;;               length
-;;               resizer
-;;               accessor
-;;               updater)
-;;   )
+  (defthm default-length-constraint
+    (natp (default-length))
+    :rule-classes :type-prescription)
+
+  (local
+    (defun element-recognizer (value)
+      (declare (xargs :guard t))
+      (integerp value)))
+
+  (defthm element-recognizer-constraint
+    (booleanp (element-recognizer value))
+    :rule-classes :type-prescription)
+
+  (local
+    (defun initial-element ()
+      (declare (xargs :guard t))
+      0))
+
+  (defthm initial-element-constraint
+    (element-recognizer (initial-element)))
+
+  (local
+    (defun element-fixer (value)
+      (declare (xargs :guard t))
+      (if (element-recognizer value)
+          value
+          (initial-element))))
+
+  (defthm element-fixer-constraint
+    (equal (element-fixer value)
+           (if (element-recognizer value)
+               value
+               (initial-element)))))
+
+(defun contents-recognizer (contents)
+  (declare (xargs :guard t))
+  (if (atom contents)
+      (equal contents nil)
+      (and (element-recognizer (car contents))
+           (contents-recognizer (cdr contents)))))
+
+(defun recognizer/resizable (vector)
+  (declare (xargs :guard t))
+  (contents-recognizer vector))
+
+(defun recognizer/fixed (vector)
+  (declare (xargs :guard t))
+  (and (equal (len vector) (default-length))
+       (contents-recognizer vector)))
+
+(defun creator ()
+  (declare (xargs :guard t))
+  (make-list (default-length)
+             :initial-element (initial-element)))
+
+(defun fixer/resizable (vector)
+  (declare (xargs :guard (recognizer/resizable vector)))
+  (if (recognizer/resizable vector)
+      vector
+      (creator)))
+
+(defun fixer/fixed (vector)
+  (declare (xargs :guard (recognizer/fixed vector)))
+  (if (recognizer/fixed vector)
+      vector
+      (creator)))
+
+(defun length/resizable (vector)
+  (declare (xargs :guard (recognizer/resizable vector)))
+  (len (fixer/resizable vector)))
+
+(defun length/fixed (vector)
+  (declare (xargs :guard (recognizer/fixed vector))
+           (ignore vector))
+  (default-length))
+
+(defun resizer/resizable (length vector)
+  (declare (xargs :guard (and (natp length)
+                              (recognizer/resizable vector))))
+  (let ((vector (fixer/resizable vector))
+        (length (nfix length)))
+    (resize-list vector length (initial-element))))
+
+(defun resizer/fixed (length vector)
+  (declare (xargs :guard (and (natp length)
+                              (recognizer/fixed vector)))
+           (ignore length))
+  (fixer/fixed vector))
+
+(defun accessor/resizable (index vector)
+  (declare (xargs :guard (and (natp index)
+                              (recognizer/resizable vector)
+                              (< index (length/resizable vector)))))
+  (let ((index (nfix index))
+        (vector (fixer/resizable vector)))
+    (if (< index (length/resizable vector))
+        (element-fixer (nth index vector))
+        (initial-element))))
+
+(defun accessor/fixed (index vector)
+  (declare (xargs :guard (and (natp index)
+                              (recognizer/fixed vector)
+                              (< index (default-length)))))
+  (let ((index (nfix index))
+        (vector (fixer/fixed vector)))
+    (if (< index (default-length))
+        (element-fixer (nth index vector))
+        (initial-element))))
+
+(defun updater/resizable (index value vector)
+  (declare (xargs :guard (and (natp index)
+                              (element-recognizer value)
+                              (recognizer/resizable vector)
+                              (< index (length/resizable vector)))))
+  (let ((index (nfix index))
+        (value (element-fixer value))
+        (vector (fixer/resizable vector)))
+    (if (< index (length/resizable vector))
+        (update-nth index value vector)
+        vector)))
+
+(defun updater/fixed (index value vector)
+  (declare (xargs :guard (and (natp index)
+                              (element-recognizer value)
+                              (recognizer/fixed vector)
+                              (< index (default-length)))))
+  (let ((index (nfix index))
+        (value (element-fixer value))
+        (vector (fixer/fixed vector)))
+    (if (< index (default-length))
+        (update-nth index value vector)
+        vector)))
+
+
+;;;; `CONTENTS-RECOGNIZER'
+(defthm contents-recognizer{type-prescription}
+  (booleanp (contents-recognizer vector))
+  :rule-classes :type-prescription)
+
+(defthm contents-recognizer{compound-recognizer}
+  (implies (contents-recognizer vector)
+           (true-listp vector))
+  :rule-classes :compound-recognizer)
+
+(local
+  (defthm contents-recognizer-of-make-list-ac
+    (equal (contents-recognizer (make-list-ac size element acc))
+           (and (or (zp size)
+                    (element-recognizer element))
+                (contents-recognizer acc)))))
+
+(local
+  (defthm contents-recognizer-of-repeat
+    (equal (contents-recognizer (acl2::repeat n x))
+           (or (zp n)
+               (element-recognizer x)))))
+
+(local
+  (defthm contents-recognizer-of-resize-list
+    (implies (contents-recognizer contents)
+             (contents-recognizer (resize-list contents length (initial-element))))))
+
+(local
+  (defthm contents-recognizer-of-update-nth
+    (implies (and (natp index)
+                  (< index (len contents))
+                  (element-recognizer value)
+                  (contents-recognizer contents))
+             (contents-recognizer (update-nth index value contents)))))
+
+(local
+  (defthm element-recognizer-of-nth
+    (implies (and (natp index)
+                  (< index (len contents))
+                  (contents-recognizer contents))
+             (element-recognizer (nth index contents)))))
+
+
+;;;; `RECOGNIZER/RESIZABLE'
+(defthm recognizer/resizable{type-prescription}
+  (booleanp (recognizer/resizable vector))
+  :rule-classes :type-prescription)
+
+(defthm recognizer/resizable{compound-recognizer}
+  (implies (recognizer/resizable vector)
+           (true-listp vector))
+  :rule-classes :compound-recognizer)
+
+(defthm recognizer/resizable-of-creator
+  (recognizer/resizable (creator)))
+
+(defthm recognizer/resizable-of-fixer/resizable
+  (recognizer/resizable (fixer/resizable vector)))
+
+(defthm recognizer/resizable-of-resizer/resizable
+  (recognizer/resizable (resizer/resizable length vector)))
+
+(with-books (("std/lists/repeat" :dir :system))
+  (defthm recognizer/resizable-of-updater/resizable
+    (recognizer/resizable (updater/resizable length value vector))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+
+;;;; `RECOGNIZER/FIXED'
+(defthm recognizer/fixed{type-prescription}
+  (booleanp (recognizer/fixed vector))
+  :rule-classes :type-prescription)
+
+(defthm recognizer/fixed{compound-recognizer}
+  (implies (recognizer/fixed vector)
+           (true-listp vector))
+  :rule-classes :compound-recognizer)
+
+(defthm recognizer/fixed-of-creator
+  (recognizer/fixed (creator)))
+
+(defthm recognizer/fixed-of-fixer/fixed
+  (recognizer/fixed (fixer/fixed vector)))
+
+(with-books (("std/lists/repeat" :dir :system))
+  (defthm recognizer/fixed-of-updater/fixed
+    (recognizer/fixed (updater/fixed length value vector))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+
+;;;; `FIXER/RESIZABLE'
+(defthm fixer/resizable-when-recognizer/resizable
+  (implies (recognizer/resizable vector)
+           (equal (fixer/resizable vector)
+                  vector)))
+
+(defthm fixer/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (equal (fixer/resizable vector)
+                  (creator))))
+
+
+;;;; `FIXER/FIXED'
+(defthm fixer/fixed-when-recognizer/fixed
+  (implies (recognizer/fixed vector)
+           (equal (fixer/fixed vector)
+                  vector)))
+
+(defthm fixer/fixed-when-not-recognizer/fixed
+  (implies (not (recognizer/fixed vector))
+           (equal (fixer/fixed vector)
+                  (creator))))
+
+
+;;;; `LENGTH/RESIZABLE'
+(defthm length/resizable{type-prescription}
+  (natp (length/resizable vector))
+  :rule-classes :type-prescription)
+
+(defthm length/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (equal (length/resizable vector)
+                  (default-length))))
+
+(defthm length/resizable-of-creator
+  (equal (length/resizable (creator))
+         (default-length)))
+
+(defthm length/resizable-of-fixer/resizable
+  (equal (length/resizable (fixer/resizable vector))
+         (length/resizable vector)))
+
+(with-books (("std/lists/resize-list" :dir :system))
+  (defthm length/resizable-of-resizer/resizable
+    (equal (length/resizable (resizer/resizable length vector))
+           (nfix length))))
+
+(with-books (("std/lists/repeat" :dir :system))
+  (defthm length/resizable-of-updater/resizable
+    (equal (length/resizable (updater/resizable index value vector))
+           (length/resizable vector))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+
+;;;; `LENGTH/FIXED'
+(defthm length/fixed{type-prescription}
+  (natp (length/fixed vector))
+  :rule-classes :type-prescription)
+
+(defthm length/fixed{rewrite}
+  (equal (length/fixed vector)
+         (default-length)))
+
+
+;;;; `RESIZER/RESIZABLE'
+(defthm resizer/resizable{type-prescription}
+  (true-listp (resizer/resizable length vector))
+  :rule-classes :type-prescription)
+
+(defthm resizer/resizable-when-not-natp
+  (implies (not (natp length))
+           (equal (resizer/resizable length vector)
+                  (resizer/resizable 0 vector))))
+
+(defthm resizer/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (equal (resizer/resizable length vector)
+                  (resizer/resizable length (creator)))))
+
+(with-books (("std/lists/repeat" :dir :system))
+  (defthm resizer/resizable-of-creator
+    (implies (equal length (default-length))
+             (equal (resizer/resizable length (creator))
+                    (creator)))))
+
+(defthm resizer/resizable-of-nfix
+  (equal (resizer/resizable (nfix length) vector)
+         (resizer/resizable length vector)))
+
+(defthm resizer/resizable-of-fixer/resizable
+  (equal (resizer/resizable length (fixer/resizable vector))
+         (resizer/resizable length vector)))
+
+(with-books (("std/lists/resize-list" :dir :system)
+             ("std/lists/list-fix" :dir :system))
+  (defthm resizer/resizable-of-length/resizable-free
+    (implies (equal (nfix length) (length/resizable vector))
+             (equal (resizer/resizable length vector)
+                    (fixer/resizable vector)))))
+
+(defthm resizer/resizable-of-length/resizable
+  (equal (resizer/resizable (length/resizable vector) vector)
+         (fixer/resizable vector))
+  :hints
+  (("Goal"
+    :in-theory (disable resizer/resizable-of-length/resizable-free)
+    :use (:instance resizer/resizable-of-length/resizable-free
+                    (length (length/resizable vector))))))
+
+(with-books (("std/lists/resize-list" :dir :system)
+             ("std/lists/list-fix" :dir :system))
+  (defthm resizer/resizable-of-resizer/resizable
+    (implies (or (<= (nfix length0) (nfix length1))
+                 (<= (length/resizable vector) (nfix length1)))
+             (equal (resizer/resizable length0 (resizer/resizable length1 vector))
+                    (resizer/resizable length0 vector)))
+    :hints
+    (("Goal"
+      :use ((:instance acl2::resize-list-of-resize-list
+                       (lst (fixer/resizable vector))
+                       (n (nfix length1))
+                       (d (initial-element))
+                       (m (nfix length0))
+                       (e (initial-element))))))))
+
+(with-books (("std/lists/resize-list" :dir :system)
+             ("std/lists/repeat" :dir :system))
+  (defthm resizer/resizable-of-updater/resizable-keep
+    (implies (and (< (nfix index) (length/resizable vector))
+                  (< (nfix index) (nfix length)))
+             (equal (resizer/resizable length (updater/resizable index value vector))
+                    (updater/resizable index value (resizer/resizable length vector))))
+    :hints
+    (("Goal"
+      :in-theory (disable acl2::resize-list-of-update-nth-keep
+                          acl2::update-nth-of-resize-list)
+      :use ((:instance acl2::resize-list-of-update-nth-keep
+                       (key (nfix index))
+                       (val (element-fixer value))
+                       (l (fixer/resizable vector))
+                       (n (nfix length))
+                       (default-value (initial-element)))
+            (:instance acl2::update-nth-of-resize-list
+                       (key (nfix index))
+                       (val (element-fixer value))
+                       (lst (fixer/resizable vector))
+                       (n (nfix length))
+                       (default-value (initial-element))))
+      :expand ((:free (x) (acl2::repeat length x))
+               (acl2::repeat (default-length) (initial-element)))))))
+
+(defthm resizer/resizable-of-updater/resizable-drop
+  (implies (and (< (nfix index) (length/resizable vector))
+                (<= (nfix length) (nfix index)))
+           (equal (resizer/resizable length (updater/resizable index value vector))
+                  (resizer/resizable length vector))))
+
+(defthm resizer/resizable-of-updater/resizable
+  (implies (< (nfix index) (length/resizable vector))
+           (equal (resizer/resizable length (updater/resizable index value vector))
+                  (if (< (nfix index) (nfix length))
+                      (updater/resizable index value (resizer/resizable length vector))
+                      (resizer/resizable length vector))))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (nfix length))))
+   ("Subgoal 2"
+    :by resizer/resizable-of-updater/resizable-drop)
+   ("Subgoal 1"
+    :by resizer/resizable-of-updater/resizable-keep)))
+
+
+;;;; `RESIZER/FIXED'
+(defthm resizer/fixed{type-prescription}
+  (true-listp (resizer/fixed length vector))
+  :rule-classes :type-prescription)
+
+(defthm resizer/fixed{rewrite}
+  (equal (resizer/fixed length vector)
+         (fixer/fixed vector)))
+
+
+;;;; `ACCESSOR/RESIZABLE'
+(defthm element-recognizer-of-accessor/resizable
+  (element-recognizer (accessor/resizable index vector)))
+
+(defthm accessor/resizable-when-large
+  (implies (<= (length/resizable vector) (nfix index))
+           (equal (accessor/resizable index vector)
+                  (initial-element))))
+
+(defthm accessor/resizable-when-not-natp
+  (implies (not (natp index))
+           (equal (accessor/resizable index vector)
+                  (accessor/resizable 0 vector))))
+
+(with-books (("std/lists/nth" :dir :system))
+  (defthm accessor/resizable-when-not-recognizer/resizable
+    (implies (not (recognizer/resizable vector))
+             (equal (accessor/resizable index vector)
+                    (initial-element))))
+
+  (defthm accessor/resizable-of-creator
+    (equal (accessor/resizable index (creator))
+           (initial-element))))
+
+(defthm accessor/resizable-of-nfix
+  (equal (accessor/resizable (nfix index) vector)
+         (accessor/resizable index vector)))
+
+(defthm accessor/resizable-of-fixer/resizable
+  (equal (accessor/resizable index (fixer/resizable vector))
+         (accessor/resizable index vector)))
+
+(with-books (("std/lists/resize-list" :dir :system))
+  (defthm accessor/resizable-of-resizer/resizable
+    (implies (< (nfix index) (nfix length))
+             (equal (accessor/resizable index (resizer/resizable length vector))
+                    (accessor/resizable index vector)))))
+
+(with-books (("std/lists/repeat" :dir :system))
+  (defthm accessor/resizable-of-updater/resizable-same
+    (implies (and (< (nfix index0) (length/resizable vector))
+                  (equal (nfix index0) (nfix index1)))
+             (equal (accessor/resizable index0 (updater/resizable index1 value vector))
+                    (element-fixer value)))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+(defthm accessor/resizable-of-updater/resizable-diff
+  (implies (and (< (nfix index0) (length/resizable vector))
+                (not (equal (nfix index0) (nfix index1))))
+           (equal (accessor/resizable index0 (updater/resizable index1 value vector))
+                  (accessor/resizable index0 vector)))
+  :hints
+  (("Goal"
+    :in-theory (disable update-nth))))
+
+(defthm accessor/resizable-of-updater/resizable
+  (implies (< (nfix index0) (length/resizable vector))
+           (equal (accessor/resizable index0 (updater/resizable index1 value vector))
+                  (if (equal (nfix index0) (nfix index1))
+                      (element-fixer value)
+                      (accessor/resizable index0 vector))))
+  :hints
+  (("Goal"
+    :cases ((equal (nfix index0) (nfix index1))))
+   ("Subgoal 2"
+    :by accessor/resizable-of-updater/resizable-diff)
+   ("Subgoal 1"
+    :by accessor/resizable-of-updater/resizable-same)))
+
+
+;;;; `ACCESSOR/FIXED'
+(defthm element-recognizer-of-accessor/fixed
+  (element-recognizer (accessor/fixed index vector)))
+
+(defthm accessor/fixed-when-large
+  (implies (<= (default-length) (nfix index))
+           (equal (accessor/fixed index vector)
+                  (initial-element))))
+
+(defthm accessor/fixed-when-not-natp
+  (implies (not (natp index))
+           (equal (accessor/fixed index vector)
+                  (accessor/fixed 0 vector))))
+
+(with-books (("std/lists/nth" :dir :system))
+  (defthm accessor/fixed-when-not-recognizer/fixed
+    (implies (not (recognizer/fixed vector))
+             (equal (accessor/fixed index vector)
+                    (initial-element))))
+
+  (defthm accessor/fixed-of-creator
+    (equal (accessor/fixed index (creator))
+           (initial-element))))
+
+(defthm accessor/fixed-of-nfix
+  (equal (accessor/fixed (nfix index) vector)
+         (accessor/fixed index vector)))
+
+(defthm accessor/fixed-of-fixer/fixed
+  (equal (accessor/fixed index (fixer/fixed vector))
+         (accessor/fixed index vector)))
+
+(with-books (("std/lists/repeat" :dir :system))
+  (defthm accessor/fixed-of-updater/fixed-same
+    (implies (and (< (nfix index0) (default-length))
+                  (equal (nfix index0) (nfix index1)))
+             (equal (accessor/fixed index0 (updater/fixed index1 value vector))
+                    (element-fixer value)))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+(defthm accessor/fixed-of-updater/fixed-diff
+  (implies (and (< (nfix index0) (default-length))
+                (not (equal (nfix index0) (nfix index1))))
+           (equal (accessor/fixed index0 (updater/fixed index1 value vector))
+                  (accessor/fixed index0 vector)))
+  :hints
+  (("Goal"
+    :in-theory (disable update-nth))))
+
+(defthm accessor/fixed-of-updater/fixed
+  (implies (< (nfix index0) (default-length))
+           (equal (accessor/fixed index0 (updater/fixed index1 value vector))
+                  (if (equal (nfix index0) (nfix index1))
+                      (element-fixer value)
+                      (accessor/fixed index0 vector))))
+  :hints
+  (("Goal"
+    :cases ((equal (nfix index0) (nfix index1))))
+   ("Subgoal 2"
+    :by accessor/fixed-of-updater/fixed-diff)
+   ("Subgoal 1"
+    :by accessor/fixed-of-updater/fixed-same)))
+
+
+;;;; `UPDATER/RESIZABLE'
+(defthm updater/resizable{type-prescription}
+  (true-listp (updater/resizable index value vector))
+  :rule-classes :type-prescription)
+
+(defthm updater/resizable-when-large
+  (implies (<= (length/resizable vector) (nfix index))
+           (equal (updater/resizable index value vector)
+                  (fixer/resizable vector))))
+
+(defthm updater/resizable-when-not-natp
+  (implies (not (natp index))
+           (equal (updater/resizable index value vector)
+                  (updater/resizable 0 value vector))))
+
+(defthm updater/resizable-when-not-element-recognizer
+  (implies (not (element-recognizer value))
+           (equal (updater/resizable index value vector)
+                  (updater/resizable index (initial-element) vector))))
+
+(defthm updater/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (equal (updater/resizable index value vector)
+                  (updater/resizable index value (creator)))))
+
+(defthm updater/resizable-of-creator
+  (implies (and (< (nfix index) (default-length))
+                (equal (element-fixer value) (initial-element)))
+           (equal (updater/resizable index value (creator))
+                  (creator))))
+
+(defthm updater/resizable-of-nfix
+  (equal (updater/resizable (nfix index) value vector)
+         (updater/resizable index value vector)))
+
+(defthm updater/resizable-of-element-fixer
+  (equal (updater/resizable index (element-fixer value) vector)
+         (updater/resizable index value vector)))
+
+(defthm updater/resizable-of-fixer/resizable
+  (equal (updater/resizable index value (fixer/resizable vector))
+         (updater/resizable index value vector)))
+
+(with-books (("std/lists/update-nth" :dir :system)
+             ("std/lists/repeat" :dir :system)
+             ("std/lists/resize-list" :dir :system)
+             ("std/lists/len" :dir :system)
+             ("std/lists/nth" :dir :system))
+  (defthm updater/resizable-of-resizer/resizable
+    (implies (and (< (nfix index) (nfix length))
+                  (equal (element-fixer value) (accessor/resizable index vector)))
+             (equal (updater/resizable index value (resizer/resizable length vector))
+                    (resizer/resizable length vector)))
+    :hints
+    (("Goal"
+      :expand ((resize-list vector length (initial-element))
+               (acl2::repeat length (initial-element))
+               (acl2::repeat (default-length) (initial-element)))))))
+
+(with-books (("std/lists/update-nth" :dir :system)
+             ("std/lists/repeat" :dir :system))
+  (defthm updater/resizable-of-accessor/resizable-free
+    (implies (equal (element-fixer value) (accessor/resizable index vector))
+             (equal (updater/resizable index value vector)
+                    (fixer/resizable vector)))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+(defthm updater/resizable-of-accessor/resizable
+  (implies (equal (nfix index0) (nfix index1))
+           (equal (updater/resizable index0 (accessor/resizable index1 vector) vector)
+                  (fixer/resizable vector)))
+  :hints
+  (("Goal"
+    :in-theory (disable updater/resizable-of-accessor/resizable-free
+                        contents-recognizer
+                        recognizer/resizable
+                        creator
+                        fixer/resizable
+                        length/resizable
+                        accessor/resizable)
+    :use (:instance updater/resizable-of-accessor/resizable-free
+                    (index index0)
+                    (value (accessor/resizable index1 vector))))))
+
+(with-books (("std/basic/nfix" :dir :system)
+             ("std/lists/update-nth" :dir :system))
+  (defthm updater/resizable-of-updater/resizable-same
+    (implies (equal (nfix index0) (nfix index1))
+             (equal (updater/resizable index0 value0 (updater/resizable index1 value1 vector))
+                    (updater/resizable index0 value0 vector))))
+
+  (defthm updater/resizable-of-updater/resizable-diff
+    (implies (not (equal (nfix index0) (nfix index1)))
+             (equal (updater/resizable index0 value0 (updater/resizable index1 value1 vector))
+                    (updater/resizable index1 value1 (updater/resizable index0 value0 vector))))
+    :rule-classes
+    ((:rewrite :loop-stopper ((index0 index1 updater/resizable))))
+    :hints
+    (("Goal"
+      :in-theory (disable acl2::update-nth-of-update-nth-diff
+                          nfix
+                          update-nth
+                          nth
+                          acl2::update-nth-when-zp)
+      :use ((:instance acl2::update-nth-of-update-nth-diff
+                       (n1 (nfix index0))
+                       (n2 (nfix index1))
+                       (v1 (element-fixer value0))
+                       (v2 (element-fixer value1))
+                       (x (fixer/resizable vector))))))))
+
+(defthm updater/resizable-of-updater/resizable
+  (equal (updater/resizable index0 value0 (updater/resizable index1 value1 vector))
+         (if (equal (nfix index0) (nfix index1))
+             (updater/resizable index0 value0 vector)
+             (updater/resizable index1 value1 (updater/resizable index0 value0 vector))))
+  :rule-classes
+  ((:rewrite :loop-stopper ((index0 index1 updater/resizable))))
+  :hints
+  (("Goal"
+    :cases ((equal (nfix index0) (nfix index1))))
+   ("Subgoal 2"
+    :by updater/resizable-of-updater/resizable-diff)
+   ("Subgoal 1"
+    :by updater/resizable-of-updater/resizable-same)))
+
+
+;;;; `UPDATER/FIXED'
+(defthm updater/fixed{type-prescription}
+  (true-listp (updater/fixed index value vector))
+  :rule-classes :type-prescription)
+
+(defthm updater/fixed-when-large
+  (implies (<= (default-length) (nfix index))
+           (equal (updater/fixed index value vector)
+                  (fixer/fixed vector))))
+
+(defthm updater/fixed-when-not-natp
+  (implies (not (natp index))
+           (equal (updater/fixed index value vector)
+                  (updater/fixed 0 value vector))))
+
+(defthm updater/fixed-when-not-element-recognizer
+  (implies (not (element-recognizer value))
+           (equal (updater/fixed index value vector)
+                  (updater/fixed index (initial-element) vector))))
+
+(defthm updater/fixed-when-not-recognizer/fixed
+  (implies (not (recognizer/fixed vector))
+           (equal (updater/fixed index value vector)
+                  (updater/fixed index value (creator)))))
+
+(defthm updater/fixed-of-creator
+  (implies (and (< (nfix index) (default-length))
+                (equal (element-fixer value) (initial-element)))
+           (equal (updater/fixed index value (creator))
+                  (creator))))
+
+(defthm updater/fixed-of-nfix
+  (equal (updater/fixed (nfix index) value vector)
+         (updater/fixed index value vector)))
+
+(defthm updater/fixed-of-element-fixer
+  (equal (updater/fixed index (element-fixer value) vector)
+         (updater/fixed index value vector)))
+
+(defthm updater/fixed-of-fixer/fixed
+  (equal (updater/fixed index value (fixer/fixed vector))
+         (updater/fixed index value vector)))
+
+(with-books (("std/lists/update-nth" :dir :system)
+             ("std/lists/repeat" :dir :system))
+  (defthm updater/fixed-of-accessor/fixed-free
+    (implies (equal (element-fixer value) (accessor/fixed index vector))
+             (equal (updater/fixed index value vector)
+                    (fixer/fixed vector)))
+    :hints
+    (("Goal"
+      :expand (acl2::repeat (default-length) (initial-element))))))
+
+(defthm updater/fixed-of-accessor/fixed
+  (implies (equal (nfix index0) (nfix index1))
+           (equal (updater/fixed index0 (accessor/fixed index1 vector) vector)
+                  (fixer/fixed vector)))
+  :hints
+  (("Goal"
+    :in-theory (disable updater/fixed-of-accessor/fixed-free
+                        contents-recognizer
+                        recognizer/fixed
+                        creator
+                        fixer/fixed
+                        length/fixed
+                        accessor/fixed)
+    :use (:instance updater/fixed-of-accessor/fixed-free
+                    (index index0)
+                    (value (accessor/fixed index1 vector))))))
+
+(with-books (("std/basic/nfix" :dir :system)
+             ("std/lists/update-nth" :dir :system))
+  (defthm updater/fixed-of-updater/fixed-same
+    (implies (equal (nfix index0) (nfix index1))
+             (equal (updater/fixed index0 value0 (updater/fixed index1 value1 vector))
+                    (updater/fixed index0 value0 vector))))
+
+  (defthm updater/fixed-of-updater/fixed-diff
+    (implies (not (equal (nfix index0) (nfix index1)))
+             (equal (updater/fixed index0 value0 (updater/fixed index1 value1 vector))
+                    (updater/fixed index1 value1 (updater/fixed index0 value0 vector))))
+    :rule-classes
+    ((:rewrite :loop-stopper ((index0 index1 updater/fixed))))
+    :hints
+    (("Goal"
+      :in-theory (disable acl2::update-nth-of-update-nth-diff
+                          nfix
+                          update-nth
+                          nth
+                          acl2::update-nth-when-zp)
+      :use ((:instance acl2::update-nth-of-update-nth-diff
+                       (n1 (nfix index0))
+                       (n2 (nfix index1))
+                       (v1 (element-fixer value0))
+                       (v2 (element-fixer value1))
+                       (x (fixer/fixed vector))))))))
+
+(defthm updater/fixed-of-updater/fixed
+  (equal (updater/fixed index0 value0 (updater/fixed index1 value1 vector))
+         (if (equal (nfix index0) (nfix index1))
+             (updater/fixed index0 value0 vector)
+             (updater/fixed index1 value1 (updater/fixed index0 value0 vector))))
+  :rule-classes
+  ((:rewrite :loop-stopper ((index0 index1 updater/fixed))))
+  :hints
+  (("Goal"
+    :cases ((equal (nfix index0) (nfix index1))))
+   ("Subgoal 2"
+    :by updater/fixed-of-updater/fixed-diff)
+   ("Subgoal 1"
+    :by updater/fixed-of-updater/fixed-same)))
+
+
+;;;; `EQUAL/RESIZABLE{FORWARD-CHAINING}'
+(defun-sk contents-equal/resizable (%vector vector)
+  (declare (xargs :guard (and (recognizer/resizable %vector)
+                              (recognizer/resizable vector))
+                  :verify-guards nil))
+  (forall index
+    (implies (and (natp index)
+                  (< index (length/resizable %vector))
+                  (< index (length/resizable vector)))
+             (equal (accessor/resizable index %vector)
+                    (accessor/resizable index vector))))
+  :rewrite :direct)
+
+(defun-nx equal/resizable (%vector vector)
+  (declare (xargs :guard (and (recognizer/resizable %vector)
+                              (recognizer/resizable vector))
+                  :verify-guards nil))
+  (and (recognizer/resizable %vector)
+       (recognizer/resizable vector)
+       (equal (length/resizable %vector)
+              (length/resizable vector))
+       (contents-equal/resizable %vector vector)))
+
+(with-books (("std/lists/nth" :dir :system))
+  (local
+    (defthmd equal/resizable{forward-chaining}-lemma-2
+      (implies (and (recognizer/resizable %vector)
+                    (recognizer/resizable vector))
+               (iff (equal (len %vector) (len vector))
+                    (equal (length/resizable %vector) (length/resizable vector))))))
+
+  (local
+    (defthmd equal/resizable{forward-chaining}-lemma-1
+      (implies (and (recognizer/resizable %vector)
+                    (recognizer/resizable vector)
+                    (equal (length/resizable %vector)
+                           (length/resizable vector))
+                    (contents-equal/resizable %vector vector)
+                    (natp n)
+                    (< n (len %vector)))
+               (equal (nth n %vector)
+                      (nth n vector)))
+      :rule-classes
+      ((:rewrite :match-free :all))
+      :hints
+      (("Goal"
+        :use ((:instance contents-equal/resizable-necc
+                         (index n)))))))
+
+  (local
+    (in-theory
+      (disable contents-recognizer
+               recognizer/resizable
+               creator
+               fixer/resizable
+               length/resizable
+               resizer/resizable
+               accessor/resizable
+               updater/resizable
+               contents-equal/resizable)))
+
+  (defthm equal/resizable{forward-chaining}
+    (implies (equal/resizable %vector vector)
+             (equal %vector vector))
+    :rule-classes
+    ((:forward-chaining :trigger-terms
+                        ((equal/resizable %vector vector))
+                        :corollary
+                        (implies t
+                                 (implies (equal/resizable %vector vector)
+                                          (equal %vector vector)))))
+    :hints
+    ((acl2::equal-by-nths-hint)
+     ("Goal"
+      :do-not-induct t)
+     ("Subgoal 2"
+      :use equal/resizable{forward-chaining}-lemma-2)
+     ("Subgoal 1"
+      :use (:instance equal/resizable{forward-chaining}-lemma-1
+                      (n acl2::n))))))
+
+
+;;;; `EQUAL/FIXED{FORWARD-CHAINING}'
+(defun-sk contents-equal/fixed (%vector vector)
+  (declare (xargs :guard (and (recognizer/fixed %vector)
+                              (recognizer/fixed vector))
+                  :verify-guards nil))
+  (forall index
+    (implies (and (natp index)
+                  (< index (length/fixed %vector))
+                  (< index (length/fixed vector)))
+             (equal (accessor/fixed index %vector)
+                    (accessor/fixed index vector))))
+  :rewrite :direct)
+
+(defun-nx equal/fixed (%vector vector)
+  (declare (xargs :guard (and (recognizer/fixed %vector)
+                              (recognizer/fixed vector))
+                  :verify-guards nil))
+  (and (recognizer/fixed %vector)
+       (recognizer/fixed vector)
+       (equal (length/fixed %vector)
+              (length/fixed vector))
+       (contents-equal/fixed %vector vector)))
+
+(with-books (("std/lists/nth" :dir :system))
+  (local
+    (defthmd equal/fixed{forward-chaining}-lemma-2
+      (implies (and (recognizer/fixed %vector)
+                    (recognizer/fixed vector))
+               (iff (equal (len %vector) (len vector))
+                    (equal (length/fixed %vector) (length/fixed vector))))))
+
+  (local
+    (defthmd equal/fixed{forward-chaining}-lemma-1
+      (implies (and (recognizer/fixed %vector)
+                    (recognizer/fixed vector)
+                    (equal (length/fixed %vector)
+                           (length/fixed vector))
+                    (contents-equal/fixed %vector vector)
+                    (natp n)
+                    (< n (len %vector)))
+               (equal (nth n %vector)
+                      (nth n vector)))
+      :rule-classes
+      ((:rewrite :match-free :all))
+      :hints
+      (("Goal"
+        :use ((:instance contents-equal/fixed-necc
+                         (index n)))))))
+
+  (local
+    (in-theory
+      (disable contents-recognizer
+               recognizer/fixed
+               creator
+               fixer/fixed
+               length/fixed
+               resizer/fixed
+               accessor/fixed
+               updater/fixed
+               contents-equal/fixed)))
+
+  (defthm equal/fixed{forward-chaining}
+    (implies (equal/fixed %vector vector)
+             (equal %vector vector))
+    :rule-classes
+    ((:forward-chaining :trigger-terms
+                        ((equal/fixed %vector vector))
+                        :corollary
+                        (implies t
+                                 (implies (equal/fixed %vector vector)
+                                          (equal %vector vector)))))
+    :hints
+    ((acl2::equal-by-nths-hint)
+     ("Goal"
+      :do-not-induct t)
+     ("Subgoal 2"
+      :use equal/fixed{forward-chaining}-lemma-2)
+     ("Subgoal 1"
+      :use (:instance equal/fixed{forward-chaining}-lemma-1
+                      (n acl2::n))))))
