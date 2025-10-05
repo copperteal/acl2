@@ -48,7 +48,7 @@
       (natp dimensions)))
 
 (defthm valid-vector-dimensions-p{compound-recognizer}
-  ;; Q: Is this theorem useful?
+  ;; TODO: Is this theorem useful?
   (implies (valid-vector-dimensions-p dimensions)
            (or (natp dimensions)
                (and (consp dimensions)
@@ -85,10 +85,10 @@
                               (valid-vector-dimensions-p dimensions)
                               (if (acl2-type-spec-p element-type)
                                   (typep$ initial-element element-type)
-                                  ;; Q: What's the best macro-guard for a value
-                                  ;; that is expected to be a stobj name?  We
-                                  ;; cannot actually check if it is a stobj name
-                                  ;; until we are within an event's scope.
+                                  ;; TODO: What's the best macro-guard for a
+                                  ;; value that is expected to be a stobj name?
+                                  ;; We cannot actually check if it is a stobj
+                                  ;; name until we are within an event's scope.
                                   ;; However, it is desirable to reject the
                                   ;; value eagerly if possible.
                                   (symbolp element-type))
@@ -474,7 +474,12 @@
 
                           `((defthm ,length{rewrite}
                               (equal (,length ,vector)
-                                     ,default-length-name))))
+                                     ,default-length-name)
+                              :hints
+                              (("Goal"
+                                :by (:functional-instance
+                                     lem-vector$c::length/fixed{rewrite}
+                                     ,@fi-bindings))))))
 
                     ;; `RESIZER'
                     (defthm ,resizer{type-prescription}
@@ -578,7 +583,12 @@
 
                           `((defthm ,resizer{rewrite}
                               (equal (,resizer length ,vector)
-                                     ,vector))))
+                                     ,vector)
+                              :hints
+                              (("Goal"
+                                :by (:functional-instance
+                                     lem-vector$c::resizer/fixed{rewrite}
+                                     ,@fi-bindings))))))
 
                     ;; `ACCESSOR'
                     ,@(and (not element-type-is-t)
