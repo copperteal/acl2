@@ -95,7 +95,8 @@
   (default-length))
 
 (defun resizer/resizable (length vector)
-  (declare (xargs :guard (recognizer/resizable vector)))
+  (declare (xargs :guard (and (natp length)
+                              (recognizer/resizable vector))))
   (update-nth 0
               (resize-list (nth 0 vector)
                            length
@@ -103,7 +104,8 @@
               vector))
 
 (defun resizer/fixed (length vector)
-  (declare (xargs :guard (recognizer/fixed vector))
+  (declare (xargs :guard (and (natp length)
+                              (recognizer/fixed vector)))
            (ignore length))
   vector)
 
@@ -250,8 +252,7 @@
   (natp (length/fixed vector))
   :rule-classes :type-prescription)
 
-(defthm length/fixed-constraint
-  ;; harmless redundant event
+(defthm length/fixed{rewrite}
   (equal (length/fixed vector)
          (default-length)))
 
@@ -331,8 +332,7 @@
                 (consp (resizer/fixed length vector))))
   :rule-classes :type-prescription)
 
-(defthm resizer/fixed-constraint
-  ;; harmless redundant event
+(defthm resizer/fixed{rewrite}
   (equal (resizer/fixed length vector)
          vector))
 
@@ -529,7 +529,7 @@
 
 ;;;; `FIXER'
 (defun fixer/resizable (vector)
-  (declare (xargs :guard t))
+  (declare (xargs :guard (recognizer/resizable vector)))
   (if (recognizer/resizable vector)
       vector
       (creator)))
@@ -540,7 +540,7 @@
   :rule-classes :type-prescription)
 
 (defun fixer/fixed (vector)
-  (declare (xargs :guard t))
+  (declare (xargs :guard (recognizer/fixed vector)))
   (if (recognizer/fixed vector)
       vector
       (creator)))
