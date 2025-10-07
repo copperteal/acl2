@@ -29,45 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/define-frame")
-
-(defun symbol-fix (x)
-  (declare (xargs :guard t))
-  (and (symbolp x)
-       x))
-
-(defthm symbol-fix-when-symbolp
-  (implies (symbolp key)
-           (equal (symbol-fix key) key)))
-
-(defthm symbol-fix-when-not-symbolp
-  (implies (not (symbolp key))
-           (not (symbol-fix key))))
-
-(defthm nfix-when-natp
-  (implies (natp key)
-           (equal (nfix key) key)))
-
-(defthm nfix-when-not-natp
-  (implies (not (natp key))
-           (equal (nfix key) 0)))
-
-(defun string-fix (x)
-  (declare (xargs :guard t))
-  (if (stringp x)
-      x
-      ""))
-
-(defthm stringp-of-string-fix
-  (stringp (string-fix x)))
-
-(defthm string-fix-when-stringp
-  (implies (stringp val)
-           (equal (string-fix val) val)))
-
-(defthm string-fix-when-not-stringp
-  (implies (not (stringp val))
-           (equal (string-fix val) "")))
+(include-book "../constructors/frame$c")
 
 
 ;;;; Stobj Values
@@ -102,13 +64,6 @@
              (equal (st/0-copy %st/0 st/0) st/0))
     :hints
     ((acl2::equal-by-nths-hint))))
-
-;; (table stobj-copier
-;;        'stobj-copier-alist
-;;        (putprop 'st/0
-;;                 'copier
-;;                 'st/0-copy
-;;                 (stobj-copier-alist world)))
 
 (defthm st/0p-of-create-st/0
   (st/0p (create-st/0)))
@@ -173,13 +128,6 @@
     :hints
     ((acl2::equal-by-nths-hint))))
 
-;; (table stobj-copier
-;;        'stobj-copier-alist
-;;        (putprop 'st/1
-;;                 'copier
-;;                 'st/1-copy
-;;                 (stobj-copier-alist world)))
-
 (defthm st/1p-of-create-st/1
   (st/1p (create-st/1)))
 
@@ -243,13 +191,6 @@
     :hints
     ((acl2::equal-by-nths-hint))))
 
-;; (table stobj-copier
-;;        'stobj-copier-alist
-;;        (putprop 'st/2
-;;                 'copier
-;;                 'st/2-copy
-;;                 (stobj-copier-alist world)))
-
 (defthm st/2p-of-create-st/2
   (st/2p (create-st/2)))
 
@@ -282,39 +223,20 @@
            (:e create-st/2)))
 
 
-(atomic-stobjs::define-frame frame/st
-  (f0 :recognizer st/0p
-      :fixer st/0-fix
-      :stobj st/0
-      :element-type st/0
-      :initial-element (create-st/0$a))
-  (f1 :recognizer st/1p
-      :fixer st/1-fix
-      :stobj st/1
-      :element-type st/1
-      :initial-element (create-st/1$a))
-  (f2 :recognizer st/2p
-      :fixer st/2-fix
-      :stobj st/2
-      :element-type st/2
-      :initial-element (create-st/2$a)))
+(atomic-stobjs::define-frame$c fr$c/st
+  (f0 :element-type st/0)
+  (f1 :element-type st/1)
+  (f2 :element-type st/2))
 
 
-(atomic-stobjs::define-frame fr
+(atomic-stobjs::define-frame$c fr$c
   (f0 :element-type unsigned-byte
-      :recognizer natp
-      :fixer nfix
       :initial-element 0)
-  (f1 :element-type symbol
-      :recognizer symbolp
-      :fixer symbol-fix)
+  (f1 :element-type symbol)
   (f2 :element-type string
-      :recognizer stringp
-      :fixer string-fix
       :initial-element ""))
 
-
-(atomic-stobjs::define-frame fr-big
+(atomic-stobjs::define-frame$c fr$c-big
   (f0) (f1) (f2) (f3)
   (f4) (f5) (f6) (f7)
   (f8) (f9) (f10) (f11)

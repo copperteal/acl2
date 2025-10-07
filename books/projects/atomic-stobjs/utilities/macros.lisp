@@ -29,8 +29,6 @@
 
 (in-package "ACL2")
 
-(include-book "xdoc/top" :dir :system)
-
 (include-book "symbolicate")
 
 (defun make-predicate-suffix (string-or-symbol)

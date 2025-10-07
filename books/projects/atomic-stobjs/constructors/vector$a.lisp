@@ -28,13 +28,13 @@
 
 
 (in-package "ATOMIC-STOBJS")
+
 #||
 (include-book "../lemmas/vector$a")
 ||#
-(include-book "../utilities/symbolicate")
-(include-book "../utilities/with-books")
-(include-book "../utilities/macros")
+
 (include-book "../accessors/top")
+(include-book "../utilities/top")
 
 
 ;;;; `VECTOR' Guard Predicates
@@ -47,7 +47,7 @@
       (natp dimensions)))
 
 (defthm valid-vector-dimensions-p{compound-recognizer}
-  ;; Q: Is this theorem useful?
+  ;; TODO: Is this theorem useful?
   (implies (valid-vector-dimensions-p dimensions)
            (or (natp dimensions)
                (and (consp dimensions)

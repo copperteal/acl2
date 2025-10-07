@@ -29,8 +29,6 @@
 
 (in-package "ACL2")
 
-#||
-(include-book "macros")
 (include-book "symbolicate")
 (include-book "with-books")
-||#
+(include-book "macros")

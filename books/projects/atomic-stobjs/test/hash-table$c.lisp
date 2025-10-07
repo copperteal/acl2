@@ -32,8 +32,8 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/stobj-copy")
-(include-book "../constructors/define-hash-table")
+(include-book "../constructors/copy")
+(include-book "../constructors/hash-table$c")
 
 
 ;;;; No Keyword Arguments

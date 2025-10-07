@@ -33,10 +33,10 @@
 (include-book "total-order")
 (include-book "osets")
 (include-book "omaps")
-(include-book "lists")
+(include-book "lists") ; TODO: drop?
 (include-book "std")
 
-(include-book "define-vector-lemmas")
-(include-book "define-hash-table-lemmas")
-(include-book "define-frame-lemmas")
+(include-book "vector")
+(include-book "hash-table")
+(include-book "frame")
 ||#

@@ -29,10 +29,10 @@
 
 (in-package "ATOMIC-STOBJS")
 
-(include-book "stobj-copy")
-(include-book "define-vector")
-(include-book "define-hash-table")
-(include-book "define-frame")
+(include-book "copy")
+(include-book "vector")
+(include-book "hash-table")
+(include-book "frame")
 
 (defconst *exports*
   '(valid-vector-dimensions-p
@@ -41,7 +41,7 @@
     define-vector$corr
     define-vector$abs
     define-vector
-    define-vector-theorems
+    define-vector-theorems ; TODO: re-examine
 
     valid-hash-table-test-p
     valid-hash-table-size-p
