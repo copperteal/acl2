@@ -29,6 +29,10 @@
 
 (in-package "LEM-VECTOR$A")
 
+#||
+(include-book "std/lists/top" :dir :system)
+||#
+
 (include-book "../utilities/with-books")
 (local
   (include-book "std"))
@@ -242,7 +246,7 @@
 
 (with-books (("std/lists/repeat" :dir :system))
   (defthm recognizer/resizable-of-updater/resizable
-    (recognizer/resizable (updater/resizable length value vector))
+    (recognizer/resizable (updater/resizable index value vector))
     :hints
     (("Goal"
       :expand (acl2::repeat (default-length) (initial-element))))))
@@ -266,7 +270,7 @@
 
 (with-books (("std/lists/repeat" :dir :system))
   (defthm recognizer/fixed-of-updater/fixed
-    (recognizer/fixed (updater/fixed length value vector))
+    (recognizer/fixed (updater/fixed index value vector))
     :hints
     (("Goal"
       :expand (acl2::repeat (default-length) (initial-element))))))

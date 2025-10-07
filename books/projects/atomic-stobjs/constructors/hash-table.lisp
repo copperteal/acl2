@@ -41,10 +41,8 @@
 (include-book "std/omaps/core" :dir :system)
 
 (include-book "../type-spec")
-(include-book "../utilities/symbolicate")
-(include-book "../utilities/with-books")
-(include-book "../utilities/macros")
 (include-book "../accessors/top")
+(include-book "../utilities/top")
 
 (deflabel define-hash-table-begin)
 

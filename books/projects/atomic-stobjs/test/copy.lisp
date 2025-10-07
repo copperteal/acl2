@@ -30,10 +30,10 @@
 (in-package "ACL2")
 
 (include-book "centaur/fty/basetypes" :dir :system)
-(include-book "../constructors/stobj-copy")
-(include-book "../constructors/define-vector")
-(include-book "../constructors/define-hash-table")
-(include-book "../constructors/define-frame")
+(include-book "../constructors/copy")
+(include-book "../constructors/vector")
+(include-book "../constructors/hash-table")
+(include-book "../constructors/frame")
 
 (defun string-fix (x)
   (declare (xargs :guard t))

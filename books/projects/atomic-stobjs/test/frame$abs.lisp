@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/define-frame")
+(include-book "../constructors/frame$abs")
 
 (defun symbol-fix (x)
   (declare (xargs :guard t))

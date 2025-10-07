@@ -29,6 +29,8 @@
 
 (in-package "ACL2")
 
+; TODO: refactor packages
+
 (defpkg "ATOMIC-STOBJS"
   (union-eq *common-lisp-symbols-from-main-lisp-package*
             *acl2-exports*

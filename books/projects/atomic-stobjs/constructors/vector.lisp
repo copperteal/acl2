@@ -30,17 +30,17 @@
 ;;;; Prologue
 (in-package "ATOMIC-STOBJS")
 
-;;; cert.pl
 #||
-(include-book "std/top" :dir :system)
-(include-book "../lemmas/top")
+(include-book "std/top" :dir :system) ; TODO: drop?
+(include-book "../lemmas/vector$c")
+(include-book "../lemmas/vector$a")
+(include-book "../lemmas/vector$abs")
+(include-book "../lemmas/vector")
 ||#
 
 (include-book "../type-spec")
-(include-book "../utilities/symbolicate")
-(include-book "../utilities/with-books")
-(include-book "../utilities/macros")
 (include-book "../accessors/top")
+(include-book "../utilities/top")
 
 (deflabel define-vector-begin)
 
