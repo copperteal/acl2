@@ -51,6 +51,7 @@
       :in-theory '((:t make-predicate-suffix))))))
 
 (defmacro lprogn (&body body)
+  ;; TODO: drop this?
   (declare (xargs :guard t))
   `(local
      (progn

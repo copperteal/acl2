@@ -29,6 +29,10 @@
 
 (in-package "LEM-VECTOR$C")
 
+#||
+(include-book "std/lists/top" :dir :system)
+||#
+
 (include-book "../utilities/with-books")
 (local
   (include-book "std"))
