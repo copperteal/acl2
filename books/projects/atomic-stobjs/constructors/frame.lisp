@@ -37,11 +37,9 @@
 ||#
 
 (include-book "../type-spec")
-(include-book "../utilities/symbolicate")
-(include-book "../utilities/with-books")
-(include-book "../utilities/macros")
 (include-book "../accessors/top")
-(include-book "stobj-copy")
+(include-book "../utilities/top")
+(include-book "copy")
 
 (defthm symbol-list-listp{compound-recognizer}
   ;; TODO: move this. where?

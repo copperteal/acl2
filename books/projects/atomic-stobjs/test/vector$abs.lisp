@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/define-vector")
+(include-book "../constructors/vector$abs")
 (include-book "std/basic/nfix" :dir :system)
 
 (defun not-null (x)

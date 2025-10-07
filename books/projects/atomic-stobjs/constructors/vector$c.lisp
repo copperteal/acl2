@@ -28,14 +28,14 @@
 
 
 (in-package "ATOMIC-STOBJS")
+
 #||
 (include-book "../lemmas/vector$c")
 ||#
-(include-book "../utilities/symbolicate")
-(include-book "../utilities/with-books")
-(include-book "../utilities/macros")
+
 (include-book "../type-spec")
 (include-book "../accessors/top")
+(include-book "../utilities/top")
 
 
 ;;;; `VECTOR' Guard Predicates

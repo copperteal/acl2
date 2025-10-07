@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/define-vector")
+(include-book "../constructors/vector$a")
 (include-book "std/basic/nfix" :dir :system)
 (include-book "centaur/fty/basetypes" :dir :system)
 
@@ -81,6 +81,7 @@
   :element-recognizer foo$cp
   :element-fixer foo$c-fix
   :element foo$c
+  ;; TODO: drop :initial-element for stobjs
   :initial-element (create-foo$c$a)
   :resizable nil)
 

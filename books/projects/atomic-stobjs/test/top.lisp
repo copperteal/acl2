@@ -31,19 +31,19 @@
 
 #||
 (include-book "vector$c")
-(include-book "define-vector$a")
-(include-book "define-vector$abs")
-(include-book "define-vector")
+(include-book "vector$a")
+(include-book "vector$abs")
+(include-book "vector")
 
-(include-book "define-hash-table$c")
-(include-book "define-hash-table$a")
-(include-book "define-hash-table$abs")
-(include-book "define-hash-table")
+(include-book "hash-table$c")
+(include-book "hash-table$a")
+(include-book "hash-table$abs")
+(include-book "hash-table")
 
-(include-book "define-frame$c")
-(include-book "define-frame$a")
-(include-book "define-frame$abs")
-(include-book "define-frame")
+(include-book "frame$c")
+(include-book "frame$a")
+(include-book "frame$abs")
+(include-book "frame")
 
-(include-book "stobj-copy")
+(include-book "copy")
 ||#
