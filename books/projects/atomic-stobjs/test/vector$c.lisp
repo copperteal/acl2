@@ -30,7 +30,9 @@
 (in-package "ACL2")
 
 ;;; dimensions, element-type, initial-element, resizable
-(include-book "../constructors/define-vector")
+(include-book "../constructors/vector$c")
+
+; TODO: systematically test edge cases!
 
 
 ;;;; No Keyword Arguments

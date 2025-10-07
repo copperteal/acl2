@@ -108,11 +108,11 @@
                                                   updater))
                               (booleanp debug))))
 
-  (let* (;; TODO: allow defined constant default length
+  (let* (;; TODO: Enable defined constant default length via the `CONST'
+         ;; property.
          (dimensions (if (consp dimensions)
                          dimensions
                          (list dimensions)))
-         ;; TODO: check if element type is stobj via stobjp
          (element-type-is-stobj (not (acl2-type-spec-p element-type)))
 
          (contents (or contents
@@ -166,21 +166,23 @@
          (let* ((vector ',vector)
                 (dimensions ',dimensions)
                 (default-length (car dimensions))
-                (default-length-name
-                 (symbolicate vector '* vector '-default-length*))
+                (default-length-name (symbolicate vector '* vector '-default-length*))
 
                 (element-type ',element-type)
                 (element-type-is-stobj (and ',element-type-is-stobj
                                             (stobj-p element-type)))
-                (stobj-recognizer (and element-type-is-stobj
-                                       (stobj-recognizer element-type)))
-                (stobj-creator (and element-type-is-stobj
-                                    (stobj-creator element-type)))
-                (element-type-is-t (eq element-type t))
+                ;; TODO: If `ELEMENT-TYPE-IS-STOBJ', check if it has a
+                ;; `ABSSTOBJ-INFO' property.  If so, get the recognizer and
+                ;; creator.  Otherwise, get the recognizer and creator from the
+                ;; `STOBJ' property.
+                ;; TODO: test the results
+                (element-recognizer (and element-type-is-stobj
+                                         (stobj-recognizer element-type)))
+                (element-creator (and element-type-is-stobj
+                                      (stobj-creator element-type)))
                 (specialize-element-type ',specialize-element-type)
                 (initial-element ',initial-element)
-                (initial-element-name
-                 (symbolicate vector '* vector '-initial-element*))
+                (initial-element-name (symbolicate vector '* vector '-initial-element*))
                 (resizable ',resizable)
 
                 (inline ',inline)
@@ -199,7 +201,6 @@
 
                 (vector-begin (symbolicate vector vector '-begin))
                 (vector-end (symbolicate vector vector '-end))
-
                 (prologue
                  `((deflabel ,vector-begin)
 
@@ -222,6 +223,56 @@
                      :non-memoizable ,(not memoizable)
                      :non-executable ,(not executable))))
 
+                (contents-recognizer{type-prescription} (symbolicate vector contents-recognizer '{type-prescription}))
+                (contents-recognizer{compound-recognizer} (symbolicate vector contents-recognizer '{compound-recognizer}))
+
+                (recognizer{type-prescription} (symbolicate vector recognizer '{type-prescription}))
+                (recognizer{compound-recognizer} (symbolicate vector recognizer '{compound-recognizer}))
+                (recognizer-of-creator (symbolicate vector recognizer '-of- creator))
+                (recognizer-of-resizer (symbolicate vector recognizer '-of- resizer))
+                (recognizer-of-updater (symbolicate vector recognizer '-of- updater))
+
+                (length{type-prescription} (symbolicate vector length '{type-prescription}))
+                (length-of-creator (symbolicate vector length '-of- creator))
+                (length-of-resizer (symbolicate vector length '-of- resizer))
+                (length-of-updater (symbolicate vector length '-of- updater))
+                (length{rewrite} (symbolicate vector length '{rewrite}))
+
+                (resizer{type-prescription} (symbolicate vector resizer '{type-prescription}))
+                (resizer-of-creator (symbolicate vector resizer '-of-creator))
+                (resizer-of-length (symbolicate vector resizer '-of- length))
+                (resizer-of-length-free (symbolicate vector resizer-of-length '-free))
+                (resizer-of-resizer (symbolicate vector resizer '-of- resizer))
+                (resizer-of-updater (symbolicate vector resizer '-of- updater))
+                (resizer-of-updater-keep (symbolicate vector resizer-of-updater '-keep))
+                (resizer-of-updater-drop (symbolicate vector resizer-of-updater '-drop))
+                (resizer{rewrite} (symbolicate vector resizer '{rewrite}))
+
+                (typep$-of-accessor (symbolicate vector (or element-recognizer 'typep$) '-of- accessor))
+                (accessor-of-creator (symbolicate vector accessor '-of- creator))
+                (accessor-of-resizer (symbolicate vector accessor '-of- resizer))
+                (accessor-of-resizer-inner (symbolicate vector accessor-of-resizer '-inner))
+                (accessor-of-resizer-outer (symbolicate vector accessor-of-resizer '-outer))
+                (accessor-of-updater (symbolicate vector accessor '-of- updater))
+                (accessor-of-updater-same (symbolicate vector accessor-of-updater '-same))
+                (accessor-of-updater-diff (symbolicate vector accessor-of-updater '-diff))
+
+                (updater{type-prescription} (symbolicate vector updater '{type-prescription}))
+                (updater-of-creator (symbolicate vector updater '-of- creator))
+                (updater-of-resizer (symbolicate vector updater '-of- resizer))
+                (updater-of-resizer-inner (symbolicate vector updater-of-resizer '-inner))
+                (updater-of-resizer-outer (symbolicate vector updater-of-resizer '-outer))
+                (updater-of-accessor (symbolicate vector updater '-of- accessor))
+                (updater-of-accessor-free (symbolicate vector updater-of-accessor '-free))
+                (updater-of-updater (symbolicate vector updater '-of- updater))
+                (updater-of-updater-same (symbolicate vector updater-of-updater '-same))
+                (updater-of-updater-diff (symbolicate vector updater-of-updater '-diff))
+
+                (fixer{type-prescription} (symbolicate vector fixer '{type-prescription}))
+                (recognizer-of-fixer (symbolicate vector recognizer '-of- fixer))
+                (fixer-when-recognizer (symbolicate vector fixer '-when- recognizer))
+                (fixer-when-not-recognizer (symbolicate vector fixer '-when-not- recognizer))
+
                 (vector-theorems (symbolicate vector vector '-theorems))
                 (epilogue
                  `((deflabel ,vector-end)
@@ -238,15 +289,14 @@
                                      (theory ',vector-theorems)))))
 
                 (fi-bindings
-                 (list `(lem-vector$c::default-length (lambda () ,default-length))
-                       `(lem-vector$c::element-recognizer
-                         ,(if element-type-is-stobj
-                              stobj-recognizer
-                              `(lambda (value) ,(typep$transform 'value element-type))))
-                       `(lem-vector$c::initial-element
-                         ,(if element-type-is-stobj
-                              stobj-creator
-                              `(lambda () ,initial-element-name)))
+                 (list `(lem-vector$c::default-length (lambda ()
+                                                        ,default-length))
+                       `(lem-vector$c::element-recognizer ,(or element-recognizer
+                                                               `(lambda (value)
+                                                                  ,(typep$transform 'value element-type))))
+                       `(lem-vector$c::initial-element ,(or element-creator
+                                                            `(lambda ()
+                                                               ,initial-element-name)))
                        `(lem-vector$c::contents-recognizer ,contents-recognizer)
                        (if resizable
                            `(lem-vector$c::recognizer/resizable ,recognizer)
@@ -265,83 +315,6 @@
                            `(lem-vector$c::fixer/resizable ,fixer)
                            `(lem-vector$c::fixer/fixed ,fixer))
                        fi-bindings))
-
-                (contents-recognizer{type-prescription}
-                 (symbolicate vector contents-recognizer '{type-prescription}))
-                (contents-recognizer{compound-recognizer}
-                 (symbolicate vector contents-recognizer '{compound-recognizer}))
-
-                (recognizer{type-prescription}
-                 (symbolicate vector recognizer '{type-prescription}))
-                (recognizer{compound-recognizer}
-                 (symbolicate vector recognizer '{compound-recognizer}))
-                (recognizer-of-creator
-                 (symbolicate vector recognizer '-of- creator))
-                (recognizer-of-resizer
-                 (symbolicate vector recognizer '-of- resizer))
-                (recognizer-of-updater
-                 (symbolicate vector recognizer '-of- updater))
-
-                (length{type-prescription}
-                 (symbolicate vector length '{type-prescription}))
-                (length-of-creator (symbolicate vector length '-of- creator))
-                (length-of-resizer (symbolicate vector length '-of- resizer))
-                (length-of-updater (symbolicate vector length '-of- updater))
-                (length{rewrite} (symbolicate vector length '{rewrite}))
-
-                (resizer{type-prescription}
-                 (symbolicate vector resizer '{type-prescription}))
-                (resizer-of-creator (symbolicate vector resizer '-of-creator))
-                (resizer-of-length (symbolicate vector resizer '-of- length))
-                (resizer-of-length-free
-                 (symbolicate vector resizer-of-length '-free))
-                (resizer-of-resizer (symbolicate vector resizer '-of- resizer))
-                (resizer-of-updater
-                 (symbolicate vector resizer '-of- updater))
-                (resizer-of-updater-keep
-                 (symbolicate vector resizer-of-updater '-keep))
-                (resizer-of-updater-drop
-                 (symbolicate vector resizer-of-updater '-drop))
-                (resizer{rewrite} (symbolicate vector resizer '{rewrite}))
-
-                (typep$-of-accessor (symbolicate vector 'typep$-of- accessor))
-                (accessor-of-creator (symbolicate vector accessor '-of- creator))
-                (accessor-of-resizer
-                 (symbolicate vector accessor '-of- resizer))
-                (accessor-of-resizer-inner
-                 (symbolicate vector accessor-of-resizer '-inner))
-                (accessor-of-resizer-outer
-                 (symbolicate vector accessor-of-resizer '-outer))
-                (accessor-of-updater
-                 (symbolicate vector accessor '-of- updater))
-                (accessor-of-updater-same
-                 (symbolicate vector accessor-of-updater '-same))
-                (accessor-of-updater-diff
-                 (symbolicate vector accessor-of-updater '-diff))
-
-                (updater{type-prescription}
-                 (symbolicate vector updater '{type-prescription}))
-                (updater-of-creator (symbolicate vector updater '-of- creator))
-                (updater-of-resizer (symbolicate vector updater '-of- resizer))
-                (updater-of-resizer-inner
-                 (symbolicate vector updater-of-resizer '-inner))
-                (updater-of-resizer-outer
-                 (symbolicate vector updater-of-resizer '-outer))
-                (updater-of-accessor (symbolicate vector updater '-of- accessor))
-                (updater-of-accessor-free
-                 (symbolicate vector updater-of-accessor '-free))
-                (updater-of-updater (symbolicate vector updater '-of- updater))
-                (updater-of-updater-same
-                 (symbolicate vector updater-of-updater '-same))
-                (updater-of-updater-diff
-                 (symbolicate vector updater-of-updater '-diff))
-
-                (fixer{type-prescription} (symbolicate vector fixer '{type-prescription}))
-                (recognizer-of-fixer (symbolicate vector recognizer '-of- fixer))
-                (fixer-when-recognizer
-                 (symbolicate vector fixer '-when- recognizer))
-                (fixer-when-not-recognizer
-                 (symbolicate vector fixer '-when-not- recognizer))
 
                 (body
                  `(with-books (("projects/atomic-stobjs/lemmas/vector$c" :dir :system))
@@ -415,9 +388,9 @@
                                     (< index ,(if resizable
                                                   `(,length ,vector)
                                                   default-length-name))
-                                    ,@(and (not element-type-is-t)
-                                           (if element-type-is-stobj
-                                               `((,stobj-recognizer value))
+                                    ,@(and (not (eq element-type t))
+                                           (if element-recognizer
+                                               `((,element-recognizer value))
                                                `(,(typep$transform 'value element-type))))
                                     (,recognizer ,vector))
                                (,recognizer (,updater index value ,vector)))
@@ -591,18 +564,21 @@
                                      ,@fi-bindings))))))
 
                     ;; `ACCESSOR'
-                    ,@(and (not element-type-is-t)
+                    ,@(and (not (eq element-type t))
                            `((defthm ,typep$-of-accessor
                                (implies (and (natp index)
                                              (< index ,(if resizable
                                                            `(,length ,vector)
                                                            default-length-name))
                                              (,recognizer ,vector))
-                                        ,(if element-type-is-stobj
-                                             `(,stobj-recognizer (,accessor index ,vector))
+                                        ,(if element-recognizer
+                                             `(,element-recognizer (,accessor index ,vector))
                                              ;; TODO: check if this fails for member,
                                              ;; unsigned-byte, or signed-byte
                                              (typep$transform `(,accessor index ,vector) element-type)))
+                               :rule-classes
+                               (:rewrite
+                                :type-prescription)
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -615,9 +591,8 @@
                       (implies (and (natp index)
                                     (< index ,default-length-name))
                                (equal (,accessor index (,creator))
-                                      ,(if element-type-is-stobj
-                                           ;; TODO: refactor "stobj-" stuff
-                                           `(,stobj-creator)
+                                      ,(if element-creator
+                                           `(,element-creator)
                                            initial-element-name)))
                       :hints
                       (("Goal"
@@ -633,8 +608,8 @@
                                         (equal (,accessor index (,resizer length ,vector))
                                                (if (< index (,length ,vector))
                                                    (,accessor index ,vector)
-                                                   ,(if element-type-is-stobj
-                                                        `(,stobj-creator)
+                                                   ,(if element-creator
+                                                        `(,element-creator)
                                                         initial-element-name))))
                                :hints
                                (("Goal"
@@ -661,8 +636,8 @@
                                              (< index length)
                                              (<= (,length ,vector) index))
                                         (equal (,accessor index (,resizer length ,vector))
-                                               ,(if element-type-is-stobj
-                                                    `(,stobj-creator)
+                                               ,(if element-creator
+                                                    `(,element-creator)
                                                     initial-element-name)))
                                :hints
                                (("Goal"
@@ -720,8 +695,8 @@
                              ,@fi-bindings))))
 
                     (defthm ,updater-of-creator
-                      (implies (and (equal value ,(if element-type-is-stobj
-                                                      `(,stobj-creator)
+                      (implies (and (equal value ,(if element-creator
+                                                      `(,element-creator)
                                                       initial-element-name))
                                     (natp index)
                                     (< index ,default-length-name))
@@ -740,8 +715,8 @@
                                              (< index length)
                                              (equal value (if (< index (,length ,vector))
                                                               (,accessor index ,vector)
-                                                              ,(if element-type-is-stobj
-                                                                   `(,stobj-creator)
+                                                              ,(if element-creator
+                                                                   `(,element-creator)
                                                                    initial-element-name))))
                                         (equal (,updater index value (,resizer length ,vector))
                                                (,resizer length ,vector)))
@@ -766,8 +741,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,updater-of-resizer-outer
-                               (implies (and (equal value ,(if element-type-is-stobj
-                                                               `(,stobj-creator)
+                               (implies (and (equal value ,(if element-creator
+                                                               `(,element-creator)
                                                                initial-element-name))
                                              (natp index)
                                              (natp length)

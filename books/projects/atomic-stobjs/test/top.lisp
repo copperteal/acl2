@@ -30,7 +30,7 @@
 (in-package "ACL2")
 
 #||
-(include-book "define-vector$c")
+(include-book "vector$c")
 (include-book "define-vector$a")
 (include-book "define-vector$abs")
 (include-book "define-vector")
