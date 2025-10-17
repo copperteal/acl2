@@ -58,6 +58,11 @@
 
 ;;; Atomic-Stobjs
                (eval . (put 'with-books 'common-lisp-indent-function 1))
+               (eval . (put 'define-vector$c 'common-lisp-indent-function 2))
+               (eval . (put 'define-vector$a 'common-lisp-indent-function 2))
+               (eval . (put 'define-vector$corr 'common-lisp-indent-function 1))
+               (eval . (put 'define-vector$abs 'common-lisp-indent-function 1))
+               (eval . (put 'define-vector 'common-lisp-indent-function 2))
 
                ))
  (shell-mode . (
