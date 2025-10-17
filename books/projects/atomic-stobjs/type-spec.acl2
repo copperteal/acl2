@@ -28,7 +28,6 @@
 
 
 (in-package "ACL2")
-;;; This file allows these constants to be used in package definitions.
 
 
 ;;;; Constants
@@ -61,7 +60,6 @@
               acl2-type-spec-p
               typep$runtime
               typep$transform
-              typep$transform/member-fix
               typep$)
             *atomic-type-specifiers*
             *atomic-real-subtype-specifiers*
