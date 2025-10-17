@@ -29,171 +29,156 @@
 
 (in-package "ACL2")
 
-;;; dimensions, element-type, initial-element, resizable
 (include-book "../constructors/vector$c")
 
-; TODO: systematically test edge cases!
-
-
-;;;; No Keyword Arguments
 (atomic-stobjs::define-vector$c arr$c/nargs 31)
 
 
-;;;; Stobj Values
+;;;; Stobj Valued
 (defstobj foo$c
   a
   :inline t
   :non-memoizable t
   :non-executable t)
 
-
-;;;; length zero, type stobj
-(atomic-stobjs::define-vector$c arr$c/0-foo$c-nil-nil 0
+(atomic-stobjs::define-vector$c arr$c/foo$c-0 0
   :element-type foo$c
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/0-foo$c-nil-t 0
+(atomic-stobjs::define-vector$c arr$c/foo$c-1 0
+  :element-type foo$c
+  :resizable t)
+
+(atomic-stobjs::define-vector$c arr$c/foo$c-2 997
+  :element-type foo$c
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c arr$c/foo$c-3 997
   :element-type foo$c
   :resizable t)
 
 
-;;;; length 997, type stobj
-(atomic-stobjs::define-vector$c arr$c/997-foo$c-nil-nil 997
-  :element-type foo$c
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/997-foo$c-nil-t 997
-  :element-type foo$c
-  :resizable t)
-
-
-;;;; length zero, type t
-(atomic-stobjs::define-vector$c arr$c/0-t-nil-nil 0
+;;;; type t
+(atomic-stobjs::define-vector$c arr$c/t-0 0
   :element-type t
   :initial-element nil
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/0-t-nil-t 0
+(atomic-stobjs::define-vector$c arr$c/t-1 0
   :element-type t
   :initial-element nil
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/0-t-|(A B)|-nil 0
+(atomic-stobjs::define-vector$c arr$c/t-2 0
   :element-type t
   :initial-element (a b)
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/0-t-c-t 0
+(atomic-stobjs::define-vector$c arr$c/t-3 0
   :element-type t
   :initial-element c
   :resizable t)
 
-
-;;;; length 997, type t
-(atomic-stobjs::define-vector$c arr$c/997-t-nil-nil 997
+(atomic-stobjs::define-vector$c arr$c/t-4 997
   :element-type t
   :initial-element nil
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/997-t-nil-t 997
+(atomic-stobjs::define-vector$c arr$c/t-5 997
   :element-type t
   :initial-element nil
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/997-t-t-nil 997
+(atomic-stobjs::define-vector$c arr$c/t-6 997
   :element-type t
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/997-t-t-t 997
+(atomic-stobjs::define-vector$c arr$c/t-7 997
   :element-type t
   :initial-element t
   :resizable t)
 
 
-;;;; length zero, type including nil
-(atomic-stobjs::define-vector$c arr$c/0-|(MEMBER T NIL)|-nil-nil 0
+;;;; type boolean
+(atomic-stobjs::define-vector$c arr$c/bool-0 0
   :element-type (member t nil)
   :initial-element nil
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/0-|(MEMBER T NIL)|-nil-t 0
-  :element-type (member t nil)
-  :initial-element nil
-  :resizable t)
-
-(atomic-stobjs::define-vector$c arr$c/0-|(MEMBER T NIL)|-t-nil 0
-  :element-type (member t nil)
-  :initial-element t
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/0-|(MEMBER T NIL)|-t-t 0
-  :element-type (member t nil)
-  :initial-element t
-  :resizable t)
-
-
-;;;; length 997, type including nil
-(atomic-stobjs::define-vector$c arr$c/997-|(MEMBER T NIL)|-nil-nil 997
-  :element-type (member t nil)
-  :initial-element nil
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/997-|(MEMBER T NIL)|-nil-t 997
+(atomic-stobjs::define-vector$c arr$c/bool-1 0
   :element-type (member t nil)
   :initial-element nil
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/997-|(MEMBER T NIL)|-t-nil 997
+(atomic-stobjs::define-vector$c arr$c/bool-2 0
   :element-type (member t nil)
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/997-|(MEMBER T NIL)|-t-t 997
+(atomic-stobjs::define-vector$c arr$c/bool-3 0
+  :element-type (member t nil)
+  :initial-element t
+  :resizable t)
+
+(atomic-stobjs::define-vector$c arr$c/bool-4 997
+  :element-type (member t nil)
+  :initial-element nil
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c arr$c/bool-5 997
+  :element-type (member t nil)
+  :initial-element nil
+  :resizable t)
+
+(atomic-stobjs::define-vector$c arr$c/bool-6 997
+  :element-type (member t nil)
+  :initial-element t
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c arr$c/bool-7 997
   :element-type (member t nil)
   :initial-element t
   :resizable t)
 
 
-;;;; length zero, type not including nil
-(atomic-stobjs::define-vector$c arr$c/0-|(SIGNED-BYTE 1511)|-11-nil 0
+;;;; type signed-byte
+(atomic-stobjs::define-vector$c arr$c/sb-0 0
   :element-type (signed-byte 1511)
   :initial-element 11
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/0-|(SIGNED-BYTE 1511)|-11-t 0
+(atomic-stobjs::define-vector$c arr$c/sb-1 0
   :element-type (signed-byte 1511)
   :initial-element 11
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/0-|(SIGNED-BYTE 1511)|--13-nil 0
+(atomic-stobjs::define-vector$c arr$c/sb-2 0
   :element-type (signed-byte 1511)
   :initial-element -13
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/0-|(SIGNED-BYTE 1511)|--13-t 0
+(atomic-stobjs::define-vector$c arr$c/sb-3 0
   :element-type (signed-byte 1511)
   :initial-element -13
   :resizable t)
 
-
-;;;; length 997, type not including nil
-(atomic-stobjs::define-vector$c arr$c/997-|(SIGNED-BYTE 1511)|-11-nil 997
+(atomic-stobjs::define-vector$c arr$c/sb-4 997
   :element-type (signed-byte 1511)
   :initial-element 11
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/997-|(SIGNED-BYTE 1511)|-11-t 997
+(atomic-stobjs::define-vector$c arr$c/sb-5 997
   :element-type (signed-byte 1511)
   :initial-element 11
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/997-|(SIGNED-BYTE 1511)|--13-nil 997
+(atomic-stobjs::define-vector$c arr$c/sb-6 997
   :element-type (signed-byte 1511)
   :initial-element -13
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/997-|(SIGNED-BYTE 1511)|--13-t 997
+(atomic-stobjs::define-vector$c arr$c/sb-7 997
   :element-type (signed-byte 1511)
   :initial-element -13
   :resizable t)
