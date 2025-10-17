@@ -29,6 +29,11 @@
 
 (in-package "ACL2")
 
+#||
+(include-book "std/lists/top" :dir :system)
+(include-book "std/alists/top" :dir :system)
+||#
+
 (local
   (include-book "std/basic/inductions" :dir :system))
 

@@ -36,8 +36,6 @@
 (include-book "vector$a")
 (include-book "vector$abs")
 
-(deflabel define-vector-begin)
-
 
 ;;;; `VECTOR' Guard Predicates
 (defun valid-vector-dimensions-p (dimensions)
@@ -61,17 +59,17 @@
 (defmacro define-vector
     (vector dimensions
      &key
-       (element-type 't)
-       (specialize-element-type 'nil)
-       (element-recognizer 'nil)
-       (element-fixer 'nil)
-       (element 'x)
-       (initial-element 'nil)
-       (resizable 'nil)
+       (element-type 't element-type-supplied-p)
+       (specialize-element-type 'nil specialize-element-type-supplied-p)
+       (element-recognizer 'nil element-recognizer-supplied-p)
+       (element-fixer 'nil element-fixer-supplied-p)
+       (element 'x element-supplied-p)
+       (initial-element 'nil initial-element-supplied-p)
+       (resizable 'nil resizable-supplied-p)
 
-       (inline 'nil)
-       (memoizable 'nil)
-       (executable 'nil)
+       (inline 'nil inline-supplied-p)
+       (memoizable 'nil memoizable-supplied-p)
+       (executable 'nil executable-supplied-p)
 
        (recognizer 'nil)
        (creator 'nil)
@@ -109,9 +107,9 @@
                               (booleanp debug))))
 
   (let* ((vector$a (or logic
-                      (symbolicate vector vector '$a)))
+                       (symbolicate vector vector '$a)))
          (vector$c (or exec
-                      (symbolicate vector vector '$c)))
+                       (symbolicate vector vector '$c)))
          (recognizer (or recognizer
                          (symbolicate vector vector (make-predicate-suffix vector))))
          (creator (or creator
@@ -132,58 +130,79 @@
                            :gag-mode t))
 
        (make-event
-         `(progn
-            (define-vector$c ,',vector$c ,',dimensions
-              :element-type ,',element-type
-              :specialize-element-type ,',specialize-element-type
-              :initial-element ,',initial-element
-              :resizable ,',resizable
-              :inline ,',inline
-              :memoizable ,',memoizable
-              :executable ,',executable
-              :debug ,',debug)
+         (let* ((vector ',vector)
+                (dimensions ',dimensions)
+                (element-type ',element-type)
+                (specialize-element-type ',specialize-element-type)
+                (element-recognizer ',element-recognizer)
+                (element-fixer ',element-fixer)
+                (element ',element)
+                (initial-element ',initial-element)
+                (resizable ',resizable)
 
-            (define-vector$a ,',vector$a ,',dimensions
-              :element-recognizer ,',element-recognizer
-              :element-fixer ,',element-fixer
-              :element ,',element
-              :initial-element ,',initial-element
-              :resizable ,',resizable
-              :debug ,',debug)
+                (inline ',inline)
+                (memoizable ',memoizable)
+                (executable ',executable)
 
-            (define-vector$corr ,',vector
-              :logic ,',vector$a
-              :exec ,',vector$c
-              :debug ,',debug)
+                (vector$c ',vector$c)
+                (vector$a ',vector$a)
+                (recognizer ',recognizer)
+                (creator ',creator)
+                (length ',length)
+                (resizer ',resizer)
+                (accessor ',accessor)
+                (updater ',updater)
 
-            (define-vector$abs ,',vector
-              :logic ,',vector$a
-              :exec ,',vector$c
-              :recognizer ,',recognizer
-              :creator ,',creator
-              :length ,',length
-              :resizer ,',resizer
-              :accessor ,',accessor
-              :updater ,',updater
-              :executable ,',executable
-              :debug ,',debug)
+                (debug ',debug))
 
-            (in-theory
-              (disable ,',(symbolicate vector$c vector$c '-theorems))))))))
+           `(progn
+              (define-vector$c ,vector$c ,dimensions
+                ,@(and ,element-type-supplied-p
+                       `(:element-type ,element-type))
+                ,@(and ,specialize-element-type-supplied-p
+                       `(:specialize-element-type ,specialize-element-type))
+                ,@(and ,initial-element-supplied-p
+                       `(:initial-element ,initial-element))
+                ,@(and ,resizable-supplied-p
+                       `(:resizable ,resizable))
+                ,@(and ,inline-supplied-p
+                       `(:inline ,inline))
+                ,@(and ,memoizable-supplied-p
+                       `(:memoizable ,memoizable))
+                ,@(and ,executable-supplied-p
+                       `(:executable ,executable))
+                :debug ,debug)
 
-
-;;;; `DEFINE-VECTOR-THEOREMS'
-(deflabel define-vector-end)
+              (define-vector$a ,vector$a ,dimensions
+                ,@(and ,element-recognizer-supplied-p
+                       `(:element-recognizer ,element-recognizer))
+                ,@(and ,element-fixer-supplied-p
+                       `(:element-fixer ,element-fixer))
+                ,@(and ,element-supplied-p
+                       `(:element ,element))
+                ,@(and ,initial-element-supplied-p
+                       `(:initial-element ,initial-element))
+                ,@(and ,resizable-supplied-p
+                       `(:resizable ,resizable))
+                :debug ,debug)
 
-(deftheory-static define-vector-theorems
-  (set-difference-theories
-   (set-difference-theories
-    (current-theory 'define-vector-end)
-    (current-theory 'define-vector-begin))
-   (function-theory 'define-vector-end)))
+              (define-vector$corr ,vector
+                :logic ,vector$a
+                :exec ,vector$c
+                :debug ,debug)
 
-
-;;;; Epilogue
-(in-theory
-  (union-theories (current-theory 'define-vector-begin)
-                  (theory 'define-vector-theorems)))
+              (define-vector$abs ,vector
+                :logic ,vector$a
+                :exec ,vector$c
+                :recognizer ,recognizer
+                :creator ,creator
+                :length ,length
+                :resizer ,resizer
+                :accessor ,accessor
+                :updater ,updater
+                ,@(and ,executable-supplied-p
+                       `(:executable ,executable))
+                :debug ,debug)
+
+              (in-theory
+                (disable ,(symbolicate vector$c vector$c '-theorems)))))))))

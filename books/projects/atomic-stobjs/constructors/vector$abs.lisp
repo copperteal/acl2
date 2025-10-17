@@ -229,7 +229,12 @@
                                      (cdr updater$c-guard)))
 
                 (aggressive$a (symbolicate vector$a vector$a '-aggressive))
-                (accessor-of-resizer$c (symbolicate vector$c accessor$c '-of- resizer$c)))
+                (accessor-of-resizer$c (symbolicate vector$c accessor$c '-of- resizer$c))
+
+                (resizer$c-index (car (getpropc resizer$c 'formals)))
+                (accessor$c-index (car (getpropc accessor$c 'formals)))
+                (updater$c-index (car (getpropc updater$c 'formals)))
+                (updater$c-value (cadr (getpropc updater$c 'formals))))
 
            `(encapsulate ()
 
@@ -264,10 +269,10 @@
 
                   (defthm ,resizer{correspondence}
                     (implies (and (,vector$corr ,vector$c ,vector)
-                                  (natp i)
+                                  (natp ,resizer$c-index)
                                   (,recognizer$a ,vector))
-                             (,vector$corr (,resizer$c i ,vector$c)
-                                           (,resizer$a i ,vector)))
+                             (,vector$corr (,resizer$c ,resizer$c-index ,vector$c)
+                                           (,resizer$a ,resizer$c-index ,vector)))
                     :rule-classes nil
                     :hints
                     (("Goal"
@@ -275,24 +280,24 @@
                                        ,@(and resizable
                                               `(,accessor-of-resizer$c)))
                                       (,vector$corr-contents))
-                      :expand (,vector$corr-contents (,resizer$c i ,vector$c)
-                                                     (,resizer$a i ,vector)))))
+                      :expand (,vector$corr-contents (,resizer$c ,resizer$c-index ,vector$c)
+                                                     (,resizer$a ,resizer$c-index ,vector)))))
 
                   (defthm ,resizer{preserved}
-                    (implies (and (natp i)
+                    (implies (and (natp ,resizer$c-index)
                                   (,recognizer$a ,vector))
-                             (,recognizer$a (,resizer$a i ,vector)))
+                             (,recognizer$a (,resizer$a ,resizer$c-index ,vector)))
                     :rule-classes nil)
 
                   (defthm ,accessor{correspondence}
                     (implies (and (,vector$corr ,vector$c ,vector)
-                                  (natp i)
+                                  (natp ,accessor$c-index)
                                   (,recognizer$a ,vector)
-                                  (< i ,(if resizable
-                                            `(,length$a ,vector)
-                                            default-length-name)))
-                             (equal (,accessor$c i ,vector$c)
-                                    (,accessor$a i ,vector)))
+                                  (< ,accessor$c-index ,(if resizable
+                                                            `(,length$a ,vector)
+                                                            default-length-name)))
+                             (equal (,accessor$c ,accessor$c-index ,vector$c)
+                                    (,accessor$a ,accessor$c-index ,vector)))
                     :rule-classes nil
                     :hints
                     (("Goal"
@@ -301,56 +306,56 @@
 
                   (defthm ,accessor{guard-thm}
                     (implies (and (,vector$corr ,vector$c ,vector)
-                                  (natp i)
+                                  (natp ,accessor$c-index)
                                   (,recognizer$a ,vector)
-                                  (< i ,(if resizable
-                                            `(,length$a ,vector)
-                                            default-length-name)))
-                             (and (integerp i)
-                                  (<= 0 i)
-                                  (< i (,length$c ,vector$c))))
+                                  (< ,accessor$c-index ,(if resizable
+                                                            `(,length$a ,vector)
+                                                            default-length-name)))
+                             (and (integerp ,accessor$c-index)
+                                  (<= 0 ,accessor$c-index)
+                                  (< ,accessor$c-index (,length$c ,vector$c))))
                     :rule-classes nil)
 
                   (defthm ,updater{correspondence}
                     (implies (and (,vector$corr ,vector$c ,vector)
-                                  (natp i)
+                                  (natp ,updater$c-index)
                                   ,@(and element-recognizer
-                                         `((,element-recognizer v)))
+                                         `((,element-recognizer ,updater$c-value)))
                                   (,recognizer$a ,vector)
-                                  (< i ,(if resizable
-                                            `(,length$a ,vector)
-                                            default-length-name)))
-                             (,vector$corr (,updater$c i v ,vector$c)
-                                           (,updater$a i v ,vector)))
+                                  (< ,updater$c-index ,(if resizable
+                                                           `(,length$a ,vector)
+                                                           default-length-name)))
+                             (,vector$corr (,updater$c ,updater$c-index ,updater$c-value ,vector$c)
+                                           (,updater$a ,updater$c-index ,updater$c-value ,vector)))
                     :rule-classes nil
                     :hints
                     (("Goal"
                       :in-theory (e/d (,aggressive$a)
                                       (,vector$corr-contents))
-                      :expand (,vector$corr-contents (,updater$c i v ,vector$c)
-                                                     (,updater$a i v ,vector)))))
+                      :expand (,vector$corr-contents (,updater$c ,updater$c-index ,updater$c-value ,vector$c)
+                                                     (,updater$a ,updater$c-index ,updater$c-value ,vector)))))
 
                   (defthm ,updater{guard-thm}
                     (implies (and (,vector$corr ,vector$c ,vector)
-                                  (natp i)
+                                  (natp ,updater$c-index)
                                   ,@(and element-recognizer
-                                         `((,element-recognizer v)))
+                                         `((,element-recognizer ,updater$c-value)))
                                   (,recognizer$a ,vector)
-                                  (< i ,(if resizable
-                                            `(,length$a ,vector)
-                                            default-length-name)))
+                                  (< ,updater$c-index ,(if resizable
+                                                           `(,length$a ,vector)
+                                                           default-length-name)))
                              (and ,@updater$c-guard))
                     :rule-classes nil)
 
                   (defthm ,updater{preserved}
-                    (implies (and (natp i)
+                    (implies (and (natp ,updater$c-index)
                                   ,@(and element-recognizer
-                                         `((,element-recognizer v)))
+                                         `((,element-recognizer ,updater$c-value)))
                                   (,recognizer$a ,vector)
-                                  (< i ,(if resizable
-                                            `(,length$a ,vector)
-                                            default-length-name)))
-                             (,recognizer$a (,updater$a i v ,vector)))
+                                  (< ,updater$c-index ,(if resizable
+                                                           `(,length$a ,vector)
+                                                           default-length-name)))
+                             (,recognizer$a (,updater$a ,updater$c-index ,updater$c-value ,vector)))
                     :rule-classes nil)))
 
               (defabsstobj ,vector

@@ -27,9 +27,7 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
-
-; TODO: refactor packages
+(in-package "ACL2") ; TODO: reset license headers
 
 (defpkg "ATOMIC-STOBJS"
   (union-eq *common-lisp-symbols-from-main-lisp-package*
@@ -42,67 +40,5 @@
               coupled)
             '(stobj
               absstobj-info
-
-              hons-remove-assoc
-              <<
-              symbol-list-listp
-              pairlis-x1
-              pairlis-x2
               formals
-              alist-fix)
-            '(lst
-              n
-              default-value
-              l
-              key
-              val
-              i
-              j
-              rhs
-              lhs
-              k
-              v
-              %set
-              keys
-              ht-size
-              rehash-size
-              rehash-threshold
-              a
-              d
-              n1
-              n2
-              v1
-              v2
-              x
-              free
-              ac)))
-
-(defpkg "DEFINE-VECTOR"
-  (set-difference-eq
-   (union-eq *common-lisp-symbols-from-main-lisp-package*
-             *acl2-exports*
-             '(lst
-               n
-               default-value
-               l
-               key
-               val
-               i
-               with-books))
-   '(length
-     set
-     vectorp)))
-
-(defpkg "DEFINE-HASH-TABLE"
-  (set-difference-eq
-   (union-eq *common-lisp-symbols-from-main-lisp-package*
-             *acl2-exports*
-             '(<<
-               forall))
-   '(boundp
-     count
-     hash-table)))
-
-(defpkg "DEFINE-FRAME"
-  (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*))
+              <<)))

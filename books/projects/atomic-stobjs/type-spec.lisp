@@ -453,17 +453,6 @@
            (true-listp (typep$transform object type-spec))))
   :rule-classes :type-prescription)
 
-;; TODO: delete
-(defun typep$transform/member-fix (object type-spec)
-  (declare (xargs :guard (acl2-type-spec-p type-spec)))
-  (let ((transform (typep$transform object type-spec)))
-    (if (and (consp type-spec)
-             (eq (car type-spec) 'member))
-        (cadr transform)
-        transform)))
-
-(defwarrant typep$transform/member-fix)
-
 
 ;;;; `TYPEP$'
 (defmacro typep$ (object type-spec)
