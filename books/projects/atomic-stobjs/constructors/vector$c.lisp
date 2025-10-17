@@ -34,7 +34,6 @@
 ||#
 
 (include-book "../type-spec")
-(include-book "../accessors/top")
 (include-book "../utilities/top")
 
 
@@ -109,11 +108,10 @@
                               (booleanp debug))))
 
   (let* (;; TODO: Enable defined constant default length via the `CONST'
-         ;; property.
+         ;; property and move this into `MAKE-EVENT'
          (dimensions (if (consp dimensions)
                          dimensions
                          (list dimensions)))
-         (element-type-is-stobj (not (acl2-type-spec-p element-type)))
 
          (contents (or contents
                        (symbolicate vector vector '-contents)))
@@ -157,6 +155,7 @@
                                 `((,updater-stobj-default ,updater))))))
 
     `(with-output
+       ;; TODO: refactor these options.
        ,@(and (not debug)
               '#!acl2(:off (warning! observation prove event history proof-tree)
                            :summary-off (rules)
@@ -169,17 +168,26 @@
                 (default-length-name (symbolicate vector '* vector '-default-length*))
 
                 (element-type ',element-type)
-                (element-type-is-stobj (and ',element-type-is-stobj
-                                            (stobj-p element-type)))
-                ;; TODO: If `ELEMENT-TYPE-IS-STOBJ', check if it has a
-                ;; `ABSSTOBJ-INFO' property.  If so, get the recognizer and
-                ;; creator.  Otherwise, get the recognizer and creator from the
-                ;; `STOBJ' property.
-                ;; TODO: test the results
-                (element-recognizer (and element-type-is-stobj
-                                         (stobj-recognizer element-type)))
-                (element-creator (and element-type-is-stobj
-                                      (stobj-creator element-type)))
+                (stobj-property (and (symbolp element-type)
+                                     (getpropc element-type 'stobj)))
+                (absstobj-info (and (symbolp element-type)
+                                    (getpropc element-type 'absstobj-info)))
+                (stobj$a-property (and (symbolp element-type)
+                                       (cdr (assoc element-type (table-alist 'stobj$a-property (w state))))))
+                (element-recognizer (cond
+                                      (stobj$a-property
+                                       (first (second stobj$a-property)))
+                                      (absstobj-info
+                                       (cadr (cadr absstobj-info)))
+                                      (stobj-property
+                                       (caadr stobj-property))))
+                (element-creator (cond
+                                   (stobj$a-property
+                                    (second (second stobj$a-property)))
+                                   (absstobj-info
+                                    (cadr (caddr absstobj-info)))
+                                   (stobj-property
+                                    (cdadr stobj-property))))
                 (specialize-element-type ',specialize-element-type)
                 (initial-element ',initial-element)
                 (initial-element-name (symbolicate vector '* vector '-initial-element*))
@@ -206,12 +214,12 @@
 
                    (defconst ,default-length-name ',default-length)
 
-                   ,@(and (not element-type-is-stobj)
+                   ,@(and (not stobj-property)
                           `((defconst ,initial-element-name ',initial-element)))
 
                    (defstobj ,vector
                      (,contents :type (array ,element-type ,dimensions)
-                                ,@(and (not element-type-is-stobj)
+                                ,@(and (not stobj-property)
                                        `(:element-type
                                          ,(if specialize-element-type
                                               element-type
@@ -248,6 +256,7 @@
                 (resizer-of-updater-drop (symbolicate vector resizer-of-updater '-drop))
                 (resizer{rewrite} (symbolicate vector resizer '{rewrite}))
 
+                ;; TODO: unfold type spec for theorem name
                 (typep$-of-accessor (symbolicate vector (or element-recognizer 'typep$) '-of- accessor))
                 (accessor-of-creator (symbolicate vector accessor '-of- creator))
                 (accessor-of-resizer (symbolicate vector accessor '-of- resizer))

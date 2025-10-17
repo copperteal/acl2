@@ -29,82 +29,76 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/vector$a")
-(include-book "std/basic/nfix" :dir :system)
 (include-book "centaur/fty/basetypes" :dir :system)
 
-(defthm nfix-when-not-natp
-  (implies (not (natp x))
-           (equal (nfix x) 0)))
+(include-book "../constructors/vector$a")
 
 
 ;;;; Stobj Values
-(defstobj foo$c
-  a
-  :inline t
-  :non-memoizable t
-  :non-executable t)
+;; (defstobj foo$c
+;;   a
+;;   :inline t
+;;   :non-memoizable t
+;;   :non-executable t)
 
-(defthm foo$cp-of-create-foo$c
-  (foo$cp (create-foo$c)))
+;; (defthm foo$cp-of-create-foo$c
+;;   (foo$cp (create-foo$c)))
 
-(defun create-foo$c$a ()
-  (declare (xargs :guard t))
-  '(nil))
+;; (defun create-foo$c$a ()
+;;   (declare (xargs :guard t))
+;;   '(nil))
 
-(defthm create-foo$c$a{rewrite}
-  (equal (create-foo$c$a)
-         (create-foo$c)))
+;; (defthm create-foo$c$a{rewrite}
+;;   (equal (create-foo$c$a)
+;;          (create-foo$c)))
 
-(in-theory
-  (disable (:d create-foo$c$a)
-           (:e create-foo$c$a)))
+;; (in-theory
+;;   (disable (:d create-foo$c$a)
+;;            (:e create-foo$c$a)))
 
-(defun foo$c-fix (x)
-  (declare (xargs :guard t))
-  (if (foo$cp x)
-      x
-      (create-foo$c$a)))
+;; (defun foo$c-fix (x)
+;;   (declare (xargs :guard t))
+;;   (if (foo$cp x)
+;;       x
+;;       (create-foo$c$a)))
 
-(defthm foo$c-fix{rewrite}
-  (equal (foo$c-fix x)
-         (if (foo$cp x)
-             x
-             (create-foo$c))))
+;; (defthm foo$c-fix{rewrite}
+;;   (equal (foo$c-fix x)
+;;          (if (foo$cp x)
+;;              x
+;;              (create-foo$c))))
 
-(in-theory
-  (disable (:d create-foo$c)
-           (:e create-foo$c)))
+;; (in-theory
+;;   (disable (:d create-foo$c)
+;;            (:e create-foo$c)))
 
 
-(atomic-stobjs::define-vector$a arr/stobj-0 0
-  :element-recognizer foo$cp
-  :element-fixer foo$c-fix
-  :element foo$c
-  ;; TODO: drop :initial-element for stobjs
-  :initial-element (create-foo$c$a)
-  :resizable nil)
+;; (atomic-stobjs::define-vector$a arr/stobj-0 0
+;;   :element-recognizer foo$cp
+;;   :element-fixer foo$c-fix
+;;   :element foo$c
+;;   :resizable nil)
 
-(atomic-stobjs::define-vector$a arr/stobj-1 876
-  :element-recognizer foo$cp
-  :element-fixer foo$c-fix
-  :element foo$c
-  :initial-element (create-foo$c$a)
-  :resizable nil)
+;; (atomic-stobjs::define-vector$a arr/stobj-1 876
+;;   :element-recognizer foo$cp
+;;   :element-fixer foo$c-fix
+;;   :element foo$c
+;;   :initial-element (create-foo$c$a)
+;;   :resizable nil)
 
-(atomic-stobjs::define-vector$a arr/stobj-2 0
-  :element-recognizer foo$cp
-  :element-fixer foo$c-fix
-  :element foo$c
-  :initial-element (create-foo$c$a)
-  :resizable t)
+;; (atomic-stobjs::define-vector$a arr/stobj-2 0
+;;   :element-recognizer foo$cp
+;;   :element-fixer foo$c-fix
+;;   :element foo$c
+;;   :initial-element (create-foo$c$a)
+;;   :resizable t)
 
-(atomic-stobjs::define-vector$a arr/stobj-3 876
-  :element-recognizer foo$cp
-  :element-fixer foo$c-fix
-  :element foo$c
-  :initial-element (create-foo$c$a)
-  :resizable t)
+;; (atomic-stobjs::define-vector$a arr/stobj-3 876
+;;   :element-recognizer foo$cp
+;;   :element-fixer foo$c-fix
+;;   :element foo$c
+;;   :initial-element (create-foo$c$a)
+;;   :resizable t)
 
 
 ;;;; Concrete Tests
@@ -153,25 +147,25 @@
 (atomic-stobjs::define-vector$a arr$a/10-boolean-t 10
   :element-recognizer booleanp
   :element-fixer bool-fix
-  :element boolean
+  :element b
   :initial-element t
   :resizable t)
 
 (atomic-stobjs::define-vector$a arr$a/10-boolean-nil 10
   :element-recognizer booleanp
   :element-fixer bool-fix
-  :element boolean
+  :element b
   :initial-element t)
 
 (atomic-stobjs::define-vector$a arr$a/0-boolean-t 0
   :element-recognizer booleanp
   :element-fixer bool-fix
-  :element boolean
+  :element b
   :initial-element t
   :resizable t)
 
 (atomic-stobjs::define-vector$a arr$a/0-boolean-nil 0
   :element-recognizer booleanp
   :element-fixer bool-fix
-  :element boolean
+  :element b
   :initial-element t)

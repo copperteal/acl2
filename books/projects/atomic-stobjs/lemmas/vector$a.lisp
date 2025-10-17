@@ -277,6 +277,10 @@
 
 
 ;;;; `FIXER/RESIZABLE'
+(defthm fixer/resizable{type-prescription}
+  (true-listp (fixer/resizable vector))
+  :rule-classes :type-prescription)
+
 (defthm fixer/resizable-when-recognizer/resizable
   (implies (recognizer/resizable vector)
            (equal (fixer/resizable vector)
@@ -289,6 +293,10 @@
 
 
 ;;;; `FIXER/FIXED'
+(defthm fixer/fixed{type-prescription}
+  (true-listp (fixer/fixed vector))
+  :rule-classes :type-prescription)
+
 (defthm fixer/fixed-when-recognizer/fixed
   (implies (recognizer/fixed vector)
            (equal (fixer/fixed vector)
@@ -941,8 +949,6 @@
                   :verify-guards nil))
   (and (recognizer/fixed %vector)
        (recognizer/fixed vector)
-       (equal (length/fixed %vector)
-              (length/fixed vector))
        (contents-equal/fixed %vector vector)))
 
 (with-books (("std/lists/nth" :dir :system))
