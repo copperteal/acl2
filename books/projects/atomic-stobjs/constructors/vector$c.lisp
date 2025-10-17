@@ -178,14 +178,14 @@
                                       (stobj$a-property
                                        (first (second stobj$a-property)))
                                       (absstobj-info
-                                       (cadr (cadr absstobj-info)))
+                                       (second (second absstobj-info)))
                                       (stobj-property
                                        (caadr stobj-property))))
                 (element-creator (cond
                                    (stobj$a-property
                                     (second (second stobj$a-property)))
                                    (absstobj-info
-                                    (cadr (caddr absstobj-info)))
+                                    (second (third absstobj-info)))
                                    (stobj-property
                                     (cdadr stobj-property))))
                 (specialize-element-type ',specialize-element-type)
