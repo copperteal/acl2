@@ -28,5 +28,4 @@
 
 
 (ld "../type-spec.acl2")
-(ld "../accessors/cert.acl2")
 (ld "../package.lsp")
