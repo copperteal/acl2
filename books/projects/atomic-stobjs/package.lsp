@@ -35,14 +35,15 @@
   (union-eq *common-lisp-symbols-from-main-lisp-package*
             *acl2-exports*
             *type-spec-exports*
-            atomic-stobj-accessors::*exports*
             '(package-witness-p
               symbolicate
               with-books
               make-predicate-suffix
-              lprogn
               coupled)
-            '(hons-remove-assoc
+            '(stobj
+              absstobj-info
+
+              hons-remove-assoc
               <<
               symbol-list-listp
               pairlis-x1
