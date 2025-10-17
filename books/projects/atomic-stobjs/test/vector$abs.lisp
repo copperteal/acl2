@@ -29,6 +29,8 @@
 
 (in-package "ACL2")
 
+(include-book "../constructors/vector$c")
+(include-book "../constructors/vector$a")
 (include-book "../constructors/vector$abs")
 (include-book "std/basic/nfix" :dir :system)
 

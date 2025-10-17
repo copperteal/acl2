@@ -148,14 +148,14 @@
                                       (stobj$a-property
                                        (first (second stobj$a-property)))
                                       (absstobj-info
-                                       (cadr (cadr absstobj-info)))
+                                       (second (second absstobj-info)))
                                       (stobj-property
                                        (caadr stobj-property))))
                 (element-creator (cond
                                    (stobj$a-property
                                     (second (second stobj$a-property)))
                                    (absstobj-info
-                                    (cadr (caddr absstobj-info)))
+                                    (second (third absstobj-info)))
                                    (stobj-property
                                     (cdadr stobj-property))))
                 (element-fixer (cond
@@ -1229,11 +1229,11 @@
                                                       ,creator
                                                       ,fixer
                                                       ,vector-equal)
-                                                     ((,element-recognizer
-                                                       ,element-fixer
-                                                       ,element
+                                                     ((,element
+                                                       ,element-recognizer
                                                        ,(and (not stobj-property)
-                                                             initial-element-name))
+                                                             initial-element-name)
+                                                       ,element-fixer)
                                                       (,resizable
                                                        ,default-length-name)
                                                       (,length

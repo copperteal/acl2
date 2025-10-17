@@ -1,0 +1,366 @@
+;;; Copyright 2025 J. David Taylor
+;;;
+;;; Redistribution and use in source and binary forms, with or without
+;;; modification, are permitted provided that the following conditions are met:
+;;;
+;;; 1. Redistributions of source code must retain the above copyright notice,
+;;;    this list of conditions and the following disclaimer.
+;;;
+;;; 2. Redistributions in binary form must reproduce the above copyright notice,
+;;;    this list of conditions and the following disclaimer in the documentation
+;;;    and/or other materials provided with the distribution.
+;;;
+;;; 3. Neither the name of the copyright holder nor the names of its
+;;;    contributors may be used to endorse or promote products derived from this
+;;;    software without specific prior written permission.
+;;;
+;;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+;;; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+;;; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+;;; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+;;; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+;;; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+;;; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+;;; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+;;; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+;;; POSSIBILITY OF SUCH DAMAGE.
+
+
+(in-package "ATOMIC-STOBJS")
+
+(include-book "../utilities/top")
+
+
+;;;; `DEFINE-VECTOR$CORR'
+(defmacro define-vector$corr (vector
+                              &key
+                                (logic 'nil)
+                                (exec 'nil)
+
+                                (debug 'nil))
+  (declare (xargs :guard (and (symbolp vector)
+                              (symbolp logic)
+                              (symbolp exec)
+                              (booleanp debug))))
+  (let* ((vector$a (or logic
+                       (symbolicate vector vector '$a)))
+         (vector$c (or exec
+                       (symbolicate vector vector '$c))))
+
+    `(with-output
+       ,@(and (not debug)
+              '#!acl2(:off (warning! observation prove event history proof-tree)
+                           :summary-off (rules)
+                           :gag-mode t))
+
+       (make-event
+         (let* ((vector ',vector)
+                (vector$corr (symbolicate vector vector '$corr))
+                (vector$corr-contents (symbolicate vector vector$corr '-contents))
+
+                (vector$c ',vector$c)
+                (stobj-property (getpropc vector$c 'stobj))
+                (recognizer$c (caadr stobj-property))
+                (length$c (second (third stobj-property)))
+                (accessor$c (fourth (third stobj-property)))
+
+                (vector$a ',vector$a)
+                (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a-property (w state)))))
+                (recognizer$a (first (second stobj$a-property)))
+                (length$a (first (third (third stobj$a-property))))
+                (accessor$a (third (third (third stobj$a-property)))))
+
+           `(progn ; TODO: use `ER-PROGN'?
+              (defun-sk ,vector$corr-contents (,vector$c ,vector$a)
+                (declare (xargs :stobjs ,vector$c
+                                :guard t
+                                :verify-guards nil))
+                (forall index
+                  (implies (and (natp index)
+                                (< index (,length$c ,vector$c)))
+                           (equal (,accessor$c index ,vector$c)
+                                  (,accessor$a index ,vector$a))))
+                :rewrite :direct)
+
+              (defun-nx ,vector$corr (,vector$c ,vector$a)
+                (declare (xargs :stobjs ,vector$c
+                                :guard (,recognizer$a ,vector$a)
+                                :verify-guards nil))
+                (and (,recognizer$c ,vector$c)
+                     (,recognizer$a ,vector$a)
+                     (= (,length$c ,vector$c)
+                        (,length$a ,vector$a))
+                     (,vector$corr-contents ,vector$c
+                                            ,vector$a)))))))))
+
+
+;;;; `DEFINE-VECTOR$ABS'
+(defmacro define-vector$abs
+    (vector
+     &key
+       (logic 'nil)
+       (exec 'nil)
+
+       (recognizer 'nil)
+       (creator 'nil)
+       (fixer 'nil)
+       (length 'nil)
+       (resizer 'nil)
+       (accessor 'nil)
+       (updater 'nil)
+
+       (executable 'nil)
+
+       (debug 'nil))
+
+  (declare (xargs :guard (and (symbolp vector)
+                              (symbolp logic)
+                              (symbolp exec)
+                              (symbol-listp (list recognizer
+                                                  creator
+                                                  fixer
+                                                  length
+                                                  resizer
+                                                  accessor
+                                                  updater))
+                              (booleanp executable)
+                              (booleanp debug))))
+
+  (let* ((vector$a (or logic
+                       (symbolicate vector vector '$a)))
+         (vector$c (or exec
+                       (symbolicate vector vector '$c)))
+
+         (recognizer (or recognizer
+                         (symbolicate vector vector (make-predicate-suffix vector))))
+         (creator (or creator
+                      (symbolicate vector 'create- vector)))
+         (fixer (or fixer
+                    (symbolicate vector vector '-fix)))
+         (length (or length
+                     (symbolicate vector vector '-length)))
+         (resizer (or resizer
+                      (symbolicate vector vector '-resize)))
+         (accessor (or accessor
+                       (symbolicate vector vector '-ref)))
+         (updater (or updater
+                      (symbolicate vector vector '-set))))
+
+    `(with-output
+       ,@(and (not debug)
+              '#!acl2(:off (warning! observation prove event history proof-tree)
+                           :summary-off (rules)
+                           :gag-mode t))
+
+       (make-event
+         (let* ((vector ',vector)
+                (recognizer ',recognizer)
+                (creator ',creator)
+                (fixer ',fixer)
+                (length ',length)
+                (resizer ',resizer)
+                (accessor ',accessor)
+                (updater ',updater)
+                (executable ',executable)
+
+                (vector$corr (symbolicate vector vector '$corr))
+                (vector$corr-contents (symbolicate vector vector$corr '-contents))
+
+                (vector$c ',vector$c)
+                (stobj-property (getpropc vector$c 'stobj))
+                (recognizer$c (caadr stobj-property))
+                (creator$c (cdadr stobj-property))
+                ;; TODO: track fixer in a table
+                (fixer$c (symbolicate vector$c vector$c '-fix))
+                (fixer$c$inline (symbolicate vector$c fixer$c '$inline))
+                (length$c (second (third stobj-property)))
+                (resizer$c (third (third stobj-property)))
+                (accessor$c (fourth (third stobj-property)))
+                (updater$c (fifth (third stobj-property)))
+
+                (vector$a ',vector$a)
+                (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a-property (w state)))))
+                (recognizer$a (first (second stobj$a-property)))
+                (creator$a (second (second stobj$a-property)))
+                (fixer$a (third (second stobj$a-property)))
+                (length$a (first (third (third stobj$a-property))))
+                (resizer$a (second (third (third stobj$a-property))))
+                (accessor$a (third (third (third stobj$a-property))))
+                (updater$a (fourth (third (third stobj$a-property))))
+                (element (first (first (third stobj$a-property))))
+                (element-recognizer (second (first (third stobj$a-property))))
+                ;; (element-fixer (fourth (first (third stobj$a-property))))
+                (resizable (first (second (third stobj$a-property))))
+                (default-length-name (second (second (third stobj$a-property))))
+
+                (element-stobj-property (getpropc element 'stobj))
+
+                (creator{correspondence} (symbolicate vector creator '{correspondence}))
+                (creator{preserved} (symbolicate vector creator '{preserved}))
+                (fixer{correspondence} (symbolicate vector fixer '{correspondence}))
+                (fixer{preserved} (symbolicate vector fixer '{preserved}))
+                (length{correspondence} (symbolicate vector length '{correspondence}))
+                (resizer{correspondence} (symbolicate vector resizer '{correspondence}))
+                (resizer{preserved} (symbolicate vector resizer '{preserved}))
+                (accessor{correspondence} (symbolicate vector accessor '{correspondence}))
+                (accessor{guard-thm} (symbolicate vector accessor '{guard-thm}))
+                (updater{correspondence} (symbolicate vector updater '{correspondence}))
+                (updater{guard-thm} (symbolicate vector updater '{guard-thm}))
+                (updater{preserved} (symbolicate vector updater '{preserved}))
+
+                (exports `((,fixer :logic ,fixer$a
+                                   :exec ,fixer$c$inline)
+                           (,length :logic ,length$a
+                                    :exec ,length$c)
+                           (,resizer :logic ,resizer$a
+                                     :exec ,resizer$c)
+                           (,accessor :logic ,accessor$a
+                                      :exec ,accessor$c
+                                      ,@(and element-stobj-property
+                                             `(:updater ,updater)))
+                           (,updater :logic ,updater$a
+                                     :exec ,updater$c)))
+
+                (updater$c-guard
+                 (cdr (untranslate (getpropc updater$c 'guard) nil (w state))))
+                (updater$c-guard (if element-stobj-property
+                                     (cddr updater$c-guard)
+                                     (cdr updater$c-guard)))
+
+                (aggressive$a (symbolicate vector$a vector$a '-aggressive))
+                (accessor-of-resizer$c (symbolicate vector$c accessor$c '-of- resizer$c)))
+
+           `(encapsulate ()
+
+              (local
+                (progn
+                  (defthm ,creator{correspondence}
+                    (,vector$corr (,creator$c) (,creator$a))
+                    :rule-classes nil)
+
+                  (defthm ,creator{preserved}
+                    (,recognizer$a (,creator$a))
+                    :rule-classes nil)
+
+                  (defthm ,fixer{correspondence}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (,recognizer$a ,vector))
+                             (,vector$corr (,fixer$c ,vector$c)
+                                           (,fixer$a ,vector)))
+                    :rule-classes nil)
+
+                  (defthm ,fixer{preserved}
+                    (implies (,recognizer$a ,vector)
+                             (,recognizer$a (,fixer$a ,vector)))
+                    :rule-classes nil)
+
+                  (defthm ,length{correspondence}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (,recognizer$a ,vector))
+                             (equal (,length$c ,vector$c)
+                                    (,length$a ,vector)))
+                    :rule-classes nil)
+
+                  (defthm ,resizer{correspondence}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (natp i)
+                                  (,recognizer$a ,vector))
+                             (,vector$corr (,resizer$c i ,vector$c)
+                                           (,resizer$a i ,vector)))
+                    :rule-classes nil
+                    :hints
+                    (("Goal"
+                      :in-theory (e/d (,aggressive$a
+                                       ,@(and resizable
+                                              `(,accessor-of-resizer$c)))
+                                      (,vector$corr-contents))
+                      :expand (,vector$corr-contents (,resizer$c i ,vector$c)
+                                                     (,resizer$a i ,vector)))))
+
+                  (defthm ,resizer{preserved}
+                    (implies (and (natp i)
+                                  (,recognizer$a ,vector))
+                             (,recognizer$a (,resizer$a i ,vector)))
+                    :rule-classes nil)
+
+                  (defthm ,accessor{correspondence}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (natp i)
+                                  (,recognizer$a ,vector)
+                                  (< i ,(if resizable
+                                            `(,length$a ,vector)
+                                            default-length-name)))
+                             (equal (,accessor$c i ,vector$c)
+                                    (,accessor$a i ,vector)))
+                    :rule-classes nil
+                    :hints
+                    (("Goal"
+                      :in-theory (e/d (,aggressive$a)
+                                      (,vector$corr-contents)))))
+
+                  (defthm ,accessor{guard-thm}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (natp i)
+                                  (,recognizer$a ,vector)
+                                  (< i ,(if resizable
+                                            `(,length$a ,vector)
+                                            default-length-name)))
+                             (and (integerp i)
+                                  (<= 0 i)
+                                  (< i (,length$c ,vector$c))))
+                    :rule-classes nil)
+
+                  (defthm ,updater{correspondence}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (natp i)
+                                  ,@(and element-recognizer
+                                         `((,element-recognizer v)))
+                                  (,recognizer$a ,vector)
+                                  (< i ,(if resizable
+                                            `(,length$a ,vector)
+                                            default-length-name)))
+                             (,vector$corr (,updater$c i v ,vector$c)
+                                           (,updater$a i v ,vector)))
+                    :rule-classes nil
+                    :hints
+                    (("Goal"
+                      :in-theory (e/d (,aggressive$a)
+                                      (,vector$corr-contents))
+                      :expand (,vector$corr-contents (,updater$c i v ,vector$c)
+                                                     (,updater$a i v ,vector)))))
+
+                  (defthm ,updater{guard-thm}
+                    (implies (and (,vector$corr ,vector$c ,vector)
+                                  (natp i)
+                                  ,@(and element-recognizer
+                                         `((,element-recognizer v)))
+                                  (,recognizer$a ,vector)
+                                  (< i ,(if resizable
+                                            `(,length$a ,vector)
+                                            default-length-name)))
+                             (and ,@updater$c-guard))
+                    :rule-classes nil)
+
+                  (defthm ,updater{preserved}
+                    (implies (and (natp i)
+                                  ,@(and element-recognizer
+                                         `((,element-recognizer v)))
+                                  (,recognizer$a ,vector)
+                                  (< i ,(if resizable
+                                            `(,length$a ,vector)
+                                            default-length-name)))
+                             (,recognizer$a (,updater$a i v ,vector)))
+                    :rule-classes nil)))
+
+              (defabsstobj ,vector
+                :foundation ,vector$c
+                :recognizer (,recognizer :logic ,recognizer$a
+                                         :exec ,recognizer$c)
+                :creator (,creator :logic ,creator$a
+                                   :exec ,creator$c)
+                :corr-fn ,vector$corr
+                :non-executable ,(not executable)
+                :exports ,exports)
+
+              (table stobj$a-property ',vector ',stobj$a-property)))))))
