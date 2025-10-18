@@ -28,6 +28,7 @@
 
 
 (in-package "ATOMIC-STOBJS")
+(set-verify-guards-eagerness 2)
 
 #||
 (include-book "../lemmas/vector$a")
@@ -1296,9 +1297,18 @@
                        ("Subgoal 1"
                         :expand (:free (,%vector ,vector)
                                        (,vector-contents-equal ,%vector ,vector)))))))
+
+; TODO: Compare `STOBJ$A-PROPERTY' with `STOBJ-PROPERTY' and `ABSSTOBJ-INFO' to
+; see if there's a more intuitive layout.  Also compare with frame and
+; hash-table.  Maybe `RECOGNIZER-AUX' should be made available?  Should theory
+; names be accessible from a property or table?
+
+; TODO: Make `VECTOR-EQUAL' and `VECTOR-CONTENTS-EQUAL' user nameable.
+
                 (stobj$a-property `(stobj$a-property (,recognizer
                                                       ,creator
                                                       ,fixer
+; TODO: Track `VECTOR-EQUAL' and `VECTOR-CONTENTS-EQUAL' in their own table.
                                                       ,vector-equal)
                                                      ((,element
                                                        ,element-recognizer

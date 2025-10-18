@@ -28,6 +28,7 @@
 
 
 (in-package "ATOMIC-STOBJS")
+(set-verify-guards-eagerness 2)
 
 #||
 (include-book "../lemmas/vector$c")
@@ -486,6 +487,12 @@
                                 :by (:functional-instance
                                      lem-vector$c::resizer/resizable-of-creator
                                      ,@fi-bindings))))
+
+; TODO: Make a theory to allow enabling or disabling the vector$c theorems that
+; are initially disabled.  Call it aggressive in analogy with the vector$a
+; aggressive theory.  Note that the concrete interface only needs to be strong
+; enough to allow users to pass the proof obligations to create custom abstract
+; stobjs.  Make the theory name accessible from a table or property.
 
                             (defthmd ,resizer-of-length-free
                               (implies (and (equal length (,length ,vector))
