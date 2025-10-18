@@ -28,6 +28,7 @@
 
 
 (in-package "OMAP")
+(set-verify-guards-eagerness 2)
 
 (include-book "std/omaps/top" :dir :system)
 

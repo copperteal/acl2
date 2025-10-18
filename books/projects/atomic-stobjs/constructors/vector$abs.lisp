@@ -71,7 +71,7 @@
                 (length$a (first (third (third stobj$a-property))))
                 (accessor$a (third (third (third stobj$a-property)))))
 
-           `(progn ; TODO: use `ER-PROGN'?
+           `(progn
               (defun-sk ,vector$corr-contents (,vector$c ,vector$a)
                 (declare (xargs :stobjs ,vector$c
                                 :guard t
@@ -171,9 +171,9 @@
                 (stobj-property (getpropc vector$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))
-                ;; TODO: track fixer in a table
-                (fixer$c (symbolicate vector$c vector$c '-fix))
-                (fixer$c$inline (symbolicate vector$c fixer$c '$inline))
+                (fixer$c (cdr (assoc vector$c (table-alist 'fixer (w state)))))
+                (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table (w state))))
+                                    fixer$c))
                 (length$c (second (third stobj-property)))
                 (resizer$c (third (third stobj-property)))
                 (accessor$c (fourth (third stobj-property)))

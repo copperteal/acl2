@@ -28,6 +28,7 @@
 
 
 (in-package "SET")
+(set-verify-guards-eagerness 2)
 
 (include-book "std/osets/top" :dir :system)
 
