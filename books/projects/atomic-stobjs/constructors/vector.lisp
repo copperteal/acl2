@@ -29,6 +29,7 @@
 
 ;;;; Prologue
 (in-package "ATOMIC-STOBJS")
+(set-verify-guards-eagerness 2)
 
 (include-book "../type-spec")
 (include-book "../utilities/top")
@@ -204,5 +205,6 @@
                        `(:executable ,executable))
                 :debug ,debug)
 
+; TODO: pull theory name from table
               (in-theory
                 (disable ,(symbolicate vector$c vector$c '-theorems)))))))))

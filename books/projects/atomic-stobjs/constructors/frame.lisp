@@ -29,6 +29,7 @@
 
 ;;;; Prologue
 (in-package "ATOMIC-STOBJS")
+(set-verify-guards-eagerness 2)
 
 ;;; cert.pl
 #||

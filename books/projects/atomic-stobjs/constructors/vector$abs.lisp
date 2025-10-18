@@ -28,6 +28,7 @@
 
 
 (in-package "ATOMIC-STOBJS")
+(set-verify-guards-eagerness 2)
 
 (include-book "../utilities/top")
 
@@ -82,6 +83,9 @@
                            (equal (,accessor$c index ,vector$c)
                                   (,accessor$a index ,vector$a))))
                 :rewrite :direct)
+
+; TODO: Put `VECTOR$CORR-CONTENTS' and `VECTOR$CORR' in a table.  Make them
+; nameable by the user.
 
               (defun-nx ,vector$corr (,vector$c ,vector$a)
                 (declare (xargs :stobjs ,vector$c
@@ -164,6 +168,7 @@
                 (updater ',updater)
                 (executable ',executable)
 
+; TODO: lookup `VECTOR$CORR' and `VECTOR$CORR-CONTENTS' from table.
                 (vector$corr (symbolicate vector vector '$corr))
                 (vector$corr-contents (symbolicate vector vector$corr '-contents))
 
@@ -190,7 +195,6 @@
                 (updater$a (fourth (third (third stobj$a-property))))
                 (element (first (first (third stobj$a-property))))
                 (element-recognizer (second (first (third stobj$a-property))))
-                ;; (element-fixer (fourth (first (third stobj$a-property))))
                 (resizable (first (second (third stobj$a-property))))
                 (default-length-name (second (second (third stobj$a-property))))
 
@@ -228,8 +232,9 @@
                                      (cddr updater$c-guard)
                                      (cdr updater$c-guard)))
 
+; TODO: pull theory name from table
                 (aggressive$a (symbolicate vector$a vector$a '-aggressive))
-                (accessor-of-resizer$c (symbolicate vector$c accessor$c '-of- resizer$c))
+                (accessor$c-of-resizer$c (symbolicate vector$c accessor$c '-of- resizer$c))
 
                 (resizer$c-index (car (getpropc resizer$c 'formals)))
                 (accessor$c-index (car (getpropc accessor$c 'formals)))
@@ -278,7 +283,7 @@
                     (("Goal"
                       :in-theory (e/d (,aggressive$a
                                        ,@(and resizable
-                                              `(,accessor-of-resizer$c)))
+                                              `(,accessor$c-of-resizer$c)))
                                       (,vector$corr-contents))
                       :expand (,vector$corr-contents (,resizer$c ,resizer$c-index ,vector$c)
                                                      (,resizer$a ,resizer$c-index ,vector)))))
