@@ -38,7 +38,7 @@
 
 ;;;; `VECTOR' Guard Predicates
 (defun valid-vector-dimensions-p (dimensions)
-  ;; TODO: refactor into separate file
+; TODO: refactor into separate file
   (declare (xargs :guard t))
   (or (and (consp dimensions)
            (natp (car dimensions))
@@ -46,7 +46,7 @@
       (natp dimensions)))
 
 (defthm valid-vector-dimensions-p{compound-recognizer}
-  ;; TODO: Is this theorem useful?
+; TODO: Is this theorem useful?
   (implies (valid-vector-dimensions-p dimensions)
            (or (natp dimensions)
                (and (consp dimensions)
@@ -99,7 +99,8 @@
                                                   updater))
                               (booleanp debug))))
 
-  (let* (;; TODO: allow defined constant default length
+  (let* (
+; TODO: allow defined constant default length
          (default-length (if (consp dimensions)
                              (car dimensions)
                              dimensions))
@@ -136,12 +137,9 @@
                 (element ',element)
                 (%element (or ',%element
                               (symbolicate element '% element)))
-                (stobj-property (and (symbolp element)
-                                     (getpropc element 'stobj)))
-                (absstobj-info (and (symbolp element)
-                                    (getpropc element 'absstobj-info)))
-                (stobj$a-property (and (symbolp element)
-                                       (cdr (assoc element (table-alist 'stobj$a-property (w state))))))
+                (stobj-property (getpropc element 'stobj))
+                (absstobj-info (getpropc element 'absstobj-info))
+                (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property (w state)))))
                 (element-recognizer (cond
                                       (',element-recognizer-supplied-p
                                        ',element-recognizer)
@@ -162,7 +160,9 @@
                                  (',element-fixer-supplied-p
                                   ',element-fixer)
                                  (stobj$a-property
-                                  (third (second stobj$a-property)))))
+                                  (third (second stobj$a-property)))
+                                 (t
+                                  (cdr (assoc element (table-alist 'fixer (w state)))))))
                 (initial-element-name (symbolicate vector '* vector '-initial-element*))
                 (initial-element (if element-creator
                                      `(,element-creator)
@@ -1296,7 +1296,6 @@
                        ("Subgoal 1"
                         :expand (:free (,%vector ,vector)
                                        (,vector-contents-equal ,%vector ,vector)))))))
-                ;; TODO: refactor stobj$a-property
                 (stobj$a-property `(stobj$a-property (,recognizer
                                                       ,creator
                                                       ,fixer
@@ -1313,7 +1312,7 @@
                                                        ,accessor
                                                        ,updater)))))
 
-           `(progn ; TODO: er-progn?
+           `(progn
               ,@prologue
 
               ,body

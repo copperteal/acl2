@@ -28,6 +28,7 @@
 
 
 (in-package "ATOMIC-STOBJS")
+(set-verify-guards-eagerness 2)
 
 (deflabel define-frame-lemmas-begin)
 

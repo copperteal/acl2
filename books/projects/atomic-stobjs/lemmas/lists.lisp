@@ -28,6 +28,7 @@
 
 
 (in-package "ACL2")
+(set-verify-guards-eagerness 2)
 
 ;;; `HONS-REMOVE-DUPLICATES'
 (include-book "std/lists/remove-duplicates" :dir :system)

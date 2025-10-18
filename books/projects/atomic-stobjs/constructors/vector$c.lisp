@@ -39,7 +39,7 @@
 
 ;;;; `VECTOR' Guard Predicates
 (defun valid-vector-dimensions-p (dimensions)
-  ;; TODO: refactor into separate file
+; TODO: refactor into separate file
   (declare (xargs :guard t))
   (or (and (consp dimensions)
            (natp (car dimensions))
@@ -47,7 +47,7 @@
       (natp dimensions)))
 
 (defthm valid-vector-dimensions-p{compound-recognizer}
-  ;; TODO: Is this theorem useful?
+; TODO: Is this theorem useful?
   (implies (valid-vector-dimensions-p dimensions)
            (or (natp dimensions)
                (and (consp dimensions)
@@ -84,12 +84,10 @@
                               (valid-vector-dimensions-p dimensions)
                               (if (acl2-type-spec-p element-type)
                                   (typep$ initial-element element-type)
-                                  ;; TODO: What's the best macro-guard for a
-                                  ;; value that is expected to be a stobj name?
-                                  ;; We cannot actually check if it is a stobj
-                                  ;; name until we are within an event's scope.
-                                  ;; However, it is desirable to reject the
-                                  ;; value eagerly if possible.
+; TODO: What's the best macro-guard for a value that is expected to be a stobj
+; name?  We cannot actually check if it is a stobj name until we are within an
+; event's scope.  However, it is desirable to reject the value eagerly if
+; possible.
                                   (symbolp element-type))
                               (boolean-listp (list specialize-element-type
                                                    resizable
@@ -107,8 +105,9 @@
                                                   updater))
                               (booleanp debug))))
 
-  (let* (;; TODO: Enable defined constant default length via the `CONST'
-         ;; property and move this into `MAKE-EVENT'
+  (let* (
+; TODO: Enable defined constant default length via the `CONST' property and move
+; this into `MAKE-EVENT'
          (dimensions (if (consp dimensions)
                          dimensions
                          (list dimensions)))
@@ -155,7 +154,7 @@
                                 `((,updater-stobj-default ,updater))))))
 
     `(with-output
-       ;; TODO: refactor these options.
+; TODO: Refactor `WITH-OUTPUT' options.
        ,@(and (not debug)
               '#!acl2(:off (warning! observation prove event history proof-tree)
                            :summary-off (rules)
@@ -256,7 +255,7 @@
                 (resizer-of-updater-drop (symbolicate vector resizer-of-updater '-drop))
                 (resizer{rewrite} (symbolicate vector resizer '{rewrite}))
 
-                ;; TODO: unfold type spec for theorem name
+; TODO: Unfold type spec to name `TYPEP$-OF-ACCESSOR'
                 (typep$-of-accessor (symbolicate vector (or element-recognizer 'typep$) '-of- accessor))
                 (accessor-of-creator (symbolicate vector accessor '-of- creator))
                 (accessor-of-resizer (symbolicate vector accessor '-of- resizer))
@@ -582,8 +581,8 @@
                                              (,recognizer ,vector))
                                         ,(if element-recognizer
                                              `(,element-recognizer (,accessor index ,vector))
-                                             ;; TODO: check if this fails for member,
-                                             ;; unsigned-byte, or signed-byte
+; TODO: Check if `TYPEP$-OF-ACCESSOR' fails for member, unsigned-byte, or
+; signed-byte.
                                              (typep$transform `(,accessor index ,vector) element-type)))
                                :rule-classes
                                (:rewrite
@@ -831,6 +830,8 @@
                                       ,vector
                                       (,creator))
                            :exec ,vector))
+
+                    (table fixer ',vector ',fixer)
 
                     (defthm ,fixer{type-prescription}
                       (and (true-listp (,fixer ,vector))

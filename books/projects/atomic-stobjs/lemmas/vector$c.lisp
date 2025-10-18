@@ -28,6 +28,7 @@
 
 
 (in-package "LEM-VECTOR$C")
+(set-verify-guards-eagerness 2)
 
 #||
 (include-book "std/lists/top" :dir :system)
@@ -36,7 +37,6 @@
 (include-book "../utilities/with-books")
 (local
   (include-book "std"))
-(set-verify-guards-eagerness 2)
 
 (encapsulate (((default-length) => *)
               ((element-recognizer *) => *)

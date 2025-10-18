@@ -39,7 +39,7 @@
 
 ;;;; `VECTOR' Guard Predicates
 (defun valid-vector-dimensions-p (dimensions)
-  ;; TODO: refactor into separate file
+; TODO: refactor into separate file
   (declare (xargs :guard t))
   (or (and (consp dimensions)
            (natp (car dimensions))
@@ -47,7 +47,7 @@
       (natp dimensions)))
 
 (defthm valid-vector-dimensions-p{compound-recognizer}
-  ;; Q: Is this theorem useful?
+; TODO: Is this theorem useful?
   (implies (valid-vector-dimensions-p dimensions)
            (or (natp dimensions)
                (and (consp dimensions)

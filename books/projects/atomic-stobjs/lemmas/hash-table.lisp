@@ -28,6 +28,7 @@
 
 
 (in-package "DEFINE-HASH-TABLE")
+(set-verify-guards-eagerness 2)
 
 (include-book "total-order")
 (include-book "omaps")

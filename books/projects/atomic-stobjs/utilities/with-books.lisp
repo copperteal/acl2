@@ -28,6 +28,7 @@
 
 
 (in-package "ACL2")
+(set-verify-guards-eagerness 2)
 
 (include-book "xdoc/top" :dir :system)
 
