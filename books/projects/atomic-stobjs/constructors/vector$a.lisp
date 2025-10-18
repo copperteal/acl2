@@ -219,7 +219,7 @@
                 (resizer-of-length (symbolicate vector resizer '-of- length))
                 (resizer-of-length-free (symbolicate vector resizer-of-length '-free))
                 (resizer-of-resizer (symbolicate vector resizer '-of- resizer))
-                (resizer-of-resizer{forced} (symbolicate vector resizer-of-resizer '{forced}))
+                (resizer-of-resizer{case-split} (symbolicate vector resizer-of-resizer '{case-split}))
                 (resizer-of-updater (symbolicate vector resizer '-of- updater))
                 (resizer-of-updater-keep (symbolicate vector resizer-of-updater '-keep))
                 (resizer-of-updater-drop (symbolicate vector resizer-of-updater '-drop))
@@ -233,6 +233,7 @@
                 (accessor-of-nfix (symbolicate vector accessor '-of-nfix))
                 (accessor-of-fixer (symbolicate vector accessor '-of- fixer))
                 (accessor-of-resizer (symbolicate vector accessor '-of- resizer))
+                (accessor-of-resizer{case-split} (symbolicate vector accessor-of-resizer '{case-split}))
                 (accessor-of-updater (symbolicate vector accessor '-of- updater))
                 (accessor-of-updater-same (symbolicate vector accessor-of-updater '-same))
                 (accessor-of-updater-diff (symbolicate vector accessor-of-updater '-diff))
@@ -259,6 +260,7 @@
                                               updater-of-element-fixer))
                 (updater-of-fixer (symbolicate vector updater '-of- fixer))
                 (updater-of-resizer (symbolicate vector updater '-of- resizer))
+                (updater-of-resizer{case-split} (symbolicate vector updater-of-resizer '{case-split}))
                 (updater-of-accessor (symbolicate vector updater '-of- accessor))
                 (updater-of-accessor-free (symbolicate vector updater-of-accessor '-free))
                 (updater-of-updater (symbolicate vector updater '-of- updater))
@@ -299,7 +301,8 @@
                       '(,vector-contents-equal)))
 
                    (deftheory-static ,vector-aggressive
-                     ',(append (list accessor-when-large
+                     ',(append (list fixer
+                                     accessor-when-large
                                      accessor-when-not-natp
                                      accessor-when-not-recognizer
                                      accessor-of-updater
@@ -313,8 +316,10 @@
                                           resizer-when-not-natp
                                           resizer-when-not-recognizer
                                           resizer-of-length-free
-                                          resizer-of-resizer{forced}
-                                          resizer-of-updater))
+                                          resizer-of-resizer{case-split}
+                                          resizer-of-updater
+                                          accessor-of-resizer{case-split}
+                                          updater-of-resizer{case-split}))
                                (and element-recognizer
                                     (list updater-when-not-element-recognizer))))
 
@@ -374,6 +379,8 @@
 
                 (body
                  `(with-books (("projects/atomic-stobjs/lemmas/vector$a" :dir :system))
+; Fixed-length vectors with specialized elements need a predicate to check
+; element-wise validity.
                     ,@(and (not resizable)
                            element-recognizer
                            `((defun ,recognizer-aux (,vector)
@@ -403,6 +410,7 @@
                       (make-list ,default-length-name
                                  :initial-element ,initial-element))
 
+; We don't want to frequently allocate large list literals in proofs.
                     (in-theory
                       (disable (:e ,creator)))
 
@@ -563,6 +571,9 @@
                                   'lem-vector$a::fixer/fixed{type-prescription})
                              ,@fi-bindings))))
 
+; While the fixer is disabled by default, it is enabled in the aggressive
+; theory.  You can see from its definition that this does not break abstraction.
+
                     (defthm ,fixer-when-recognizer
                       (implies (,recognizer ,vector)
                                (equal (,fixer ,vector)
@@ -598,6 +609,11 @@
                                   'lem-vector$a::length/resizable{type-prescription}
                                   'lem-vector$a::length/fixed{type-prescription})
                              ,@fi-bindings))))
+
+; Resizable vector length is characterized by a short list of composition
+; identities.
+;
+; Non-resizable vector length is characterized entirely by `LENGTH{REWRITE}'.
 
                     ,@(if resizable
                           `((defthmd ,length-when-not-recognizer
@@ -666,6 +682,12 @@
                                   'lem-vector$a::resizer/resizable{type-prescription}
                                   'lem-vector$a::resizer/fixed{type-prescription})
                              ,@fi-bindings))))
+
+
+; Resizable vector resizer is characterized by a short list of composition
+; identities.
+;
+; Non-resizable vector resizer is characterized entirely by `RESIZER{REWRITE}'.
 
                     ,@(if resizable
                           `((defthmd ,resizer-when-not-natp
@@ -736,6 +758,10 @@
                                      ,@fi-bindings))))
 
                             (defthm ,resizer-of-resizer
+; If you resize a vector and then shrink it, the result is equivalent to a
+; single resize.  If you extend a vector and then resize it, the result is
+; equivalent to a single resize. If you shrink a vector and then extend it, this
+; is not equivalent to a single resize.
                               (implies (or (<= (nfix length) (nfix %length))
                                            (<= (,length ,vector) (nfix %length)))
                                        (equal (,resizer length (,resizer %length ,vector))
@@ -746,18 +772,15 @@
                                      lem-vector$a::resizer/resizable-of-resizer/resizable
                                      ,@fi-bindings))))
 
-                            (defthmd ,resizer-of-resizer{forced}
+                            (defthmd ,resizer-of-resizer{case-split}
                               (implies (or (<= (nfix length) (nfix %length))
                                            (<= (,length ,vector) (nfix %length)))
                                        (equal (,resizer length (,resizer %length ,vector))
                                               (,resizer length ,vector)))
                               :rule-classes
                               ((:rewrite :corollary
-                                         ;; NOTE: The only way this forcing
-                                         ;; fails is if you shrink a vector and
-                                         ;; then grow it again.
-                                         (implies (force (or (<= (nfix length) (nfix %length))
-                                                             (<= (,length ,vector) (nfix %length))))
+                                         (implies (case-split (or (<= (nfix length) (nfix %length))
+                                                                  (<= (,length ,vector) (nfix %length))))
                                                   (equal (,resizer length (,resizer %length ,vector))
                                                          (,resizer length ,vector)))))
                               :hints
@@ -765,12 +788,18 @@
                                 :by ,resizer-of-resizer)))
 
                             (defthmd ,resizer-of-updater
-                              ;; TODO: case-split?
                               (implies (< (nfix ,index) (,length ,vector))
                                        (equal (,resizer length (,updater ,index ,element ,vector))
                                               (if (< (nfix ,index) (nfix length))
                                                   (,updater ,index ,element (,resizer length ,vector))
                                                   (,resizer length ,vector))))
+                              :rule-classes
+                              ((:rewrite :corollary
+                                         (implies (case-split (< (nfix ,index) (,length ,vector)))
+                                                  (equal (,resizer length (,updater ,index ,element ,vector))
+                                                         (if (< (nfix ,index) (nfix length))
+                                                             (,updater ,index ,element (,resizer length ,vector))
+                                                             (,resizer length ,vector))))))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -778,7 +807,6 @@
                                      ,@fi-bindings))))
 
                             (defthm ,resizer-of-updater-keep
-                              ;; TODO: case-split?
                               (implies (and (< (nfix ,index) (,length ,vector))
                                             (< (nfix ,index) (nfix length)))
                                        (equal (,resizer length (,updater ,index ,element ,vector))
@@ -790,7 +818,6 @@
                                      ,@fi-bindings))))
 
                             (defthm ,resizer-of-updater-drop
-                              ;; TODO: case-split?
                               (implies (and (< (nfix ,index) (,length ,vector))
                                             (<= (nfix length) (nfix ,index)))
                                        (equal (,resizer length (,updater ,index ,element ,vector))
@@ -887,7 +914,6 @@
                              ,@fi-bindings))))
 
                     (defthm ,accessor-of-fixer
-                      ;; TODO: case-split?
                       (equal (,accessor ,index (,fixer ,vector))
                              (,accessor ,index ,vector))
                       :hints
@@ -900,7 +926,6 @@
 
                     ,@(and resizable
                            `((defthm ,accessor-of-resizer
-                               ;; TODO: case-split? and others
                                (implies (< (nfix ,index) (nfix length))
                                         (equal (,accessor ,index (,resizer length ,vector))
                                                (,accessor ,index ,vector)))
@@ -910,7 +935,20 @@
                                       ,(if resizable
                                            'lem-vector$a::accessor/resizable-of-resizer/resizable
                                            'lem-vector$a::accessor/fixed-of-resizer/fixed)
-                                      ,@fi-bindings))))))
+                                      ,@fi-bindings))))
+
+                             (defthmd ,accessor-of-resizer{case-split}
+                               (implies (< (nfix ,index) (nfix length))
+                                        (equal (,accessor ,index (,resizer length ,vector))
+                                               (,accessor ,index ,vector)))
+                               :rule-classes
+                               ((:rewrite :corollary
+                                          (implies (case-split (< (nfix ,index) (nfix length)))
+                                                   (equal (,accessor ,index (,resizer length ,vector))
+                                                          (,accessor ,index ,vector)))))
+                               :hints
+                               (("Goal"
+                                 :by ,accessor-of-resizer)))))
 
                     (defthmd ,accessor-of-updater
                       (implies (< (nfix ,index)
@@ -923,6 +961,18 @@
                                                `(,element-fixer ,element)
                                                element)
                                           (,accessor ,index ,vector))))
+                      :rule-classes
+                      ((:rewrite :corollary
+                                 (implies (case-split (< (nfix ,index)
+                                                         ,(if resizable
+                                                              `(,length ,vector)
+                                                              default-length-name)))
+                                          (equal (,accessor ,index (,updater ,%index ,element ,vector))
+                                                 (if (equal (nfix ,index) (nfix ,%index))
+                                                     ,(if element-fixer
+                                                          `(,element-fixer ,element)
+                                                          element)
+                                                     (,accessor ,index ,vector))))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1030,14 +1080,10 @@
                              ,@fi-bindings))))
 
                     (defthm ,updater-of-creator
-                      (implies (and (< (nfix ,index)
-                                       ,default-length-name)
-                                    (equal ,(if element-fixer
-                                                `(,element-fixer ,element)
-                                                element)
-                                           ,initial-element))
-                               ;; TODO: let user set ,index variable and ,%index
-                               ;; and %element.
+                      (implies (equal ,(if element-fixer
+                                           `(,element-fixer ,element)
+                                           element)
+                                      ,initial-element)
                                (equal (,updater ,index ,element (,creator))
                                       (,creator)))
                       :hints
@@ -1098,7 +1144,29 @@
                                       ,(if resizable
                                            'lem-vector$a::updater/resizable-of-resizer/resizable
                                            'lem-vector$a::updater/fixed-of-resizer/fixed)
-                                      ,@fi-bindings))))))
+                                      ,@fi-bindings))))
+
+                             (defthmd ,updater-of-resizer{case-split}
+                               (implies (and (< (nfix ,index)
+                                                (nfix length))
+                                             (equal ,(if element-fixer
+                                                         `(,element-fixer ,element)
+                                                         element)
+                                                    (,accessor ,index ,vector)))
+                                        (equal (,updater ,index ,element (,resizer length ,vector))
+                                               (,resizer length ,vector)))
+                               :rule-classes
+                               ((:rewrite :corollary
+                                          (implies (and (case-split (< (nfix ,index) (nfix length)))
+                                                        (equal ,(if element-fixer
+                                                                    `(,element-fixer ,element)
+                                                                    element)
+                                                               (,accessor ,index ,vector)))
+                                                   (equal (,updater ,index ,element (,resizer length ,vector))
+                                                          (,resizer length ,vector)))))
+                               :hints
+                               (("Goal"
+                                 :by ,updater-of-resizer)))))
 
                     (defthmd ,updater-of-accessor-free
                       (implies (equal ,(if element-fixer
@@ -1191,6 +1259,10 @@
                                   `((= (,length ,%vector)
                                        (,length ,vector))))
                            (,vector-contents-equal ,%vector ,vector)))
+
+; If you pass an instance of `VECTOR-EQUAL' in a `USE' hint, then
+; `VECTOR-EQUAL{FORWARD-CHAINING}' ensures true equality is proven if both
+; arguments are vectors of the same length with the same elements.
 
                     (defthm ,vector-equal{forward-chaining}
                       (implies (,vector-equal ,%vector ,vector)
