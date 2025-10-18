@@ -632,8 +632,7 @@
                   (updater/resizable index value (creator)))))
 
 (defthm updater/resizable-of-creator
-  (implies (and (< (nfix index) (default-length))
-                (equal (element-fixer value) (initial-element)))
+  (implies (equal (element-fixer value) (initial-element))
            (equal (updater/resizable index value (creator))
                   (creator))))
 
@@ -761,8 +760,7 @@
                   (updater/fixed index value (creator)))))
 
 (defthm updater/fixed-of-creator
-  (implies (and (< (nfix index) (default-length))
-                (equal (element-fixer value) (initial-element)))
+  (implies (equal (element-fixer value) (initial-element))
            (equal (updater/fixed index value (creator))
                   (creator))))
 
