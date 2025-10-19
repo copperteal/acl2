@@ -77,17 +77,22 @@
 (defun recognizer/resizable (vector)
   (declare (xargs :guard t))
   (and (true-listp vector)
-       (= (cl:length vector) 1)
+       (= (cl::length vector) 1)
        (contents-recognizer (nth 0 vector))
        t))
 
 (defun recognizer/fixed (vector)
   (declare (xargs :guard t))
   (and (true-listp vector)
-       (= (cl:length vector) 1)
+       (= (cl::length vector) 1)
        (contents-recognizer (nth 0 vector))
        (equal (len (nth 0 vector)) (default-length))
        t))
+
+(defun creator ()
+  (declare (xargs :guard t))
+  (list (make-list (default-length)
+                   :initial-element (initial-element))))
 
 (defun length/resizable (vector)
   (declare (xargs :guard (recognizer/resizable vector)))
@@ -112,11 +117,6 @@
                               (recognizer/fixed vector)))
            (ignore length))
   vector)
-
-(defun creator ()
-  (declare (xargs :guard t))
-  (list (make-list (default-length)
-                   :initial-element (initial-element))))
 
 (defun accessor (index vector)
   (declare (xargs :guard (and (recognizer/resizable vector)
@@ -264,8 +264,8 @@
 ;;;; `RESIZER/RESIZABLE'
 (defthm resizer/resizable{type-prescription}
   (implies (recognizer/resizable vector)
-           (and (true-listp (resizer/resizable length vector))
-                (consp (resizer/resizable length vector))))
+           (and (consp (resizer/resizable length vector))
+                (true-listp (resizer/resizable length vector))))
   :rule-classes :type-prescription)
 
 (with-books (("std/lists/repeat" :dir :system))
@@ -332,8 +332,8 @@
 ;;;; `RESIZER/FIXED'
 (defthm resizer/fixed{type-prescription}
   (implies (recognizer/fixed vector)
-           (and (true-listp (resizer/fixed length vector))
-                (consp (resizer/fixed length vector))))
+           (and (consp (resizer/fixed length vector))
+                (true-listp (resizer/fixed length vector))))
   :rule-classes :type-prescription)
 
 (defthm resizer/fixed{rewrite}
@@ -422,14 +422,14 @@
 ;;;; `UPDATER'
 (defthm updater{type-prescription}/resizable
   (implies (recognizer/resizable vector)
-           (and (true-listp (updater index value vector))
-                (consp (updater index value vector))))
+           (and (consp (updater index value vector))
+                (true-listp (updater index value vector))))
   :rule-classes :type-prescription)
 
 (defthm updater{type-prescription}/fixed
   (implies (recognizer/fixed vector)
-           (and (true-listp (updater index value vector))
-                (consp (updater index value vector))))
+           (and (consp (updater index value vector))
+                (true-listp (updater index value vector))))
   :rule-classes :type-prescription)
 
 (defthm updater-of-creator
@@ -520,6 +520,8 @@
                   (natp index1))
              (equal (updater index0 value0 (updater index1 value1 vector))
                     (updater index1 value1 (updater index0 value0 vector))))
+    :rule-classes
+    ((:rewrite :loop-stopper ((index0 index1 updater))))
     :hints
     (("Goal"
       :in-theory (disable acl2::update-nth-of-update-nth-diff)
@@ -531,7 +533,7 @@
                        (x (car vector))))))))
 
 
-;;;; `FIXER'
+;;;; `FIXER/RESIZABLE'
 (defun fixer/resizable (vector)
   (declare (xargs :guard (recognizer/resizable vector)))
   (if (recognizer/resizable vector)
@@ -539,10 +541,25 @@
       (creator)))
 
 (defthm fixer/resizable{type-prescription}
-  (and (true-listp (fixer/resizable vector))
-       (consp (fixer/resizable vector)))
+  (and (consp (fixer/resizable vector))
+       (true-listp (fixer/resizable vector)))
   :rule-classes :type-prescription)
 
+(defthm recognizer/resizable-of-fixer/resizable
+  (recognizer/resizable (fixer/resizable vector)))
+
+(defthm fixer/resizable-when-recognizer/resizable
+  (implies (recognizer/resizable vector)
+           (equal (fixer/resizable vector)
+                  vector)))
+
+(defthm fixer/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (equal (fixer/resizable vector)
+                  (creator))))
+
+
+;;;; `FIXER/FIXED'
 (defun fixer/fixed (vector)
   (declare (xargs :guard (recognizer/fixed vector)))
   (if (recognizer/fixed vector)
@@ -550,30 +567,17 @@
       (creator)))
 
 (defthm fixer/fixed{type-prescription}
-  (and (true-listp (fixer/fixed vector))
-       (consp (fixer/fixed vector)))
+  (and (consp (fixer/fixed vector))
+       (true-listp (fixer/fixed vector)))
   :rule-classes :type-prescription)
-
-(defthm recognizer/resizable-of-fixer/resizable
-  (recognizer/resizable (fixer/resizable vector)))
 
 (defthm recognizer/fixed-of-fixer/fixed
   (recognizer/fixed (fixer/fixed vector)))
-
-(defthm fixer/resizable-when-recognizer/resizable
-  (implies (recognizer/resizable vector)
-           (equal (fixer/resizable vector)
-                  vector)))
 
 (defthm fixer/fixed-when-recognizer/fixed
   (implies (recognizer/fixed vector)
            (equal (fixer/fixed vector)
                   vector)))
-
-(defthm fixer/resizable-when-not-recognizer/resizable
-  (implies (not (recognizer/resizable vector))
-           (equal (fixer/resizable vector)
-                  (creator))))
 
 (defthm fixer/fixed-when-not-recognizer/fixed
   (implies (not (recognizer/fixed vector))
