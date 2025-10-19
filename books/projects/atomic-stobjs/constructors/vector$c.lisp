@@ -466,8 +466,8 @@
                     ;; `RESIZER'
                     (defthm ,resizer{type-prescription}
                       (implies (,recognizer ,vector)
-                               (and (true-listp (,resizer length ,vector))
-                                    (consp (,resizer length ,vector))))
+                               (and (consp (,resizer length ,vector))
+                                    (true-listp (,resizer length ,vector))))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -698,8 +698,8 @@
                     ;; `UPDATER'
                     (defthm ,updater{type-prescription}
                       (implies (,recognizer ,vector)
-                               (and (true-listp (,updater index value ,vector))
-                                    (consp (,updater index value ,vector))))
+                               (and (consp (,updater index value ,vector))
+                                    (true-listp (,updater index value ,vector))))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
@@ -841,8 +841,8 @@
                     (table fixer ',vector ',fixer)
 
                     (defthm ,fixer{type-prescription}
-                      (and (true-listp (,fixer ,vector))
-                           (consp (,fixer ,vector)))
+                      (and (consp (,fixer ,vector))
+                           (true-listp (,fixer ,vector)))
                       :rule-classes :type-prescription
                       :hints
                       (("Goal"
