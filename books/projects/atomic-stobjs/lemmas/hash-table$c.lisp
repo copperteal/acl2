@@ -700,6 +700,12 @@
   (declare (xargs :guard (recognizer/copyable hash-table)))
   (%clear (keys-set '() (fixer/copyable hash-table))))
 
+(defthm clear{type-prescription}
+  (implies (recognizer/copyable hash-table)
+           (and (consp (clear hash-table))
+                (true-listp (clear hash-table))))
+  :rule-classes :type-prescription)
+
 (with-books (("std/lists/len" :dir :system)
              ("std/lists/update-nth" :dir :system))
   (defthm clear{rewrite}
@@ -722,6 +728,12 @@
                                   (not rehash-threshold)))))
   (%init ht-size rehash-size rehash-threshold
          (keys-set '() (fixer/copyable hash-table))))
+
+(defthm init{type-prescription}
+  (implies (recognizer/copyable hash-table)
+           (and (consp (init ht-size rehash-size rehash-threshold hash-table))
+                (true-listp (init ht-size rehash-size rehash-threshold hash-table))))
+  :rule-classes :type-prescription)
 
 (with-books (("std/lists/len" :dir :system)
              ("std/lists/update-nth" :dir :system))

@@ -155,7 +155,7 @@
                                 `((,updater-stobj-default ,updater))))))
 
     `(with-output
-; TODO: Refactor `WITH-OUTPUT' options.
+; TODO: Refactor `WITH-OUTPUT' options.  Do for all constructors.
        ,@(and (not debug)
               '#!acl2(:off (warning! observation prove event history proof-tree)
                            :summary-off (rules)
