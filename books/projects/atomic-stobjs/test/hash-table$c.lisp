@@ -27,16 +27,10 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-;;; test, element-type, default-element
-
-
 (in-package "ACL2")
 
-(include-book "../constructors/copy")
 (include-book "../constructors/hash-table$c")
 
-
-;;;; No Keyword Arguments
 (atomic-stobjs::define-hash-table$c ht$c/nargs-eq eq)
 (atomic-stobjs::define-hash-table$c ht$c/nargs-eq-nil eq
   :copyable nil)
@@ -51,62 +45,12 @@
   :copyable nil)
 
 
-;;;; Stobj Values
+;;;; Stobj Valued
 (defstobj foo$c
   a
   :inline t
   :non-memoizable t
   :non-executable t)
-
-(defstobj %foo$c
-  %a
-  :congruent-to foo$c
-  :inline t
-  :non-memoizable t
-  :non-executable t)
-
-(defun foo$c-fix (foo$c)
-  (declare (xargs :stobjs foo$c))
-  (mbe :logic (if (foo$cp foo$c)
-                  foo$c
-                  (create-foo$c))
-       :exec foo$c))
-
-(defthm foo$c-fix{rewrite}
-  (equal (foo$c-fix foo$c)
-         (if (foo$cp foo$c)
-             foo$c
-             (create-foo$c))))
-
-(defun foo$c-copy (%foo$c foo$c)
-  (declare (xargs :stobjs (%foo$c foo$c)))
-  (let* ((%foo$c (foo$c-fix %foo$c))
-         (%foo$c (update-%a (a foo$c) %foo$c)))
-    %foo$c))
-
-(defthm foo$c-copy{rewrite}
-  (implies (foo$cp foo$c)
-           (equal (foo$c-copy %foo$c foo$c)
-                  foo$c)))
-
-(table atomic-stobjs::stobj-copier
-       'atomic-stobjs::stobj-copier-alist
-       (putprop 'foo$c
-                'atomic-stobjs::copier
-                'foo$c-copy
-                (atomic-stobjs::stobj-copier-alist world)))
-
-(defthm foo$cp-of-create-foo$c
-  (foo$cp (create-foo$c)))
-
-(in-theory
-  (disable (:d create-foo$c)
-           (:e create-foo$c)
-           (:d create-%foo$c)
-           (:e create-%foo$c)
-           foo$c-copy
-           foo$cp
-           foo$c-fix))
 
 (atomic-stobjs::define-hash-table$c ht$c/eql-foo$c eql
   :element-type foo$c)
@@ -117,60 +61,60 @@
 
 
 ;;;; type t
-(atomic-stobjs::define-hash-table$c ht$c/he-t-t hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/t-0 hons-equal
   :element-type t
   :default-value t)
 
-(atomic-stobjs::define-hash-table$c ht$c/he-t-nil hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/t-1 hons-equal
   :element-type t
   :default-value nil)
 
-(atomic-stobjs::define-hash-table$c ht$c/he-t-t-nil hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/t-2 hons-equal
   :element-type t
   :default-value t
   :copyable nil)
 
-(atomic-stobjs::define-hash-table$c ht$c/he-t-nil-nil hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/t-3 hons-equal
   :element-type t
   :default-value nil
   :copyable nil)
 
 
-;;;; type including nil
-(atomic-stobjs::define-hash-table$c ht$c/he-|(MEMBER T NIL)|-t hons-equal
+;;;; type boolean
+(atomic-stobjs::define-hash-table$c ht$c/bool-0 hons-equal
   :element-type (member t nil)
   :default-value t)
 
-(atomic-stobjs::define-hash-table$c ht$c/he-|(MEMBER T NIL)|-nil hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/bool-1 hons-equal
   :element-type (member t nil)
   :default-value nil)
 
-(atomic-stobjs::define-hash-table$c ht$c/he-|(MEMBER T NIL)|-t-nil hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/bool-2 hons-equal
   :element-type (member t nil)
   :default-value t
   :copyable nil)
 
-(atomic-stobjs::define-hash-table$c ht$c/he-|(MEMBER T NIL)|-nil-nil hons-equal
+(atomic-stobjs::define-hash-table$c ht$c/bool-3 hons-equal
   :element-type (member t nil)
   :default-value nil
   :copyable nil)
 
 
-;;;; type not including nil
-(atomic-stobjs::define-hash-table$c ht$c/eq-unsigned-byte-0 eq
+;;;; type (un)signed-byte
+(atomic-stobjs::define-hash-table$c ht$c/unsigned-byte-0 eq
   :element-type unsigned-byte
   :default-value 0)
 
-(atomic-stobjs::define-hash-table$c ht$c/eq-signed-byte--1 eq
+(atomic-stobjs::define-hash-table$c ht$c/signed-byte-1 eq
   :element-type signed-byte
   :default-value -1)
 
-(atomic-stobjs::define-hash-table$c ht$c/eq-unsigned-byte-0-nil eq
+(atomic-stobjs::define-hash-table$c ht$c/unsigned-byte-2 eq
   :element-type unsigned-byte
   :default-value 0
   :copyable nil)
 
-(atomic-stobjs::define-hash-table$c ht$c/eq-signed-byte--1-nil eq
+(atomic-stobjs::define-hash-table$c ht$c/signed-byte-3 eq
   :element-type signed-byte
   :default-value -1
   :copyable nil)
