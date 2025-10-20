@@ -70,7 +70,7 @@
 
   (local
     (defun element-fixer (value)
-      (declare (xargs :guard t))
+      (declare (xargs :guard (element-recognizer value)))
       (if (element-recognizer value)
           value
           (initial-element))))
