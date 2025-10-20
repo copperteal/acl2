@@ -1238,43 +1238,43 @@
                              ,@fi-bindings))))
 
                     ;; `VECTOR-EQUAL'
-                    (defun-sk ,vector-contents-equal (,%vector ,vector)
-                      (declare (xargs :guard (and (,recognizer ,%vector)
-                                                  (,recognizer ,vector))
+                    (defun-sk ,vector-contents-equal (,vector ,%vector)
+                      (declare (xargs :guard (and (,recognizer ,vector)
+                                                  (,recognizer ,%vector))
                                       :verify-guards nil))
                       (forall ,index
                         (implies (and (natp ,index)
-                                      (< ,index (,length ,%vector))
-                                      (< ,index (,length ,vector)))
-                                 (equal (,accessor ,index ,%vector)
-                                        (,accessor ,index ,vector))))
+                                      (< ,index (,length ,vector))
+                                      (< ,index (,length ,%vector)))
+                                 (equal (,accessor ,index ,vector)
+                                        (,accessor ,index ,%vector))))
                       :rewrite :direct)
 
-                    (defun-nx ,vector-equal (,%vector ,vector)
-                      (declare (xargs :guard (and (,recognizer ,%vector)
-                                                  (,recognizer ,vector))
+                    (defun-nx ,vector-equal (,vector ,%vector)
+                      (declare (xargs :guard (and (,recognizer ,vector)
+                                                  (,recognizer ,%vector))
                                       :verify-guards nil))
-                      (and (,recognizer ,%vector)
-                           (,recognizer ,vector)
+                      (and (,recognizer ,vector)
+                           (,recognizer ,%vector)
                            ,@(and resizable
-                                  `((= (,length ,%vector)
-                                       (,length ,vector))))
-                           (,vector-contents-equal ,%vector ,vector)))
+                                  `((= (,length ,vector)
+                                       (,length ,%vector))))
+                           (,vector-contents-equal ,vector ,%vector)))
 
 ; If you pass an instance of `VECTOR-EQUAL' in a `USE' hint, then
 ; `VECTOR-EQUAL{FORWARD-CHAINING}' ensures true equality is proven if both
 ; arguments are vectors of the same length with the same elements.
 
                     (defthm ,vector-equal{forward-chaining}
-                      (implies (,vector-equal ,%vector ,vector)
-                               (equal ,%vector ,vector))
+                      (implies (,vector-equal ,vector ,%vector)
+                               (equal ,vector ,%vector))
                       :rule-classes
                       ((:forward-chaining :trigger-terms
-                                          ((,vector-equal ,%vector ,vector))
+                                          ((,vector-equal ,vector ,%vector))
                                           :corollary
                                           (implies t
-                                                   (implies (,vector-equal ,%vector ,vector)
-                                                            (equal ,%vector ,vector)))))
+                                                   (implies (,vector-equal ,vector ,%vector)
+                                                            (equal ,vector ,%vector)))))
                       :hints
                       (("Goal"
                         :in-theory (disable ,recognizer
@@ -1291,12 +1291,12 @@
                              ,@fi-bindings-with-skolem))
                        ("Subgoal 2"
                         :use ((:instance ,vector-contents-equal-necc
-                                         (,%vector lem-vector$a::%vector)
                                          (,vector lem-vector$a::vector)
+                                         (,%vector lem-vector$a::%vector)
                                          (,index lem-vector$a::index))))
                        ("Subgoal 1"
-                        :expand (:free (,%vector ,vector)
-                                       (,vector-contents-equal ,%vector ,vector)))))))
+                        :expand (:free (,vector ,%vector)
+                                       (,vector-contents-equal ,vector ,%vector)))))))
 
 ; TODO: Compare `STOBJ$A-PROPERTY' with `STOBJ-PROPERTY' and `ABSSTOBJ-INFO' to
 ; see if there's a more intuitive layout.  Also compare with frame and
