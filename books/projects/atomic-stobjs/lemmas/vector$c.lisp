@@ -287,20 +287,20 @@
 
 (with-books (("std/lists/resize-list" :dir :system))
   (defthm resizer/resizable-of-resizer/resizable
-    (implies (and (natp length0)
-                  (natp length1)
-                  (or (<= length0 length1)
-                      (<= (length/resizable vector) length1))
+    (implies (and (natp %length)
+                  (natp length)
+                  (or (<= %length length)
+                      (<= (length/resizable vector) length))
                   (recognizer/resizable vector))
-             (equal (resizer/resizable length0 (resizer/resizable length1 vector))
-                    (resizer/resizable length0 vector)))
+             (equal (resizer/resizable %length (resizer/resizable length vector))
+                    (resizer/resizable %length vector)))
     :hints
     (("Goal"
       :use ((:instance acl2::resize-list-of-resize-list
                        (lst (car vector))
-                       (n length1)
+                       (n length)
                        (d (initial-element))
-                       (m length0)
+                       (m %length)
                        (e (initial-element))))))))
 
 (defthm resizer/resizable-of-updater-keep
@@ -399,24 +399,24 @@
     :use (:instance accessor-of-resizer/resizable-inner))))
 
 (defthm accessor-of-updater-same
-  (implies (equal index0 index1)
-           (equal (accessor index0 (updater index1 value vector))
+  (implies (equal %index index)
+           (equal (accessor %index (updater index value vector))
                   value)))
 
 (defthm accessor-of-updater-diff
-  (implies (and (not (equal index0 index1))
-                (natp index0)
-                (natp index1))
-           (equal (accessor index0 (updater index1 value vector))
-                  (accessor index0 vector))))
+  (implies (and (not (equal %index index))
+                (natp %index)
+                (natp index))
+           (equal (accessor %index (updater index value vector))
+                  (accessor %index vector))))
 
 (defthm accessor-of-updater
-  (implies (and (natp index0)
-                (natp index1))
-           (equal (accessor index0 (updater index1 value vector))
-                  (if (equal index0 index1)
+  (implies (and (natp %index)
+                (natp index))
+           (equal (accessor %index (updater index value vector))
+                  (if (equal %index index)
                       value
-                      (accessor index0 vector)))))
+                      (accessor %index vector)))))
 
 
 ;;;; `UPDATER'
@@ -486,50 +486,50 @@
                     vector)))
 
   (defthm updater-of-accessor/resizable
-    (implies (and (equal index0 index1)
-                  (natp index0)
-                  (< index0 (length/resizable vector))
+    (implies (and (equal %index index)
+                  (natp %index)
+                  (< %index (length/resizable vector))
                   (recognizer/resizable vector))
-             (equal (updater index0 (accessor index1 vector) vector)
+             (equal (updater %index (accessor index vector) vector)
                     vector)))
 
   (defthm updater-of-accessor/fixed
-    (implies (and (equal index0 index1)
-                  (natp index0)
-                  (< index0 (default-length))
+    (implies (and (equal %index index)
+                  (natp %index)
+                  (< %index (default-length))
                   (recognizer/fixed vector))
-             (equal (updater index0 (accessor index1 vector) vector)
+             (equal (updater %index (accessor index vector) vector)
                     vector)))
 
   (defthm updater-of-updater-same
-    (implies (equal index0 index1)
-             (equal (updater index0 value0 (updater index1 value1 vector))
-                    (updater index0 value0 vector)))
+    (implies (equal %index index)
+             (equal (updater %index %value (updater index value vector))
+                    (updater %index %value vector)))
     :hints
     (("Goal"
       :in-theory (disable acl2::update-nth-of-update-nth-same)
       :use ((:instance acl2::update-nth-of-update-nth-same
-                       (n index0)
-                       (v1 value0)
-                       (v2 value1)
+                       (n %index)
+                       (v1 %value)
+                       (v2 value)
                        (x (car vector)))))))
 
   (defthm updater-of-updater-diff
-    (implies (and (not (equal index0 index1))
-                  (natp index0)
-                  (natp index1))
-             (equal (updater index0 value0 (updater index1 value1 vector))
-                    (updater index1 value1 (updater index0 value0 vector))))
+    (implies (and (not (equal %index index))
+                  (natp %index)
+                  (natp index))
+             (equal (updater %index %value (updater index value vector))
+                    (updater index value (updater %index %value vector))))
     :rule-classes
-    ((:rewrite :loop-stopper ((index0 index1 updater))))
+    ((:rewrite :loop-stopper ((%index index updater))))
     :hints
     (("Goal"
       :in-theory (disable acl2::update-nth-of-update-nth-diff)
       :use ((:instance acl2::update-nth-of-update-nth-diff
-                       (n1 index0)
-                       (n2 index1)
-                       (v1 value0)
-                       (v2 value1)
+                       (n1 %index)
+                       (n2 index)
+                       (v1 %value)
+                       (v2 value)
                        (x (car vector))))))))
 
 

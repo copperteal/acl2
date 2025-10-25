@@ -746,40 +746,40 @@
       :expand (accessor/unique key (omap::update key val hash-table))))))
 
 (defthm accessor/unique-of-updater/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (accessor/unique key0 (updater/unique key1 val hash-table))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (accessor/unique %key (updater/unique key val hash-table))
                   (val-fixer val))))
 
 (local
   (defthm accessor/unique-of-update-diff
-    (implies (and (key-recognizer key0)
-                  (key-recognizer key1)
-                  (not (equal key0 key1))
+    (implies (and (key-recognizer %key)
+                  (key-recognizer key)
+                  (not (equal %key key))
                   (val-recognizer val)
                   (recognizer/unique hash-table))
-             (equal (accessor/unique key0 (omap::update key1 val hash-table))
-                    (accessor/unique key0 hash-table)))
+             (equal (accessor/unique %key (omap::update key val hash-table))
+                    (accessor/unique %key hash-table)))
     :hints
     (("Goal"
       :in-theory (disable omap::assoc-of-update
                           omap::use-weak-update-induction
                           omap::weak-update-induction))
      ("Subgoal *1/6"
-      :expand (accessor/unique key0 (omap::update key1 val hash-table))))))
+      :expand (accessor/unique %key (omap::update key val hash-table))))))
 
 (defthm accessor/unique-of-updater/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (accessor/unique key0 (updater/unique key1 val hash-table))
-                  (accessor/unique key0 hash-table))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (accessor/unique %key (updater/unique key val hash-table))
+                  (accessor/unique %key hash-table))))
 
 (defthm accessor/unique-of-updater/unique
-  (equal (accessor/unique key0 (updater/unique key1 val hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
+  (equal (accessor/unique %key (updater/unique key val hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
              (val-fixer val)
-             (accessor/unique key0 hash-table)))
+             (accessor/unique %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by accessor/unique-of-updater/unique-diff)
    ("Subgoal 1"
@@ -791,23 +791,23 @@
                   (default-val))))
 
 (defthm accessor/unique-of-remover/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (accessor/unique key0 (remover/unique key1 hash-table))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (accessor/unique %key (remover/unique key hash-table))
                   (default-val))))
 
 (defthm accessor/unique-of-remover/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (accessor/unique key0 (remover/unique key1 hash-table))
-                  (accessor/unique key0 hash-table))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (accessor/unique %key (remover/unique key hash-table))
+                  (accessor/unique %key hash-table))))
 
 (defthm accessor/unique-of-remover/unique
-  (equal (accessor/unique key0 (remover/unique key1 hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
+  (equal (accessor/unique %key (remover/unique key hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
              (default-val)
-             (accessor/unique key0 hash-table)))
+             (accessor/unique %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by accessor/unique-of-remover/unique-diff)
    ("Subgoal 1"
@@ -850,20 +850,20 @@
            (accessor/copyable key hash-table)))
 
   (defthm accessor/copyable-of-updater/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (accessor/copyable key0 (updater/copyable key1 val hash-table))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (accessor/copyable %key (updater/copyable key val hash-table))
                     (val-fixer val))))
 
   (defthm accessor/copyable-of-updater/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (accessor/copyable key0 (updater/copyable key1 val hash-table))
-                    (accessor/copyable key0 hash-table))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (accessor/copyable %key (updater/copyable key val hash-table))
+                    (accessor/copyable %key hash-table))))
 
   (defthm accessor/copyable-of-updater/copyable
-    (equal (accessor/copyable key0 (updater/copyable key1 val hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
+    (equal (accessor/copyable %key (updater/copyable key val hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
                (val-fixer val)
-               (accessor/copyable key0 hash-table))))
+               (accessor/copyable %key hash-table))))
 
   (defthm accessor/copyable-when-not-boundp/copyable
     (implies (not (boundp/copyable key hash-table))
@@ -871,20 +871,20 @@
                     (default-val))))
 
   (defthm accessor/copyable-of-remover/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (accessor/copyable key0 (remover/copyable key1 hash-table))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (accessor/copyable %key (remover/copyable key hash-table))
                     (default-val))))
 
   (defthm accessor/copyable-of-remover/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (accessor/copyable key0 (remover/copyable key1 hash-table))
-                    (accessor/copyable key0 hash-table))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (accessor/copyable %key (remover/copyable key hash-table))
+                    (accessor/copyable %key hash-table))))
 
   (defthm accessor/copyable-of-remover/copyable
-    (equal (accessor/copyable key0 (remover/copyable key1 hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
+    (equal (accessor/copyable %key (remover/copyable key hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
                (default-val)
-               (accessor/copyable key0 hash-table))))
+               (accessor/copyable %key hash-table))))
 
   (defthm accessor/copyable-of-keys-set
     (equal (accessor/copyable key (keys-set set hash-table))
@@ -930,68 +930,68 @@
                   (fixer/unique hash-table))))
 
 (defthm updater/unique-of-accessor/unique-when-boundp/unique
-  (implies (and (boundp/unique key0 hash-table)
-                (equal (key-fixer key0) (key-fixer key1)))
-           (equal (updater/unique key0 (accessor/unique key1 hash-table) hash-table)
+  (implies (and (boundp/unique %key hash-table)
+                (equal (key-fixer %key) (key-fixer key)))
+           (equal (updater/unique %key (accessor/unique key hash-table) hash-table)
                   (fixer/unique hash-table)))
   :hints
   (("Goal"
     :in-theory (disable updater/unique-of-accessor/unique-when-boundp/unique-free)
     :use (:instance updater/unique-of-accessor/unique-when-boundp/unique-free
-                    (val (accessor/unique key1 hash-table))
-                    (key key0)))))
+                    (val (accessor/unique key hash-table))
+                    (key %key)))))
 
 (defthm updater/unique-of-accessor/unique-when-not-boundp/unique
-  (implies (and (not (boundp/unique key0 hash-table))
-                (equal (key-fixer key0) (key-fixer key1)))
-           (equal (updater/unique key0 (accessor/unique key1 hash-table) hash-table)
-                  (updater/unique key0 (default-val) hash-table))))
+  (implies (and (not (boundp/unique %key hash-table))
+                (equal (key-fixer %key) (key-fixer key)))
+           (equal (updater/unique %key (accessor/unique key hash-table) hash-table)
+                  (updater/unique %key (default-val) hash-table))))
 
 (defthm updater/unique-of-accessor/unique
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (updater/unique key0 (accessor/unique key1 hash-table) hash-table)
-                  (if (boundp/unique key0 hash-table)
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (updater/unique %key (accessor/unique key hash-table) hash-table)
+                  (if (boundp/unique %key hash-table)
                       (fixer/unique hash-table)
-                      (updater/unique key0 (default-val) hash-table))))
+                      (updater/unique %key (default-val) hash-table))))
   :hints
   (("Goal"
-    :cases ((boundp/unique key0 hash-table)))
+    :cases ((boundp/unique %key hash-table)))
    ("Subgoal 2"
     :by updater/unique-of-accessor/unique-when-not-boundp/unique)
    ("Subgoal 1"
     :by updater/unique-of-accessor/unique-when-boundp/unique)))
 
 (defthm updater/unique-of-updater/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (updater/unique key0 val0 (updater/unique key1 val1 hash-table))
-                  (updater/unique key0 val0 hash-table))))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (updater/unique %key %val (updater/unique key val hash-table))
+                  (updater/unique %key %val hash-table))))
 
 (defthm updater/unique-of-updater/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (updater/unique key0 val0 (updater/unique key1 val1 hash-table))
-                  (updater/unique key1 val1 (updater/unique key0 val0 hash-table))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (updater/unique %key %val (updater/unique key val hash-table))
+                  (updater/unique key val (updater/unique %key %val hash-table))))
   :rule-classes
-  ((:rewrite :loop-stopper ((key0 key1 updater/unique)))))
+  ((:rewrite :loop-stopper ((%key key updater/unique)))))
 
 (defthm updater/unique-of-updater/unique
-  (equal (updater/unique key0 val0 (updater/unique key1 val1 hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
-             (updater/unique key0 val0 hash-table)
-             (updater/unique key1 val1 (updater/unique key0 val0 hash-table))))
+  (equal (updater/unique %key %val (updater/unique key val hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
+             (updater/unique %key %val hash-table)
+             (updater/unique key val (updater/unique %key %val hash-table))))
   :rule-classes
-  ((:rewrite :loop-stopper ((key0 key1 updater/unique))))
+  ((:rewrite :loop-stopper ((%key key updater/unique))))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by updater/unique-of-updater/unique-diff)
    ("Subgoal 1"
     :by updater/unique-of-updater/unique-same)))
 
 (defthm updater/unique-of-remover/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (updater/unique key0 val (remover/unique key1 hash-table))
-                  (updater/unique key0 val hash-table))))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (updater/unique %key val (remover/unique key hash-table))
+                  (updater/unique %key val hash-table))))
 
 
 ;;;; `UPDATER/COPYABLE'
@@ -1044,68 +1044,68 @@
                     (fixer/copyable hash-table))))
 
   (defthm updater/copyable-of-accessor/copyable-when-boundp/copyable
-    (implies (and (boundp/copyable key0 hash-table)
-                  (equal (key-fixer key0) (key-fixer key1)))
-             (equal (updater/copyable key0 (accessor/copyable key1 hash-table) hash-table)
+    (implies (and (boundp/copyable %key hash-table)
+                  (equal (key-fixer %key) (key-fixer key)))
+             (equal (updater/copyable %key (accessor/copyable key hash-table) hash-table)
                     (fixer/copyable hash-table)))
     :hints
     (("Goal"
       :in-theory (disable updater/copyable-of-accessor/copyable-when-boundp/copyable-free)
       :use (:instance updater/copyable-of-accessor/copyable-when-boundp/copyable-free
-                      (val (accessor/copyable key1 hash-table))
-                      (key key0)))))
+                      (val (accessor/copyable key hash-table))
+                      (key %key)))))
 
   (defthm updater/copyable-of-accessor/copyable-when-not-boundp/copyable
-    (implies (and (not (boundp/copyable key0 hash-table))
-                  (equal (key-fixer key0) (key-fixer key1)))
-             (equal (updater/copyable key0 (accessor/copyable key1 hash-table) hash-table)
-                    (updater/copyable key0 (default-val) hash-table))))
+    (implies (and (not (boundp/copyable %key hash-table))
+                  (equal (key-fixer %key) (key-fixer key)))
+             (equal (updater/copyable %key (accessor/copyable key hash-table) hash-table)
+                    (updater/copyable %key (default-val) hash-table))))
 
   (defthm updater/copyable-of-accessor/copyable
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (updater/copyable key0 (accessor/copyable key1 hash-table) hash-table)
-                    (if (boundp/copyable key0 hash-table)
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (updater/copyable %key (accessor/copyable key hash-table) hash-table)
+                    (if (boundp/copyable %key hash-table)
                         (fixer/copyable hash-table)
-                        (updater/copyable key0 (default-val) hash-table))))
+                        (updater/copyable %key (default-val) hash-table))))
     :hints
     (("Goal"
-      :cases ((boundp/copyable key0 hash-table)))
+      :cases ((boundp/copyable %key hash-table)))
      ("Subgoal 2"
       :by updater/copyable-of-accessor/copyable-when-not-boundp/copyable)
      ("Subgoal 1"
       :by updater/copyable-of-accessor/copyable-when-boundp/copyable)))
 
   (defthm updater/copyable-of-updater/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (updater/copyable key0 val0 (updater/copyable key1 val1 hash-table))
-                    (updater/copyable key0 val0 hash-table))))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (updater/copyable %key %val (updater/copyable key val hash-table))
+                    (updater/copyable %key %val hash-table))))
 
   (defthm updater/copyable-of-updater/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (updater/copyable key0 val0 (updater/copyable key1 val1 hash-table))
-                    (updater/copyable key1 val1 (updater/copyable key0 val0 hash-table))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (updater/copyable %key %val (updater/copyable key val hash-table))
+                    (updater/copyable key val (updater/copyable %key %val hash-table))))
     :rule-classes
-    ((:rewrite :loop-stopper ((key0 key1 updater/copyable)))))
+    ((:rewrite :loop-stopper ((%key key updater/copyable)))))
 
   (defthm updater/copyable-of-updater/copyable
-    (equal (updater/copyable key0 val0 (updater/copyable key1 val1 hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
-               (updater/copyable key0 val0 hash-table)
-               (updater/copyable key1 val1 (updater/copyable key0 val0 hash-table))))
+    (equal (updater/copyable %key %val (updater/copyable key val hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
+               (updater/copyable %key %val hash-table)
+               (updater/copyable key val (updater/copyable %key %val hash-table))))
     :rule-classes
-    ((:rewrite :loop-stopper ((key0 key1 updater/copyable))))
+    ((:rewrite :loop-stopper ((%key key updater/copyable))))
     :hints
     (("Goal"
-      :cases ((equal (key-fixer key0) (key-fixer key1))))
+      :cases ((equal (key-fixer %key) (key-fixer key))))
      ("Subgoal 2"
       :by updater/copyable-of-updater/copyable-diff)
      ("Subgoal 1"
       :by updater/copyable-of-updater/copyable-same)))
 
   (defthm updater/copyable-of-remover/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (updater/copyable key0 val (remover/copyable key1 hash-table))
-                    (updater/copyable key0 val hash-table)))))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (updater/copyable %key val (remover/copyable key hash-table))
+                    (updater/copyable %key val hash-table)))))
 
 
 ;;;; `BOUNDP/UNIQUE'
@@ -1134,50 +1134,57 @@
          (boundp/unique key hash-table)))
 
 (defthm boundp/unique-of-updater/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (boundp/unique key0 (updater/unique key1 val hash-table))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (boundp/unique %key (updater/unique key val hash-table))
                   t)))
 
 (defthm boundp/unique-of-updater/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (boundp/unique key0 (updater/unique key1 val hash-table))
-                  (boundp/unique key0 hash-table))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (boundp/unique %key (updater/unique key val hash-table))
+                  (boundp/unique %key hash-table))))
 
 (defthm boundp/unique-of-updater/unique
-  (equal (boundp/unique key0 (updater/unique key1 val hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
+  (equal (boundp/unique %key (updater/unique key val hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
              t
-             (boundp/unique key0 hash-table)))
+             (boundp/unique %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by boundp/unique-of-updater/unique-diff)
    ("Subgoal 1"
     :by boundp/unique-of-updater/unique-same)))
 
 (defthm boundp/unique-of-remover/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (not (boundp/unique key0 (remover/unique key1 hash-table)))))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (not (boundp/unique %key (remover/unique key hash-table)))))
 
 (defthm boundp/unique-of-remover/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (boundp/unique key0 (remover/unique key1 hash-table))
-                  (boundp/unique key0 hash-table))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (boundp/unique %key (remover/unique key hash-table))
+                  (boundp/unique %key hash-table))))
 
 (defthm boundp/unique-of-remover/unique
-  (equal (boundp/unique key0 (remover/unique key1 hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
+  (equal (boundp/unique %key (remover/unique key hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
              nil
-             (boundp/unique key0 hash-table)))
+             (boundp/unique %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by boundp/unique-of-remover/unique-diff)
    ("Subgoal 1"
     :in-theory (disable boundp/unique-of-remover/unique-same)
     :use boundp/unique-of-remover/unique-same)))
+
+(defthm boundp/unique-when-zp-count/unique
+  (implies (zp (count/unique hash-table))
+           (not (boundp/unique key hash-table)))
+  :hints
+  (("Goal"
+    :in-theory (enable omap::unfold-equal-size-const))))
 
 
 ;;;; `BOUNDP/COPYABLE'
@@ -1186,6 +1193,9 @@
     (in-theory
       (disable recognizer/unique{definition}
                accessor/unique{definition}
+               updater/unique{definition}
+               boundp/unique{definition}
+               remover/unique{definition}
                count/unique{definition})))
 
   (defthm boundp/copyable{type-prescription}
@@ -1213,45 +1223,45 @@
            (boundp/copyable key hash-table)))
 
   (defthm boundp/copyable-of-updater/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (boundp/copyable key0 (updater/copyable key1 val hash-table))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (boundp/copyable %key (updater/copyable key val hash-table))
                     t)))
 
   (defthm boundp/copyable-of-updater/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (boundp/copyable key0 (updater/copyable key1 val hash-table))
-                    (boundp/copyable key0 hash-table))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (boundp/copyable %key (updater/copyable key val hash-table))
+                    (boundp/copyable %key hash-table))))
 
   (defthm boundp/copyable-of-updater/copyable
-    (equal (boundp/copyable key0 (updater/copyable key1 val hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
+    (equal (boundp/copyable %key (updater/copyable key val hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
                t
-               (boundp/copyable key0 hash-table)))
+               (boundp/copyable %key hash-table)))
     :hints
     (("Goal"
-      :cases ((equal (key-fixer key0) (key-fixer key1))))
+      :cases ((equal (key-fixer %key) (key-fixer key))))
      ("Subgoal 2"
       :by boundp/copyable-of-updater/copyable-diff)
      ("Subgoal 1"
       :by boundp/copyable-of-updater/copyable-same)))
 
   (defthm boundp/copyable-of-remover/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (not (boundp/copyable key0 (remover/copyable key1 hash-table)))))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (not (boundp/copyable %key (remover/copyable key hash-table)))))
 
   (defthm boundp/copyable-of-remover/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (boundp/copyable key0 (remover/copyable key1 hash-table))
-                    (boundp/copyable key0 hash-table))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (boundp/copyable %key (remover/copyable key hash-table))
+                    (boundp/copyable %key hash-table))))
 
   (defthm boundp/copyable-of-remover/copyable
-    (equal (boundp/copyable key0 (remover/copyable key1 hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
+    (equal (boundp/copyable %key (remover/copyable key hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
                nil
-               (boundp/copyable key0 hash-table)))
+               (boundp/copyable %key hash-table)))
     :hints
     (("Goal"
-      :cases ((equal (key-fixer key0) (key-fixer key1))))
+      :cases ((equal (key-fixer %key) (key-fixer key))))
      ("Subgoal 2"
       :by boundp/copyable-of-remover/copyable-diff)
      ("Subgoal 1"
@@ -1260,7 +1270,11 @@
 
   (defthm boundp/copyable-of-keys-set
     (equal (boundp/copyable key (keys-set set hash-table))
-           (boundp/copyable key hash-table))))
+           (boundp/copyable key hash-table)))
+
+  (defthm boundp/copyable-when-zp-count/copyable
+    (implies (zp (count/copyable hash-table))
+             (not (boundp/copyable key hash-table)))))
 
 
 ;;;; `GETP/UNIQUE'
@@ -1317,23 +1331,23 @@
          (remover/unique key hash-table)))
 
 (defthm remover/unique-of-updater/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (remover/unique key0 (updater/unique key1 val hash-table))
-                  (remover/unique key0 hash-table))))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (remover/unique %key (updater/unique key val hash-table))
+                  (remover/unique %key hash-table))))
 
 (defthm remover/unique-of-updater/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (remover/unique key0 (updater/unique key1 val hash-table))
-                  (updater/unique key1 val (remover/unique key0 hash-table)))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (remover/unique %key (updater/unique key val hash-table))
+                  (updater/unique key val (remover/unique %key hash-table)))))
 
 (defthm remover/unique-of-updater/unique
-  (equal (remover/unique key0 (updater/unique key1 val hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
-             (remover/unique key0 hash-table)
-             (updater/unique key1 val (remover/unique key0 hash-table))))
+  (equal (remover/unique %key (updater/unique key val hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
+             (remover/unique %key hash-table)
+             (updater/unique key val (remover/unique %key hash-table))))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by remover/unique-of-updater/unique-diff)
    ("Subgoal 1"
@@ -1345,27 +1359,27 @@
                   (fixer/unique hash-table))))
 
 (defthm remover/unique-of-remover/unique-same
-  (implies (equal (key-fixer key0) (key-fixer key1))
-           (equal (remover/unique key0 (remover/unique key1 hash-table))
-                  (remover/unique key0 hash-table))))
+  (implies (equal (key-fixer %key) (key-fixer key))
+           (equal (remover/unique %key (remover/unique key hash-table))
+                  (remover/unique %key hash-table))))
 
 (defthm remover/unique-of-remover/unique-diff
-  (implies (not (equal (key-fixer key0) (key-fixer key1)))
-           (equal (remover/unique key0 (remover/unique key1 hash-table))
-                  (remover/unique key1 (remover/unique key0 hash-table))))
+  (implies (not (equal (key-fixer %key) (key-fixer key)))
+           (equal (remover/unique %key (remover/unique key hash-table))
+                  (remover/unique key (remover/unique %key hash-table))))
   :rule-classes
-  ((:rewrite :loop-stopper ((key0 key1 remover/unique)))))
+  ((:rewrite :loop-stopper ((%key key remover/unique)))))
 
 (defthm remover/unique-of-remover/unique
-  (equal (remover/unique key0 (remover/unique key1 hash-table))
-         (if (equal (key-fixer key0) (key-fixer key1))
-             (remover/unique key0 hash-table)
-             (remover/unique key1 (remover/unique key0 hash-table))))
+  (equal (remover/unique %key (remover/unique key hash-table))
+         (if (equal (key-fixer %key) (key-fixer key))
+             (remover/unique %key hash-table)
+             (remover/unique key (remover/unique %key hash-table))))
   :rule-classes
-  ((:rewrite :loop-stopper ((key0 key1 remover/unique))))
+  ((:rewrite :loop-stopper ((%key key remover/unique))))
   :hints
   (("Goal"
-    :cases ((equal (key-fixer key0) (key-fixer key1))))
+    :cases ((equal (key-fixer %key) (key-fixer key))))
    ("Subgoal 2"
     :by remover/unique-of-remover/unique-diff)
    ("Subgoal 1"
@@ -1407,23 +1421,23 @@
            (remover/copyable key hash-table)))
 
   (defthm remover/copyable-of-updater/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (remover/copyable key0 (updater/copyable key1 val hash-table))
-                    (remover/copyable key0 hash-table))))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (remover/copyable %key (updater/copyable key val hash-table))
+                    (remover/copyable %key hash-table))))
 
   (defthm remover/copyable-of-updater/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (remover/copyable key0 (updater/copyable key1 val hash-table))
-                    (updater/copyable key1 val (remover/copyable key0 hash-table)))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (remover/copyable %key (updater/copyable key val hash-table))
+                    (updater/copyable key val (remover/copyable %key hash-table)))))
 
   (defthm remover/copyable-of-updater/copyable
-    (equal (remover/copyable key0 (updater/copyable key1 val hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
-               (remover/copyable key0 hash-table)
-               (updater/copyable key1 val (remover/copyable key0 hash-table))))
+    (equal (remover/copyable %key (updater/copyable key val hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
+               (remover/copyable %key hash-table)
+               (updater/copyable key val (remover/copyable %key hash-table))))
     :hints
     (("Goal"
-      :cases ((equal (key-fixer key0) (key-fixer key1))))
+      :cases ((equal (key-fixer %key) (key-fixer key))))
      ("Subgoal 2"
       :by remover/copyable-of-updater/copyable-diff)
      ("Subgoal 1"
@@ -1435,27 +1449,27 @@
                     (fixer/copyable hash-table))))
 
   (defthm remover/copyable-of-remover/copyable-same
-    (implies (equal (key-fixer key0) (key-fixer key1))
-             (equal (remover/copyable key0 (remover/copyable key1 hash-table))
-                    (remover/copyable key0 hash-table))))
+    (implies (equal (key-fixer %key) (key-fixer key))
+             (equal (remover/copyable %key (remover/copyable key hash-table))
+                    (remover/copyable %key hash-table))))
 
   (defthm remover/copyable-of-remover/copyable-diff
-    (implies (not (equal (key-fixer key0) (key-fixer key1)))
-             (equal (remover/copyable key0 (remover/copyable key1 hash-table))
-                    (remover/copyable key1 (remover/copyable key0 hash-table))))
+    (implies (not (equal (key-fixer %key) (key-fixer key)))
+             (equal (remover/copyable %key (remover/copyable key hash-table))
+                    (remover/copyable key (remover/copyable %key hash-table))))
     :rule-classes
-    ((:rewrite :loop-stopper ((key0 key1 remover/copyable)))))
+    ((:rewrite :loop-stopper ((%key key remover/copyable)))))
 
   (defthm remover/copyable-of-remover/copyable
-    (equal (remover/copyable key0 (remover/copyable key1 hash-table))
-           (if (equal (key-fixer key0) (key-fixer key1))
-               (remover/copyable key0 hash-table)
-               (remover/copyable key1 (remover/copyable key0 hash-table))))
+    (equal (remover/copyable %key (remover/copyable key hash-table))
+           (if (equal (key-fixer %key) (key-fixer key))
+               (remover/copyable %key hash-table)
+               (remover/copyable key (remover/copyable %key hash-table))))
     :rule-classes
-    ((:rewrite :loop-stopper ((key0 key1 remover/copyable))))
+    ((:rewrite :loop-stopper ((%key key remover/copyable))))
     :hints
     (("Goal"
-      :cases ((equal (key-fixer key0) (key-fixer key1))))
+      :cases ((equal (key-fixer %key) (key-fixer key))))
      ("Subgoal 2"
       :by remover/copyable-of-remover/copyable-diff)
      ("Subgoal 1"
@@ -1731,8 +1745,8 @@
                     (set (keys hash-table))))))
 
 (defthm keys-set-of-keys-set
-  (equal (keys-set set0 (keys-set set1 hash-table))
-         (keys-set set0 hash-table)))
+  (equal (keys-set %set (keys-set set hash-table))
+         (keys-set %set hash-table)))
 
 
 ;;;; `EQUAL/UNIQUE{FORWARD-CHAINING}'
