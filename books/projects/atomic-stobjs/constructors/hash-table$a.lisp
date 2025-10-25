@@ -34,6 +34,9 @@
 (include-book "../lemmas/hash-table$a")
 ||#
 
+(include-book "misc/total-order" :dir :system)
+(include-book "std/osets/top" :dir :system)
+
 (include-book "../utilities/top")
 
 
@@ -72,10 +75,12 @@
        (key-recognizer 'nil)
        (key-fixer 'nil)
        (key 'key)
+       (%key 'nil)
        (default-key 'nil)
-       (val-recognizer 'nil)
-       (val-fixer 'nil)
+       (val-recognizer 'nil val-recognzier-supplied-p)
+       (val-fixer 'nil val-fixer-supplied-p)
        (val 'val)
+       (%val 'nil)
        (default-val 'nil)
        (copyable 't)
 
@@ -94,8 +99,8 @@
        (keys 'nil)
        (keys-set 'nil)
 
-       (testp 'nil)
-       (debug 'nil))
+       ;; TODO: swap to `NIL'
+       (debug 't))
 
   (declare (xargs :guard (and (symbolp hash-table)
                               (valid-hash-table-test-p test)
@@ -135,19 +140,7 @@
                               (booleanp testp)
                               (booleanp debug))))
 
-  (let* ((hash-table-begin (symbolicate hash-table hash-table '-begin))
-         (hash-table-end (symbolicate hash-table hash-table '-end))
-         (hash-table-theorems (symbolicate hash-table hash-table '-theorems))
-         (hash-table-definitions (symbolicate hash-table hash-table '-definitions))
-         (hash-table-aggressive (symbolicate hash-table hash-table '-aggressive))
-
-         (hash-table-entry-guard (symbolicate hash-table hash-table '-entry-guard))
-         (default-key-name (symbolicate hash-table '* hash-table '-default-key*))
-         (default-val-name (symbolicate hash-table '* hash-table '-default-val*))
-         (%key (symbolicate hash-table '% key))
-         (%val (symbolicate hash-table '% val))
-
-         (contents (if copyable
+  (let* ((contents (if copyable
                        (or contents
                            (symbolicate hash-table hash-table '-contents))
                        hash-table))
@@ -200,217 +193,7 @@
          (keys (or keys
                    (symbolicate hash-table hash-table '-keys)))
          (keys-set (or keys-set
-                       (symbolicate hash-table hash-table '-keys-set)))
-
-         (recognizer{compound-recognizer} (symbolicate hash-table recognizer '{compound-recognizer}))
-         (contents-recognizer{compound-recognizer}
-          (symbolicate hash-table contents-recognizer '{compound-recognizer}))
-
-         (recognizer-of-fixer (symbolicate hash-table recognizer '-of- fixer))
-         (contents-recognizer-of-contents-fixer
-          (symbolicate hash-table contents-recognizer '-of- contents-fixer))
-         (fixer-when-recognizer (symbolicate hash-table fixer '-when- recognizer))
-         (contents-fixer-when-contents-recognizer
-          (symbolicate hash-table contents-fixer '-when- contents-recognizer))
-         (fixer-when-not-recognizer (symbolicate hash-table fixer '-when-not- recognizer))
-         (contents-fixer-when-not-contents-recognizer
-          (symbolicate hash-table contents-fixer '-when-not- contents-recognizer))
-
-         (recognizer-of-creator (symbolicate hash-table recognizer '-of- creator))
-         (emptyp-of-creator (symbolicate hash-table 'emptyp-of- creator))
-
-         (accessor-of-key-fixer (symbolicate hash-table accessor '-of- key-fixer))
-         (contents-accessor-of-key-fixer
-          (symbolicate hash-table contents-accessor '-of- key-fixer))
-         (accessor-of-fixer (symbolicate hash-table accessor '-of- fixer))
-         (contents-accessor-of-contents-fixer
-          (symbolicate hash-table contents-accessor '-of- contents-fixer))
-         (accessor-when-not-key-recognizer (symbolicate hash-table accessor '-when-not- key-recognizer))
-         (contents-accessor-when-not-key-recognizer (symbolicate hash-table contents-accessor '-when-not- key-recognizer))
-
-         (recognizer-of-updater (symbolicate hash-table recognizer '-of- updater))
-         (contents-recognizer-of-contents-updater
-          (symbolicate hash-table contents-recognizer '-of- contents-updater))
-         (updater-of-key-fixer (symbolicate hash-table updater '-of- key-fixer))
-         (updater-of-fixer (symbolicate hash-table updater '-of- fixer))
-         (contents-updater-of-contents-fixer
-          (symbolicate hash-table contents-updater '-of- contents-fixer))
-         (updater-when-not-key-recognizer (symbolicate hash-table updater '-when-not- key-recognizer))
-         (contents-updater-when-not-key-recognizer (symbolicate hash-table contents-updater '-when-not- key-recognizer))
-
-         (boundp-of-key-fixer (symbolicate hash-table boundp '-of- key-fixer))
-         (contents-boundp-of-key-fixer
-          (symbolicate hash-table contents-boundp '-of- key-fixer))
-         (boundp-of-fixer (symbolicate hash-table boundp '-of- fixer))
-         (contents-boundp-of-contents-fixer
-          (symbolicate hash-table contents-boundp '-of- contents-fixer))
-         (boundp-when-not-key-recognizer (symbolicate hash-table boundp '-when-not- key-recognizer))
-         (contents-boundp-when-not-key-recognizer (symbolicate hash-table contents-boundp '-when-not- key-recognizer))
-         (boundp-when-not-recognizer (symbolicate hash-table boundp '-when-not- recognizer))
-         (contents-boundp-when-not-contents-recognizer
-          (symbolicate hash-table contents-boundp '-when-not- contents-recognizer))
-
-         (getp{rewrite} (symbolicate hash-table getp '{rewrite}))
-
-         (recognizer-of-remover (symbolicate hash-table recognizer '-of- remover))
-         (contents-recognizer-of-contents-remover
-          (symbolicate hash-table contents-recognizer '-of- contents-remover))
-         (remover-of-key-fixer (symbolicate hash-table remover '-of- key-fixer))
-         (contents-remover-of-key-fixer
-          (symbolicate hash-table contents-remover '-of- key-fixer))
-         (remover-of-fixer (symbolicate hash-table remover '-of- fixer))
-         (contents-remover-of-contents-fixer
-          (symbolicate hash-table contents-remover '-of- contents-fixer))
-         (remover-when-not-key-recognizer (symbolicate hash-table remover '-when-not- key-recognizer))
-         (contents-remover-when-not-key-recognizer (symbolicate hash-table contents-remover '-when-not- key-recognizer))
-
-         (count-of-fixer (symbolicate hash-table count '-of- fixer))
-         (contents-count-of-contents-fixer
-          (symbolicate hash-table contents-count '-of- contents-fixer))
-         (count-when-not-recognizer (symbolicate hash-table count '-when-not- recognizer))
-         (contents-count-when-not-contents-recognizer
-          (symbolicate hash-table contents-count '-when-not- contents-recognizer))
-
-         (clear{rewrite} (symbolicate hash-table clear '{rewrite}))
-
-         (init{rewrite} (symbolicate hash-table init '{rewrite}))
-
-         (accessor-of-creator (symbolicate hash-table accessor '-of- creator))
-         (accessor-of-updater (symbolicate hash-table accessor '-of- updater))
-         (accessor-of-updater-same (symbolicate hash-table accessor-of-updater '-same))
-         (accessor-of-updater-diff (symbolicate hash-table accessor-of-updater '-diff))
-         (accessor-when-not-boundp (symbolicate hash-table accessor '-when-not- boundp))
-         (accessor-of-remover (symbolicate hash-table accessor '-of- remover))
-         (accessor-of-remover-same (symbolicate hash-table accessor-of-remover '-same))
-         (accessor-of-remover-diff (symbolicate hash-table accessor-of-remover '-diff))
-
-         (contents-accessor-of-contents-creator (symbolicate hash-table contents-accessor '-of- contents-creator))
-         (contents-accessor-of-contents-updater (symbolicate hash-table contents-accessor '-of- contents-updater))
-         (contents-accessor-of-contents-updater-same (symbolicate hash-table contents-accessor-of-contents-updater '-same))
-         (contents-accessor-of-contents-updater-diff (symbolicate hash-table contents-accessor-of-contents-updater '-diff))
-         (contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-accessor '-when-not- contents-boundp))
-         (contents-accessor-of-contents-remover (symbolicate hash-table contents-accessor '-of- contents-remover))
-         (contents-accessor-of-contents-remover-same (symbolicate hash-table contents-accessor-of-contents-remover '-same))
-         (contents-accessor-of-contents-remover-diff (symbolicate hash-table contents-accessor-of-contents-remover '-diff))
-
-         (updater-of-accessor (symbolicate hash-table updater '-of- accessor))
-         (updater-of-accessor-when-boundp (symbolicate hash-table updater-of-accessor '-when- boundp))
-         (updater-of-accessor-when-not-boundp (symbolicate hash-table updater-of-accessor '-when-not- boundp))
-         (updater-of-updater (symbolicate hash-table updater '-of- updater))
-         (updater-of-updater-same (symbolicate hash-table updater-of-updater '-same))
-         (updater-of-updater-diff (symbolicate hash-table updater-of-updater '-diff))
-         (updater-of-remover (symbolicate hash-table updater '-of- remover))
-
-         (contents-updater-of-contents-accessor (symbolicate hash-table contents-updater '-of- contents-accessor))
-         (contents-updater-of-contents-accessor-when-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor '-when- contents-boundp))
-         (contents-updater-of-contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor '-when-not- contents-boundp))
-         (contents-updater-of-contents-updater (symbolicate hash-table contents-updater '-of- contents-updater))
-         (contents-updater-of-contents-updater-same (symbolicate hash-table contents-updater-of-contents-updater '-same))
-         (contents-updater-of-contents-updater-diff (symbolicate hash-table contents-updater-of-contents-updater '-diff))
-         (contents-updater-of-contents-remover (symbolicate hash-table contents-updater '-of- contents-remover))
-
-         (boundp-of-creator (symbolicate hash-table boundp '-of- creator))
-         (boundp-of-updater (symbolicate hash-table boundp '-of- updater))
-         (boundp-of-updater-same (symbolicate hash-table boundp-of-updater '-same))
-         (boundp-of-updater-diff (symbolicate hash-table boundp-of-updater '-diff))
-         (boundp-of-remover (symbolicate hash-table boundp '-of- remover))
-         (boundp-of-remover-same (symbolicate hash-table boundp-of-remover '-same))
-         (boundp-of-remover-diff (symbolicate hash-table boundp-of-remover '-diff))
-         (boundp-when-zp-count (symbolicate hash-table boundp '-when-zp- count))
-         (contents-boundp-when-zp-contents-count (symbolicate hash-table contents-boundp '-when-zp- contents-count))
-
-         (contents-boundp-of-contents-creator (symbolicate hash-table contents-boundp '-of- contents-creator))
-         (contents-boundp-of-contents-updater (symbolicate hash-table contents-boundp '-of- contents-updater))
-         (contents-boundp-of-contents-updater-same (symbolicate hash-table contents-boundp-of-contents-updater '-same))
-         (contents-boundp-of-contents-updater-diff (symbolicate hash-table contents-boundp-of-contents-updater '-diff))
-         (contents-boundp-of-contents-remover (symbolicate hash-table contents-boundp '-of- contents-remover))
-         (contents-boundp-of-contents-remover-same (symbolicate hash-table contents-boundp-of-contents-remover '-same))
-         (contents-boundp-of-contents-remover-diff (symbolicate hash-table contents-boundp-of-contents-remover '-diff))
-
-         (remover-of-creator (symbolicate hash-table remover '-of- creator))
-         (remover-of-updater (symbolicate hash-table remover '-of- updater))
-         (remover-of-updater-same (symbolicate hash-table remover-of-updater '-same))
-         (remover-of-updater-diff (symbolicate hash-table remover-of-updater '-diff))
-         (remover-when-not-boundp (symbolicate hash-table remover '-when-not- boundp))
-         (remover-of-remover (symbolicate hash-table remover '-of- remover))
-         (remover-of-remover-same (symbolicate hash-table remover-of-remover '-same))
-         (remover-of-remover-diff (symbolicate hash-table remover-of-remover '-diff))
-
-         (contents-remover-of-contents-creator (symbolicate hash-table contents-remover '-of- contents-creator))
-         (contents-remover-of-contents-updater (symbolicate hash-table contents-remover '-of- contents-updater))
-         (contents-remover-of-contents-updater-same (symbolicate hash-table contents-remover-of-contents-updater '-same))
-         (contents-remover-of-contents-updater-diff (symbolicate hash-table contents-remover-of-contents-updater '-diff))
-         (contents-remover-when-not-contents-boundp (symbolicate hash-table contents-remover '-when-not- contents-boundp))
-         (contents-remover-of-contents-remover (symbolicate hash-table contents-remover '-of- contents-remover))
-         (contents-remover-of-contents-remover-same (symbolicate hash-table contents-remover-of-contents-remover '-same))
-         (contents-remover-of-contents-remover-diff (symbolicate hash-table contents-remover-of-contents-remover '-diff))
-
-         (count-of-creator (symbolicate hash-table count '-of- creator))
-         (count-of-updater (symbolicate hash-table count '-of- updater))
-         (count-of-updater-when-boundp (symbolicate hash-table count-of-updater '-when- boundp))
-         (count-of-updater-when-not-boundp (symbolicate hash-table count-of-updater '-when-not- boundp))
-         (count-of-remover (symbolicate hash-table count '-of- remover))
-         (count-of-remover-when-boundp (symbolicate hash-table count-of-remover '-when- boundp))
-         (count-of-remover-when-not-boundp (symbolicate hash-table count-of-remover '-when-not- boundp))
-
-         (contents-count-of-contents-creator (symbolicate hash-table contents-count '-of- contents-creator))
-         (contents-count-of-contents-updater (symbolicate hash-table contents-count '-of- contents-updater))
-         (contents-count-of-contents-updater-when-contents-boundp (symbolicate hash-table contents-count-of-contents-updater '-when- contents-boundp))
-         (contents-count-of-contents-updater-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-updater '-when-not- contents-boundp))
-         (contents-count-of-contents-remover (symbolicate hash-table contents-count '-of- contents-remover))
-         (contents-count-of-contents-remover-when-contents-boundp (symbolicate hash-table contents-count-of-contents-remover '-when- contents-boundp))
-         (contents-count-of-contents-remover-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-remover '-when-not- contents-boundp))
-
-         (setp-of-keys (symbolicate hash-table 'setp-of- keys))
-         (keys-of-creator (symbolicate hash-table keys '-of- creator))
-         (keys-of-fixer (symbolicate hash-table keys '-of- fixer))
-         (keys-when-not-recognizer (symbolicate hash-table keys '-when-not- recognizer))
-         (keys-of-updater (symbolicate hash-table keys '-of- updater))
-         (keys-of-remover (symbolicate hash-table keys '-of- remover))
-         (keys-of-keys-set (symbolicate hash-table keys '-of- keys-set))
-         (recognizer-of-keys-set (symbolicate hash-table recognizer '-of- keys-set))
-         (keys-set-of-sfix (symbolicate hash-table keys-set '-of-sfix))
-         (keys-set-of-fixer (symbolicate hash-table keys-set '-of- fixer))
-         (accessor-of-keys-set (symbolicate hash-table accessor '-of- keys-set))
-         (keys-set-of-updater (symbolicate hash-table keys-set '-of- updater))
-         (boundp-of-keys-set (symbolicate hash-table boundp '-of- keys-set))
-         (keys-set-of-remover (symbolicate hash-table keys-set '-of- remover))
-         (count-of-keys-set (symbolicate hash-table count '-of- keys-set))
-         (keys-set-of-keys-set (symbolicate hash-table keys-set '-of- keys-set))
-         (keys-set-of-keys (symbolicate hash-table keys-set '-of- keys))
-         (keys-set-of-keys-free (symbolicate hash-table keys-set-of-keys '-free))
-
-         (%contents (symbolicate hash-table '% contents))
-         (%hash-table (symbolicate hash-table '% hash-table))
-         (keys-equal (symbolicate hash-table hash-table '-keys-equal))
-         (contents-keys-equal (if copyable
-                                  (symbolicate hash-table contents '-keys-equal)
-                                  keys-equal))
-         (keys-equal-witness (symbolicate hash-table keys-equal '-witness))
-         (contents-keys-equal-witness (if copyable
-                                          (symbolicate hash-table contents-keys-equal '-witness)
-                                          keys-equal-witness))
-         (keys-equal-necc (symbolicate hash-table keys-equal '-necc))
-         (contents-keys-equal-lemma-0 (symbolicate hash-table contents-keys-equal '-lemma-0))
-         (contents-keys-equal-lemma-1 (symbolicate hash-table contents-keys-equal '-lemma-1))
-         (keys-equal-implies-contents-keys-equal (symbolicate hash-table keys-equal '-implies- contents-keys-equal))
-         (vals-equal (symbolicate hash-table hash-table '-vals-equal))
-         (contents-vals-equal (if copyable
-                                  (symbolicate hash-table contents '-vals-equal)
-                                  vals-equal))
-         (contents-vals-equal-witness (symbolicate hash-table contents-vals-equal '-witness))
-         (vals-equal-necc (symbolicate hash-table vals-equal '-necc))
-         (contents-vals-equal-lemma-0 (symbolicate hash-table contents-vals-equal '-lemma-0))
-         (contents-vals-equal-lemma-1 (symbolicate hash-table contents-vals-equal '-lemma-1))
-         (vals-equal-implies-contents-vals-equal (symbolicate hash-table vals-equal '-implies- contents-vals-equal))
-         (hash-table-equal (symbolicate hash-table hash-table '-equal))
-         (contents-equal (if copyable
-                             (symbolicate hash-table contents '-equal)
-                             hash-table-equal))
-         (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal '{forward-chaining}))
-         (contents-equal{forward-chaining} (if copyable
-                                               (symbolicate hash-table contents-equal '{forward-chaining})
-                                               hash-table-equal{forward-chaining})))
+                       (symbolicate hash-table hash-table '-keys-set))))
 
     `(with-output
        ,@(and (not debug)
@@ -419,27 +202,304 @@
                            :gag-mode t))
 
        (make-event
-         (let* ((val-type-is-stobj (stobj-p ',val))
-                (val$a (stobj$a-lookup ',val))
-                (val-recognizer (if val$a
-                                    (stobj$a-recognizer val$a)
-                                    ',val-recognizer))
-                (val-fixer (if val$a
-                               (stobj$a-fixer val$a)
-                               ',val-fixer))
-                (val-recognizer-of-accessor (symbolicate ',hash-table val-recognizer '-of- ',accessor))
-                (val-recognizer-of-contents-accessor
-                 (symbolicate ',hash-table val-recognizer '-of- ',contents-accessor))
-                (updater-of-val-fixer (symbolicate ',hash-table ',updater '-of- val-fixer))
-                (updater-when-not-val-recognizer (symbolicate ',hash-table ',updater '-when-not- val-recognizer))
-                (contents-updater-when-not-val-recognizer (symbolicate ',hash-table ',contents-updater '-when-not- val-recognizer))
+         (let* ((hash-table ',hash-table)
+                (test ',test)
+
+                (key ',key)
+                (%key (or ',%key
+                          (symbolicate key '% key)))
+                (key-recognizer ',key-recognizer)
+                (key-fixer ',key-fixer)
+                (default-key-name (symbolicate hash-table '* hash-table '-default-key*))
+                (default-key default-key-name)
+
+                (val ',val)
+                (%val (or ',%val
+                          (symbolicate val '% val)))
+                (stobj-property (getpropc val 'stobj))
+                (absstobj-info (getpropc val 'absstobj-info))
+                (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property (w state)))))
+                (val-recognizer (cond
+                                  ('val-recognizer-supplied-p
+                                   ',val-recognizer)
+                                  (stobj$a-property
+                                   (first (second stobj$a-property)))
+                                  (absstobj-info
+                                   (second (second absstobj-info)))
+                                  (stobj-property
+                                   (caadr stobj-property))))
+                (val-creator (cond
+                               (stobj$a-property
+                                (second (second stobj$a-property)))
+                               (absstobj-info
+                                (second (third absstobj-info)))
+                               (stobj-property
+                                (cdadr stobj-property))))
+                (val-fixer (cond
+                             (',val-fixer-supplied-p
+                              ',val-fixer)
+                             (stobj$a-property
+                              (third (second stobj$a-property)))
+                             (t
+                              (cdr (assoc val (table-alist 'fixer (w state)))))))
+                (default-val-name (symbolicate hash-table '* hash-table '-default-val*))
+                (default-val (if val-creator
+                                 `(,val-creator)
+                                 default-val-name))
+                (copyable ',copyable)
+
+                (contents ',contents)
+                (recognizer ',recognizer)
+                (creator ',creator)
+                (fixer ',fixer)
+                (accessor ',accessor)
+                (updater ',updater)
+                (boundp ',boundp)
+                (getp ',getp)
+                (remover ',remover)
+                (count ',count)
+                (clear ',clear)
+                (init ',init)
+                (keys ',keys)
+                (keys-set ',keys-set)
+
+                (hash-table-begin (symbolicate hash-table hash-table '-begin))
+                (hash-table-end (symbolicate hash-table hash-table '-end))
+                (prologue
+                 `((deflabel ,hash-table-begin)
+
+                   (defconst ,default-key-name ',',default-key)
+
+                   ,@(and (not stobj-property)
+                          `((defconst ,default-val-name ',',default-val)))))
+
+                (contents-recognizer{type-prescription} (symbolicate hash-table contents-recognizer '{type-prescription}))
+                (contents-recognizer{compound-recognizer} (symbolicate hash-table contents-recognizer '{compound-recognizer}))
+                (contents-recognizer-of-contents-creator (symbolicate hash-table contents-recognizer '-of- contents-creator))
+                (contents-recognizer-of-contents-fixer (symbolicate hash-table contents-recognizer '-of- contents-fixer))
+                (contents-recognizer-of-contents-updater (symbolicate hash-table contents-recognizer '-of- contents-updater))
+                (contents-recognizer-of-contents-remover (symbolicate hash-table contents-recognizer '-of- contents-remover))
+
+                (recognizer{type-prescription} (symbolicate hash-table recognizer '{type-prescription}))
+                (recognizer{compound-recognizer} (symbolicate hash-table recognizer '{compound-recognizer}))
+                (recognizer-of-creator (symbolicate hash-table recognizer '-of- creator))
+                (recognizer-of-fixer (symbolicate hash-table recognizer '-of- fixer))
+                (recognizer-of-updater (symbolicate hash-table recognizer '-of- updater))
+                (recognizer-of-remover (symbolicate hash-table recognizer '-of- remover))
+                (recognizer-of-keys-set (symbolicate hash-table recognizer '-of- keys-set))
+
+                (contents-fixer{type-prescription} (symbolicate hash-table contents-fixer '{type-prescription}))
+                (contents-fixer-when-contents-recognizer (symbolicate hash-table contents-fixer '-when- contents-recognizer))
+                (contents-fixer-when-not-contents-recognizer (symbolicate hash-table contents-fixer '-when-not- contents-recognizer))
+                (fixer{type-prescription} (symbolicate hash-table fixer '{type-prescription}))
+                (fixer-when-recognizer (symbolicate hash-table fixer '-when- recognizer))
+                (fixer-when-not-recognizer (symbolicate hash-table fixer '-when-not- recognizer))
+
+                (val-recognizer-of-contents-accessor (symbolicate hash-table val-recognizer '-of- contents-accessor))
+                (contents-accessor-when-not-key-recognizer (symbolicate hash-table contents-accessor '-when-not- key-recognizer))
+                (contents-accessor-when-not-contents-recognizer (symbolicate hash-table contents-accessor '-when-not- contents-recognizer))
+                (contents-accessor-of-contents-creator (symbolicate hash-table contents-accessor '-of- contents-creator))
+                (contents-accessor-of-key-fixer (symbolicate hash-table contents-accessor '-of- key-fixer))
+                (contents-accessor-of-contents-fixer (symbolicate hash-table contents-accessor-of-contents-fixer))
+                (contents-accessor-of-contents-updater (symbolicate hash-table contents-accessor '-of- contents-updater))
+                (contents-accessor-of-contents-updater-same (symbolicate hash-table contents-accessor-of-contents-updater '-same))
+                (contents-accessor-of-contents-updater-diff (symbolicate hash-table contents-accessor-of-contents-updater '-diff))
+                (contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-accessor '-when-not- contents-boundp))
+                (contents-accessor-of-contents-remover (symbolicate hash-table contents-accessor '-of- contents-remover))
+                (contents-accessor-of-contents-remover-same (symbolicate hash-table contents-accessor-of-contents-remover '-same))
+                (contents-accessor-of-contents-remover-diff (symbolicate hash-table contents-accessor-of-contents-remover '-diff))
+
+                (val-recognizer-of-accessor (symbolicate hash-table val-recognizer '-of- accessor))
+                (accessor-when-not-key-recognizer (symbolicate hash-table accessor '-when-not- key-recognizer))
+                (accessor-when-not-recognizer (symbolicate hash-table accessor '-when-not- recognizer))
+                (accessor-of-creator (symbolicate hash-table accessor '-of- creator))
+                (accessor-of-key-fixer (symbolicate hash-table accessor '-of- key-fixer))
+                (accessor-of-fixer (symbolicate hash-table accessor '-of- fixer))
+                (accessor-of-updater (symbolicate hash-table accessor '-of- updater))
+                (accessor-of-updater-same (symbolicate hash-table accessor-of-updater '-same))
+                (accessor-of-updater-diff (symbolicate hash-table accessor-of-updater '-diff))
+                (accessor-when-not-boundp (symbolicate hash-table accessor '-when-not- boundp))
+                (accessor-of-remover (symbolicate hash-table accessor '-of- remover))
+                (accessor-of-remover-same (symbolicate hash-table accessor-of-remover '-same))
+                (accessor-of-remover-diff (symbolicate hash-table accessor-of-remover '-diff))
+                (accessor-of-keys-set (symbolicate hash-table accessor '-of- keys-set))
+
+                (contents-updater{type-prescription} (symbolicate hash-table contents-updater '{type-prescription}))
+                (contents-updater-when-not-key-recognizer (symbolicate hash-table contents-updater '-when-not- key-recognizer))
+                (contents-updater-when-not-val-recognizer (symbolicate hash-table contents-updater '-when-not- val-recognizer))
+                (contents-updater-when-not-contents-recognizer (symbolicate hash-table contents-updater '-when-not- contents-recognizer))
+                (contents-updater-of-key-fixer (symbolicate hash-table contents-updater '-of- key-fixer))
+                (contents-updater-of-val-fixer (symbolicate hash-table contents-updater '-of- val-fixer))
+                (contents-updater-of-contents-fixer (symbolicate hash-table contents-updater '-of- contents-fixer))
+                (contents-updater-of-contents-accessor (symbolicate hash-table contents-updater '-of- contents-accessor))
+                (contents-updater-of-contents-accessor-when-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor '-when- contents-boundp))
+                (contents-updater-of-contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor '-when-not- contents-boundp))
+                (contents-updater-of-contents-accessor-when-contents-boundp-free (symbolicate hash-table contents-updater-of-contents-accessor-when-contents-boundp '-free))
+                (contents-updater-of-contents-updater (symbolicate hash-table contents-updater '-of- contents-updater))
+                (contents-updater-of-contents-updater-same (symbolicate hash-table contents-updater-of-contents-updater '-same))
+                (contents-updater-of-contents-updater-diff (symbolicate hash-table contents-updater-of-contents-updater '-diff))
+                (contents-updater-of-contents-remover-same (symbolicate hash-table contents-updater '-of- contents-remover '-same))
+
+                (updater{type-prescription} (symbolicate hash-table updater '{type-prescription}))
+                (updater-when-not-key-recognizer (symbolicate hash-table updater '-when-not- key-recognizer))
+                (updater-when-not-val-recognizer (symbolicate hash-table updater '-when-not- val-recognizer))
+                (updater-when-not-recognizer (symbolicate hash-table updater '-when-not- recognizer))
+                (updater-of-key-fixer (symbolicate hash-table updater '-of- key-fixer))
+                (updater-of-val-fixer (symbolicate hash-table updater '-of- val-fixer))
+                (updater-of-fixer (symbolicate hash-table updater '-of- fixer))
+                (updater-of-accessor (symbolicate hash-table updater '-of- accessor))
+                (updater-of-accessor-when-boundp (symbolicate hash-table updater-of-accessor '-when- boundp))
+                (updater-of-accessor-when-not-boundp (symbolicate hash-table updater-of-accessor '-when-not- boundp))
+                (updater-of-accessor-when-boundp-free (symbolicate hash-table updater-of-accessor-when-boundp '-free))
+                (updater-of-updater (symbolicate hash-table updater '-of- updater))
+                (updater-of-updater-same (symbolicate hash-table updater-of-updater '-same))
+                (updater-of-updater-diff (symbolicate hash-table updater-of-updater '-diff))
+                (updater-of-remover-same (symbolicate hash-table updater '-of- remover '-same))
+
+                (contents-boundp{type-prescription} (symbolicate hash-table contents-boundp '{type-prescription}))
+                (contents-boundp-when-not-key-recognizer (symbolicate hash-table contents-boundp '-when-not- key-recognizer))
+                (contents-boundp-when-not-contents-recognizer (symbolicate hash-table contents-boundp '-when-not- contents-recognizer))
+                (contents-boundp-of-contents-creator (symbolicate hash-table contents-boundp '-of- contents-creator))
+                (contents-boundp-of-key-fixer (symbolicate hash-table contents-boundp '-of- key-fixer))
+                (contents-boundp-of-contents-fixer (symbolicate hash-table contents-boundp '-of- contents-fixer))
+                (contents-boundp-of-contents-updater (symbolicate hash-table contents-boundp '-of- contents-updater))
+                (contents-boundp-of-contents-updater-same (symbolicate hash-table contents-boundp-of-contents-updater '-same))
+                (contents-boundp-of-contents-updater-diff (symbolicate hash-table contents-boundp-of-contents-updater '-diff))
+                (contents-boundp-of-contents-remover (symbolicate hash-table contents-boundp '-of- contents-remover))
+                (contents-boundp-of-contents-remover-same (symbolicate hash-table contents-boundp-of-contents-remover '-same))
+                (contents-boundp-of-contents-remover-diff (symbolicate hash-table contents-boundp-of-contents-remover '-diff))
+; TODO: replace spurious symbols with strings
+                (contents-boundp-when-zp-contents-count (symbolicate hash-table contents-boundp '-when-zp- contents-count))
+
+                (boundp{type-prescription} (symbolicate hash-table boundp '{type-prescription}))
+                (boundp-when-not-key-recognizer (symbolicate hash-table boundp '-when-not- key-recognizer))
+                (boundp-when-not-recognizer (symbolicate hash-table boundp '-when-not- recognizer))
+                (boundp-of-creator (symbolicate hash-table boundp '-of- creator))
+                (boundp-of-key-fixer (symbolicate hash-table boundp '-of- key-fixer))
+                (boundp-of-fixer (symbolicate hash-table boundp '-of- fixer))
+                (boundp-of-updater (symbolicate hash-table boundp '-of- updater))
+                (boundp-of-updater-same (symbolicate hash-table boundp-of-updater '-same))
+                (boundp-of-updater-diff (symbolicate hash-table boundp-of-updater '-diff))
+                (boundp-of-remover (symbolicate hash-table boundp '-of- remover))
+                (boundp-of-remover-same (symbolicate hash-table boundp-of-remover '-same))
+                (boundp-of-remover-diff (symbolicate hash-table boundp-of-remover '-diff))
+                (boundp-when-zp-count (symbolicate hash-table boundp '-when-zp- count))
+                (boundp-of-keys-set (symbolicate hash-table boundp '-of- keys-set))
+
+                (contents-getp{type-prescription} (symbolicate hash-table contents-getp '{type-prescription}))
+                (contents-getp{rewrite} (symbolicate hash-table contents-getp '{rewrite}))
+
+                (getp{type-prescription} (symbolicate hash-table getp '{type-prescription}))
+                (getp{rewrite} (symbolicate hash-table getp '{rewrite}))
+
+                (contents-remover{type-prescription} (symbolicate hash-table contents-remover '{type-prescription}))
+                (contents-remover-when-not-key-recognizer (symbolicate hash-table contents-remover '-when-not- key-recognizer))
+                (contents-remover-when-not-contents-recognizer (symbolicate hash-table contents-remover '-when-not- contents-recognizer))
+                (contents-remover-of-contents-creator (symbolicate hash-table contents-remover '-of- contents-creator))
+                (contents-remover-of-key-fixer (symbolicate hash-table contents-remover '-of- key-fixer))
+                (contents-remover-of-contents-fixer (symbolicate hash-table contents-remover '-of- contents-fixer))
+                (contents-remover-of-contents-updater (symbolicate hash-table contents-remover '-of- contents-updater))
+                (contents-remover-of-contents-updater-same (symbolicate hash-table contents-remover-of-contents-updater '-same))
+                (contents-remover-of-contents-updater-diff (symbolicate hash-table contents-remover-of-contents-updater '-diff))
+                (contents-remover-when-not-contents-boundp (symbolicate hash-table contents-remover '-when-not- contents-boundp))
+                (contents-remover-of-contents-remover (symbolicate hash-table contents-remover '-of- contents-remover))
+                (contents-remover-of-contents-remover-same (symbolicate hash-table contents-remover-of-contents-remover '-same))
+                (contents-remover-of-contents-remover-diff (symbolicate hash-table contents-remover-of-contents-remover '-diff))
+
+                (remover{type-prescription} (symbolicate hash-table remover '{type-prescription}))
+                (remover-when-not-key-recognizer (symbolicate hash-table remover '-when-not- key-recognizer))
+                (remover-when-not-recognizer (symbolicate hash-table remover '-when-not- recognizer))
+                (remover-of-creator (symbolicate hash-table remover '-of- creator))
+                (remover-of-key-fixer (symbolicate hash-table remover '-of- key-fixer))
+                (remover-of-fixer (symbolicate hash-table remover '-of- fixer))
+                (remover-of-updater (symbolicate hash-table remover '-of- updater))
+                (remover-of-updater-same (symbolicate hash-table remover-of-updater '-same))
+                (remover-of-updater-diff (symbolicate hash-table remover-of-updater '-diff))
+                (remover-when-not-boundp (symbolicate hash-table remover '-when-not- boundp))
+                (remover-of-remover (symbolicate hash-table remover '-of- remover))
+                (remover-of-remover-same (symbolicate hash-table remover-of-remover '-same))
+                (remover-of-remover-diff (symbolicate hash-table remover-of-remover '-diff))
+
+                (contents-count{type-prescription} (symbolicate hash-table contents-count '{type-prescription}))
+                (contents-count-when-not-contents-recognizer (symbolicate hash-table contents-count '-when-not- contents-recognizer))
+                (contents-count-of-contents-creator (symbolicate hash-table contents-count '-of- contents-creator))
+                (contents-count-of-contents-fixer (symbolicate hash-table contents-count '-of- contents-fixer))
+                (contents-count-of-contents-updater (symbolicate hash-table contents-count '-of- contents-updater))
+                (contents-count-of-contents-updater-when-contents-boundp (symbolicate hash-table contents-count-of-contents-updater '-when- contents-boundp))
+                (contents-count-of-contents-updater-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-updater '-when-not- contents-boundp))
+                (contents-count-when-contents-boundp (symbolicate hash-table contents-count '-when- contents-boundp))
+                (contents-count-of-contents-remover (symbolicate hash-table contents-count '-of- contents-remover))
+                (contents-count-of-contents-remover-when-contents-boundp (symbolicate hash-table contents-count-of-contents-remover '-when- contents-boundp))
+                (contents-count-of-contents-remover-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-remover '-when-not- contents-boundp))
+
+                (count{type-prescription} (symbolicate hash-table count '{type-prescription}))
+                (count-when-not-recognizer (symbolicate hash-table count '-when-not- recognizer))
+                (count-of-creator (symbolicate hash-table count '-of- creator))
+                (count-of-fixer (symbolicate hash-table count '-of- fixer))
+                (count-of-updater (symbolicate hash-table count '-of- updater))
+                (count-of-updater-when-boundp (symbolicate hash-table count-of-updater '-when- boundp))
+                (count-of-updater-when-not-boundp (symbolicate hash-table count-of-updater '-when-not- boundp))
+                (count-when-boundp (symbolicate hash-table count '-when- boundp))
+                (count-of-remover (symbolicate hash-table count '-of- remover))
+                (count-of-remover-when-boundp (symbolicate hash-table count-of-remover '-when- boundp))
+                (count-of-remover-when-not-boundp (symbolicate hash-table count-of-remover '-when-not- boundp))
+                (count-of-keys-set (symbolicate hash-table count '-of- keys-set))
+
+                (contents-clear{type-prescription} (symbolicate hash-table contents-clear '{type-prescription}))
+                (contents-clear{rewrite} (symbolicate hash-table contents-clear '{rewrite}))
+
+                (clear{type-prescription} (symbolicate hash-table clear '{type-prescription}))
+                (clear{rewrite} (symbolicate hash-table clear '{rewrite}))
+
+                (contents-init{type-prescription} (symbolicate hash-table contents-init '{type-prescription}))
+                (contents-init{rewrite} (symbolicate hash-table contents-init '{rewrite}))
+
+                (init{type-prescription} (symbolicate hash-table init '{type-prescription}))
+                (init{rewrite} (symbolicate hash-table init '{rewrite}))
+
+                (keys{type-prescription} (symbolicate hash-table keys '{type-prescription}))
+                (setp-of-keys (symbolicate hash-table 'set::setp '-of- keys))
+                (keys-when-not-recognizer (symbolicate hash-table keys '-when-not- recognizer))
+                (keys-of-creator (symbolicate hash-table keys '-of- creator))
+                (keys-of-fixer (symbolicate hash-table keys '-of- fixer))
+                (keys-of-updater (symbolicate hash-table keys '-of- updater))
+                (keys-of-remover (symbolicate hash-table keys '-of- remover))
+                (keys-of-keys-set (symbolicate hash-table keys '-of- keys-set))
+
+                (keys-set{type-prescription} (symblicate hash-table keys-set '{type-prescription}))
+                (keys-set-when-not-setp (symbolociate hash-table keys-set '-when-not- 'set::setp))
+                (keys-set-when-not-recognizer (symbolciate hash-table keys-set '-when-not- recognizer))
+                (keys-set-of-creator (symbolicate hash-table keys-set '-of- creator))
+                (keys-set-of-sfix (symbolicate hash-table keys-set '-of- 'set::sfix))
+                (keys-set-of-fixer (symbolicate hash-table keys-set '-of- fixer))
+                (keys-set-of-updater (symbolicate hash-table keys-set '-of- updater))
+                (keys-set-of-remover (symbolicate hash-table keys-set '-of- remover))
+                (keys-set-of-keys (symbolicate hash-table keys-set '-of- keys))
+                (keys-set-of-keys-free (symbolicate hash-table keys-set-of-keys '-free))
+                (keys-set-of-keys-set (symbolicate hash-table keys-set '-of- keys-set))
+
+                (contents-keys-equal (symbolicate hash-table contents '-keys-equal))
+                (contents-vals-equal (symbolicate hash-table contents '-vals-equal))
+                (contents-equal (symbolicate hash-table contents '-equal))
+                (contents-equal{forward-chaining} (symbolicate hash-table contents-equal '{forward-chaining}))
+
+                (hash-table-keys-equal (symbolicate hash-table hash-table '-keys-equal))
+                (hash-table-vals-equal (symbolicate hash-table hash-table '-vals-equal))
+                (hash-table-equal (symbolicate hash-table hash-table '-equal))
+                (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal '{forward-chaining}))
+
+                ;; HERE
+
+                (updater-of-val-fixer (symbolicate hash-table ',updater '-of- val-fixer))
+                (updater-when-not-val-recognizer (symbolicate hash-table ',updater '-when-not- val-recognizer))
+                (contents-updater-when-not-val-recognizer (symbolicate hash-table ',contents-updater '-when-not- val-recognizer))
                 (updater-when-not-key-recognizer
                  (if (eq ',updater-when-not-key-recognizer updater-when-not-val-recognizer)
                      ',(symbolicate hash-table updater-when-not-key-recognizer "-0")
                      ',updater-when-not-key-recognizer))
                 (updater-when-not-val-recognizer
                  (if (eq ',updater-when-not-key-recognizer updater-when-not-val-recognizer)
-                     (symbolicate ',hash-table updater-when-not-val-recognizer "-1")
+                     (symbolicate hash-table updater-when-not-val-recognizer "-1")
                      updater-when-not-val-recognizer))
                 (contents-updater-when-not-key-recognizer
                  (if (eq ',contents-updater-when-not-key-recognizer contents-updater-when-not-val-recognizer)
@@ -447,89 +507,219 @@
                      ',contents-updater-when-not-key-recognizer))
                 (contents-updater-when-not-val-recognizer
                  (if (eq ',contents-updater-when-not-key-recognizer contents-updater-when-not-val-recognizer)
-                     (symbolicate ',hash-table contents-updater-when-not-val-recognizer "-1")
+                     (symbolicate hash-table contents-updater-when-not-val-recognizer "-1")
                      contents-updater-when-not-val-recognizer))
-                (prologue
-                 `((deflabel ,',hash-table-begin)
 
-                   (defconst ,',default-key-name ',',default-key)
+                (recognizer{compound-recognizer} (symbolicate hash-table recognizer '{compound-recognizer}))
+                (contents-recognizer{compound-recognizer}
+                 (symbolicate hash-table contents-recognizer '{compound-recognizer}))
 
-                   ,@(and (not val-type-is-stobj)
-                          `((defconst ,',default-val-name ',',default-val)))))
-                (epilogue
-                 `((deflabel ,',hash-table-end)
+                (recognizer-of-fixer (symbolicate hash-table recognizer '-of- fixer))
+                (contents-recognizer-of-contents-fixer
+                 (symbolicate hash-table contents-recognizer '-of- contents-fixer))
+                (fixer-when-recognizer (symbolicate hash-table fixer '-when- recognizer))
+                (contents-fixer-when-contents-recognizer
+                 (symbolicate hash-table contents-fixer '-when- contents-recognizer))
+                (fixer-when-not-recognizer (symbolicate hash-table fixer '-when-not- recognizer))
+                (contents-fixer-when-not-contents-recognizer
+                 (symbolicate hash-table contents-fixer '-when-not- contents-recognizer))
 
-                   (deftheory-static ,',hash-table-theorems
-                     (set-difference-theories
-                      (set-difference-theories
-                       (current-theory ',',hash-table-end)
-                       (current-theory ',',hash-table-begin))
-                      (union-theories (function-theory ',',hash-table-end)
-                                      '((:i ,',contents-recognizer)
-                                        (:i ,',contents-accessor)
-                                        (:i ,',contents-updater)
-                                        (:i ,',contents-boundp)
-                                        (:i ,',contents-remover)
-                                        (:i ,',contents-count)))))
+                (recognizer-of-creator (symbolicate hash-table recognizer '-of- creator))
+                (emptyp-of-creator (symbolicate hash-table 'emptyp-of- creator))
 
-                   (deftheory-static ,',hash-table-definitions
-                     (set-difference-theories
-                      (set-difference-theories
-                       (set-difference-theories
-                        (current-theory ',',hash-table-end)
-                        (current-theory ',',hash-table-begin))
-                       (theory ',',hash-table-theorems))
-                      '(,',keys-equal
-                        ,',vals-equal)))
+                (accessor-of-key-fixer (symbolicate hash-table accessor '-of- key-fixer))
+                (contents-accessor-of-key-fixer
+                 (symbolicate hash-table contents-accessor '-of- key-fixer))
+                (accessor-of-fixer (symbolicate hash-table accessor '-of- fixer))
+                (contents-accessor-of-contents-fixer
+                 (symbolicate hash-table contents-accessor '-of- contents-fixer))
+                (accessor-when-not-key-recognizer (symbolicate hash-table accessor '-when-not- key-recognizer))
+                (contents-accessor-when-not-key-recognizer (symbolicate hash-table contents-accessor '-when-not- key-recognizer))
 
-                   (deftheory-static ,',hash-table-aggressive
-                     (append
-                      (and ',',key-recognizer
-                           (list ',updater-when-not-key-recognizer))
-                      (and ',',val-recognizer
-                           (list ',updater-when-not-val-recognizer))
-                      ',',(append
-                           (list count-of-updater
-                                 count-of-remover
-                                 count-when-not-recognizer
-                                 accessor-of-updater
-                                 accessor-when-not-boundp
-                                 accessor-of-remover
-                                 updater-of-accessor
-                                 updater-of-updater
-                                 boundp-of-updater
-                                 boundp-of-remover
-                                 boundp-when-not-recognizer
-                                 remover-of-updater
-                                 remover-when-not-boundp
-                                 remover-of-remover)
-                           (and copyable
-                                (list keys-when-not-recognizer
-                                      boundp-when-zp-count
-                                      keys-set-of-keys-free))
-                           (and key-recognizer
-                                (list accessor-when-not-key-recognizer
-                                      boundp-when-not-key-recognizer
-                                      remover-when-not-key-recognizer)))))
+                (recognizer-of-updater (symbolicate hash-table recognizer '-of- updater))
+                (contents-recognizer-of-contents-updater
+                 (symbolicate hash-table contents-recognizer '-of- contents-updater))
+                (updater-of-key-fixer (symbolicate hash-table updater '-of- key-fixer))
+                (updater-of-fixer (symbolicate hash-table updater '-of- fixer))
+                (contents-updater-of-contents-fixer
+                 (symbolicate hash-table contents-updater '-of- contents-fixer))
+                (updater-when-not-key-recognizer (symbolicate hash-table updater '-when-not- key-recognizer))
+                (contents-updater-when-not-key-recognizer (symbolicate hash-table contents-updater '-when-not- key-recognizer))
 
-                   (in-theory
-                     (union-theories (current-theory ',',hash-table-begin)
-                                     (theory ',',hash-table-theorems)))
-                   (in-theory
-                     (enable ,',keys-equal
-                             ,',vals-equal))))
-                (default-key (cond
-                               (',testp
-                                ',default-key)
-                               (t
-                                ',default-key-name)))
-                (default-val (cond
-                               (',testp
-                                ',default-val)
-                               (val-type-is-stobj
-                                `(,(stobj-creator ',val)))
-                               (t
-                                ',default-val-name)))
+                (boundp-of-key-fixer (symbolicate hash-table boundp '-of- key-fixer))
+                (contents-boundp-of-key-fixer
+                 (symbolicate hash-table contents-boundp '-of- key-fixer))
+                (boundp-of-fixer (symbolicate hash-table boundp '-of- fixer))
+                (contents-boundp-of-contents-fixer
+                 (symbolicate hash-table contents-boundp '-of- contents-fixer))
+                (boundp-when-not-key-recognizer (symbolicate hash-table boundp '-when-not- key-recognizer))
+                (contents-boundp-when-not-key-recognizer (symbolicate hash-table contents-boundp '-when-not- key-recognizer))
+                (boundp-when-not-recognizer (symbolicate hash-table boundp '-when-not- recognizer))
+                (contents-boundp-when-not-contents-recognizer
+                 (symbolicate hash-table contents-boundp '-when-not- contents-recognizer))
+
+                (getp{rewrite} (symbolicate hash-table getp '{rewrite}))
+
+                (recognizer-of-remover (symbolicate hash-table recognizer '-of- remover))
+                (contents-recognizer-of-contents-remover
+                 (symbolicate hash-table contents-recognizer '-of- contents-remover))
+                (remover-of-key-fixer (symbolicate hash-table remover '-of- key-fixer))
+                (contents-remover-of-key-fixer
+                 (symbolicate hash-table contents-remover '-of- key-fixer))
+                (remover-of-fixer (symbolicate hash-table remover '-of- fixer))
+                (contents-remover-of-contents-fixer
+                 (symbolicate hash-table contents-remover '-of- contents-fixer))
+                (remover-when-not-key-recognizer (symbolicate hash-table remover '-when-not- key-recognizer))
+                (contents-remover-when-not-key-recognizer (symbolicate hash-table contents-remover '-when-not- key-recognizer))
+
+                (count-of-fixer (symbolicate hash-table count '-of- fixer))
+                (contents-count-of-contents-fixer
+                 (symbolicate hash-table contents-count '-of- contents-fixer))
+                (count-when-not-recognizer (symbolicate hash-table count '-when-not- recognizer))
+                (contents-count-when-not-contents-recognizer
+                 (symbolicate hash-table contents-count '-when-not- contents-recognizer))
+
+                (clear{rewrite} (symbolicate hash-table clear '{rewrite}))
+
+                (init{rewrite} (symbolicate hash-table init '{rewrite}))
+
+                (accessor-of-creator (symbolicate hash-table accessor '-of- creator))
+                (accessor-of-updater (symbolicate hash-table accessor '-of- updater))
+                (accessor-of-updater-same (symbolicate hash-table accessor-of-updater '-same))
+                (accessor-of-updater-diff (symbolicate hash-table accessor-of-updater '-diff))
+                (accessor-when-not-boundp (symbolicate hash-table accessor '-when-not- boundp))
+                (accessor-of-remover (symbolicate hash-table accessor '-of- remover))
+                (accessor-of-remover-same (symbolicate hash-table accessor-of-remover '-same))
+                (accessor-of-remover-diff (symbolicate hash-table accessor-of-remover '-diff))
+
+                (contents-accessor-of-contents-creator (symbolicate hash-table contents-accessor '-of- contents-creator))
+                (contents-accessor-of-contents-updater (symbolicate hash-table contents-accessor '-of- contents-updater))
+                (contents-accessor-of-contents-updater-same (symbolicate hash-table contents-accessor-of-contents-updater '-same))
+                (contents-accessor-of-contents-updater-diff (symbolicate hash-table contents-accessor-of-contents-updater '-diff))
+                (contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-accessor '-when-not- contents-boundp))
+                (contents-accessor-of-contents-remover (symbolicate hash-table contents-accessor '-of- contents-remover))
+                (contents-accessor-of-contents-remover-same (symbolicate hash-table contents-accessor-of-contents-remover '-same))
+                (contents-accessor-of-contents-remover-diff (symbolicate hash-table contents-accessor-of-contents-remover '-diff))
+
+                (updater-of-accessor (symbolicate hash-table updater '-of- accessor))
+                (updater-of-accessor-when-boundp (symbolicate hash-table updater-of-accessor '-when- boundp))
+                (updater-of-accessor-when-not-boundp (symbolicate hash-table updater-of-accessor '-when-not- boundp))
+                (updater-of-updater (symbolicate hash-table updater '-of- updater))
+                (updater-of-updater-same (symbolicate hash-table updater-of-updater '-same))
+                (updater-of-updater-diff (symbolicate hash-table updater-of-updater '-diff))
+                (updater-of-remover (symbolicate hash-table updater '-of- remover))
+
+                (contents-updater-of-contents-accessor (symbolicate hash-table contents-updater '-of- contents-accessor))
+                (contents-updater-of-contents-accessor-when-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor '-when- contents-boundp))
+                (contents-updater-of-contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor '-when-not- contents-boundp))
+                (contents-updater-of-contents-updater (symbolicate hash-table contents-updater '-of- contents-updater))
+                (contents-updater-of-contents-updater-same (symbolicate hash-table contents-updater-of-contents-updater '-same))
+                (contents-updater-of-contents-updater-diff (symbolicate hash-table contents-updater-of-contents-updater '-diff))
+                (contents-updater-of-contents-remover (symbolicate hash-table contents-updater '-of- contents-remover))
+
+                (boundp-of-creator (symbolicate hash-table boundp '-of- creator))
+                (boundp-of-updater (symbolicate hash-table boundp '-of- updater))
+                (boundp-of-updater-same (symbolicate hash-table boundp-of-updater '-same))
+                (boundp-of-updater-diff (symbolicate hash-table boundp-of-updater '-diff))
+                (boundp-of-remover (symbolicate hash-table boundp '-of- remover))
+                (boundp-of-remover-same (symbolicate hash-table boundp-of-remover '-same))
+                (boundp-of-remover-diff (symbolicate hash-table boundp-of-remover '-diff))
+                (boundp-when-zp-count (symbolicate hash-table boundp '-when-zp- count))
+                (contents-boundp-when-zp-contents-count (symbolicate hash-table contents-boundp '-when-zp- contents-count))
+
+                (contents-boundp-of-contents-creator (symbolicate hash-table contents-boundp '-of- contents-creator))
+                (contents-boundp-of-contents-updater (symbolicate hash-table contents-boundp '-of- contents-updater))
+                (contents-boundp-of-contents-updater-same (symbolicate hash-table contents-boundp-of-contents-updater '-same))
+                (contents-boundp-of-contents-updater-diff (symbolicate hash-table contents-boundp-of-contents-updater '-diff))
+                (contents-boundp-of-contents-remover (symbolicate hash-table contents-boundp '-of- contents-remover))
+                (contents-boundp-of-contents-remover-same (symbolicate hash-table contents-boundp-of-contents-remover '-same))
+                (contents-boundp-of-contents-remover-diff (symbolicate hash-table contents-boundp-of-contents-remover '-diff))
+
+                (remover-of-creator (symbolicate hash-table remover '-of- creator))
+                (remover-of-updater (symbolicate hash-table remover '-of- updater))
+                (remover-of-updater-same (symbolicate hash-table remover-of-updater '-same))
+                (remover-of-updater-diff (symbolicate hash-table remover-of-updater '-diff))
+                (remover-when-not-boundp (symbolicate hash-table remover '-when-not- boundp))
+                (remover-of-remover (symbolicate hash-table remover '-of- remover))
+                (remover-of-remover-same (symbolicate hash-table remover-of-remover '-same))
+                (remover-of-remover-diff (symbolicate hash-table remover-of-remover '-diff))
+
+                (contents-remover-of-contents-creator (symbolicate hash-table contents-remover '-of- contents-creator))
+                (contents-remover-of-contents-updater (symbolicate hash-table contents-remover '-of- contents-updater))
+                (contents-remover-of-contents-updater-same (symbolicate hash-table contents-remover-of-contents-updater '-same))
+                (contents-remover-of-contents-updater-diff (symbolicate hash-table contents-remover-of-contents-updater '-diff))
+                (contents-remover-when-not-contents-boundp (symbolicate hash-table contents-remover '-when-not- contents-boundp))
+                (contents-remover-of-contents-remover (symbolicate hash-table contents-remover '-of- contents-remover))
+                (contents-remover-of-contents-remover-same (symbolicate hash-table contents-remover-of-contents-remover '-same))
+                (contents-remover-of-contents-remover-diff (symbolicate hash-table contents-remover-of-contents-remover '-diff))
+
+                (count-of-creator (symbolicate hash-table count '-of- creator))
+                (count-of-updater (symbolicate hash-table count '-of- updater))
+                (count-of-updater-when-boundp (symbolicate hash-table count-of-updater '-when- boundp))
+                (count-of-updater-when-not-boundp (symbolicate hash-table count-of-updater '-when-not- boundp))
+                (count-of-remover (symbolicate hash-table count '-of- remover))
+                (count-of-remover-when-boundp (symbolicate hash-table count-of-remover '-when- boundp))
+                (count-of-remover-when-not-boundp (symbolicate hash-table count-of-remover '-when-not- boundp))
+
+                (contents-count-of-contents-creator (symbolicate hash-table contents-count '-of- contents-creator))
+                (contents-count-of-contents-updater (symbolicate hash-table contents-count '-of- contents-updater))
+                (contents-count-of-contents-updater-when-contents-boundp (symbolicate hash-table contents-count-of-contents-updater '-when- contents-boundp))
+                (contents-count-of-contents-updater-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-updater '-when-not- contents-boundp))
+                (contents-count-of-contents-remover (symbolicate hash-table contents-count '-of- contents-remover))
+                (contents-count-of-contents-remover-when-contents-boundp (symbolicate hash-table contents-count-of-contents-remover '-when- contents-boundp))
+                (contents-count-of-contents-remover-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-remover '-when-not- contents-boundp))
+
+                (setp-of-keys (symbolicate hash-table 'setp-of- keys))
+                (keys-of-creator (symbolicate hash-table keys '-of- creator))
+                (keys-of-fixer (symbolicate hash-table keys '-of- fixer))
+                (keys-when-not-recognizer (symbolicate hash-table keys '-when-not- recognizer))
+                (keys-of-updater (symbolicate hash-table keys '-of- updater))
+                (keys-of-remover (symbolicate hash-table keys '-of- remover))
+                (keys-of-keys-set (symbolicate hash-table keys '-of- keys-set))
+                (recognizer-of-keys-set (symbolicate hash-table recognizer '-of- keys-set))
+                (keys-set-of-sfix (symbolicate hash-table keys-set '-of-sfix))
+                (keys-set-of-fixer (symbolicate hash-table keys-set '-of- fixer))
+                (accessor-of-keys-set (symbolicate hash-table accessor '-of- keys-set))
+                (keys-set-of-updater (symbolicate hash-table keys-set '-of- updater))
+                (boundp-of-keys-set (symbolicate hash-table boundp '-of- keys-set))
+                (keys-set-of-remover (symbolicate hash-table keys-set '-of- remover))
+                (count-of-keys-set (symbolicate hash-table count '-of- keys-set))
+                (keys-set-of-keys-set (symbolicate hash-table keys-set '-of- keys-set))
+                (keys-set-of-keys (symbolicate hash-table keys-set '-of- keys))
+                (keys-set-of-keys-free (symbolicate hash-table keys-set-of-keys '-free))
+
+                (%contents (symbolicate hash-table '% contents))
+                (%hash-table (symbolicate hash-table '% hash-table))
+                (keys-equal (symbolicate hash-table hash-table '-keys-equal))
+                (contents-keys-equal (if copyable
+                                         (symbolicate hash-table contents '-keys-equal)
+                                         keys-equal))
+                (keys-equal-witness (symbolicate hash-table keys-equal '-witness))
+                (contents-keys-equal-witness (if copyable
+                                                 (symbolicate hash-table contents-keys-equal '-witness)
+                                                 keys-equal-witness))
+                (keys-equal-necc (symbolicate hash-table keys-equal '-necc))
+                (contents-keys-equal-lemma-0 (symbolicate hash-table contents-keys-equal '-lemma-0))
+                (contents-keys-equal-lemma-1 (symbolicate hash-table contents-keys-equal '-lemma-1))
+                (keys-equal-implies-contents-keys-equal (symbolicate hash-table keys-equal '-implies- contents-keys-equal))
+                (vals-equal (symbolicate hash-table hash-table '-vals-equal))
+                (contents-vals-equal (if copyable
+                                         (symbolicate hash-table contents '-vals-equal)
+                                         vals-equal))
+                (contents-vals-equal-witness (symbolicate hash-table contents-vals-equal '-witness))
+                (vals-equal-necc (symbolicate hash-table vals-equal '-necc))
+                (contents-vals-equal-lemma-0 (symbolicate hash-table contents-vals-equal '-lemma-0))
+                (contents-vals-equal-lemma-1 (symbolicate hash-table contents-vals-equal '-lemma-1))
+                (vals-equal-implies-contents-vals-equal (symbolicate hash-table vals-equal '-implies- contents-vals-equal))
+                (hash-table-equal (symbolicate hash-table hash-table '-equal))
+                (contents-equal (if copyable
+                                    (symbolicate hash-table contents '-equal)
+                                    hash-table-equal))
+                (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal '{forward-chaining}))
+                (contents-equal{forward-chaining} (if copyable
+                                                      (symbolicate hash-table contents-equal '{forward-chaining})
+                                                      hash-table-equal{forward-chaining}))
+
                 (updater-of-key-fixer (if (eq ',updater-of-key-fixer updater-of-val-fixer)
                                           (symbolicate ',updater-of-key-fixer ',updater-of-key-fixer "-0")
                                           ',updater-of-key-fixer))
@@ -538,329 +728,331 @@
                                           (symbolicate updater-of-val-fixer updater-of-val-fixer "-1")
                                           updater-of-val-fixer))
                 (contents-updater-of-val-fixer (symbolicate ',contents ',contents "-" updater-of-val-fixer))
+
+                (hash-table-theorems (symbolicate hash-table hash-table '-theorems))
+                (hash-table-definitions (symbolicate hash-table hash-table '-definitions))
+                (hash-table-aggressive (symbolicate hash-table hash-table '-aggressive))
+                (epilogue
+                 `((deflabel ,hash-table-end)
+
+                   (deftheory-static ,hash-table-theorems
+                     (set-difference-theories
+                      (set-difference-theories
+                       (current-theory ',hash-table-end)
+                       (current-theory ',hash-table-begin))
+                      (union-theories (function-theory ',hash-table-end)
+; TODO: double check theory
+                                      '((:i ,contents-recognizer)
+                                        (:i ,contents-accessor)
+                                        (:i ,contents-updater)
+                                        (:i ,contents-boundp)
+                                        (:i ,contents-remover)
+                                        (:i ,contents-count)))))
+
+                   (deftheory-static ,hash-table-definitions
+                     (set-difference-theories
+                      (set-difference-theories
+                       (set-difference-theories
+                        (current-theory ',hash-table-end)
+                        (current-theory ',hash-table-begin))
+                       (theory ',hash-table-theorems))
+                      '(,keys-equal
+                        ,vals-equal)))
+
+                   (deftheory-static ,hash-table-aggressive
+                     ',(append
+                        (and key-recognizer
+                             (list updater-when-not-key-recognizer))
+                        (and val-recognizer
+                             (list updater-when-not-val-recognizer))
+                        (append
+                         (list count-of-updater
+                               count-of-remover
+                               count-when-not-recognizer
+                               accessor-of-updater
+                               accessor-when-not-boundp
+                               accessor-of-remover
+                               updater-of-accessor
+                               updater-of-updater
+                               boundp-of-updater
+                               boundp-of-remover
+                               boundp-when-not-recognizer
+                               remover-of-updater
+                               remover-when-not-boundp
+                               remover-of-remover)
+                         (and copyable
+                              (list keys-when-not-recognizer
+                                    boundp-when-zp-count
+                                    keys-set-of-keys-free))
+                         (and key-recognizer
+                              (list accessor-when-not-key-recognizer
+                                    boundp-when-not-key-recognizer
+                                    remover-when-not-key-recognizer)))))
+
+                   (in-theory
+                     (union-theories (current-theory ',hash-table-begin)
+                                     (theory ',hash-table-theorems)))
+
+                   (in-theory
+                     (enable ,keys-equal
+                             ,vals-equal))))
+
+                (fi-bindings
+                 ;; TODO:
+                 (list ...))
+                (fi-bindings-with-skolem
+                 (list* ...))
+
+; TODO: collapse contents and full theorems to singles not duplicates, use ,(if
+; copyable) dispatch on which theorem to instantiate.
                 (body
-                 `(with-books (("projects/atomic-stobjs/lemmas/define-hash-table-lemmas" :dir :system))
-
-                    ,@(and (or ',(and key-recognizer
-                                      key-fixer)
-                               (and val-recognizer
-                                    val-fixer)
-                               val-type-is-stobj)
-                           `((local
-                               (defthm ,',hash-table-entry-guard
-                                 (and ,@(and ',(and key-recognizer
-                                                    key-fixer)
-                                             `((booleanp (,',key-recognizer ,',key))
-                                               (,',key-recognizer ,default-key)
-                                               (,',key-recognizer (,',key-fixer ,',key))
-                                               (implies (,',key-recognizer ,',key)
-                                                        (equal (,',key-fixer ,',key) ,',key))
-                                               (implies (not (,',key-recognizer ,',key))
-                                                        (equal (,',key-fixer ,',key) ,default-key))))
-                                      ,@(and ',(or (eq test 'eq)
-                                                   (eq test 'eql))
-                                             `((implies (,',key-recognizer ,',key)
-                                                        ,(case ',test
-                                                           (eq
-                                                            `(symbolp ,',key))
-                                                           (eql
-                                                            `(eqlablep ,',key))))))
-                                      ,@(and ',(and val-recognizer
-                                                    val-fixer)
-                                             `((booleanp (,val-recognizer ,',val))
-                                               (,val-recognizer ,default-val)
-                                               (,val-recognizer (,val-fixer ,',val))
-                                               (implies (,val-recognizer ,',val)
-                                                        (equal (,val-fixer ,',val) ,',val))
-                                               (implies (not (,val-recognizer ,',val))
-                                                        (equal (,val-fixer ,',val) ,default-val))))
-                                      ,@(and val-type-is-stobj
-                                             `((equal ,',default-val ,default-val))))
-                                 :rule-classes
-                                 (,@(and ',(and key-recognizer
-                                                key-fixer)
-                                         `((:rewrite :corollary
-                                                     (booleanp (,',key-recognizer ,',key)))
-                                           (:rewrite :corollary
-                                                     (,',key-recognizer (,',key-fixer ,',key)))
-                                           (:rewrite :corollary
-                                                     (implies (,',key-recognizer ,',key)
-                                                              (equal (,',key-fixer ,',key) ,',key)))
-                                           (:rewrite :corollary
-                                                     (implies (not (,',key-recognizer ,',key))
-                                                              (equal (,',key-fixer ,',key) ,default-key)))))
-                                    ,@(and ',(or (eq test 'eq)
-                                                 (eq test 'eql))
-                                           `((:rewrite :corollary
-                                                       (implies (,',key-recognizer ,',key)
-                                                                ,(case ',test
-                                                                   (eq
-                                                                    `(symbolp ,',key))
-                                                                   (eql
-                                                                    `(eqlablep ,',key)))))))
-                                    ,@(and ',(and val-recognizer
-                                                  val-fixer)
-                                           `((:rewrite :corollary
-                                                       (booleanp (,val-recognizer ,',val)))
-                                             (:rewrite :corollary
-                                                       (,val-recognizer (,val-fixer ,',val)))
-                                             (:rewrite :corollary
-                                                       (implies (,val-recognizer ,',val)
-                                                                (equal (,val-fixer ,',val) ,',val)))
-                                             (:rewrite :corollary
-                                                       (implies (not (,val-recognizer ,',val))
-                                                                (equal (,val-fixer ,',val) ,default-val))))))
-                                 :hints
-                                 (("Goal"
-                                   ,@(and ',(not testp)
-                                          `(:in-theory (disable ,@(and ',key-recognizer
-                                                                       '(,key-recognizer
-                                                                         ,key-fixer))
-                                                                ,@(and val-recognizer
-                                                                       '(,val-recognizer
-                                                                         ,val-fixer)))))))))))
-
-                    ,@(and ',(not testp)
-                           ',(or key-recognizer
-                                 val-recognizer)
-                           '((local
-                               (in-theory
-                                 (disable ,@(and key-recognizer
-                                                 `((:d ,key-recognizer)
-                                                   (:d ,key-fixer)
-                                                   (:e ,key-fixer)))
-                                          ,@(and val-recognizer
-                                                 `((:d ,val-recognizer)
-                                                   (:d ,val-fixer)
-                                                   (:e ,val-fixer))))))))
-
-                    (defun ,',contents-recognizer (,',contents)
+                 `(with-books (("projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
+; If hash-table isn't copyable, then all "CONTENTS"-prefixed symbols refer to
+; their non-prefixed base.
+                    (defun ,contents-recognizer (,contents)
                       (declare (xargs :guard t))
-                      (if (consp ,',contents)
-                          (let ((a (car ,',contents))
-                                (d (cdr ,',contents)))
-                            (and (consp a)
-                                 (let ((,',key (car a))
-                                       ,@(and val-recognizer
-                                              `((,',val (cdr a)))))
-                                   (and ,@(and ',key-recognizer
-                                               `((,',key-recognizer ,',key)))
-                                        ,@(and val-recognizer
-                                               `((,val-recognizer ,',val)))
-                                        (or (null d)
-                                            (and (consp d)
-                                                 (consp (car d))
-                                                 (<< ,',key (caar d))
-                                                 (,',contents-recognizer d)))))))
-                          (null ,',contents)))
+                      (if (atom ,contents)
+                          (null ,contents)
+                          (and (consp (car ,contents))
+                               ,@(and key-recognizer
+                                      `((,key-recognizer (caar ,contents))))
+                               ,@(and val-recognizer
+                                      `((,val-recognizer (cdar ,contents))))
+                               (or (null (cdr ,contents))
+                                   (and (consp (cdr ,contents))
+                                        (consp (cadr ,contents))
+                                        (<< (caar ,contents) (caadr ,contents))
+                                        (,contents-recognizer (cdr ,contents)))))))
 
-                    ,@(and ',copyable
-                           `((defun ,',recognizer (,',hash-table)
+                    ,@(and copyable
+                           `((defun ,recognizer (,hash-table)
                                (declare (xargs :guard t))
-                               (and (consp ,',hash-table)
-                                    (set::setp (car ,',hash-table))
-                                    (,',contents-recognizer (cdr ,',hash-table))))))
+                               (and (consp ,hash-table)
+                                    (set::setp (car ,hash-table))
+                                    (,contents-recognizer (cdr ,hash-table))))))
 
-                    (defun ,',contents-creator ()
+                    (defun ,contents-creator ()
                       (declare (xargs :guard t))
                       '())
 
-                    ,@(and ',copyable
-                           `((defun ,',creator ()
+                    ,@(and copyable
+                           `((defun ,creator ()
                                (declare (xargs :guard t))
-                               (cons '() (,',contents-creator)))))
+                               (cons '() (,contents-creator)))))
 
-                    ,@(and ',copyable
-                           `((defun ,',contents-fixer (,',contents)
-                               (declare (xargs :guard (,',contents-recognizer ,',contents)))
-                               (and (,',contents-recognizer ,',contents)
-                                    ,',contents))))
+                    (defun ,contents-fixer (,contents)
+                      (declare (xargs :guard (,contents-recognizer ,contents)))
+                      (if (,contents-recognizer ,contents)
+                          ,contents
+                          (,contents-creator)))
 
-                    (defun ,',fixer (,',hash-table)
-                      (declare (xargs :guard (,',recognizer ,',hash-table)))
-                      (if (,',recognizer ,',hash-table)
-                          ,',hash-table
-                          (,',creator)))
+                    ,@(and copyable
+                           `((defun ,fixer (,hash-table)
+                               (declare (xargs :guard (,recognizer ,hash-table)))
+                               (if (,recognizer ,hash-table)
+                                   ,hash-table
+                                   (,creator)))))
 
-                    (defun ,',contents-accessor (,',key ,',contents)
-                      (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                         `((,',key-recognizer ,',key)))
-                                                  (,',contents-recognizer ,',contents))
-                                      :measure (len ,',contents)))
-                      (let (,@(and ',key-fixer
-                                   `((,',key (,',key-fixer ,',key))))
-                            (,',contents (,',contents-fixer ,',contents)))
+                    (defun ,contents-accessor (,key ,contents)
+                      (declare (xargs :guard ,(if key-recognizer
+                                                  `(and (,key-recognizer ,key)
+                                                        (,contents-recognizer ,contents))
+                                                  `(,contents-recognizer ,contents))
+                                      :measure (len ,contents)))
+                      (let (,@(and key-fixer
+                                   `((,key (,key-fixer ,key))))
+                            (,contents (,contents-fixer ,contents)))
                         (cond
-                          ((or (null ,',contents)
-                               (<< ,',key (caar ,',contents)))
-                           ,(if val-type-is-stobj
-                                ',default-val
-                                default-val))
-                          ((,',test ,',key (caar ,',contents))
+                          ((or (atom ,contents)
+                               (<< ,key (caar ,contents)))
+                           ,default-val)
+                          ((equal ,key (caar ,contents))
                            ,(if val-fixer
-                                `(,val-fixer (cdar ,',contents))
-                                `(cdar ,',contents)))
+                                `(,val-fixer (cdar ,contents))
+                                `(cdar ,contents)))
                           (t
-                           (,',contents-accessor ,',key (cdr ,',contents))))))
+                           (,contents-accessor ,key (cdr ,contents))))))
 
-                    ,@(and ',copyable
-                           `((defun ,',accessor (,',key ,',hash-table)
-                               (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                                  `((,',key-recognizer ,',key)))
-                                                           (,',recognizer ,',hash-table))))
-                               (let (,@(and ',key-fixer
-                                            `((,',key (,',key-fixer ,',key))))
-                                     (,',hash-table (,',fixer ,',hash-table)))
-                                 (,',contents-accessor ,',key (cdr ,',hash-table))))))
+                    ,@(and copyable
+                           `((defun ,accessor (,key ,hash-table)
+                               (declare (xargs :guard ,(if key-recognizer
+                                                           `(and (,key-recognizer ,key)
+                                                                 (,recognizer ,hash-table))
+                                                           `(,recognizer ,hash-table))))
+                               (let (,@(and key-fixer
+                                            `((,key (,key-fixer ,key))))
+                                     (,hash-table (,fixer ,hash-table)))
+                                 (,accessor ,key (cdr ,hash-table))))))
 
-                    (defun ,',contents-updater (,',key ,',val ,',contents)
-                      (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                         `((,',key-recognizer ,',key)))
-                                                  ,@(and val-recognizer
-                                                         `((,(if ',copyable
-                                                                 val-recognizer
-                                                                 ',val-recognizer)
-                                                             ,',val)))
-                                                  (,',contents-recognizer ,',contents))
-                                      :measure (len ,',contents)))
-                      (let (,@(and ',key-fixer
-                                   `((,',key (,',key-fixer ,',key))))
+                    (defun ,contents-updater (,key ,val ,contents)
+                      (declare (xargs :guard ,(cond
+                                                ((and key-recognizer
+                                                      val-recognizer)
+                                                 `(and (,key-recognizer ,key)
+                                                       (,val-recognizer ,val)
+                                                       (,contents-recognizer ,contents)))
+                                                (key-recognizer
+                                                 `(and (,key-recognizer ,key)
+                                                       (,contents-recognizer ,contents)))
+                                                (val-recognizer
+                                                 `(and (,val-recognizer ,val)
+                                                       (,contents-recognizer ,contents)))
+                                                (t
+                                                 `(,contents-recognizer ,contents)))
+                                      :measure (len ,contents)))
+                      (let (,@(and key-fixer
+                                   `((,key (,key-fixer ,key))))
                             ,@(and val-fixer
-                                   `((,',val (,val-fixer ,',val))))
-                              (,',contents (,',contents-fixer ,',contents)))
-                        (if (endp ,',contents)
-                            (list (cons ,',key ,',val))
-                            (let* ((a (car ,',contents))
-                                   (d (cdr ,',contents))
-                                   (k (car a)))
-                              (cond
-                                ((<< ,',key k)
-                                 (cons (cons ,',key ,',val)
-                                       ,',contents))
-                                ((,',test ,',key k)
-                                 (cons (cons ,',key ,',val) d))
-                                (t
-                                 (cons a (,',contents-updater ,',key ,',val d))))))))
-
-                    ,@(and ',copyable
-                           `((defun ,',updater (,',key ,',val ,',hash-table)
-                               (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                                  `((,',key-recognizer ,',key)))
-                                                           ,@(and val-recognizer
-                                                                  `((,',val-recognizer ,',val)))
-                                                           (,',recognizer ,',hash-table))))
-                               (let (,@(and ',key-fixer
-                                            `((,',key (,',key-fixer ,',key))))
-                                     ,@(and val-fixer
-                                            `((,',val (,val-fixer ,',val))))
-                                       (,',hash-table (,',fixer ,',hash-table)))
-                                 (cons (car ,',hash-table)
-                                       (,',contents-updater ,',key ,',val (cdr ,',hash-table)))))))
-
-                    (defun ,',contents-boundp (,',key ,',contents)
-                      (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                         `((,',key-recognizer ,',key)))
-                                                  (,',contents-recognizer ,',contents))
-                                      :measure (len ,',contents)))
-                      (let (,@(and ',key-fixer
-                                   `((,',key (,',key-fixer ,',key))))
-                            (,',contents (,',contents-fixer ,',contents)))
+                                   `((,val (,val-fixer ,val))))
+                              (,contents (,contents-fixer ,contents)))
                         (cond
-                          ((or (null ,',contents)
-                               (<< ,',key (caar ,',contents)))
+                          ((atom ,contents)
+                           (list (cons ,key ,val)))
+                          ((<< ,key (caar ,contents))
+                           (cons (cons ,key ,val)
+                                 ,contents))
+                          ((equal ,key (caar ,contents))
+                           (cons (cons ,key ,val)
+                                 (cdr ,contents)))
+                          (t
+                           (cons (car ,contents)
+                                 (,contents-updater ,key ,val (cdr ,contents)))))))
+
+                    ,@(and copyable
+                           `((defun ,updater (,key ,val ,hash-table)
+                               (declare (xargs :guard ,(cond
+                                                         ((and key-recognizer
+                                                               val-recognizer)
+                                                          `(and (,key-recognizer ,key)
+                                                                (,val-recognizer ,val)
+                                                                (,recognizer ,hash-table)))
+                                                         (key-recognizer
+                                                          `(and (,key-recognizer ,key)
+                                                                (,recognizer ,hash-table)))
+                                                         (val-recognizer
+                                                          `(and (,val-recognizer ,val)
+                                                                (,recognizer ,hash-table)))
+                                                         (t
+                                                          `(,recognizer ,hash-table)))))
+                               (let (,@(and key-fixer
+                                            `((,key (,key-fixer ,key))))
+                                     ,@(and val-fixer
+                                            `((,val (,val-fixer ,val))))
+                                       (,hash-table (,fixer ,hash-table)))
+                                 (cons (car ,hash-table)
+                                       (,contents-updater ,key ,val (cdr ,hash-table)))))))
+
+                    (defun ,contents-boundp (,key ,contents)
+                      (declare (xargs :guard ,(if key-recognizer
+                                                  `(and (,key-recognizer ,key)
+                                                        (,contents-recognizer ,contents))
+                                                  `(,contents-recognizer ,contents))
+                                      :measure (len ,contents)))
+                      (let (,@(and key-fixer
+                                   `((,key (,key-fixer ,key))))
+                            (,contents (,contents-fixer ,contents)))
+                        (cond
+                          ((or (atom ,contents)
+                               (<< ,key (caar ,contents)))
                            'nil)
-                          ((,',test ,',key (caar ,',contents))
+                          ((equal ,key (caar ,contents))
                            't)
                           (t
-                           (,',contents-boundp ,',key (cdr ,',contents))))))
+                           (,contents-boundp ,key (cdr ,contents))))))
 
-                    ,@(and ',copyable
-                           `((defun ,',boundp (,',key ,',hash-table)
-                               (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                                  `((,',key-recognizer ,',key)))
-                                                           (,',recognizer ,',hash-table))))
-                               (let (,@(and ',key-fixer
-                                            `((,',key (,',key-fixer ,',key))))
-                                     (,',hash-table (,',fixer ,',hash-table)))
-                                 (,',contents-boundp ,',key (cdr ,',hash-table))))))
+                    ,@(and copyable
+                           `((defun ,boundp (,key ,hash-table)
+                               (declare (xargs :guard ,(if key-recognizer
+                                                           `(and (,key-recognizer ,key)
+                                                                 (,recognizer ,hash-table))
+                                                           `(,recognizer ,hash-table))))
+                               (let (,@(and key-fixer
+                                            `((,key (,key-fixer ,key))))
+                                     (,hash-table (,fixer ,hash-table)))
+                                 (,contents-boundp ,key (cdr ,hash-table))))))
 
-                    (defun ,',contents-remover (,',key ,',contents)
-                      (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                         `((,',key-recognizer ,',key)))
-                                                  (,',contents-recognizer ,',contents))
-                                      :measure (len ,',contents)))
-                      (let (,@(and ',key-fixer
-                                   `((,',key (,',key-fixer ,',key))))
-                            (,',contents (,',contents-fixer ,',contents)))
+                    ;; TODO: maybe you don't need contents- for getp, clear,
+                    ;; init, etc.
+                    (defun ,contents-getp (,key ,contents)
+                      (declare (xargs :guard ,(if key-recognizer
+                                                  `(and (,key-recognizer ,key)
+                                                        (,contents-recognizer ,contents))
+                                                  `(,contents-recognizer ,contents))))
+                      (let (,@(and key-fixer
+                                   `((,key (,key-fixer ,key))))
+                            (,contents (,contents-fixer ,contents)))
+                        (mv (,contents-accessor ,key ,contents)
+                            (,contents-boundp ,key ,contents))))
+
+                    ,@(and copyable
+                           `((defun ,getp (,key ,hash-table)
+                               (declare (xargs :guard ,(if key-recognizer
+                                                           `(and (,key-recognizer ,key)
+                                                                 (,recognizer ,hash-table))
+                                                           `(,recognizer ,hash-table))))
+                               (let (,@(and key-fixer
+                                            `((,key (,key-fixer ,key))))
+                                     (,hash-table (,fixer ,hash-table)))
+                                 (,contents-getp ,key (cdr ,hash-table))))))
+
+                    (defun ,contents-remover (,key ,contents)
+                      (declare (xargs :guard ,(if key-recognizer
+                                                  `(and (,key-recognizer ,key)
+                                                        (,contents-recognizer ,contents))
+                                                  `(,contents-recognizer ,contents))
+                                      :measure (len ,contents)))
+                      (let (,@(and key-fixer
+                                   `((,key (,key-fixer ,key))))
+                            (,contents (,contents-fixer ,contents)))
                         (cond
-                          ((null ,',contents)
-                           (,',contents-creator))
-                          ((<< ,',key (caar ,',contents))
-                           ,',contents)
-                          ((,',test ,',key (caar ,',contents))
-                           (cdr ,',contents))
+                          ((atom ,contents)
+                           (,contents-creator))
+                          ((<< ,key (caar ,contents))
+                           ,contents)
+                          ((equal ,key (caar ,contents))
+                           (cdr ,contents))
                           (t
-                           (cons (car ,',contents) (,',contents-remover ,',key (cdr ,',contents)))))))
+                           (cons (car ,contents)
+                                 (,contents-remover ,key (cdr ,contents)))))))
 
-                    ,@(and ',copyable
-                           `((defun ,',remover (,',key ,',hash-table)
-                               (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                                  `((,',key-recognizer ,',key)))
-                                                           (,',recognizer ,',hash-table))))
-                               (let (,@(and ',key-fixer
-                                            `((,',key (,',key-fixer ,',key))))
-                                     (,',hash-table (,',fixer ,',hash-table)))
-                                 (cons (car ,',hash-table)
-                                       (,',contents-remover ,',key (cdr ,',hash-table)))))))
+                    ,@(and copyable
+                           `((defun ,remover (,key ,hash-table)
+                               (declare (xargs :guard ,(if key-recognizer
+                                                           `(and (,key-recognizer ,key)
+                                                                 (,recognizer ,hash-table))
+                                                           `(,recognizer ,hash-table))))
+                               (let (,@(and key-fixer
+                                            `((,key (,key-fixer ,key))))
+                                     (,hash-table (,fixer ,hash-table)))
+                                 (cons (car ,hash-table)
+                                       (,contents-remover ,key (cdr ,hash-table)))))))
 
-                    (defun ,',contents-count (,',contents)
-                      (declare (xargs :guard (,',contents-recognizer ,',contents)))
-                      (let ((,',contents (,',contents-fixer ,',contents)))
-                        (if (consp ,',contents)
-                            (1+ (,',contents-count (cdr ,',contents)))
-                            0)))
+                    (defun ,contents-count (,contents)
+                      (declare (xargs :guard (,contents-recognizer ,contents)))
+                      (let ((,contents (,contents-fixer ,contents)))
+                        (if (atom ,contents)
+                            0
+                            (1+ (,contents-count (cdr ,contents))))))
 
-                    ,@(and ',copyable
-                           `((defun ,',count (,',hash-table)
-                               (declare (xargs :guard (,',recognizer ,',hash-table)))
-                               (let ((,',hash-table (,',fixer ,',hash-table)))
-                                 (,',contents-count (cdr ,',hash-table))))))
+                    ,@(and copyable
+                           `((defun ,count (,hash-table)
+                               (declare (xargs :guard (,recognizer ,hash-table)))
+                               (let ((,hash-table (,fixer ,hash-table)))
+                                 (,contents-count (cdr ,hash-table))))))
 
-                    (defun ,',getp (,',key ,',hash-table)
-                      (declare (xargs :guard (and ,@(and ',key-recognizer
-                                                         `((,',key-recognizer ,',key)))
-                                                  (,',recognizer ,',hash-table))))
-                      (mv (,',accessor ,',key ,',hash-table)
-                          (,',boundp ,',key ,',hash-table)))
+                    (defun ,contents-clear (,contents)
+                      (declare (xargs :guard (,contents-recognizer ,contents))
+                               (ignore ,contents))
+                      (,contents-creator))
 
-                    (defthm ,',getp{rewrite}
-                      (mv-let (v w)
-                              (,',getp ,',key ,',hash-table)
-                        (and (equal v (,',accessor ,',key ,',hash-table))
-                             (equal w (,',boundp ,',key ,',hash-table))))
-                      :hints
-                      (("Goal"
-                        :in-theory (disable ,',accessor
-                                            ,',boundp
-                                            ,',recognizer
-                                            ,@(and ',(and key-recognizer
-                                                          (not testp))
-                                                   '(,key-recognizer))))))
+                    ,@(and copyable
+                           `((defun ,clear (,hash-table)
+                               (declare (xargs :guard (,recognizer ,hash-table))
+                                        (ignore ,hash-table))
+                               (,creator))))
 
-                    (defun ,',clear (,',hash-table)
-                      (declare (xargs :guard (,',recognizer ,',hash-table))
-                               (ignore ,',hash-table))
-                      (,',creator))
-
-                    (defthm ,',clear{rewrite}
-                      (equal (,',clear ,',hash-table)
-                             (,',creator))
-                      :hints
-                      (("Goal"
-                        :in-theory (disable ,',creator))))
-
-                    (defun ,',init (ht-size rehash-size rehash-threshold ,',hash-table)
-                      (declare (xargs :guard (and (,',recognizer ,',hash-table)
+                    (defun ,contents-init (ht-size rehash-size rehash-threshold ,contents)
+                      (declare (xargs :guard (and (,contents-recognizer ,contents)
                                                   (or (natp ht-size)
                                                       (not ht-size))
                                                   (or (and (rationalp rehash-size)
@@ -870,2768 +1062,2282 @@
                                                            (<= 0 rehash-threshold)
                                                            (<= rehash-threshold 1))
                                                       (not rehash-threshold))))
-                               (ignore ht-size rehash-size rehash-threshold ,',hash-table))
-                      (,',creator))
+                               (ignore ht-size rehash-size rehash-threshold ,contents))
+                      (,contents-creator))
 
-                    (defthm ,',init{rewrite}
-                      (equal (,',init ht-size rehash-size rehash-threshold ,',hash-table)
-                             (,',creator))
+                    ,@(and copyable
+                           `((defun ,init (ht-size rehash-size rehash-threshold ,hash-table)
+                               (declare (xargs :guard (and (,recognizer ,hash-table)
+                                                           (or (natp ht-size)
+                                                               (not ht-size))
+                                                           (or (and (rationalp rehash-size)
+                                                                    (<= 1 rehash-size))
+                                                               (not rehash-size))
+                                                           (or (and (rationalp rehash-threshold)
+                                                                    (<= 0 rehash-threshold)
+                                                                    (<= rehash-threshold 1))
+                                                               (not rehash-threshold))))
+                                        (ignore ht-size rehash-size rehash-threshold ,hash-table))
+                               (,creator))))
+
+                    ,@(and copyable
+                           `((defun ,keys (,hash-table)
+                               (declare (xargs :guard (,recognizer ,hash-table)))
+                               (let ((,hash-table (,fixer ,hash-table)))
+                                 (car ,hash-table)))))
+
+                    ,@(and copyable
+                           `((defun ,keys-set (set ,hash-table)
+                               (declare (xargs :guard (and (set::setp set)
+                                                           (,recognizer ,hash-table))))
+                               (let ((set (set::sfix set))
+                                     (,hash-table (,fixer ,hash-table)))
+                                 (cons set (cdr ,hash-table))))))
+
+; TODO: top
+
+; TODO: disable (:e creator)
+
+                    ;; `CONTENTS-RECOGNIZER'
+                    (defthm ,contents-recognizer{type-prescription}
+                      (booleanp (,contents-recognizer ,contents))
+                      :rule-classes :type-prescription
                       :hints
                       (("Goal"
-                        :in-theory (disable ,',creator))))
+                        :by (:functional-instance
+                             lem-hash-table$a::recognizer/unique{type-prescription}
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-recognizer{compound-recognizer}
-                                   (implies (,',contents-recognizer ,',contents)
-                                            (true-listp ,',contents))
-                                   :rule-classes :compound-recognizer)))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
+                    (defthm ,contents-recognizer{compound-recognizer}
+                      (implies (,contents-recognizer ,contents)
+                               (true-listp ,contents))
+                      :rule-classes :compound-recognizer
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::recognizer/unique{compound-recognizer}
+                             ,@fi-bindings))))
 
-                    ,@(and ',copyable
-                           `((defthm ,',recognizer{compound-recognizer}
-                               (implies (,',recognizer ,',hash-table)
-                                        (and (consp ,',hash-table)
-                                             (true-listp ,',hash-table)))
+                    (defthm ,contents-recognizer-of-contents-creator
+                      (,contents-recognizer (,contents-creator))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::recognizer/unique-of-creator/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-recognizer-of-contents-fixer
+                      (,contents-recognizer (,contents-fixer ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::recognizer/unique-of-fixer/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-recognizer-of-contents-updater
+                      (,contents-recognizer (,contents-updater ,key ,val ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::recognizer/unique-of-updater/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-recognizer-of-contents-remover
+                      (,contents-recognizer (,contents-remover ,key ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::recognizer/unique-of-remover/unique
+                             ,@fi-bindings))))
+
+
+                    ;; `RECOGNIZER'
+                    ,@(and copyable
+                           `((defthm ,recognizer{type-prescription}
+                               (booleanp (,recognizer ,hash-table))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthm ,recognizer{compound-recognizer}
+                               (implies (,recognizer ,hash-table)
+                                        (and (consp ,hash-table)
+                                             (true-listp ,hash-table)))
                                :rule-classes :compound-recognizer
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-recognizer))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable{compound-recognizer}
+                                      ,@fi-bindings))))
 
-                    (in-theory
-                      (disable (:e ,',creator)
-                               ,@(and ',copyable
-                                      `((:e ,',contents-creator)))))
-
-                    (defthm ,',recognizer-of-creator
-                      (,',recognizer (,',creator)))
-
-                    (local
-                      (defthm ,',emptyp-of-creator
-                        (omap::emptyp (,',creator))))
-
-                    ,(let ((thm `(defthm ,',contents-recognizer-of-contents-fixer
-                                   (,',contents-recognizer (,',contents-fixer ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :in-theory (disable (:e ,',contents-accessor))
-                                     :by (:functional-instance
-                                          define-hash-table::recognizer-of-fixer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',recognizer-of-fixer
-                               (,',recognizer (,',fixer ,',hash-table))
+                             (defthm ,recognizer-of-creator
+                               (,recognizer (,creator))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',recognizer))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable-of-creator/copyable
+                                      ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-fixer-when-contents-recognizer
-                                   (implies (,',contents-recognizer ,',contents)
-                                            (equal (,',contents-fixer ,',contents) ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::fixer-when-recognizer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',fixer-when-recognizer
-                               (implies (,',recognizer ,',hash-table)
-                                        (equal (,',fixer ,',hash-table) ,',hash-table))
+                             (defthm ,recognizer-of-fixer
+                               (,recognizer (,fixer ,hash-table))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',recognizer))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable-of-fixer/copyable
+                                      ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-fixer-when-not-contents-recognizer
-                                   (implies (not (,',contents-recognizer ,',contents))
-                                            (equal (,',contents-fixer ,',contents) (,',contents-creator)))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::fixer-when-not-recognizer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',fixer-when-not-recognizer
-                               (implies (not (,',recognizer ,',hash-table))
-                                        (equal (,',fixer ,',hash-table) (,',creator)))
+                             (defthm ,recognizer-of-updater
+                               (,recognizer (,updater ,key ,val ,hash-table))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',recognizer))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,recognizer-of-remover
+                               (,recognizer (,remover ,key ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable-of-remover/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,recognizer-of-keys-set
+                               (,recognizer (,keys-set set ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::recognizer/copyable-of-keys-set
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-FIXER'
+                    (defthm ,contents-fixer{type-prescription}
+                      (true-listp (,contents-fixer ,contents))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::fixer/unique{type-prescription}
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-fixer-when-contents-recognizer
+                      (implies (,contents-recognizer ,contents)
+                               (equal (,contents-fixer ,contents)
+                                      ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::fixer/unique-when-recognizer/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-fixer-when-not-contents-recognizer
+                      (implies (not (,contents-recognizer ,contents))
+                               (equal (,contents-fixer ,contents)
+                                      (,contents-creator)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::fixer/unique-when-not-recognizer/unique
+                             ,@fi-bindings))))
+
+
+                    ;; `FIXER'
+                    ,@(and copyable
+                           `((defthm ,fixer{type-prescription}
+                               (and (consp (,fixer ,hash-table))
+                                    (true-listp (,fixer ,hash-table)))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::fixer/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthm ,fixer-when-recognizer
+                               (implies (,recognizer ,hash-table)
+                                        (equal (,fixer ,hash-table)
+                                               ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::fixer/copyable-when-recognizer/copyable
+                                      ,@fi-bindings))))
+
+; TODO: ensure fixer is in aggressive theory for
+; this an other macros
+                             (defthm ,fixer-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (equal (,fixer ,hash-table)
+                                               (,creator)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::fixer/copyable-when-not-recognizer/copyable
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-ACCESSOR'
+                    ,@(and val-recognizer
+                           `((defthm ,val-recognizer-of-contents-accessor
+                               (,val-recognizer (,contents-accessor ,key ,contents))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::val-recognizer-of-accessor/unique
+                                      ,@fi-bindings))))))
+
+                    ,@(and key-recognizer
+                           `((defthmd ,contents-accessor-when-not-key-recognizer
+                               (implies (not (,key-recognizer ,key))
+                                        (equal (,contents-accessor ,key ,contents)
+                                               (,contents-accessor ,default-key ,contents)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::accessor/unique-when-not-key-recognizer
+                                      ,@fi-bindings))))))
+
+                    (defthmd ,contents-accessor-when-not-contents-recognizer
+                      (implies (not (,contents-recognizer ,contents))
+                               (equal (,contents-accessor ,key ,contents)
+                                      ,default-val))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-when-not-recognizer/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-accessor-of-contents-creator
+                      (equal (,contents-accessor ,key (,contents-creator))
+                             ,default-val)
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-creator/unique
+                             ,@fi-bindings))))
+
+                    ,@(and key-fixer
+                           `((defthm ,contents-accessor-of-key-fixer
+                               (equal (,contents-accessor (,key-fixer ,key) ,contents)
+                                      (,contents-accessor ,key ,contents))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::accessor/unique-of-key-fixer
+                                      ,@fi-bindings))))))
+
+                    (defthm ,contents-accessor-of-contents-fixer
+                      (equal (,contents-accessor ,key (,contents-fixer ,contents))
+                             (,contents-accessor ,key ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-fixer/unique
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-accessor-of-contents-updater
+                      (equal (,contents-accessor ,key (,contents-updater ,%key ,val ,contents))
+; TODO: put key, %key in rev order
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 ,(if val-fixer
+                                      `(,val-fixer ,val)
+                                      val)
+                                 (,contents-accessor ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-updater/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-accessor-of-contents-updater-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-accessor ,key (,contents-updater ,%key ,val ,contents))
+                                      ,(if val-fixer
+                                           `(,val-fixer ,val)
+                                           val)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-updater/unique-same
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-accessor-of-contents-updater-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-accessor ,key (,contents-updater ,%key ,val ,contents))
+                                      (,contents-accessor ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-updater/unique-diff
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-accessor-when-not-contents-boundp
+                      (implies (not (,contents-boundp ,key ,contents))
+                               (equal (,contents-accessor ,key ,contents)
+                                      ,default-val))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-when-not-boundp/unique
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-accessor-of-contents-remover
+                      (equal (,contents-accessor ,key (,contents-remover ,%key ,contents))
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 ,default-val
+                                 (,contents-accessor ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-remover/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-accessor-of-contents-remover-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-accessor ,key (,contents-remover ,%key ,contents))
+                                      ,default-val))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-remover/unique-same
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-accessor-of-contents-remover-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-accessor ,key (,contents-remover ,%key ,contents))
+                                      (,contents-accessor ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::accessor/unique-of-remover/unique-diff
+                             ,@fi-bindings))))
+
+; TODO: ensure aggressive theory correct. In what ways?
+
+
+                    ;; `ACCESSOR'
+                    ,@(and copyable
+                           `(,@(and val-recognizer
+                                    `((defthm ,val-recognizer-of-accessor
+                                        (,val-recognizer (,accessor ,key ,hash-table))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::val-recognizer-of-accessor/copyable
+                                               ,@fi-bindings))))))
+
+                               ,@(and key-recognizer
+                                      `((defthmd ,accessor-when-not-key-recognizer
+                                          (implies (not (,key-recognizer ,key))
+                                                   (equal (,accessor ,key ,hash-table)
+                                                          (,accessor ,default-key ,hash-table)))
+                                          :hints
+                                          (("Goal"
+                                            :by (:functional-instance
+                                                 lem-hash-table$a::accessor/copyable-when-not-key-recognizer
+                                                 ,@fi-bindings))))))
+
+                               (defthmd ,accessor-when-not-recognizer
+                                 (implies (not (,recognizer ,hash-table))
+                                          (equal (,accessor ,key ,hash-table)
+                                                 ,default-val))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-when-not-recognizer/copyable
+                                        ,@fi-bindings))))
+
+                               (defthm ,accessor-of-creator
+                                 (equal (,accessor ,key (,creator))
+                                        ,default-val)
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-creator/copyable
+                                        ,@fi-bindings))))
+
+                               ,@(and key-fixer
+                                      `((defthm ,accessor-of-key-fixer
+                                          (equal (,accessor (,key-fixer ,key) ,hash-table)
+                                                 (,accessor ,key ,hash-table))
+                                          :hints
+                                          (("Goal"
+                                            :by (:functional-instance
+                                                 lem-hash-table$a::accessor/copyable-of-key-fixer
+                                                 ,@fi-bindings))))))
+
+                               (defthm ,accessor-of-fixer
+                                 (equal (,accessor ,key (,fixer ,hash-table))
+                                        (,accessor ,key ,hash-table))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-fixer/copyable
+                                        ,@fi-bindings))))
+
+                               (defthmd ,accessor-of-updater
+                                 (equal (,accessor ,key (,updater ,%key ,val ,hash-table))
+                                        (if (equal ,(if key-fixer
+                                                        `(,key-fixer ,key)
+                                                        key)
+                                                   ,(if key-fixer
+                                                        `(,key-fixer ,%key)
+                                                        %key))
+                                            ,(if val-fixer
+                                                 `(,val-fixer ,val)
+                                                 val)
+                                            (,accessor ,key ,hash-table)))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-updater/copyable
+                                        ,@fi-bindings))))
+
+                               (defthm ,accessor-of-updater-same
+                                 (implies (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          (equal (,accessor ,key (,updater ,%key ,val ,hash-table))
+                                                 ,(if val-fixer
+                                                      `(,val-fixer ,val)
+                                                      val)))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-updater/copyable-same
+                                        ,@fi-bindings))))
+
+                               (defthm ,accessor-of-updater-diff
+                                 (implies (not (equal ,(if key-fixer
+                                                           `(,key-fixer ,key)
+                                                           key)
+                                                      ,(if key-fixer
+                                                           `(,key-fixer ,%key)
+                                                           %key)))
+                                          (equal (,accessor ,key (,updater ,%key ,val ,hash-table))
+                                                 (,accessor ,key ,hash-table)))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-updater/copyable-diff
+                                        ,@fi-bindings))))
+
+                               (defthmd , accessor-when-not-boundp
+                                 (implies (not (,boundp ,key ,hash-table))
+                                          (equal (,accessor ,key ,hash-table)
+                                                 ,default-val))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-when-not-boundp/copyable
+                                        ,@fi-bindings))))
+
+                               (defthmd ,accessor-of-remover
+                                 (equal (,accessor ,key (,remover ,%key ,hash-table))
+                                        (if (equal ,(if key-fixer
+                                                        `(,key-fixer ,key)
+                                                        key)
+                                                   ,(if key-fixer
+                                                        `(,key-fixer ,%key)
+                                                        %key))
+                                            ,default-val
+                                            (,accessor ,key ,hash-table)))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-remover/copyable
+                                        ,@fi-bindings))))
+
+                               (defthm ,accessor-of-remover-same
+                                 (implies (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          (equal (,accessor ,key (,remover ,%key ,hash-table))
+                                                 ,default-val))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-remover/copyable-same
+                                        ,@fi-bindings))))
+
+                               (defthm ,accessor-of-remover-diff
+                                 (implies (not (equal ,(if key-fixer
+                                                           `(,key-fixer ,key)
+                                                           key)
+                                                      ,(if key-fixer
+                                                           `(,key-fixer ,%key)
+                                                           %key)))
+                                          (equal (,accessor ,key (,remover ,%key ,hash-table))
+                                                 (,accessor ,key ,hash-table)))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-remover/copyable-diff
+                                        ,@fi-bindings))))
+
+                               (defthm ,accessor-of-keys-set
+                                 (equal (,accessor ,key (,keys-set set ,hash-table))
+                                        (,accessor ,key ,hash-table))
+                                 :hints
+                                 (("Goal"
+                                   :by (:functional-instance
+                                        lem-hash-table$a::accessor/copyable-of-keys-set
+                                        ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-UPDATER'
+                    (defthm ,contents-updater{type-prescription}
+                      (true-listp (,contents-updater ,key ,val ,contents))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique{type-prescription}
+                             ,@fi-bindings))))
+
+                    ,@(and key-recognizer
+                           `((defthmd ,contents-updater-when-not-key-recognizer
+                               (implies (not (,key-recognizer ,key))
+                                        (equal (,contents-updater ,key ,val ,contents)
+                                               (,contents-updater ,default-key ,val ,contents)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/unique-when-not-key-recognizer
+                                      ,@fi-bindings))))))
 
                     ,@(and val-recognizer
-                           (append
-                            (list (let ((thm `(defthm ,val-recognizer-of-contents-accessor
-                                                (,val-recognizer (,',contents-accessor ,',key ,',contents))
-                                                :hints
-                                                (("Goal"
-                                                  :by (:functional-instance
-                                                       define-hash-table::val-recognizer-of-accessor
-                                                       (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::key-default (lambda () ,default-key))
-                                                       (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::val-fixer ,(or val-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::val-default (lambda () ,default-val))
-                                                       (define-hash-table::recognizer ,',contents-recognizer)
-                                                       (define-hash-table::creator ,',contents-creator)
-                                                       (define-hash-table::fixer ,',contents-fixer)
-                                                       (define-hash-table::accessor ,',contents-accessor)
-                                                       (define-hash-table::updater ,',contents-updater)
-                                                       (define-hash-table::boundp ,',contents-boundp)
-                                                       (define-hash-table::remover ,',contents-remover)
-                                                       (define-hash-table::count ,',contents-count)
-                                                       (define-hash-table::hash-table (lambda () ,',contents))
-                                                       (define-hash-table::key (lambda () ,',key))))))))
-                                    (if ',copyable
-                                        `(local ,thm)
-                                        thm)))
-
-                            (and ',copyable
-                                 `((defthm ,val-recognizer-of-accessor
-                                     (,val-recognizer (,',accessor ,',key ,',hash-table))
-                                     :hints
-                                     (("Goal"
-                                       :in-theory (disable ,',contents-accessor))))))))
-
-                    ,@(and ',key-fixer
-                           (append
-                            (list (let ((thm `(defthm ,',contents-accessor-of-key-fixer
-                                                (equal (,',contents-accessor (,',key-fixer ,',key) ,',contents)
-                                                       (,',contents-accessor ,',key ,',contents))
-                                                :hints
-                                                (("Goal"
-                                                  :by (:functional-instance
-                                                       define-hash-table::accessor-of-key-fixer
-                                                       (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::key-default (lambda () ,default-key))
-                                                       (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::val-fixer ,(or val-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::val-default (lambda () ,default-val))
-                                                       (define-hash-table::recognizer ,',contents-recognizer)
-                                                       (define-hash-table::creator ,',contents-creator)
-                                                       (define-hash-table::fixer ,',contents-fixer)
-                                                       (define-hash-table::accessor ,',contents-accessor)
-                                                       (define-hash-table::updater ,',contents-updater)
-                                                       (define-hash-table::boundp ,',contents-boundp)
-                                                       (define-hash-table::remover ,',contents-remover)
-                                                       (define-hash-table::count ,',contents-count)
-                                                       (define-hash-table::hash-table (lambda () ,',contents))
-                                                       (define-hash-table::key (lambda () ,',key))))))))
-                                    (if ',copyable
-                                        `(local ,thm)
-                                        thm)))
-
-                            (and ',copyable
-                                 `((defthm ,',accessor-of-key-fixer
-                                     (equal (,',accessor (,',key-fixer ,',key) ,',hash-table)
-                                            (,',accessor ,',key ,',hash-table))
-                                     :hints
-                                     (("Goal"
-                                       :in-theory (disable ,',contents-accessor))))))))
-
-                    ,(let ((thm `(defthm ,',contents-accessor-of-contents-fixer
-                                   (equal (,',contents-accessor ,',key (,',contents-fixer ,',contents))
-                                          (,',contents-accessor ,',key ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::accessor-of-fixer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',accessor-of-fixer
-                               (equal (,',accessor ,',key (,',fixer ,',hash-table))
-                                      (,',accessor ,',key ,',hash-table))
+                           `((defthmd ,contents-updater-when-not-val-recognizer
+                               (implies (not (,val-recognizer ,val))
+                                        (equal (,contents-updater ,key ,val ,contents)
+                                               (,contents-updater ,key ,default-val ,contents)))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-accessor
-                                                     ,',contents-fixer))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/unique-when-not-val-recognizer
+                                      ,@fi-bindings))))))
 
-                    ,@(and ',key-recognizer
-                           (let ((thm `(defthmd ,',contents-accessor-when-not-key-recognizer
-                                         (implies (and (syntaxp (not (quotep ,',key)))
-                                                       (not (,',key-recognizer ,',key)))
-                                                  (equal (,',contents-accessor ,',key ,',contents)
-                                                         (,',contents-accessor ,default-key ,',contents)))
-                                         :hints
-                                         (("Goal"
-                                           :by (:functional-instance
-                                                define-hash-table::accessor-when-not-key-recognizer
-                                                (define-hash-table::key-recognizer ,',key-recognizer)
-                                                (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                   'identity))
-                                                (define-hash-table::key-default (lambda () ,default-key))
-                                                (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                        '(lambda (x) t)))
-                                                (define-hash-table::val-fixer ,(or val-fixer
-                                                                                   'identity))
-                                                (define-hash-table::val-default (lambda () ,default-val))
-                                                (define-hash-table::recognizer ,',contents-recognizer)
-                                                (define-hash-table::creator ,',contents-creator)
-                                                (define-hash-table::fixer ,',contents-fixer)
-                                                (define-hash-table::accessor ,',contents-accessor)
-                                                (define-hash-table::updater ,',contents-updater)
-                                                (define-hash-table::boundp ,',contents-boundp)
-                                                (define-hash-table::remover ,',contents-remover)
-                                                (define-hash-table::count ,',contents-count)
-                                                (define-hash-table::hash-table (lambda () ,',contents))
-                                                (define-hash-table::key (lambda () ,',key))
-                                                (define-hash-table::val (lambda () ,',val))))))))
-                             (list (if ',copyable
-                                       `(local ,thm)
-                                       thm))))
+                    (defthmd ,contents-updater-when-not-contents-recognizer
+                      (implies (not (,contents-recognizer ,contents))
+                               (equal (,contents-updater ,key ,val ,contents)
+                                      (,contents-updater ,key ,val (,contents-creator))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-when-not-recognizer/unique
+                             ,@fi-bindings))))
 
-                    ,@(and ',(and copyable
-                                  key-recognizer)
-                           `((defthmd ,',accessor-when-not-key-recognizer
-                               (implies (and (syntaxp (not (quotep ,',key)))
-                                             (not (,',key-recognizer ,',key)))
-                                        (equal (,',accessor ,',key ,',hash-table)
-                                               (,',accessor ,default-key ,',hash-table)))
+                    ,@(and key-fixer
+                           `((defthm ,contents-updater-of-key-fixer
+                               (equal (,contents-updater (,key-fixer ,key) ,val ,contents)
+                                      (,contents-updater ,key ,val ,contents))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-accessor
-                                                     ,',fixer)
-                                 :use ((:instance ,',contents-accessor-when-not-key-recognizer
-                                                  (,',contents (cdr (,',fixer ,',hash-table))))))))))
-
-                    ,(let ((thm `(defthm ,',contents-recognizer-of-contents-updater
-                                   (,',contents-recognizer (,',contents-updater ,',key ,',val ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::recognizer-of-updater
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',recognizer-of-updater
-                               (,',recognizer (,',updater ,',key ,',val ,',hash-table))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-recognizer
-                                                     ,',contents-updater))))))
-
-                    ,@(and ',key-fixer
-                           (append
-                            (list (let ((thm `(defthm ,contents-updater-of-key-fixer
-                                                (equal (,',contents-updater (,',key-fixer ,',key) ,',val ,',contents)
-                                                       (,',contents-updater ,',key ,',val ,',contents))
-                                                :hints
-                                                (("Goal"
-                                                  :by (:functional-instance
-                                                       define-hash-table::updater-of-key-fixer
-                                                       (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::key-default (lambda () ,default-key))
-                                                       (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::val-fixer ,(or val-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::val-default (lambda () ,default-val))
-                                                       (define-hash-table::recognizer ,',contents-recognizer)
-                                                       (define-hash-table::creator ,',contents-creator)
-                                                       (define-hash-table::fixer ,',contents-fixer)
-                                                       (define-hash-table::accessor ,',contents-accessor)
-                                                       (define-hash-table::updater ,',contents-updater)
-                                                       (define-hash-table::boundp ,',contents-boundp)
-                                                       (define-hash-table::remover ,',contents-remover)
-                                                       (define-hash-table::count ,',contents-count)
-                                                       (define-hash-table::hash-table (lambda () ,',contents))
-                                                       (define-hash-table::key (lambda () ,',key))
-                                                       (define-hash-table::val (lambda () ,',val))))))))
-                                    (if ',copyable
-                                        `(local ,thm)
-                                        thm)))
-
-                            (and ',copyable
-                                 `((defthm ,updater-of-key-fixer
-                                     (equal (,',updater (,',key-fixer ,',key) ,',val ,',hash-table)
-                                            (,',updater ,',key ,',val ,',hash-table))
-                                     :hints
-                                     (("Goal"
-                                       :in-theory (disable ,',contents-updater))))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/unique-of-key-fixer
+                                      ,@fi-bindings))))))
 
                     ,@(and val-fixer
-                           (append
-                            (list (let ((thm `(defthm ,contents-updater-of-val-fixer
-                                                (equal (,',contents-updater ,',key (,val-fixer ,',val) ,',contents)
-                                                       (,',contents-updater ,',key ,',val ,',contents))
-                                                :hints
-                                                (("Goal"
-                                                  :by (:functional-instance
-                                                       define-hash-table::updater-of-val-fixer
-                                                       (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::key-default (lambda () ,default-key))
-                                                       (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::val-fixer ,(or val-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::val-default (lambda () ,default-val))
-                                                       (define-hash-table::recognizer ,',contents-recognizer)
-                                                       (define-hash-table::creator ,',contents-creator)
-                                                       (define-hash-table::fixer ,',contents-fixer)
-                                                       (define-hash-table::accessor ,',contents-accessor)
-                                                       (define-hash-table::updater ,',contents-updater)
-                                                       (define-hash-table::boundp ,',contents-boundp)
-                                                       (define-hash-table::remover ,',contents-remover)
-                                                       (define-hash-table::count ,',contents-count)
-                                                       (define-hash-table::hash-table (lambda () ,',contents))
-                                                       (define-hash-table::key (lambda () ,',key))
-                                                       (define-hash-table::val (lambda () ,',val))))))))
-                                    (if ',copyable
-                                        `(local ,thm)
-                                        thm)))
-
-                            (and ',copyable
-                                 `((defthm ,updater-of-val-fixer
-                                     (equal (,',updater ,',key (,val-fixer ,',val) ,',hash-table)
-                                            (,',updater ,',key ,',val ,',hash-table))
-                                     :hints
-                                     (("Goal"
-                                       :in-theory (disable ,',contents-updater))))))))
-
-                    ,(let ((thm `(defthm ,',contents-updater-of-contents-fixer
-                                   (equal (,',contents-updater ,',key ,',val (,',contents-fixer ,',contents))
-                                          (,',contents-updater ,',key ,',val ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::updater-of-fixer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',updater-of-fixer
-                               (equal (,',updater ,',key ,',val (,',fixer ,',hash-table))
-                                      (,',updater ,',key ,',val ,',hash-table))
+                           `((defthm ,contents-updater-of-val-fixer
+                               (equal (,contents-updater ,key (,val-fixer ,val) ,contents)
+                                      (,contents-updater ,key ,val ,contents))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',contents-fixer))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/unique-of-val-fixer
+                                      ,@fi-bindings))))))
 
-                    ,@(and ',key-recognizer
-                           (let ((thm `(defthmd ,contents-updater-when-not-key-recognizer
-                                         (implies (and (syntaxp (not (quotep ,',key)))
-                                                       (not (,',key-recognizer ,',key)))
-                                                  (equal (,',contents-updater ,',key ,',val ,',contents)
-                                                         (,',contents-updater ,default-key ,',val ,',contents)))
-                                         :hints
-                                         (("Goal"
-                                           :by (:functional-instance
-                                                define-hash-table::updater-when-not-key-recognizer
-                                                (define-hash-table::key-recognizer ,',key-recognizer)
-                                                (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                   'identity))
-                                                (define-hash-table::key-default (lambda () ,default-key))
-                                                (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                        '(lambda (x) t)))
-                                                (define-hash-table::val-fixer ,(or val-fixer
-                                                                                   'identity))
-                                                (define-hash-table::val-default (lambda () ,default-val))
-                                                (define-hash-table::recognizer ,',contents-recognizer)
-                                                (define-hash-table::creator ,',contents-creator)
-                                                (define-hash-table::fixer ,',contents-fixer)
-                                                (define-hash-table::accessor ,',contents-accessor)
-                                                (define-hash-table::updater ,',contents-updater)
-                                                (define-hash-table::boundp ,',contents-boundp)
-                                                (define-hash-table::remover ,',contents-remover)
-                                                (define-hash-table::count ,',contents-count)
-                                                (define-hash-table::hash-table (lambda () ,',contents))
-                                                (define-hash-table::key (lambda () ,',key))
-                                                (define-hash-table::val (lambda () ,',val))))))))
-                             (list (if ',copyable
-                                       `(local ,thm)
-                                       thm))))
-
-                    ,@(and ',(and copyable
-                                  key-recognizer)
-                           `((defthmd ,updater-when-not-key-recognizer
-                               (implies (and (syntaxp (not (quotep ,',key)))
-                                             (not (,',key-recognizer ,',key)))
-                                        (equal (,',updater ,',key ,',val ,',hash-table)
-                                               (,',updater ,default-key ,',val ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',fixer)
-                                 :use ((:instance ,contents-updater-when-not-key-recognizer
-                                                  (,',contents (cdr (,',fixer ,',hash-table))))
-                                       (:instance ,contents-updater-when-not-key-recognizer
-                                                  (,',contents (cdr (,',fixer ,',hash-table)))
-                                                  (,',val ,default-val))))))))
-
-                    ,@(and ',val-recognizer
-                           (let ((thm `(defthmd ,contents-updater-when-not-val-recognizer
-                                         (implies (and (syntaxp (not (quotep ,',val)))
-                                                       (not (,val-recognizer ,',val)))
-                                                  (equal (,',contents-updater ,',key ,',val ,',contents)
-                                                         (,',contents-updater ,',key ,default-val ,',contents)))
-                                         :hints
-                                         (("Goal"
-                                           :by (:functional-instance
-                                                define-hash-table::updater-when-not-val-recognizer
-                                                (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                        '(lambda (x) t)))
-                                                (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                   'identity))
-                                                (define-hash-table::key-default (lambda () ,default-key))
-                                                (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                        '(lambda (x) t)))
-                                                (define-hash-table::val-fixer ,(or val-fixer
-                                                                                   'identity))
-                                                (define-hash-table::val-default (lambda () ,default-val))
-                                                (define-hash-table::recognizer ,',contents-recognizer)
-                                                (define-hash-table::creator ,',contents-creator)
-                                                (define-hash-table::fixer ,',contents-fixer)
-                                                (define-hash-table::accessor ,',contents-accessor)
-                                                (define-hash-table::updater ,',contents-updater)
-                                                (define-hash-table::boundp ,',contents-boundp)
-                                                (define-hash-table::remover ,',contents-remover)
-                                                (define-hash-table::count ,',contents-count)
-                                                (define-hash-table::hash-table (lambda () ,',contents))
-                                                (define-hash-table::key (lambda () ,',key))
-                                                (define-hash-table::val (lambda () ,',val))))))))
-                             (list (if ',copyable
-                                       `(local ,thm)
-                                       thm))))
-
-                    ,@(and ',(and copyable
-                                  val-recognizer)
-                           `((defthmd ,updater-when-not-val-recognizer
-                               (implies (and (syntaxp (not (quotep ,',val)))
-                                             (not (,val-recognizer ,',val)))
-                                        (equal (,',updater ,',key ,',val ,',hash-table)
-                                               (,',updater ,',key ,default-val ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',fixer)
-                                 :use ((:instance ,contents-updater-when-not-val-recognizer
-                                                  (,',contents (cdr (,',fixer ,',hash-table))))))))))
-
-                    ,@(and ',key-fixer
-                           (append
-                            (list (let ((thm `(defthm ,',contents-boundp-of-key-fixer
-                                                (equal (,',contents-boundp (,',key-fixer ,',key) ,',contents)
-                                                       (,',contents-boundp ,',key ,',contents))
-                                                :hints
-                                                (("Goal"
-                                                  :by (:functional-instance
-                                                       define-hash-table::boundp-of-key-fixer
-                                                       (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::key-default (lambda () ,default-key))
-                                                       (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::val-fixer ,(or val-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::val-default (lambda () ,default-val))
-                                                       (define-hash-table::recognizer ,',contents-recognizer)
-                                                       (define-hash-table::creator ,',contents-creator)
-                                                       (define-hash-table::fixer ,',contents-fixer)
-                                                       (define-hash-table::accessor ,',contents-accessor)
-                                                       (define-hash-table::updater ,',contents-updater)
-                                                       (define-hash-table::boundp ,',contents-boundp)
-                                                       (define-hash-table::remover ,',contents-remover)
-                                                       (define-hash-table::count ,',contents-count)
-                                                       (define-hash-table::hash-table (lambda () ,',contents))
-                                                       (define-hash-table::key (lambda () ,',key))
-                                                       (define-hash-table::val (lambda () ,',val))))))))
-                                    (if ',copyable
-                                        `(local ,thm)
-                                        thm)))
-
-                            (and ',copyable
-                                 `((defthm ,',boundp-of-key-fixer
-                                     (equal (,',boundp (,',key-fixer ,',key) ,',hash-table)
-                                            (,',boundp ,',key ,',hash-table))
-                                     :hints
-                                     (("Goal"
-                                       :in-theory (disable ,',contents-boundp))))))))
-
-                    ,(let ((thm `(defthm ,',contents-boundp-of-contents-fixer
-                                   (equal (,',contents-boundp ,',key (,',contents-fixer ,',contents))
-                                          (,',contents-boundp ,',key ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::boundp-of-fixer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',boundp-of-fixer
-                               (equal (,',boundp ,',key (,',fixer ,',hash-table))
-                                      (,',boundp ,',key ,',hash-table))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-boundp
-                                                     ,',contents-fixer))))))
-
-                    ,@(and ',key-recognizer
-                           (let ((thm `(defthmd ,',contents-boundp-when-not-key-recognizer
-                                         (implies (and (syntaxp (not (quotep ,',key)))
-                                                       (not (,',key-recognizer ,',key)))
-                                                  (equal (,',contents-boundp ,',key ,',contents)
-                                                         (,',contents-boundp ,default-key ,',contents)))
-                                         :hints
-                                         (("Goal"
-                                           :by (:functional-instance
-                                                define-hash-table::boundp-when-not-key-recognizer
-                                                (define-hash-table::key-recognizer ,',key-recognizer)
-                                                (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                   'identity))
-                                                (define-hash-table::key-default (lambda () ,default-key))
-                                                (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                        '(lambda (x) t)))
-                                                (define-hash-table::val-fixer ,(or val-fixer
-                                                                                   'identity))
-                                                (define-hash-table::val-default (lambda () ,default-val))
-                                                (define-hash-table::recognizer ,',contents-recognizer)
-                                                (define-hash-table::creator ,',contents-creator)
-                                                (define-hash-table::fixer ,',contents-fixer)
-                                                (define-hash-table::accessor ,',contents-accessor)
-                                                (define-hash-table::updater ,',contents-updater)
-                                                (define-hash-table::boundp ,',contents-boundp)
-                                                (define-hash-table::remover ,',contents-remover)
-                                                (define-hash-table::count ,',contents-count)
-                                                (define-hash-table::hash-table (lambda () ,',contents))
-                                                (define-hash-table::key (lambda () ,',key))
-                                                (define-hash-table::val (lambda () ,',val))))))))
-                             (list (if ',copyable
-                                       `(local ,thm)
-                                       thm))))
-
-                    ,@(and ',(and copyable
-                                  key-recognizer)
-                           `((defthmd ,',boundp-when-not-key-recognizer
-                               (implies (and (syntaxp (not (quotep ,',key)))
-                                             (not (,',key-recognizer ,',key)))
-                                        (equal (,',boundp ,',key ,',hash-table)
-                                               (,',boundp ,default-key ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-boundp
-                                                     ,',fixer)
-                                 :use ((:instance ,',contents-boundp-when-not-key-recognizer
-                                                  (,',contents (cdr (,',fixer ,',hash-table))))))))))
-
-                    ,(let ((thm `(defthmd ,',contents-boundp-when-not-contents-recognizer
-                                   (implies (not (,',contents-recognizer ,',contents))
-                                            (not (,',contents-boundp ,',key ,',contents))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthmd ,',boundp-when-not-recognizer
-                               (implies (not (,',recognizer ,',hash-table))
-                                        (not (,',boundp ,',key ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :use ((:instance ,',contents-boundp-when-not-contents-recognizer
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    ,(let ((thm `(defthm ,',contents-recognizer-of-contents-remover
-                                   (,',contents-recognizer (,',contents-remover ,',key ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::recognizer-of-remover
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',recognizer-of-remover
-                               (,',recognizer (,',remover ,',key ,',hash-table))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-recognizer
-                                                     ,',contents-remover))))))
-
-                    ,@(and ',key-fixer
-                           (append
-                            (list (let ((thm `(defthm ,',contents-remover-of-key-fixer
-                                                (equal (,',contents-remover (,',key-fixer ,',key) ,',contents)
-                                                       (,',contents-remover ,',key ,',contents))
-                                                :hints
-                                                (("Goal"
-                                                  :by (:functional-instance
-                                                       define-hash-table::remover-of-key-fixer
-                                                       (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::key-default (lambda () ,default-key))
-                                                       (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                               '(lambda (x) t)))
-                                                       (define-hash-table::val-fixer ,(or val-fixer
-                                                                                          'identity))
-                                                       (define-hash-table::val-default (lambda () ,default-val))
-                                                       (define-hash-table::recognizer ,',contents-recognizer)
-                                                       (define-hash-table::creator ,',contents-creator)
-                                                       (define-hash-table::fixer ,',contents-fixer)
-                                                       (define-hash-table::accessor ,',contents-accessor)
-                                                       (define-hash-table::updater ,',contents-updater)
-                                                       (define-hash-table::boundp ,',contents-boundp)
-                                                       (define-hash-table::remover ,',contents-remover)
-                                                       (define-hash-table::count ,',contents-count)
-                                                       (define-hash-table::hash-table (lambda () ,',contents))
-                                                       (define-hash-table::key (lambda () ,',key))
-                                                       (define-hash-table::val (lambda () ,',val))))))))
-                                    (if ',copyable
-                                        `(local ,thm)
-                                        thm)))
-
-                            (and ',copyable
-                                 `((defthm ,',remover-of-key-fixer
-                                     (equal (,',remover (,',key-fixer ,',key) ,',hash-table)
-                                            (,',remover ,',key ,',hash-table))
-                                     :hints
-                                     (("Goal"
-                                       :in-theory (disable ,',contents-recognizer))))))))
-
-                    ,(let ((thm `(defthm ,',contents-remover-of-contents-fixer
-                                   (equal (,',contents-remover ,',key (,',contents-fixer ,',contents))
-                                          (,',contents-remover ,',key ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::remover-of-fixer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',remover-of-fixer
-                               (equal (,',remover ,',key (,',fixer ,',hash-table))
-                                      (,',remover ,',key ,',hash-table))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-recognizer
-                                                     ,',contents-fixer))))))
-
-                    ,@(and ',key-recognizer
-                           (let ((thm `(defthmd ,',contents-remover-when-not-key-recognizer
-                                         (implies (and (syntaxp (not (quotep ,',key)))
-                                                       (not (,',key-recognizer ,',key)))
-                                                  (equal (,',contents-remover ,',key ,',contents)
-                                                         (,',contents-remover ,default-key ,',contents)))
-                                         :hints
-                                         (("Goal"
-                                           :by (:functional-instance
-                                                define-hash-table::remover-when-not-key-recognizer
-                                                (define-hash-table::key-recognizer ,',key-recognizer)
-                                                (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                                   'identity))
-                                                (define-hash-table::key-default (lambda () ,default-key))
-                                                (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                        '(lambda (x) t)))
-                                                (define-hash-table::val-fixer ,(or val-fixer
-                                                                                   'identity))
-                                                (define-hash-table::val-default (lambda () ,default-val))
-                                                (define-hash-table::recognizer ,',contents-recognizer)
-                                                (define-hash-table::creator ,',contents-creator)
-                                                (define-hash-table::fixer ,',contents-fixer)
-                                                (define-hash-table::accessor ,',contents-accessor)
-                                                (define-hash-table::updater ,',contents-updater)
-                                                (define-hash-table::boundp ,',contents-boundp)
-                                                (define-hash-table::remover ,',contents-remover)
-                                                (define-hash-table::count ,',contents-count)
-                                                (define-hash-table::hash-table (lambda () ,',contents))
-                                                (define-hash-table::key (lambda () ,',key))
-                                                (define-hash-table::val (lambda () ,',val))))))))
-                             (list (if ',copyable
-                                       `(local ,thm)
-                                       thm))))
-
-                    ,@(and ',(and copyable
-                                  key-recognizer)
-                           `((defthmd ,',remover-when-not-key-recognizer
-                               (implies (and (syntaxp (not (quotep ,',key)))
-                                             (not (,',key-recognizer ,',key)))
-                                        (equal (,',remover ,',key ,',hash-table)
-                                               (,',remover ,default-key ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-remover
-                                                     ,',fixer)
-                                 :use ((:instance ,',contents-remover-when-not-key-recognizer
-                                                  (,',contents (cdr (,',fixer ,',hash-table))))))))))
-
-                    ,(let ((thm `(defthm ,',contents-count-of-contents-fixer
-                                   (equal (,',contents-count (,',contents-fixer ,',contents))
-                                          (,',contents-count ,',contents))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::count-of-fixer
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',count-of-fixer
-                               (equal (,',count (,',fixer ,',hash-table))
-                                      (,',count ,',hash-table))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-count
-                                                     ,',contents-fixer))))))
-
-                    ,(let ((thm `(defthmd ,',contents-count-when-not-contents-recognizer
-                                   (implies (not (,',contents-recognizer ,',contents))
-                                            (equal (,',contents-count ,',contents) 0)))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthmd ,',count-when-not-recognizer
-                               (implies (not (,',recognizer ,',hash-table))
-                                        (equal (,',count ,',hash-table) 0))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-recognizer
-                                                     ,',contents-count)
-                                 :use ((:instance ,',contents-count-when-not-contents-recognizer
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    ,(let ((thm `(defthm ,',contents-accessor-of-contents-creator
-                                   (equal (,',contents-accessor ,',key (,',contents-creator))
-                                          ,default-val)
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::accessor-of-creator
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',accessor-of-creator
-                               (equal (,',accessor ,',key (,',creator))
-                                      ,default-val))))
-
-                    ,(let ((thm `(defthm ,',contents-boundp-of-contents-creator
-                                   (not (,',contents-boundp ,',key (,',contents-creator)))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::boundp-of-creator
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',boundp-of-creator
-                               (not (,',boundp ,',key (,',creator))))))
-
-                    ,(let ((thm `(defthm ,',contents-remover-of-contents-creator
-                                   (equal (,',contents-remover ,',key (,',contents-creator))
-                                          (,',contents-creator))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::remover-of-creator
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',remover-of-creator
-                               (equal (,',remover ,',key (,',creator))
-                                      (,',creator)))))
-
-                    ,(let ((thm `(defthm ,',contents-count-of-contents-creator
-                                   (equal (,',contents-count (,',contents-creator)) 0)
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::count-of-creator
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',count-of-creator
-                               (equal (,',count (,',creator)) 0))))
-
-                    ,@(and ',copyable
-                           `((defun ,',keys (,',hash-table)
-                               (declare (xargs :guard (,',recognizer ,',hash-table)))
-                               (let ((,',hash-table (,',fixer ,',hash-table)))
-                                 (car ,',hash-table)))
-
-                             (defun ,',keys-set (set ,',hash-table)
-                               (declare (xargs :guard (and (set::setp set)
-                                                           (,',recognizer ,',hash-table))))
-                               (let ((set (set::sfix set))
-                                     (,',hash-table (,',fixer ,',hash-table)))
-                                 (cons set (cdr ,',hash-table))))
-
-                             (defthm ,',setp-of-keys
-                               (set::setp (,',keys ,',hash-table)))
-
-                             (defthm ,',keys-of-creator
-                               (not (,',keys (,',creator))))
-
-                             (defthm ,',keys-of-fixer
-                               (equal (,',keys (,',fixer ,',hash-table))
-                                      (,',keys ,',hash-table)))
-
-                             (defthmd ,',keys-when-not-recognizer
-                               (implies (not (,',recognizer ,',hash-table))
-                                        (not (,',keys ,',hash-table))))
-
-                             (defthm ,',keys-of-updater
-                               (equal (,',keys (,',updater ,',key ,',val ,',hash-table))
-                                      (,',keys ,',hash-table)))
-
-                             (defthm ,',keys-of-remover
-                               (equal (,',keys (,',remover ,',key ,',hash-table))
-                                      (,',keys ,',hash-table)))
-
-                             (defthm ,',keys-of-keys-set
-                               (equal (,',keys (,',keys-set set ,',hash-table))
-                                      (set::sfix set)))
-
-                             (defthm ,',recognizer-of-keys-set
-                               (,',recognizer (,',keys-set set ,',hash-table)))
-
-                             (defthm ,',keys-set-of-sfix
-                               (equal (,',keys-set (set::sfix set) ,',hash-table)
-                                      (,',keys-set set ,',hash-table)))
-
-                             (defthm ,',keys-set-of-fixer
-                               (equal (,',keys-set set (,',fixer ,',hash-table))
-                                      (,',keys-set set ,',hash-table)))
-
-                             (defthm ,',accessor-of-keys-set
-                               (equal (,',accessor ,',key (,',keys-set set ,',hash-table))
-                                      (,',accessor ,',key ,',hash-table)))
-
-                             (defthm ,',keys-set-of-updater
-                               (equal (,',keys-set set (,',updater ,',key ,',val ,',hash-table))
-                                      (,',updater ,',key ,',val (,',keys-set set ,',hash-table))))
-
-                             (defthm ,',boundp-of-keys-set
-                               (equal (,',boundp ,',key (,',keys-set set ,',hash-table))
-                                      (,',boundp ,',key ,',hash-table)))
-
-                             (defthm ,',keys-set-of-remover
-                               (equal (,',keys-set set (,',remover ,',key ,',hash-table))
-                                      (,',remover ,',key (,',keys-set set ,',hash-table))))
-
-                             (defthm ,',count-of-keys-set
-                               (equal (,',count (,',keys-set set ,',hash-table))
-                                      (,',count ,',hash-table)))
-
-                             (defthm ,',keys-set-of-keys-set
-                               (equal (,',keys-set %set (,',keys-set set ,',hash-table))
-                                      (,',keys-set %set ,',hash-table)))
-
-                             (defthmd ,',keys-set-of-keys-free
-                               (implies (equal set (,',keys ,',hash-table))
-                                        (equal (,',keys-set set ,',hash-table)
-                                               (,',fixer ,',hash-table))))
-
-                             (defthm ,',keys-set-of-keys
-                               (equal (,',keys-set (,',keys ,',hash-table) ,',hash-table)
-                                      (,',fixer ,',hash-table))
-                               :hints
-                               (("Goal"
-                                 :in-theory (e/d (,',keys-set-of-keys-free)
-                                                 (,',recognizer
-                                                  ,',keys
-                                                  ,',keys-set
-                                                  ,',fixer)))))))
-
-                    ,(let ((thm `(defthm ,',contents-count-of-contents-updater-when-contents-boundp
-                                   (implies (,',contents-boundp ,',key ,',contents)
-                                            (equal (,',contents-count (,',contents-updater ,',key ,',val ,',contents))
-                                                   (,',contents-count ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::count-of-updater-when-boundp
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',count-of-updater-when-boundp
-                               (implies (,',boundp ,',key ,',hash-table)
-                                        (equal (,',count (,',updater ,',key ,',val ,',hash-table))
-                                               (,',count ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-count-of-contents-updater-when-contents-boundp)
-                                 :use ((:instance ,',contents-count-of-contents-updater-when-contents-boundp
-                                                  (,',contents (cdr ,',hash-table)))
-                                       (:instance ,',contents-count-of-contents-updater-when-contents-boundp
-                                                  (,',contents (cdr ,',hash-table))
-                                                  (,',val ,default-val))))))))
-
-                    ,(let ((thm `(defthm ,',contents-count-of-contents-updater-when-not-contents-boundp
-                                   (implies (not (,',contents-boundp ,',key ,',contents))
-                                            (equal (,',contents-count (,',contents-updater ,',key ,',val ,',contents))
-                                                   (1+ (,',contents-count ,',contents))))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::count-of-updater-when-not-boundp
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',count-of-updater-when-not-boundp
-                               (implies (not (,',boundp ,',key ,',hash-table))
-                                        (equal (,',count (,',updater ,',key ,',val ,',hash-table))
-                                               (1+ (,',count ,',hash-table))))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-count-of-contents-updater-when-not-contents-boundp)
-                                 :use ((:instance ,',contents-count-of-contents-updater-when-not-contents-boundp
-                                                  (,',contents (cdr ,',hash-table)))
-                                       (:instance ,',contents-count-of-contents-updater-when-not-contents-boundp
-                                                  (,',contents (cdr ,',hash-table))
-                                                  (,',val ,default-val))))))))
-
-                    (defthmd ,',count-of-updater
-                      (equal (,',count (,',updater ,',key ,',val ,',hash-table))
-                             (if (,',boundp ,',key ,',hash-table)
-                                 (,',count ,',hash-table)
-                                 (1+ (,',count ,',hash-table))))
+                    (defthm ,contents-updater-of-contents-fixer
+                      (equal (,contents-updater ,key ,val (,contents-fixer ,contents))
+                             (,contents-updater ,key ,val ,contents))
                       :hints
                       (("Goal"
-                        :cases ((,',boundp ,',key ,',hash-table))
-                        :in-theory (disable ,',contents-count
-                                            ,',contents-updater
-                                            ,',contents-boundp))))
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-fixer/unique
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-count-of-contents-remover-when-contents-boundp
-                                   (implies (,',contents-boundp ,',key ,',contents)
-                                            (equal (,',contents-count (,',contents-remover ,',key ,',contents))
-                                                   (1- (,',contents-count ,',contents))))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::count-of-remover-when-boundp
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',count-of-remover-when-boundp
-                               (implies (,',boundp ,',key ,',hash-table)
-                                        (equal (,',count (,',remover ,',key ,',hash-table))
-                                               (1- (,',count ,',hash-table))))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-count-of-contents-remover-when-contents-boundp)
-                                 :use ((:instance ,',contents-count-of-contents-remover-when-contents-boundp
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    ,(let ((thm `(defthm ,',contents-count-of-contents-remover-when-not-contents-boundp
-                                   (implies (not (,',contents-boundp ,',key ,',contents))
-                                            (equal (,',contents-count (,',contents-remover ,',key ,',contents))
-                                                   (,',contents-count ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::count-of-remover-when-not-boundp
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',count-of-remover-when-not-boundp
-                               (implies (not (,',boundp ,',key ,',hash-table))
-                                        (equal (,',count (,',remover ,',key ,',hash-table))
-                                               (,',count ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-count-of-contents-remover-when-not-contents-boundp)
-                                 :use ((:instance ,',contents-count-of-contents-remover-when-not-contents-boundp
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    (defthmd ,',count-of-remover
-                      (equal (,',count (,',remover ,',key ,',hash-table))
-                             (if (,',boundp ,',key ,',hash-table)
-                                 (1- (,',count ,',hash-table))
-                                 (,',count ,',hash-table)))
+                    (defthmd ,contents-updater-of-contents-accessor-when-contents-boundp-free
+                      (implies (and (,contents-boundp ,key ,contents)
+                                    (equal ,(if val-fixer
+                                                `(,val-fixer ,val)
+                                                val) (,contents-accessor ,key ,contents)))
+                               (equal (,contents-updater ,key ,val ,contents)
+                                      (,contents-fixer ,contents)))
                       :hints
                       (("Goal"
-                        :cases ((,',boundp ,',key ,',hash-table))
-                        :in-theory (disable ,',contents-count
-                                            ,',contents-remover
-                                            ,',contents-boundp))))
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-accessor/unique-when-boundp/unique-free
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-accessor-of-contents-updater-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-accessor ,',key (,',contents-updater ,',%key ,',val ,',contents))
-                                                   ,(if val-fixer
-                                                        `(,val-fixer ,',val)
-                                                        ',val)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::accessor-of-updater-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',accessor-of-updater-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',accessor ,',key (,',updater ,',%key ,',val ,',hash-table))
-                                               ,(if val-fixer
-                                                    `(,val-fixer ,',val)
-                                                    ',val)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-accessor-of-contents-updater-same)
-                                 :use ((:instance ,',contents-accessor-of-contents-updater-same
-                                                  (,',contents (cdr ,',hash-table)))
-                                       (:instance ,',contents-accessor-of-contents-updater-same
-                                                  (,',contents (cdr ,',hash-table))
-                                                  (,',val ,default-val))))))))
-
-                    ,(let ((thm `(defthm ,',contents-accessor-of-contents-updater-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-accessor ,',key (,',contents-updater ,',%key ,',val ,',contents))
-                                                   (,',contents-accessor ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::accessor-of-updater-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',accessor-of-updater-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',accessor ,',key (,',updater ,',%key ,',val ,',hash-table))
-                                               (,',accessor ,',key ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-accessor-of-contents-updater-diff)
-                                 :use ((:instance ,',contents-accessor-of-contents-updater-diff
-                                                  (,',contents (cdr ,',hash-table)))
-                                       (:instance ,',contents-accessor-of-contents-updater-diff
-                                                  (,',contents (cdr ,',hash-table))
-                                                  (,',val ,default-val))))))))
-
-                    (defthmd ,',accessor-of-updater
-                      (equal (,',accessor ,',key (,',updater ,',%key ,',val ,',hash-table))
-                             (if ,(if ',key-fixer
-                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                      `(equal ,',key ,',%key))
-                                 ,(if val-fixer
-                                      `(,val-fixer ,',val)
-                                      ',val)
-                                 (,',accessor ,',key ,',hash-table)))
+                    (defthmd ,contents-updater-of-contents-accessor
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-updater ,key (,contents-accessor ,%key ,contents) ,contents)
+                                      (if (,contents-boundp ,key ,contents)
+                                          (,contents-fixer ,contents)
+                                          (,contents-updater ,key ,default-val ,contents))))
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-accessor
-                                            ,',contents-updater))))
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-accessor/unique
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthmd ,',contents-accessor-when-not-contents-boundp
-                                   (implies (not (,',contents-boundp ,',key ,',contents))
-                                            (equal (,',contents-accessor ,',key ,',contents)
-                                                   ,default-val))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::accessor-when-not-boundp
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::%key (lambda () ,',%key))
-                                          (define-hash-table::val (lambda () ,',val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthmd ,',accessor-when-not-boundp
-                               (implies (not (,',boundp ,',key ,',hash-table))
-                                        (equal (,',accessor ,',key ,',hash-table)
-                                               ,default-val))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-accessor-when-not-contents-boundp)
-                                 :use ((:instance ,',contents-accessor-when-not-contents-boundp
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    ,(let ((thm `(defthm ,',contents-accessor-of-contents-remover-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-accessor ,',key (,',contents-remover ,',%key ,',contents))
-                                                   ,default-val))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::accessor-of-remover-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',accessor-of-remover-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',accessor ,',key (,',remover ,',%key ,',hash-table))
-                                               ,default-val))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-accessor-of-contents-remover-same)
-                                 :use ((:instance ,',contents-accessor-of-contents-remover-same
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    ,(let ((thm `(defthm ,',contents-accessor-of-contents-remover-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-accessor ,',key (,',contents-remover ,',%key ,',contents))
-                                                   (,',contents-accessor ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::accessor-of-remover-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',accessor-of-remover-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',accessor ,',key (,',remover ,',%key ,',hash-table))
-                                               (,',accessor ,',key ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-accessor-of-contents-remover-diff)
-                                 :use ((:instance ,',contents-accessor-of-contents-remover-diff
-                                                  (,',contents (cdr ,',hash-table)))))))))
-
-                    (defthmd ,',accessor-of-remover
-                      (equal (,',accessor ,',key (,',remover ,',%key ,',hash-table))
-                             (if ,(if ',key-fixer
-                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                      `(equal ,',key ,',%key))
-                                 ,default-val
-                                 (,',accessor ,',key ,',hash-table)))
+                    ;; TODO: compare with free/not in vector macros
+                    (defthm ,contents-updater-of-contents-accessor-when-contents-boundp
+                      (implies (and (,contents-boundp ,key ,contents)
+                                    (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-updater ,key (,contents-accessor ,%key ,contents) ,contents)
+                                      (,contents-fixer ,contents)))
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-accessor
-                                            ,',contents-remover))))
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-accessor/unique-when-boundp/unique
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-updater-of-contents-accessor-when-contents-boundp
-                                   (implies (and ,(if ',key-fixer
-                                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                      `(equal ,',key ,',%key))
-                                                 (,',contents-boundp ,',key ,',contents))
-                                            (equal (,',contents-updater ,',key (,',contents-accessor ,',%key ,',contents) ,',contents)
-                                                   (,',contents-fixer ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::updater-of-accessor-when-boundp
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',updater-of-accessor-when-boundp
-                               (implies (and ,(if ',key-fixer
-                                                  `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                  `(equal ,',key ,',%key))
-                                             (,',boundp ,',key ,',hash-table))
-                                        (equal (,',updater ,',key (,',accessor ,',%key ,',hash-table) ,',hash-table)
-                                               (,',fixer ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater-of-contents-accessor-when-contents-boundp)
-                                 :use ((:instance ,',contents-updater-of-contents-accessor-when-contents-boundp
-                                                  (,',contents (cdr ,',hash-table))))
-                                 :expand ((,',contents-updater ,',key
-                                                               (,',contents-accessor ,',%key (cdr ,',hash-table))
-                                                               (cdr ,',hash-table))
-                                          (,',contents-updater ,',%key
-                                                               (,',contents-accessor ,',%key (cdr ,',hash-table))
-                                                               (cdr ,',hash-table))))))))
-
-                    ,(let ((thm `(defthm ,',contents-updater-of-contents-accessor-when-not-contents-boundp
-                                   (implies (and ,(if ',key-fixer
-                                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                      `(equal ,',key ,',%key))
-                                                 (not (,',contents-boundp ,',key ,',contents)))
-                                            (equal (,',contents-updater ,',key (,',contents-accessor ,',%key ,',contents) ,',contents)
-                                                   (,',contents-updater ,',key ,default-val ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::updater-of-accessor-when-not-boundp
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',updater-of-accessor-when-not-boundp
-                               (implies (and ,(if ',key-fixer
-                                                  `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                  `(equal ,',key ,',%key))
-                                             (not (,',boundp ,',key ,',hash-table)))
-                                        (equal (,',updater ,',key (,',accessor ,',%key ,',hash-table) ,',hash-table)
-                                               (,',updater ,',key ,default-val ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater-of-contents-accessor-when-not-contents-boundp)
-                                 :use ((:instance ,',contents-updater-of-contents-accessor-when-not-contents-boundp
-                                                  (,',contents (cdr ,',hash-table))))
-                                 :expand ((,',contents-updater ,',key
-                                                               (,',contents-accessor ,',%key (cdr ,',hash-table))
-                                                               (cdr ,',hash-table))
-                                          (,',contents-updater ,',%key
-                                                               (,',contents-accessor ,',%key (cdr ,',hash-table))
-                                                               (cdr ,',hash-table))))))))
-
-                    (defthmd ,',updater-of-accessor
-                      (implies ,(if ',key-fixer
-                                    `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                    `(equal ,',key ,',%key))
-                               (equal (,',updater ,',key (,',accessor ,',%key ,',hash-table) ,',hash-table)
-                                      (if (,',boundp ,',key ,',hash-table)
-                                          (,',fixer ,',hash-table)
-                                          (,',updater ,',key ,default-val ,',hash-table))))
+                    (defthm ,contents-updater-of-contents-accessor-when-not-contents-boundp
+                      (implies (and (not (,contents-boundp ,key ,contents))
+                                    (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-updater ,key (,contents-accessor ,%key ,contents) ,contents)
+                                      (,contents-updater ,key ,default-val ,contents)))
                       :hints
                       (("Goal"
-                        :cases ((,',boundp ,',key ,',hash-table))
-                        :in-theory (disable ,',accessor
-                                            ,',updater
-                                            ,',boundp
-                                            ,',fixer
-                                            ,',updater-of-accessor-when-not-boundp
-                                            ,',updater-of-accessor-when-boundp))
-                       ("Subgoal 2"
-                        :use ((:instance ,',updater-of-accessor-when-not-boundp)))
-                       ("Subgoal 1"
-                        :use ((:instance ,',updater-of-accessor-when-boundp)))))
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-accessor/unique-when-not-boundp/unique
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-updater-of-contents-updater-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-updater ,',key ,',val (,',contents-updater ,',%key ,',%val ,',contents))
-                                                   (,',contents-updater ,',key ,',val ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::updater-of-updater-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',updater-of-updater-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',updater ,',key ,',val (,',updater ,',%key ,',%val ,',hash-table))
-                                               (,',updater ,',key ,',val ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater))))))
-
-                    ,(let ((thm `(defthm ,',contents-updater-of-contents-updater-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-updater ,',key ,',val (,',contents-updater ,',%key ,',%val ,',contents))
-                                                   (,',contents-updater ,',%key ,',%val (,',contents-updater ,',key ,',val ,',contents))))
-                                   :rule-classes
-                                   ((:rewrite :loop-stopper ((,',key ,',%key ,',contents-updater))))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::updater-of-updater-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',updater-of-updater-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',updater ,',key ,',val (,',updater ,',%key ,',%val ,',hash-table))
-                                               (,',updater ,',%key ,',%val (,',updater ,',key ,',val ,',hash-table))))
-                               :rule-classes
-                               ((:rewrite :loop-stopper ((,',key ,',%key ,',updater))))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater))))))
-
-                    (defthmd ,',updater-of-updater
-                      (equal (,',updater ,',key ,',val (,',updater ,',%key ,',%val ,',hash-table))
-                             (if ,(if ',key-fixer
-                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                      `(equal ,',key ,',%key))
-                                 (,',updater ,',key ,',val ,',hash-table)
-                                 (,',updater ,',%key ,',%val (,',updater ,',key ,',val ,',hash-table))))
+                    (defthmd ,contents-updater-of-contents-updater
+                      (equal (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 (,contents-updater ,key ,val ,contents)
+                                 (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((,',key ,',%key ,',updater))))
+                      ((:rewrite :loop-stopper ((,key ,%key ,contents-updater))))
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-updater))))
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-updater/unique
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-updater-of-contents-remover
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-updater ,',key ,',val (,',contents-remover ,',%key ,',contents))
-                                                   (,',contents-updater ,',key ,',val ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::updater-of-remover
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
+                    (defthm ,contents-updater-of-contents-updater-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))
+                                      (,contents-updater ,key ,val ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-updater/unique-same
+                             ,@fi-bindings))))
 
-                    ,@(and ',copyable
-                           `((defthm ,',updater-of-remover
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',updater ,',key ,',val (,',remover ,',%key ,',hash-table))
-                                               (,',updater ,',key ,',val ,',hash-table)))
+                    (defthm ,contents-updater-of-contents-updater-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))
+                                      (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))))
+                      :rule-classes
+                      ((:rewrite :loop-stopper ((,key ,%key ,contents-updater))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-updater/unique-diff
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-updater-of-contents-remover-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-updater ,key ,val (,contents-remover ,%key ,contents))
+                                      (,contents-updater ,key ,val ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::updater/unique-of-remover/unique-same
+                             ,@fi-bindings))))
+
+
+                    ;; `UPDATER'
+                    ,@(and copyable
+                           `((defthm ,updater{type-prescription}
+                               (and (consp (,updater ,key ,val ,hash-table))
+                                    (true-listp (,updater ,key ,val ,hash-table)))
+                               :rule-classes :type-prescription
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',contents-remover))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable{type-prescription}
+                                      ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-boundp-of-contents-updater-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-boundp ,',key (,',contents-updater ,',%key ,',val ,',contents))
-                                                   t))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::boundp-of-updater-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
+                             ,@(and key-recognizer
+                                    `((defthmd ,updater-when-not-key-recognizer
+                                        (implies (not (,key-recognizer ,key))
+                                                 (equal (,updater ,key ,val ,hash-table)
+                                                        (,updater ,default-key ,val ,hash-table)))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::updater/copyable-when-not-key-recognizer
+                                               ,@fi-bindings))))))
 
-                    ,@(and ',copyable
-                           `((defthm ,',boundp-of-updater-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',boundp ,',key (,',updater ,',%key ,',val ,',hash-table))
+                             ,@(and val-recognizer
+                                    `((defthmd ,updater-when-not-val-recognizer
+                                        (implies (not (,val-recognizer ,val))
+                                                 (equal (,updater ,key ,val ,hash-table)
+                                                        (,updater ,key ,default-val ,hash-table)))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::updater/copyable-when-not-val-recognizer
+                                               ,@fi-bindings))))))
+
+                             (defthmd ,updater-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (equal (,updater ,key ,val ,hash-table)
+                                               (,updater ,key ,val (,creator))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-when-not-recognizer/copyable
+                                      ,@fi-bindings))))
+
+                             ,@(and key-fixer
+                                    `((defthm ,updater-of-key-fixer
+                                        (equal (,updater (,key-fixer ,key) ,val ,hash-table)
+                                               (,updater ,key ,val ,hash-table))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::updater/copyable-of-key-fixer
+                                               ,@fi-bindings))))))
+
+                             ,@(and val-fixer
+                                    `((defthm ,updater-of-val-fixer
+                                        (equal (,updater ,key (,val-fixer ,val) ,hash-table)
+                                               (,updater ,key ,val ,hash-table))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::updater/copyable-of-val-fixer
+                                               ,@fi-bindings))))))
+
+                             (defthm ,updater-of-fixer
+                               (equal (,updater ,key ,val (,fixer ,hash-table))
+                                      (,updater ,key ,val ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-fixer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,updater-of-accessor-when-boundp-free
+                               (implies (and (,boundp ,key ,hash-table)
+                                             (equal ,(if val-fixer
+                                                         `(,val-fixer ,val)
+                                                         val) (,accessor ,key ,hash-table)))
+                                        (equal (,updater ,key ,val ,hash-table)
+                                               (,fixer ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-accessor/copyable-when-boundp/copyable-free
+                                      ,@fi-bindings))))
+
+                             (defthmd ,updater-of-accessor
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (equal (,updater ,key (,accessor ,%key ,hash-table) ,hash-table)
+                                               (if (,boundp ,key ,hash-table)
+                                                   (,fixer ,hash-table)
+                                                   (,updater ,key ,default-val ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-accessor/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,updater-of-accessor-when-boundp
+                               (implies (and (,boundp ,key ,hash-table)
+                                             (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,updater ,key (,accessor ,%key ,hash-table) ,hash-table)
+                                               (,fixer ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-accessor/copyable-when-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,updater-of-accessor-when-not-boundp
+                               (implies (and (not (,boundp ,key ,hash-table))
+                                             (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,updater ,key (,accessor ,%key ,hash-table) ,hash-table)
+                                               (,updater ,key ,default-val ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-accessor/copyable-when-not-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,updater-of-updater
+                               (equal (,updater ,key ,val (,updater ,%key ,%val ,hash-table))
+                                      (if (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          (,updater ,key ,val ,hash-table)
+                                          (,updater ,%key ,%val (,updater ,key ,val ,hash-table))))
+                               :rule-classes
+                               ((:rewrite :loop-stopper ((,key ,%key ,updater))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,updater-of-updater-same
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (equal (,updater ,key ,val (,updater ,%key ,%val ,hash-table))
+                                               (,updater ,key ,val ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-updater/copyable-same
+                                      ,@fi-bindings))))
+
+                             (defthm ,updater-of-updater-diff
+                               (implies (not (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,updater ,key ,val (,updater ,%key ,%val ,hash-table))
+                                               (,updater ,%key ,%val (,updater ,key ,val ,hash-table))))
+                               :rule-classes
+                               ((:rewrite :loop-stopper ((,key ,%key ,updater))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-updater/copyable-diff
+                                      ,@fi-bindings))))
+
+                             (defthm ,updater-of-remover-same
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (equal (,updater ,key ,val (,remover ,%key ,hash-table))
+                                               (,updater ,key ,val ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::updater/copyable-of-remover/copyable-same
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-BOUNDP'
+                    (defthm ,contents-boundp{type-prescription}
+                      (booleanp (,contents-boundp ,key ,contents))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique{type-prescription}
+                             ,@fi-bindings))))
+
+                    ,@(and key-recognizer
+                           `((defthmd ,contents-boundp-when-not-key-recognizer
+                               (implies (not (,key-recognizer ,key))
+                                        (equal (,contents-boundp ,key ,contents)
+                                               (,contents-boundp ,default-key ,contents)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/unique-when-not-key-recognizer
+                                      ,@fi-bindings))))))
+
+                    (defthmd ,contents-boundp-when-not-contents-recognizer
+                      (implies (not (,contents-recognizer ,contents))
+                               (not (,contents-boundp ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-when-not-recognizer/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-boundp-of-contents-creator
+                      (not (,contents-boundp ,key (,contents-creator)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-creator/unique
+                             ,@fi-bindings))))
+
+                    ,@(and key-fixer
+                           `((defthm ,contents-boundp-of-key-fixer
+                               (equal (,contents-boundp (,key-fixer ,key) ,contents)
+                                      (,contents-boundp ,key ,contents))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/unique-of-key-fixer
+                                      ,@fi-bindings))))))
+
+                    (defthm ,contents-boundp-of-contents-fixer
+                      (equal (,contents-boundp ,key (,contents-fixer ,contents))
+                             (,contents-boundp ,key ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-fixer/unique
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-boundp-of-contents-updater
+                      (equal (,contents-boundp ,key (,contents-updater ,%key ,val ,contents))
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 t
+                                 (,contents-boundp ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-updater/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-boundp-of-contents-updater-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-boundp ,key (,contents-updater ,%key ,val ,contents))
+                                      t))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-updater/unique-same
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-boundp-of-contents-updater-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-boundp ,key (,contents-updater ,%key ,val ,contents))
+                                      (,contents-boundp ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-updater/unique-diff
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-boundp-of-contents-remover
+                      (equal (,contents-boundp ,key (,contents-remover ,%key ,contents))
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 nil
+                                 (,contents-boundp ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-remover/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-boundp-of-contents-remover-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (not (,contents-boundp ,key (,contents-remover ,%key ,contents))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-remover/unique-same
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-boundp-of-contents-remover-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-boundp ,key (,contents-remover ,%key ,contents))
+                                      (,contents-boundp ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-of-remover/unique-diff
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-boundp-when-zp-contents-count
+                      (implies (zp (,contents-count ,contents))
+                               (not (,contents-boundp ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::boundp/unique-when-zp-count/unique
+                             ,@fi-bindings))))
+
+
+                    ;; `BOUNDP'
+                    ,@(and copyable
+                           `((defthm ,boundp{type-prescription}
+                               (booleanp (,boundp ,key ,hash-table))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             ,@(and key-recognizer
+                                    `((defthmd ,boundp-when-not-key-recognizer
+                                        (implies (not (,key-recognizer ,key))
+                                                 (equal (,boundp ,key ,hash-table)
+                                                        (,boundp ,default-key ,hash-table)))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::boundp/copyable-when-not-key-recognizer
+                                               ,@fi-bindings))))))
+
+                             (defthmd ,boundp-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (not (,boundp ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-when-not-recognizer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,boundp-of-creator
+                               (not (,boundp ,key (,creator)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-creator/copyable
+                                      ,@fi-bindings))))
+
+                             ,@(and key-fixer
+                                    `((defthm ,boundp-of-key-fixer
+                                        (equal (,boundp (,key-fixer ,key) ,hash-table)
+                                               (,boundp ,key ,hash-table))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::boundp/copyable-of-key-fixer
+                                               ,@fi-bindings))))))
+
+                             (defthm ,boundp-of-fixer
+                               (equal (,boundp ,key (,fixer ,hash-table))
+                                      (,boundp ,key ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-fixer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,boundp-of-updater
+                               (equal (,boundp ,key (,updater ,%key ,val ,hash-table))
+                                      (if (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          t
+                                          (,boundp ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,boundp-of-updater-same
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (equal (,boundp ,key (,updater ,%key ,val ,hash-table))
                                                t))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',contents-boundp))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-updater/copyable-same
+                                      ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-boundp-of-contents-updater-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-boundp ,',key (,',contents-updater ,',%key ,',val ,',contents))
-                                                   (,',contents-boundp ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::boundp-of-updater-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',boundp-of-updater-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',boundp ,',key (,',updater ,',%key ,',val ,',hash-table))
-                                               (,',boundp ,',key ,',hash-table)))
+                             (defthm ,boundp-of-updater-diff
+                               (implies (not (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,boundp ,key (,updater ,%key ,val ,hash-table))
+                                               (,boundp ,key ,hash-table)))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',contents-boundp))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-updater/copyable-diff
+                                      ,@fi-bindings))))
 
-                    (defthmd ,',boundp-of-updater
-                      (equal (,',boundp ,',key (,',updater ,',%key ,',val ,',hash-table))
-                             (or ,(if ',key-fixer
-                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                      `(equal ,',key ,',%key))
-                                 (,',boundp ,',key ,',hash-table)))
+                             (defthmd ,boundp-of-remover
+                               (equal (,boundp ,key (,remover ,%key ,hash-table))
+                                      (if (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          nil
+                                          (,boundp ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-remover/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,boundp-of-remover-same
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (not (,boundp ,key (,remover ,%key ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-remover/copyable-same
+                                      ,@fi-bindings))))
+
+                             (defthm ,boundp-of-remover-diff
+                               (implies (not (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,boundp ,key (,remover ,%key ,hash-table))
+                                               (,boundp ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-remover/copyable-diff
+                                      ,@fi-bindings))))
+
+                             (defthmd ,boundp-when-zp-count
+                               (implies (zp (,count ,hash-table))
+                                        (not (,boundp ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-when-zp-count/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,boundp-of-keys-set
+                               (equal (,boundp ,key (,keys-set set ,hash-table))
+                                      (,boundp ,key ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::boundp/copyable-of-keys-set
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-GETP'
+                    (defthm ,contents-getp{type-prescription}
+                      (and (consp (,contents-getp ,key ,contents))
+                           (true-listp (,contents-getp ,key ,contents)))
+                      :rule-classes :type-prescription
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-updater
-                                            ,',contents-boundp))))
+                        :by (:functional-instance
+                             lem-hash-table$a::getp/unique{type-prescription}
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-boundp-of-contents-remover-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (not (,',contents-boundp ,',key (,',contents-remover ,',%key ,',contents))))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::boundp-of-remover-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',boundp-of-remover-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (not (,',boundp ,',key (,',remover ,',%key ,',hash-table))))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-boundp
-                                                     ,',contents-remover))))))
-
-                    ,(let ((thm `(defthm ,',contents-boundp-of-contents-remover-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-boundp ,',key (,',contents-remover ,',%key ,',contents))
-                                                   (,',contents-boundp ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::boundp-of-remover-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',boundp-of-remover-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',boundp ,',key (,',remover ,',%key ,',hash-table))
-                                               (,',boundp ,',key ,',hash-table)))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-boundp
-                                                     ,',contents-remover))))))
-
-                    (defthmd ,',boundp-of-remover
-                      (equal (,',boundp ,',key (,',remover ,',%key ,',hash-table))
-                             (and (not ,(if ',key-fixer
-                                            `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                            `(equal ,',key ,',%key)))
-                                  (,',boundp ,',key ,',hash-table)))
+                    (defthm ,contents-getp{rewrite}
+                      (mv-let (v0 v1)
+                              (,contents-getp ,key ,contents)
+                        (and (equal v0 (,contents-accessor ,key ,contents))
+                             (equal v1 (,contents-boundp ,key ,contents))))
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-boundp
-                                            ,',contents-remover))))
+                        :by (:functional-instance
+                             lem-hash-table$a::getp/unique{rewrite}
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthmd ,',contents-boundp-when-zp-contents-count
-                                   (implies (zp (,',contents-count ,',contents))
-                                            (not (,',contents-boundp ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::boundp-when-zp-count
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthmd ,',boundp-when-zp-count
-                               (implies (zp (,',count ,',hash-table))
-                                        (not (,',boundp ,',key ,',hash-table)))
+
+                    ;; `GETP'
+                    ,@(and copyable
+                           `((defthm ,getp{type-prescription}
+                               (and (consp (,getp ,key ,hash-table))
+                                    (true-listp (,getp ,key ,hash-table)))
+                               :rule-classes :type-prescription
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-count
-                                                     ,',contents-boundp
-                                                     ,',fixer)
-                                 :use ((:instance ,',contents-boundp-when-zp-contents-count
-                                                  (,',contents (cdr (,',fixer ,',hash-table))))))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::getp/copyable{type-prescription}
+                                      ,@fi-bindings))))
 
-                    ,(let ((thm `(defthm ,',contents-remover-of-contents-updater-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-remover ,',key (,',contents-updater ,',%key ,',val ,',contents))
-                                                   (,',contents-remover ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::remover-of-updater-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',remover-of-updater-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',remover ,',key (,',updater ,',%key ,',val ,',hash-table))
-                                               (,',remover ,',key ,',hash-table)))
+                             (defthm ,getp{rewrite}
+                               (mv-let (v0 v1)
+                                       (,getp ,key ,hash-table)
+                                 (and (equal v0 (,accessor ,key ,hash-table))
+                                      (equal v1 (,boundp ,key ,hash-table))))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',contents-remover))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::getp/copyable{rewrite}
+                                      ,@fi-bindings))))))
 
-                    ,(let ((thm `(defthm ,',contents-remover-of-contents-updater-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-remover ,',key (,',contents-updater ,',%key ,',val ,',contents))
-                                                   (,',contents-updater ,',%key ,',val (,',contents-remover ,',key ,',contents))))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::remover-of-updater-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',remover-of-updater-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',remover ,',key (,',updater ,',%key ,',val ,',hash-table))
-                                               (,',updater ,',%key ,',val (,',remover ,',key ,',hash-table))))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-updater
-                                                     ,',contents-remover))))))
-
-                    (defthmd ,',remover-of-updater
-                      (equal (,',remover ,',key (,',updater ,',%key ,',val ,',hash-table))
-                             (if ,(if ',key-fixer
-                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                      `(equal ,',key ,',%key))
-                                 (,',remover ,',key ,',hash-table)
-                                 (,',updater ,',%key ,',val (,',remover ,',key ,',hash-table))))
+
+                    ;; `CONTENTS-REMOVER'
+                    (defthm ,contents-remover{type-prescription}
+                      (true-listp (,contents-remover ,key ,contents))
+                      :rule-classes :type-prescription
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-updater
-                                            ,',contents-remover))))
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique{type-prescription}
+                             ,@fi-bindings))))
 
-                    ,(let ((thm `(defthmd ,',contents-remover-when-not-contents-boundp
-                                   (implies (not (,',contents-boundp ,',key ,',contents))
-                                            (equal (,',contents-remover ,',key ,',contents)
-                                                   (,',contents-fixer ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :by (:functional-instance
-                                          define-hash-table::remover-when-not-boundp
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::%key (lambda () ,',%key))
-                                          (define-hash-table::val (lambda () ,',val))
-                                          (define-hash-table::%val (lambda () ,',%val))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthmd ,',remover-when-not-boundp
-                               (implies (not (,',boundp ,',key ,',hash-table))
-                                        (equal (,',remover ,',key ,',hash-table)
-                                               (,',fixer ,',hash-table)))
+                    ,@(and key-recognizer
+                           `((defthmd ,contents-remover-when-not-key-recognizer
+                               (implies (not (,key-recognizer ,key))
+                                        (equal (,contents-remover ,key ,contents)
+                                               (,contents-remover ,default-key ,contents)))
                                :hints
                                (("Goal"
-                                 :in-theory (e/d (,',contents-remover-when-not-contents-boundp)
-                                                 (,',contents-boundp
-                                                  ,',contents-remover)))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/unique-when-not-key-recognizer
+                                      ,@fi-bindings))))))
 
-                    ,(let ((thm `(defthm ,',contents-remover-of-contents-remover-same
-                                   (implies ,(if ',key-fixer
-                                                 `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                                 `(equal ,',key ,',%key))
-                                            (equal (,',contents-remover ,',key (,',contents-remover ,',%key ,',contents))
-                                                   (,',contents-remover ,',key ,',contents)))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::remover-of-remover-same
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
+                    (defthmd ,contents-remover-when-not-contents-recognizer
+                      (implies (not (,contents-recognizer ,contents))
+                               (equal (,contents-remover ,key ,contents)
+                                      (,contents-creator)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-when-not-recognizer/unique
+                             ,@fi-bindings))))
 
-                    ,@(and ',copyable
-                           `((defthm ,',remover-of-remover-same
-                               (implies ,(if ',key-fixer
-                                             `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                             `(equal ,',key ,',%key))
-                                        (equal (,',remover ,',key (,',remover ,',%key ,',hash-table))
-                                               (,',remover ,',key ,',hash-table)))
+                    (defthm ,contents-remover-of-contents-creator
+                      (equal (,contents-remover ,key (,contents-creator))
+                             (,contents-creator))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-creator/unique
+                             ,@fi-bindings))))
+
+                    ,@(and key-fixer
+                           `((defthm ,contents-remover-of-key-fixer
+                               (equal (,contents-remover (,key-fixer ,key) ,contents)
+                                      (,contents-remover ,key ,contents))
                                :hints
                                (("Goal"
-                                 :in-theory (disable ,',contents-remover))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/unique-of-key-fixer
+                                      ,@fi-bindings))))))
 
-                    ,(let ((thm `(defthm ,',contents-remover-of-contents-remover-diff
-                                   (implies ,(if ',key-fixer
-                                                 `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                                 `(not (equal ,',key ,',%key)))
-                                            (equal (,',contents-remover ,',key (,',contents-remover ,',%key ,',contents))
-                                                   (,',contents-remover ,',%key (,',contents-remover ,',key ,',contents))))
-                                   :rule-classes
-                                   ((:rewrite :loop-stopper ((,',key ,',%key ,',contents-remover))))
-                                   :hints
-                                   (("Goal"
-                                     :use ((:functional-instance
-                                            define-hash-table::remover-of-remover-diff
-                                            (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                               'identity))
-                                            (define-hash-table::key-default (lambda () ,default-key))
-                                            (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                    '(lambda (x) t)))
-                                            (define-hash-table::val-fixer ,(or val-fixer
-                                                                               'identity))
-                                            (define-hash-table::val-default (lambda () ,default-val))
-                                            (define-hash-table::recognizer ,',contents-recognizer)
-                                            (define-hash-table::creator ,',contents-creator)
-                                            (define-hash-table::fixer ,',contents-fixer)
-                                            (define-hash-table::accessor ,',contents-accessor)
-                                            (define-hash-table::updater ,',contents-updater)
-                                            (define-hash-table::boundp ,',contents-boundp)
-                                            (define-hash-table::remover ,',contents-remover)
-                                            (define-hash-table::count ,',contents-count)
-                                            (define-hash-table::hash-table (lambda () ,',contents))
-                                            (define-hash-table::key (lambda () ,',key))
-                                            (define-hash-table::%key (lambda () ,',%key))
-                                            (define-hash-table::val (lambda () ,',val))
-                                            (define-hash-table::%val (lambda () ,',%val)))))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
+                    (defthm ,contents-remover-of-contents-fixer
+                      (equal (,contents-remover ,key (,contents-fixer ,contents))
+                             (,contents-remover ,key ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-fixer/unique
+                             ,@fi-bindings))))
 
-                    ,@(and ',copyable
-                           `((defthm ,',remover-of-remover-diff
-                               (implies ,(if ',key-fixer
-                                             `(not (equal (,',key-fixer ,',key) (,',key-fixer ,',%key)))
-                                             `(not (equal ,',key ,',%key)))
-                                        (equal (,',remover ,',key (,',remover ,',%key ,',hash-table))
-                                               (,',remover ,',%key (,',remover ,',key ,',hash-table))))
-                               :rule-classes
-                               ((:rewrite :loop-stopper ((,',key ,',%key ,',remover))))
-                               :hints
-                               (("Goal"
-                                 :in-theory (disable ,',contents-remover))))))
+                    (defthmd ,contents-remover-of-contents-updater
+                      (equal (,contents-remover ,key (,contents-updater ,%key ,val ,contents))
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 (,contents-remover ,key ,contents)
+                                 (,contents-updater ,%key ,val (,contents-remover ,key ,contents))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-updater/unique
+                             ,@fi-bindings))))
 
-                    (defthmd ,',remover-of-remover
-                      (equal (,',remover ,',key (,',remover ,',%key ,',hash-table))
-                             (if ,(if ',key-fixer
-                                      `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                      `(equal ,',key ,',%key))
-                                 (,',remover ,',key ,',hash-table)
-                                 (,',remover ,',%key (,',remover ,',key ,',hash-table))))
+                    (defthm ,contents-remover-of-contents-updater-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-remover ,key (,contents-updater ,%key ,val ,contents))
+                                      (,contents-remover ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-updater/unique-same
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-remover-of-contents-updater-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-remover ,key (,contents-updater ,%key ,val ,contents))
+                                      (,contents-updater ,%key ,val (,contents-remover ,key ,contents))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-updater/unique-diff
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-remover-when-not-contents-boundp
+                      (implies (not (,contents-boundp ,key ,contents))
+                               (equal (,contents-remover ,key ,contents)
+                                      (,contents-fixer ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-when-not-boundp/unique
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-remover-of-contents-remover
+                      (equal (,contents-remover ,key (,contents-remover ,%key ,contents))
+                             (if (equal ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,%key)
+                                             %key))
+                                 (,contents-remover ,key ,contents)
+                                 (,contents-remover ,%key (,contents-remover ,key ,contents))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((,',key ,',%key ,',remover))))
+                      ((:rewrite :loop-stopper ((,key ,%key ,contents-remover))))
                       :hints
                       (("Goal"
-                        :cases (,(if ',key-fixer
-                                     `(equal (,',key-fixer ,',key) (,',key-fixer ,',%key))
-                                     `(equal ,',key ,',%key)))
-                        :in-theory (disable ,',contents-remover))))
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-remover/unique
+                             ,@fi-bindings))))
 
-                    (defun-sk ,',contents-keys-equal (,',%contents ,',contents)
-                      (declare (xargs :guard (and (,',contents-recognizer ,',%contents)
-                                                  (,',contents-recognizer ,',contents))
+                    (defthm ,contents-remover-of-contents-remover-same
+                      (implies (equal ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,%key)
+                                           %key))
+                               (equal (,contents-remover ,key (,contents-remover ,%key ,contents))
+                                      (,contents-remover ,key ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-remover/unique-same
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-remover-of-contents-remover-diff
+                      (implies (not (equal ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,%key)
+                                                %key)))
+                               (equal (,contents-remover ,key (,contents-remover ,%key ,contents))
+                                      (,contents-remover ,%key (,contents-remover ,key ,contents))))
+                      :rule-classes
+                      ((:rewrite :loop-stopper ((,key ,%key ,contents-remover))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::remover/unique-of-remover/unique-diff
+                             ,@fi-bindings))))
+
+
+                    ;; `REMOVER'
+                    ,@(and copyable
+                           `((defthm ,remover{type-prescription}
+                               (and (consp (,remover ,key ,hash-table))
+                                    (true-listp (,remover ,key ,hash-table)))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             ,@(and key-recognizer
+                                    `((defthmd ,remover-when-not-key-recognizer
+                                        (implies (not (,key-recognizer ,key))
+                                                 (equal (,remover ,key ,hash-table)
+                                                        (,remover ,default-key ,hash-table)))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::remover/copyable-when-not-key-recognizer
+                                               ,@fi-bindings))))))
+
+                             (defthmd ,remover-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (equal (,remover ,key ,hash-table)
+                                               (,creator)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-when-not-recognizer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,remover-of-creator
+                               (equal (,remover ,key (,creator))
+                                      (,creator))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-creator/copyable
+                                      ,@fi-bindings))))
+
+                             ,@(and key-fixer
+                                    `((defthm ,remover-of-key-fixer
+                                        (equal (,remover (,key-fixer ,key) ,hash-table)
+                                               (,remover ,key ,hash-table))
+                                        :hints
+                                        (("Goal"
+                                          :by (:functional-instance
+                                               lem-hash-table$a::remover/copyable-of-key-fixer
+                                               ,@fi-bindings))))))
+
+                             (defthm ,remover-of-fixer
+                               (equal (,remover ,key (,fixer ,hash-table))
+                                      (,remover ,key ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-fixer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,remover-of-updater
+                               (equal (,remover ,key (,updater ,%key ,val ,hash-table))
+                                      (if (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          (,remover ,key ,hash-table)
+                                          (,updater ,%key ,val (,remover ,key ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,remover-of-updater-same
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (equal (,remover ,key (,updater ,%key ,val ,hash-table))
+                                               (,remover ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-updater/copyable-same
+                                      ,@fi-bindings))))
+
+                             (defthm ,remover-of-updater-diff
+                               (implies (not (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,remover ,key (,updater ,%key ,val ,hash-table))
+                                               (,updater ,%key ,val (,remover ,key ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-updater/copyable-diff
+                                      ,@fi-bindings))))
+
+                             (defthmd ,remover-when-not-boundp
+                               (implies (not (,boundp ,key ,hash-table))
+                                        (equal (,remover ,key ,hash-table)
+                                               (,fixer ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-when-not-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,remover-of-remover
+                               (equal (,remover ,key (,remover ,%key ,hash-table))
+                                      (if (equal ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,%key)
+                                                      %key))
+                                          (,remover ,key ,hash-table)
+                                          (,remover ,%key (,remover ,key ,hash-table))))
+                               :rule-classes
+                               ((:rewrite :loop-stopper ((,key ,%key ,remover))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-remover/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,remover-of-remover-same
+                               (implies (equal ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,%key)
+                                                    %key))
+                                        (equal (,remover ,key (,remover ,%key ,hash-table))
+                                               (,remover ,key ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-remover/copyable-same
+                                      ,@fi-bindings))))
+
+                             (defthm ,remover-of-remover-diff
+                               (implies (not (equal ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,%key)
+                                                         %key)))
+                                        (equal (,remover ,key (,remover ,%key ,hash-table))
+                                               (,remover ,%key (,remover ,key ,hash-table))))
+                               :rule-classes
+                               ((:rewrite :loop-stopper ((,key ,%key ,remover))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::remover/copyable-of-remover/copyable-diff
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-COUNT'
+                    (defthm ,contents-count{type-prescription}
+                      (natp (,contents-count ,contents))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique{type-prescription}
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-count-when-not-contents-recognizer
+                      (implies (not (,contents-recognizer ,contents))
+                               (equal (,contents-count ,contents)
+                                      0))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-when-not-recognizer/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-of-contents-creator
+                      (equal (,contents-count (,contents-creator))
+                             0)
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-creator/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-of-contents-fixer
+                      (equal (,contents-count (,contents-fixer ,contents))
+                             (,contents-count ,contents))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-fixer/unique
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-count-of-contents-updater
+                      (equal (,contents-count (,contents-updater ,key ,val ,contents))
+                             (if (,contents-boundp ,key ,contents)
+                                 (,contents-count ,contents)
+                                 (1+ (,contents-count ,contents))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-updater/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-of-contents-updater-when-contents-boundp
+                      (implies (,contents-boundp ,key ,contents)
+                               (equal (,contents-count (,contents-updater ,key ,val ,contents))
+                                      (,contents-count ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-updater/unique-when-boundp/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-of-contents-updater-when-not-contents-boundp
+                      (implies (not (,contents-boundp ,key ,contents))
+                               (equal (,contents-count (,contents-updater ,key ,val ,contents))
+                                      (1+ (,contents-count ,contents))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-updater/unique-when-not-boundp/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-when-contents-boundp
+                      (implies (,contents-boundp ,key ,contents)
+                               (posp (,contents-count ,contents)))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-when-boundp/unique
+                             ,@fi-bindings))))
+
+                    (defthmd ,contents-count-of-contents-remover
+                      (equal (,contents-count (,contents-remover ,key ,contents))
+                             (if (,contents-boundp ,key ,contents)
+                                 (1- (,contents-count ,contents))
+                                 (,contents-count ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-remover/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-of-contents-remover-when-contents-boundp
+                      (implies (,contents-boundp ,key ,contents)
+                               (equal (,contents-count (,contents-remover ,key ,contents))
+                                      (1- (,contents-count ,contents))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-remover/unique-when-boundp/unique
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-count-of-contents-remover-when-not-contents-boundp
+                      (implies (not (,contents-boundp ,key ,contents))
+                               (equal (,contents-count (,contents-remover ,key ,contents))
+                                      (,contents-count ,contents)))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::count/unique-of-remover/unique-when-not-boundp/unique
+                             ,@fi-bindings))))
+
+
+                    ;; `COUNT'
+                    ,@(and copyable
+                           `((defthm ,count{type-prescription}
+                               (natp (,count ,hash-table))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthmd ,count-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (equal (,count ,hash-table)
+                                               0))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-when-not-recognizer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-creator
+                               (equal (,count (,creator))
+                                      0)
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-creator/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-fixer
+                               (equal (,count (,fixer ,hash-table))
+                                      (,count ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-fixer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,count-of-updater
+                               (equal (,count (,updater ,key ,val ,hash-table))
+                                      (if (,boundp ,key ,hash-table)
+                                          (,count ,hash-table)
+                                          (1+ (,count ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-updater-when-boundp
+                               (implies (,boundp ,key ,hash-table)
+                                        (equal (,count (,updater ,key ,val ,hash-table))
+                                               (,count ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-updater/copyable-when-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-updater-when-not-boundp
+                               (implies (not (,boundp ,key ,hash-table))
+                                        (equal (,count (,updater ,key ,val ,hash-table))
+                                               (1+ (,count ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-updater/copyable-when-not-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-when-boundp
+                               (implies (,boundp ,key ,hash-table)
+                                        (posp (,count ,hash-table)))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-when-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,count-of-remover
+                               (equal (,count (,remover ,key ,hash-table))
+                                      (if (,boundp ,key ,hash-table)
+                                          (1- (,count ,hash-table))
+                                          (,count ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-remover/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-remover-when-boundp
+                               (implies (,boundp ,key ,hash-table)
+                                        (equal (,count (,remover ,key ,hash-table))
+                                               (1- (,count ,hash-table))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-remover/copyable-when-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-remover-when-not-boundp
+                               (implies (not (,boundp ,key ,hash-table))
+                                        (equal (,count (,remover ,key ,hash-table))
+                                               (,count ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-remover/copyable-when-not-boundp/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,count-of-keys-set
+                               (equal (,count (,keys-set set ,hash-table))
+                                      (,count ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::count/copyable-of-keys-set
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-CLEAR'
+                    (defthm ,contents-clear{type-prescription}
+                      (true-listp (,contents-clear ,contents))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::clear/unique{type-prescription}
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-clear{rewrite}
+                      (equal (,contents-clear ,contents)
+                             (,contents-creator))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::clear/unique{rewrite}
+                             ,@fi-bindings))))
+
+
+                    ;; `CLEAR'
+                    ,@(and copyable
+                           `((defthm ,clear{type-prescription}
+                               (and (consp (,clear ,hash-table))
+                                    (true-listp (,clear ,hash-table)))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::clear/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthm ,clear{rewrite}
+                               (equal (,clear ,hash-table)
+                                      (,creator))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::clear/copyable{rewrite}
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-INIT'
+                    (defthm ,contents-init{type-prescription}
+                      (true-listp (,contents-init ht-size rehash-size rehash-threshold ,contents))
+                      :rule-classes :type-prescription
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::init/unique{type-prescription}
+                             ,@fi-bindings))))
+
+                    (defthm ,contents-init{rewrite}
+                      (equal (,contents-init ht-size rehash-size rehash-threshold ,contents)
+                             (,contents-creator))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::init/unique{rewrite}
+                             ,@fi-bindings))))
+
+
+                    ;; `INIT'
+                    ,@(and copyable
+                           `((defthm ,init{type-prescription}
+                               (and (consp (,init ht-size rehash-size rehash-threshold ,hash-table))
+                                    (true-listp (,init ht-size rehash-size rehash-threshold ,hash-table)))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::init/copyable{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthm ,init{rewrite}
+                               (equal (,init ht-size rehash-size rehash-threshold ,hash-table)
+                                      (,creator))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::init/copyable{rewrite}
+                                      ,@fi-bindings))))))
+
+
+                    ;; `KEYS'
+                    ,@(and copyable
+                           `((defthm ,keys{type-prescription}
+                               (true-listp (,keys ,hash-table))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthm ,setp-of-keys
+                               (set::setp (,keys ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::setp-of-keys
+                                      ,@fi-bindings))))
+
+                             (defthmd ,keys-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (not (,keys ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-when-not-recognizer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-of-creator
+                               (not (,keys (,creator)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-of-creator/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-of-fixer
+                               (equal (,keys (,fixer ,hash-table))
+                                      (,keys ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-of-fixer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-of-updater
+                               (equal (,keys (,updater ,key ,val ,hash-table))
+                                      (,keys ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-of-remover
+                               (equal (,keys (,remover ,key ,hash-table))
+                                      (,keys ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-of-remover/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-of-keys-set
+                               (equal (,keys (,keys-set set ,hash-table))
+                                      (set::sfix set))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-of-keys-set
+                                      ,@fi-bindings))))))
+
+
+                    ;; `KEYS-SET'
+                    ,@(and copyable
+                           `((defthm ,keys-set{type-prescription}
+                               (and (consp (,keys-set set ,hash-table))
+                                    (true-listp (,keys-set set ,hash-table)))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set{type-prescription}
+                                      ,@fi-bindings))))
+
+                             (defthmd ,keys-set-when-not-setp
+                               (implies (not (set::setp set))
+                                        (equal (,keys-set set ,hash-table)
+                                               (,keys-set '() ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-when-not-setp
+                                      ,@fi-bindings))))
+
+                             (defthmd ,keys-set-when-not-recognizer
+                               (implies (not (,recognizer ,hash-table))
+                                        (equal (,keys-set set ,hash-table)
+                                               (,keys-set set (,creator))))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-when-not-recognizer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-creator
+                               (implies (set::emptyp set)
+                                        (equal (,keys-set set (,creator))
+                                               (,creator)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-creator/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-sfix
+                               (equal (,keys-set (set::sfix set) ,hash-table)
+                                      (,keys-set set ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-sfix
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-fixer
+                               (equal (,keys-set set (,fixer ,hash-table))
+                                      (,keys-set set ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-fixer/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-updater
+                               (equal (,keys-set set (,updater ,key ,val ,hash-table))
+                                      (,updater ,key ,val (,keys-set set ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-updater/copyable
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-remover
+                               (equal (,keys-set set (,remover ,key ,hash-table))
+                                      (,remover ,key (,keys-set set ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-remover/copyable
+                                      ,@fi-bindings))))
+
+                             (defthmd ,keys-set-of-keys-free
+                               (implies (equal (set::sfix set) (,keys ,hash-table))
+                                        (equal (,keys-set set ,hash-table)
+                                               (,fixer ,hash-table)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-keys-free
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-keys
+                               (equal (,keys-set (,keys ,hash-table) ,hash-table)
+                                      (,fixer ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-keys
+                                      ,@fi-bindings))))
+
+                             (defthm ,keys-set-of-keys-set
+                               (equal (,keys-set set (,keys-set %set ,hash-table))
+                                      (,keys-set set ,hash-table))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance
+                                      lem-hash-table$a::keys-set-of-keys-set
+                                      ,@fi-bindings))))))
+
+
+                    ;; `CONTENTS-EQUAL'
+                    (defun-sk ,contents-keys-equal (,contents ,%contents)
+                      (declare (xargs :guard (and (,contents-recognizer ,contents)
+                                                  (,contents-recognizer ,%contents))
                                       :verify-guards nil))
-                      (forall ,',key
-                        ,(if ',key-recognizer
-                             `(implies (,',key-recognizer ,',key)
-                                       (equal (,',contents-boundp ,',key ,',%contents)
-                                              (,',contents-boundp ,',key ,',contents)))
-                             `(equal (,',contents-boundp ,',key ,',%contents)
-                                     (,',contents-boundp ,',key ,',contents))))
+                      (forall ,key
+                        ,(if key-recognizer
+                             `(implies (,key-recognizer ,key)
+                                       (equal (,contents-boundp ,key ,contents)
+                                              (,contents-boundp ,key ,%contents)))
+                             `(equal (,contents-boundp ,key ,contents)
+                                     (,contents-boundp ,key ,%contents))))
                       :rewrite :direct)
 
-                    (local
-                      ,(let ((witness `(,',contents-keys-equal-witness ,',%contents
-                                                                       ,',contents)))
-                         `(defthm ,',contents-keys-equal-lemma-0
-                            (implies ,(if ',key-recognizer
-                                          `(and (,',key-recognizer ,witness)
-                                                (equal (,',contents-boundp ,witness ,',%contents)
-                                                       (,',contents-boundp ,witness ,',contents)))
-                                          `(equal (,',contents-boundp ,witness ,',%contents)
-                                                  (,',contents-boundp ,witness ,',contents)))
-                                     (,',contents-keys-equal ,',%contents ,',contents)))))
-
-                    ,@(and ',key-recognizer
-                           (let ((witness `(,',contents-keys-equal-witness ,',%contents
-                                                                           ,',contents)))
-                             `((local
-                                 (defthm ,',contents-keys-equal-lemma-1
-                                   (implies (not (,',key-recognizer ,witness))
-                                            (,',contents-keys-equal ,',%contents ,',contents)))))))
-
-                    ,@(and ',copyable
-                           `((defun-sk ,',keys-equal (,',%hash-table ,',hash-table)
-                               (declare (xargs :guard (and (,',recognizer ,',%hash-table)
-                                                           (,',recognizer ,',hash-table))
-                                               :verify-guards nil))
-                               (forall ,',key
-                                 ,(if ',key-recognizer
-                                      `(implies (,',key-recognizer ,',key)
-                                                (equal (,',boundp ,',key ,',%hash-table)
-                                                       (,',boundp ,',key ,',hash-table)))
-                                      `(equal (,',boundp ,',key ,',%hash-table)
-                                              (,',boundp ,',key ,',hash-table))))
-                               :rewrite :direct)
-
-                             (local
-                               (defthm ,',keys-equal-implies-contents-keys-equal
-                                 (implies (and (set::setp (car ,',hash-table))
-                                               (set::setp (car ,',%hash-table)))
-                                          (implies (,',keys-equal ,',%hash-table ,',hash-table)
-                                                   (,',contents-keys-equal (cdr ,',%hash-table) (cdr ,',hash-table))))
-                                 :hints
-                                 (("Goal"
-                                   :do-not-induct t
-                                   :cases ((,',recognizer ,',%hash-table)
-                                           (,',recognizer ,',hash-table))
-                                   :in-theory (disable ,',keys-equal
-                                                       ,',keys-equal-necc))
-                                  ("Subgoal 2"
-                                   :use ((:instance ,',keys-equal-necc
-                                                    (,',key (,',contents-keys-equal-witness
-                                                             (cdr ,',%hash-table)
-                                                             (cdr ,',hash-table))))))
-                                  ("Subgoal 1"
-                                   :use ((:instance ,',keys-equal-necc
-                                                    (,',key (,',contents-keys-equal-witness
-                                                             (cdr ,',%hash-table)
-                                                             (cdr ,',hash-table)))))))))))
-
-                    (defun-sk ,',contents-vals-equal (,',%contents ,',contents)
-                      (declare (xargs :guard (and (,',contents-recognizer ,',%contents)
-                                                  (,',contents-recognizer ,',contents))
+                    (defun-sk ,contents-vals-equal (,contents ,%contents)
+                      (declare (xargs :guard (and (,contents-recognizer ,contents)
+                                                  (,contents-recognizer ,%contents))
                                       :verify-guards nil))
-                      (forall ,',key
-                        ,(if ',key-recognizer
-                             `(implies (,',key-recognizer ,',key)
-                                       (equal (,',contents-accessor ,',key ,',%contents)
-                                              (,',contents-accessor ,',key ,',contents)))
-                             `(equal (,',contents-accessor ,',key ,',%contents)
-                                     (,',contents-accessor ,',key ,',contents))))
+                      (forall ,key
+                        ,(if key-recognizer
+                             `(implies (,key-recognizer ,key)
+                                       (equal (,contents-accessor ,key ,contents)
+                                              (,contents-accessor ,key ,%contents)))
+                             `(equal (,contents-accessor ,key ,contents)
+                                     (,contents-accessor ,key ,%contents))))
                       :rewrite :direct)
 
-                    ,@(and ',copyable
-                           `((defun-sk ,',vals-equal (,',%hash-table ,',hash-table)
-                               (declare (xargs :guard (and (,',recognizer ,',%hash-table)
-                                                           (,',recognizer ,',hash-table))
-                                               :verify-guards nil))
-                               (forall ,',key
-                                 ,(if ',key-recognizer
-                                      `(implies (,',key-recognizer ,',key)
-                                                (equal (,',accessor ,',key ,',%hash-table)
-                                                       (,',accessor ,',key ,',hash-table)))
-                                      `(equal (,',accessor ,',key ,',%hash-table)
-                                              (,',accessor ,',key ,',hash-table))))
-                               :rewrite :direct)
-
-                             (local
-                               (defthm ,',vals-equal-implies-contents-vals-equal
-                                 (implies (and (set::setp (car ,',hash-table))
-                                               (set::setp (car ,',%hash-table)))
-                                          (implies (,',vals-equal ,',%hash-table ,',hash-table)
-                                                   (,',contents-vals-equal (cdr ,',%hash-table) (cdr ,',hash-table))))
-                                 :hints
-                                 (("Goal"
-                                   :do-not-induct t
-                                   :cases ((,',recognizer ,',%hash-table)
-                                           (,',recognizer ,',hash-table))
-                                   :in-theory (disable ,',vals-equal
-                                                       ,',vals-equal-necc))
-                                  ("Subgoal 2"
-                                   :use ((:instance ,',vals-equal-necc
-                                                    (,',key (,',contents-vals-equal-witness
-                                                             (cdr ,',%hash-table)
-                                                             (cdr ,',hash-table))))))
-                                  ("Subgoal 1"
-                                   :use ((:instance ,',vals-equal-necc
-                                                    (,',key (,',contents-vals-equal-witness
-                                                             (cdr ,',%hash-table)
-                                                             (cdr ,',hash-table)))))))))))
-
-                    (local
-                      ,(let ((witness `(,',contents-vals-equal-witness ,',%contents
-                                                                       ,',contents)))
-                         `(defthm ,',contents-vals-equal-lemma-0
-                            (implies ,(if ',key-recognizer
-                                          `(and (,',key-recognizer ,witness)
-                                                (equal (,',contents-accessor ,witness ,',%contents)
-                                                       (,',contents-accessor ,witness ,',contents)))
-                                          `(equal (,',contents-accessor ,witness ,',%contents)
-                                                  (,',contents-accessor ,witness ,',contents)))
-                                     (,',contents-vals-equal ,',%contents ,',contents)))))
-
-                    ,@(and ',key-recognizer
-                           (let ((witness `(,',contents-vals-equal-witness ,',%contents
-                                                                           ,',contents)))
-                             `((local
-                                 (defthm ,',contents-vals-equal-lemma-1
-                                   (implies (not (,',key-recognizer ,witness))
-                                            (,',contents-vals-equal ,',%contents ,',contents)))))))
-
-                    (defun-nx ,',contents-equal (,',%contents ,',contents)
+                    (defun-nx ,contents-equal (,contents ,%contents)
                       (declare (xargs :guard t
                                       :verify-guards nil))
-                      (and (,',contents-recognizer ,',%contents)
-                           (,',contents-recognizer ,',contents)
-                           (= (,',contents-count ,',%contents)
-                              (,',contents-count ,',contents))
-                           (,',contents-keys-equal ,',%contents ,',contents)
-                           (,',contents-vals-equal ,',%contents ,',contents)))
+                      (and (,contents-recognizer ,contents)
+                           (,contents-recognizer ,%contents)
+                           (= (,contents-count ,contents)
+                              (,contents-count ,%contents))
+                           (,contents-keys-equal ,contents ,%contents)
+                           (,contents-vals-equal ,contents ,%contents)))
 
-                    ,@(and ',copyable
-                           `((defun-nx ,',hash-table-equal (,',%hash-table ,',hash-table)
+                    (defthm ,contents-equal{forward-chaining}
+                      (implies (,contents-equal ,contents ,%contents)
+                               (equal ,contents ,%contents))
+                      :rule-classes
+                      ((:forward-chaining :trigger-terms
+                                          ((,contents-equal ,contents ,%contents))
+                                          :corollary
+                                          (implies t
+                                                   (implies (,contents-equal ,contents ,%contents)
+                                                            (equal ,contents ,%contents)))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::equal/unique{forward-chaining}
+                             ,@fi-bindings))))
+
+
+                    ;; `HASH-TABLE-EQUAL'
+                    ,@(and copyable
+                           `((defun-sk ,keys-equal (,hash-table ,%hash-table)
+                               (declare (xargs :guard (and (,recognizer ,hash-table)
+                                                           (,recognizer ,%hash-table))
+                                               :verify-guards nil))
+                               (forall ,key
+                                 ,(if key-recognizer
+                                      `(implies (,key-recognizer ,key)
+                                                (equal (,boundp ,key ,hash-table)
+                                                       (,boundp ,key ,%hash-table)))
+                                      `(equal (,boundp ,key ,hash-table)
+                                              (,boundp ,key ,%hash-table))))
+                               :rewrite :direct)
+
+                             (defun-sk ,vals-equal (,hash-table ,%hash-table)
+                               (declare (xargs :guard (and (,recognizer ,hash-table)
+                                                           (,recognizer ,%hash-table))
+                                               :verify-guards nil))
+                               (forall ,key
+                                 ,(if key-recognizer
+                                      `(implies (,key-recognizer ,key)
+                                                (equal (,accessor ,key ,hash-table)
+                                                       (,accessor ,key ,%hash-table)))
+                                      `(equal (,accessor ,key ,hash-table)
+                                              (,accessor ,key ,%hash-table))))
+                               :rewrite :direct)
+
+                             (defun-nx ,hash-table-equal (,hash-table ,%hash-table)
                                (declare (xargs :guard t
                                                :verify-guards nil))
-                               (and (,',recognizer ,',%hash-table)
-                                    (,',recognizer ,',hash-table)
-                                    (equal (,',keys ,',%hash-table) (,',keys ,',hash-table))
-                                    (= (,',count ,',%hash-table) (,',count ,',hash-table))
-                                    (,',keys-equal ,',%hash-table ,',hash-table)
-                                    (,',vals-equal ,',%hash-table ,',hash-table)))))
+                               (and (,recognizer ,hash-table)
+                                    (,recognizer ,%hash-table)
+                                    (equal (,keys ,hash-table)
+                                           (,keys ,%hash-table))
+                                    (= (,count ,hash-table)
+                                       (,count ,%hash-table))
+                                    (,keys-equal ,hash-table ,%hash-table)
+                                    (,vals-equal ,hash-table ,%hash-table)))
 
-                    ,(let ((thm `(defthm ,',contents-equal{forward-chaining}
-                                   (implies (,',contents-equal ,',%contents ,',contents)
-                                            (equal ,',%contents ,',contents))
-                                   :rule-classes
-                                   ((:forward-chaining :trigger-terms
-                                                       ((,',contents-equal ,',%contents ,',contents))
-                                                       :corollary
-                                                       (implies t
-                                                                (implies (,',contents-equal ,',%contents ,',contents)
-                                                                         (equal ,',%contents ,',contents)))))
-                                   :hints
-                                   (("Goal"
-                                     :in-theory (disable ,',contents-keys-equal
-                                                         ,',contents-vals-equal)
-                                     :by (:functional-instance
-                                          define-hash-table::hash-table-equal{forward-chaining}
-                                          (define-hash-table::key-recognizer ,(or ',key-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::key-fixer ,(or ',key-fixer
-                                                                             'identity))
-                                          (define-hash-table::key-default (lambda () ,default-key))
-                                          (define-hash-table::val-recognizer ,(or val-recognizer
-                                                                                  '(lambda (x) t)))
-                                          (define-hash-table::val-fixer ,(or val-fixer
-                                                                             'identity))
-                                          (define-hash-table::val-default (lambda () ,default-val))
-                                          (define-hash-table::recognizer ,',contents-recognizer)
-                                          (define-hash-table::creator ,',contents-creator)
-                                          (define-hash-table::fixer ,',contents-fixer)
-                                          (define-hash-table::accessor ,',contents-accessor)
-                                          (define-hash-table::updater ,',contents-updater)
-                                          (define-hash-table::boundp ,',contents-boundp)
-                                          (define-hash-table::remover ,',contents-remover)
-                                          (define-hash-table::count ,',contents-count)
-                                          (define-hash-table::hash-table (lambda () ,',contents))
-                                          (define-hash-table::%hash-table (lambda () ,',%contents))
-                                          (define-hash-table::key (lambda () ,',key))
-                                          (define-hash-table::%key (lambda () ,',%key))
-                                          (define-hash-table::val (lambda () ,',val))
-                                          (define-hash-table::%val (lambda () ,',%val))
-                                          (define-hash-table::hash-table-keys-equal ,',contents-keys-equal)
-                                          (define-hash-table::hash-table-keys-equal-witness ,',contents-keys-equal-witness)
-                                          (define-hash-table::hash-table-vals-equal ,',contents-vals-equal)
-                                          (define-hash-table::hash-table-vals-equal-witness ,',contents-vals-equal-witness)
-                                          (define-hash-table::hash-table-equal ,',contents-equal)))))))
-                       (if ',copyable
-                           `(local ,thm)
-                           thm))
-
-                    ,@(and ',copyable
-                           `((defthm ,',hash-table-equal{forward-chaining}
-                               (implies (,',hash-table-equal ,',%hash-table ,',hash-table)
-                                        (equal ,',%hash-table ,',hash-table))
+                             (defthm ,hash-table-equal{forward-chaining}
+                               (implies (,hash-table-equal ,hash-table ,%hash-table)
+                                        (equal ,hash-table ,%hash-table))
                                :rule-classes
                                ((:forward-chaining :trigger-terms
-                                                   ((,',hash-table-equal ,',%hash-table ,',hash-table))
+                                                   ((,hash-table-equal ,hash-table ,%hash-table))
                                                    :corollary
                                                    (implies t
-                                                            (implies (,',hash-table-equal ,',%hash-table ,',hash-table)
-                                                                     (equal ,',%hash-table ,',hash-table)))))
+                                                            (implies (,hash-table-equal ,hash-table ,%hash-table)
+                                                                     (equal ,hash-table ,%hash-table)))))
                                :hints
                                (("Goal"
-                                 :do-not-induct t
-                                 :in-theory (disable ,',contents-keys-equal
-                                                     ,',contents-vals-equal
-                                                     ,',contents-equal
-                                                     ,',keys-equal
-                                                     ,',vals-equal)
-                                 :use ((:instance ,',contents-equal
-                                                  (,',%contents (cdr ,',%hash-table))
-                                                  (,',contents (cdr ,',hash-table)))))))))))
+                                 :by (:functional-instance
+                                      lem-hash-table$a::equal/copyable{forward-chaining}
+                                      ,@fi-bindings))))))))
 
                 (stobj$a-property `(stobj$a-property (,',recognizer
                                                       ,',creator
@@ -3644,7 +3350,7 @@
                                                       (,',val-recognizer
                                                        ,',val-fixer
                                                        ,',val
-                                                       ,(and (not val-type-is-stobj)
+                                                       ,(and (not stobj-property)
                                                              ',default-val-name))
                                                       (,',test
                                                        ,',copyable)
