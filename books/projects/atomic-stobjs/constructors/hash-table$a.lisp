@@ -327,9 +327,21 @@
                 (contents-updater{type-prescription} (symbolicate hash-table contents-updater "{TYPE-PRESCRIPTION}"))
                 (contents-updater-when-not-key-recognizer (symbolicate hash-table contents-updater "-WHEN-NOT-" key-recognizer))
                 (contents-updater-when-not-val-recognizer (symbolicate hash-table contents-updater "-WHEN-NOT-" val-recognizer))
+                (contents-updater-when-not-key-recognizer (if (eq contents-updater-when-not-key-recognizer contents-updater-when-not-val-recognizer)
+                                                              (symbolicate hash-table contents-updater-when-not-key-recognizer "-1")
+                                                              contents-updater-when-not-key-recognizer))
+                (contents-updater-when-not-val-recognizer (if (eq contents-updater-when-not-key-recognizer contents-updater-when-not-val-recognizer)
+                                                              (symbolicate hash-table contents-updater-when-not-val-recognizer "-2")
+                                                              contents-updater-when-not-val-recognizer))
                 (contents-updater-when-not-contents-recognizer (symbolicate hash-table contents-updater "-WHEN-NOT-" contents-recognizer))
                 (contents-updater-of-key-fixer (symbolicate hash-table contents-updater "-OF-" key-fixer))
                 (contents-updater-of-val-fixer (symbolicate hash-table contents-updater "-OF-" val-fixer))
+                (contents-updater-of-key-fixer (if (eq contents-updater-of-key-fixer contents-updater-of-val-fixer)
+                                                   (symbolicate hash-table contents-updater-of-key-fixer "-1")
+                                                   contents-updater-of-key-fixer))
+                (contents-updater-of-val-fixer (if (eq contents-updater-of-key-fixer contents-updater-of-val-fixer)
+                                                   (symbolicate hash-table contents-updater-of-val-fixer "-2")
+                                                   contents-updater-of-val-fixer))
                 (contents-updater-of-contents-fixer (symbolicate hash-table contents-updater "-OF-" contents-fixer))
                 (contents-updater-of-contents-accessor (symbolicate hash-table contents-updater "-OF-" contents-accessor))
                 (contents-updater-of-contents-accessor-when-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor "-WHEN-" contents-boundp))
@@ -343,9 +355,21 @@
                 (updater{type-prescription} (symbolicate hash-table updater "{TYPE-PRESCRIPTION}"))
                 (updater-when-not-key-recognizer (symbolicate hash-table updater "-WHEN-NOT-" key-recognizer))
                 (updater-when-not-val-recognizer (symbolicate hash-table updater "-WHEN-NOT-" val-recognizer))
+                (updater-when-not-key-recognizer (if (eq updater-when-not-key-recognizer updater-when-not-val-recognizer)
+                                                     (symbolicate hash-table updater-when-not-key-recognizer "-1")
+                                                     updater-when-not-key-recognizer))
+                (updater-when-not-val-recognizer (if (eq updater-when-not-key-recognizer updater-when-not-val-recognizer)
+                                                     (symbolicate hash-table updater-when-not-val-recognizer "-2")
+                                                     updater-when-not-val-recognizer))
                 (updater-when-not-recognizer (symbolicate hash-table updater "-WHEN-NOT-" recognizer))
                 (updater-of-key-fixer (symbolicate hash-table updater "-OF-" key-fixer))
                 (updater-of-val-fixer (symbolicate hash-table updater "-OF-" val-fixer))
+                (updater-of-key-fixer (if (eq updater-of-key-fixer updater-of-val-fixer)
+                                          (symbolicate hash-table updater-of-key-fixer "-1")
+                                          updater-of-key-fixer))
+                (updater-of-val-fixer (if (eq updater-of-key-fixer updater-of-val-fixer)
+                                          (symbolicate hash-table updater-of-val-fixer "-1")
+                                          updater-of-val-fixer))
                 (updater-of-fixer (symbolicate hash-table updater "-OF-" fixer))
                 (updater-of-accessor (symbolicate hash-table updater "-OF-" accessor))
                 (updater-of-accessor-when-boundp (symbolicate hash-table updater-of-accessor "-WHEN-" boundp))
@@ -488,247 +512,6 @@
                 (hash-table-equal (symbolicate hash-table hash-table "-EQUAL"))
                 (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal "{FORWARD-CHAINING}"))
 
-                ;; HERE
-
-                (updater-of-val-fixer (symbolicate hash-table ',updater "-OF-" val-fixer))
-                (updater-when-not-val-recognizer (symbolicate hash-table ',updater "-WHEN-NOT-" val-recognizer))
-                (contents-updater-when-not-val-recognizer (symbolicate hash-table ',contents-updater "-WHEN-NOT-" val-recognizer))
-                (updater-when-not-key-recognizer
-                 (if (eq ',updater-when-not-key-recognizer updater-when-not-val-recognizer)
-                     ',(symbolicate hash-table updater-when-not-key-recognizer "-0")
-                     ',updater-when-not-key-recognizer))
-                (updater-when-not-val-recognizer
-                 (if (eq ',updater-when-not-key-recognizer updater-when-not-val-recognizer)
-                     (symbolicate hash-table updater-when-not-val-recognizer "-1")
-                     updater-when-not-val-recognizer))
-                (contents-updater-when-not-key-recognizer
-                 (if (eq ',contents-updater-when-not-key-recognizer contents-updater-when-not-val-recognizer)
-                     ',(symbolicate hash-table contents-updater-when-not-key-recognizer "-0")
-                     ',contents-updater-when-not-key-recognizer))
-                (contents-updater-when-not-val-recognizer
-                 (if (eq ',contents-updater-when-not-key-recognizer contents-updater-when-not-val-recognizer)
-                     (symbolicate hash-table contents-updater-when-not-val-recognizer "-1")
-                     contents-updater-when-not-val-recognizer))
-
-                (recognizer{compound-recognizer} (symbolicate hash-table recognizer "{COMPOUND-RECOGNIZER}"))
-                (contents-recognizer{compound-recognizer}
-                 (symbolicate hash-table contents-recognizer "{COMPOUND-RECOGNIZER}"))
-
-                (recognizer-of-fixer (symbolicate hash-table recognizer "-OF-" fixer))
-                (contents-recognizer-of-contents-fixer
-                 (symbolicate hash-table contents-recognizer "-OF-" contents-fixer))
-                (fixer-when-recognizer (symbolicate hash-table fixer "-WHEN-" recognizer))
-                (contents-fixer-when-contents-recognizer
-                 (symbolicate hash-table contents-fixer "-WHEN-" contents-recognizer))
-                (fixer-when-not-recognizer (symbolicate hash-table fixer "-WHEN-NOT-" recognizer))
-                (contents-fixer-when-not-contents-recognizer
-                 (symbolicate hash-table contents-fixer "-WHEN-NOT-" contents-recognizer))
-
-                (recognizer-of-creator (symbolicate hash-table recognizer "-OF-" creator))
-                (emptyp-of-creator (symbolicate hash-table 'emptyp-of- creator))
-
-                (accessor-of-key-fixer (symbolicate hash-table accessor "-OF-" key-fixer))
-                (contents-accessor-of-key-fixer
-                 (symbolicate hash-table contents-accessor "-OF-" key-fixer))
-                (accessor-of-fixer (symbolicate hash-table accessor "-OF-" fixer))
-                (contents-accessor-of-contents-fixer
-                 (symbolicate hash-table contents-accessor "-OF-" contents-fixer))
-                (accessor-when-not-key-recognizer (symbolicate hash-table accessor "-WHEN-NOT-" key-recognizer))
-                (contents-accessor-when-not-key-recognizer (symbolicate hash-table contents-accessor "-WHEN-NOT-" key-recognizer))
-
-                (recognizer-of-updater (symbolicate hash-table recognizer "-OF-" updater))
-                (contents-recognizer-of-contents-updater
-                 (symbolicate hash-table contents-recognizer "-OF-" contents-updater))
-                (updater-of-key-fixer (symbolicate hash-table updater "-OF-" key-fixer))
-                (updater-of-fixer (symbolicate hash-table updater "-OF-" fixer))
-                (contents-updater-of-contents-fixer
-                 (symbolicate hash-table contents-updater "-OF-" contents-fixer))
-                (updater-when-not-key-recognizer (symbolicate hash-table updater "-WHEN-NOT-" key-recognizer))
-                (contents-updater-when-not-key-recognizer (symbolicate hash-table contents-updater "-WHEN-NOT-" key-recognizer))
-
-                (boundp-of-key-fixer (symbolicate hash-table boundp "-OF-" key-fixer))
-                (contents-boundp-of-key-fixer
-                 (symbolicate hash-table contents-boundp "-OF-" key-fixer))
-                (boundp-of-fixer (symbolicate hash-table boundp "-OF-" fixer))
-                (contents-boundp-of-contents-fixer
-                 (symbolicate hash-table contents-boundp "-OF-" contents-fixer))
-                (boundp-when-not-key-recognizer (symbolicate hash-table boundp "-WHEN-NOT-" key-recognizer))
-                (contents-boundp-when-not-key-recognizer (symbolicate hash-table contents-boundp "-WHEN-NOT-" key-recognizer))
-                (boundp-when-not-recognizer (symbolicate hash-table boundp "-WHEN-NOT-" recognizer))
-                (contents-boundp-when-not-contents-recognizer
-                 (symbolicate hash-table contents-boundp "-WHEN-NOT-" contents-recognizer))
-
-                (getp{rewrite} (symbolicate hash-table getp "{REWRITE}"))
-
-                (recognizer-of-remover (symbolicate hash-table recognizer "-OF-" remover))
-                (contents-recognizer-of-contents-remover
-                 (symbolicate hash-table contents-recognizer "-OF-" contents-remover))
-                (remover-of-key-fixer (symbolicate hash-table remover "-OF-" key-fixer))
-                (contents-remover-of-key-fixer
-                 (symbolicate hash-table contents-remover "-OF-" key-fixer))
-                (remover-of-fixer (symbolicate hash-table remover "-OF-" fixer))
-                (contents-remover-of-contents-fixer
-                 (symbolicate hash-table contents-remover "-OF-" contents-fixer))
-                (remover-when-not-key-recognizer (symbolicate hash-table remover "-WHEN-NOT-" key-recognizer))
-                (contents-remover-when-not-key-recognizer (symbolicate hash-table contents-remover "-WHEN-NOT-" key-recognizer))
-
-                (count-of-fixer (symbolicate hash-table count "-OF-" fixer))
-                (contents-count-of-contents-fixer
-                 (symbolicate hash-table contents-count "-OF-" contents-fixer))
-                (count-when-not-recognizer (symbolicate hash-table count "-WHEN-NOT-" recognizer))
-                (contents-count-when-not-contents-recognizer
-                 (symbolicate hash-table contents-count "-WHEN-NOT-" contents-recognizer))
-
-                (clear{rewrite} (symbolicate hash-table clear "{REWRITE}"))
-
-                (init{rewrite} (symbolicate hash-table init "{REWRITE}"))
-
-                (accessor-of-creator (symbolicate hash-table accessor "-OF-" creator))
-                (accessor-of-updater (symbolicate hash-table accessor "-OF-" updater))
-                (accessor-of-updater-same (symbolicate hash-table accessor-of-updater "-SAME"))
-                (accessor-of-updater-diff (symbolicate hash-table accessor-of-updater "-DIFF"))
-                (accessor-when-not-boundp (symbolicate hash-table accessor "-WHEN-NOT-" boundp))
-                (accessor-of-remover (symbolicate hash-table accessor "-OF-" remover))
-                (accessor-of-remover-same (symbolicate hash-table accessor-of-remover "-SAME"))
-                (accessor-of-remover-diff (symbolicate hash-table accessor-of-remover "-DIFF"))
-
-                (contents-accessor-of-contents-creator (symbolicate hash-table contents-accessor "-OF-" contents-creator))
-                (contents-accessor-of-contents-updater (symbolicate hash-table contents-accessor "-OF-" contents-updater))
-                (contents-accessor-of-contents-updater-same (symbolicate hash-table contents-accessor-of-contents-updater "-SAME"))
-                (contents-accessor-of-contents-updater-diff (symbolicate hash-table contents-accessor-of-contents-updater "-DIFF"))
-                (contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-accessor "-WHEN-NOT-" contents-boundp))
-                (contents-accessor-of-contents-remover (symbolicate hash-table contents-accessor "-OF-" contents-remover))
-                (contents-accessor-of-contents-remover-same (symbolicate hash-table contents-accessor-of-contents-remover "-SAME"))
-                (contents-accessor-of-contents-remover-diff (symbolicate hash-table contents-accessor-of-contents-remover "-DIFF"))
-
-                (updater-of-accessor (symbolicate hash-table updater "-OF-" accessor))
-                (updater-of-accessor-when-boundp (symbolicate hash-table updater-of-accessor "-WHEN-" boundp))
-                (updater-of-accessor-when-not-boundp (symbolicate hash-table updater-of-accessor "-WHEN-NOT-" boundp))
-                (updater-of-updater (symbolicate hash-table updater "-OF-" updater))
-                (updater-of-updater-same (symbolicate hash-table updater-of-updater "-SAME"))
-                (updater-of-updater-diff (symbolicate hash-table updater-of-updater "-DIFF"))
-                (updater-of-remover (symbolicate hash-table updater "-OF-" remover))
-
-                (contents-updater-of-contents-accessor (symbolicate hash-table contents-updater "-OF-" contents-accessor))
-                (contents-updater-of-contents-accessor-when-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor "-WHEN-" contents-boundp))
-                (contents-updater-of-contents-accessor-when-not-contents-boundp (symbolicate hash-table contents-updater-of-contents-accessor "-WHEN-NOT-" contents-boundp))
-                (contents-updater-of-contents-updater (symbolicate hash-table contents-updater "-OF-" contents-updater))
-                (contents-updater-of-contents-updater-same (symbolicate hash-table contents-updater-of-contents-updater "-SAME"))
-                (contents-updater-of-contents-updater-diff (symbolicate hash-table contents-updater-of-contents-updater "-DIFF"))
-                (contents-updater-of-contents-remover (symbolicate hash-table contents-updater "-OF-" contents-remover))
-
-                (boundp-of-creator (symbolicate hash-table boundp "-OF-" creator))
-                (boundp-of-updater (symbolicate hash-table boundp "-OF-" updater))
-                (boundp-of-updater-same (symbolicate hash-table boundp-of-updater "-SAME"))
-                (boundp-of-updater-diff (symbolicate hash-table boundp-of-updater "-DIFF"))
-                (boundp-of-remover (symbolicate hash-table boundp "-OF-" remover))
-                (boundp-of-remover-same (symbolicate hash-table boundp-of-remover "-SAME"))
-                (boundp-of-remover-diff (symbolicate hash-table boundp-of-remover "-DIFF"))
-                (boundp-when-zp-count (symbolicate hash-table boundp "-WHEN-ZP-" count))
-                (contents-boundp-when-zp-contents-count (symbolicate hash-table contents-boundp "-WHEN-ZP-" contents-count))
-
-                (contents-boundp-of-contents-creator (symbolicate hash-table contents-boundp "-OF-" contents-creator))
-                (contents-boundp-of-contents-updater (symbolicate hash-table contents-boundp "-OF-" contents-updater))
-                (contents-boundp-of-contents-updater-same (symbolicate hash-table contents-boundp-of-contents-updater "-SAME"))
-                (contents-boundp-of-contents-updater-diff (symbolicate hash-table contents-boundp-of-contents-updater "-DIFF"))
-                (contents-boundp-of-contents-remover (symbolicate hash-table contents-boundp "-OF-" contents-remover))
-                (contents-boundp-of-contents-remover-same (symbolicate hash-table contents-boundp-of-contents-remover "-SAME"))
-                (contents-boundp-of-contents-remover-diff (symbolicate hash-table contents-boundp-of-contents-remover "-DIFF"))
-
-                (remover-of-creator (symbolicate hash-table remover "-OF-" creator))
-                (remover-of-updater (symbolicate hash-table remover "-OF-" updater))
-                (remover-of-updater-same (symbolicate hash-table remover-of-updater "-SAME"))
-                (remover-of-updater-diff (symbolicate hash-table remover-of-updater "-DIFF"))
-                (remover-when-not-boundp (symbolicate hash-table remover "-WHEN-NOT-" boundp))
-                (remover-of-remover (symbolicate hash-table remover "-OF-" remover))
-                (remover-of-remover-same (symbolicate hash-table remover-of-remover "-SAME"))
-                (remover-of-remover-diff (symbolicate hash-table remover-of-remover "-DIFF"))
-
-                (contents-remover-of-contents-creator (symbolicate hash-table contents-remover "-OF-" contents-creator))
-                (contents-remover-of-contents-updater (symbolicate hash-table contents-remover "-OF-" contents-updater))
-                (contents-remover-of-contents-updater-same (symbolicate hash-table contents-remover-of-contents-updater "-SAME"))
-                (contents-remover-of-contents-updater-diff (symbolicate hash-table contents-remover-of-contents-updater "-DIFF"))
-                (contents-remover-when-not-contents-boundp (symbolicate hash-table contents-remover "-WHEN-NOT-" contents-boundp))
-                (contents-remover-of-contents-remover (symbolicate hash-table contents-remover "-OF-" contents-remover))
-                (contents-remover-of-contents-remover-same (symbolicate hash-table contents-remover-of-contents-remover "-SAME"))
-                (contents-remover-of-contents-remover-diff (symbolicate hash-table contents-remover-of-contents-remover "-DIFF"))
-
-                (count-of-creator (symbolicate hash-table count "-OF-" creator))
-                (count-of-updater (symbolicate hash-table count "-OF-" updater))
-                (count-of-updater-when-boundp (symbolicate hash-table count-of-updater "-WHEN-" boundp))
-                (count-of-updater-when-not-boundp (symbolicate hash-table count-of-updater "-WHEN-NOT-" boundp))
-                (count-of-remover (symbolicate hash-table count "-OF-" remover))
-                (count-of-remover-when-boundp (symbolicate hash-table count-of-remover "-WHEN-" boundp))
-                (count-of-remover-when-not-boundp (symbolicate hash-table count-of-remover "-WHEN-NOT-" boundp))
-
-                (contents-count-of-contents-creator (symbolicate hash-table contents-count "-OF-" contents-creator))
-                (contents-count-of-contents-updater (symbolicate hash-table contents-count "-OF-" contents-updater))
-                (contents-count-of-contents-updater-when-contents-boundp (symbolicate hash-table contents-count-of-contents-updater "-WHEN-" contents-boundp))
-                (contents-count-of-contents-updater-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-updater "-WHEN-NOT-" contents-boundp))
-                (contents-count-of-contents-remover (symbolicate hash-table contents-count "-OF-" contents-remover))
-                (contents-count-of-contents-remover-when-contents-boundp (symbolicate hash-table contents-count-of-contents-remover "-WHEN-" contents-boundp))
-                (contents-count-of-contents-remover-when-not-contents-boundp (symbolicate hash-table contents-count-of-contents-remover "-WHEN-NOT-" contents-boundp))
-
-                (setp-of-keys (symbolicate hash-table 'setp-of- keys))
-                (keys-of-creator (symbolicate hash-table keys "-OF-" creator))
-                (keys-of-fixer (symbolicate hash-table keys "-OF-" fixer))
-                (keys-when-not-recognizer (symbolicate hash-table keys "-WHEN-NOT-" recognizer))
-                (keys-of-updater (symbolicate hash-table keys "-OF-" updater))
-                (keys-of-remover (symbolicate hash-table keys "-OF-" remover))
-                (keys-of-keys-set (symbolicate hash-table keys "-OF-" keys-set))
-                (recognizer-of-keys-set (symbolicate hash-table recognizer "-OF-" keys-set))
-                (keys-set-of-sfix (symbolicate hash-table keys-set '-of-sfix))
-                (keys-set-of-fixer (symbolicate hash-table keys-set "-OF-" fixer))
-                (accessor-of-keys-set (symbolicate hash-table accessor "-OF-" keys-set))
-                (keys-set-of-updater (symbolicate hash-table keys-set "-OF-" updater))
-                (boundp-of-keys-set (symbolicate hash-table boundp "-OF-" keys-set))
-                (keys-set-of-remover (symbolicate hash-table keys-set "-OF-" remover))
-                (count-of-keys-set (symbolicate hash-table count "-OF-" keys-set))
-                (keys-set-of-keys-set (symbolicate hash-table keys-set "-OF-" keys-set))
-                (keys-set-of-keys (symbolicate hash-table keys-set "-OF-" keys))
-                (keys-set-of-keys-free (symbolicate hash-table keys-set-of-keys "-FREE"))
-
-                (%contents (symbolicate hash-table '% contents))
-                (%hash-table (symbolicate hash-table '% hash-table))
-                (keys-equal (symbolicate hash-table hash-table '-keys-equal))
-                (contents-keys-equal (if copyable
-                                         (symbolicate hash-table contents '-keys-equal)
-                                         keys-equal))
-                (keys-equal-witness (symbolicate hash-table keys-equal '-witness))
-                (contents-keys-equal-witness (if copyable
-                                                 (symbolicate hash-table contents-keys-equal '-witness)
-                                                 keys-equal-witness))
-                (keys-equal-necc (symbolicate hash-table keys-equal '-necc))
-                (contents-keys-equal-lemma-0 (symbolicate hash-table contents-keys-equal '-lemma-0))
-                (contents-keys-equal-lemma-1 (symbolicate hash-table contents-keys-equal '-lemma-1))
-                (keys-equal-implies-contents-keys-equal (symbolicate hash-table keys-equal '-implies- contents-keys-equal))
-                (vals-equal (symbolicate hash-table hash-table '-vals-equal))
-                (contents-vals-equal (if copyable
-                                         (symbolicate hash-table contents '-vals-equal)
-                                         vals-equal))
-                (contents-vals-equal-witness (symbolicate hash-table contents-vals-equal '-witness))
-                (vals-equal-necc (symbolicate hash-table vals-equal '-necc))
-                (contents-vals-equal-lemma-0 (symbolicate hash-table contents-vals-equal '-lemma-0))
-                (contents-vals-equal-lemma-1 (symbolicate hash-table contents-vals-equal '-lemma-1))
-                (vals-equal-implies-contents-vals-equal (symbolicate hash-table vals-equal '-implies- contents-vals-equal))
-                (hash-table-equal (symbolicate hash-table hash-table '-equal))
-                (contents-equal (if copyable
-                                    (symbolicate hash-table contents '-equal)
-                                    hash-table-equal))
-                (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal "{FORWARD-CHAINING}"))
-                (contents-equal{forward-chaining} (if copyable
-                                                      (symbolicate hash-table contents-equal "{FORWARD-CHAINING}")
-                                                      hash-table-equal{forward-chaining}))
-
-                (updater-of-key-fixer (if (eq ',updater-of-key-fixer updater-of-val-fixer)
-                                          (symbolicate ',updater-of-key-fixer ',updater-of-key-fixer "-0")
-                                          ',updater-of-key-fixer))
-                (contents-updater-of-key-fixer (symbolicate ',contents ',contents "-" updater-of-key-fixer))
-                (updater-of-val-fixer (if (eq ',updater-of-key-fixer updater-of-val-fixer)
-                                          (symbolicate updater-of-val-fixer updater-of-val-fixer "-1")
-                                          updater-of-val-fixer))
-                (contents-updater-of-val-fixer (symbolicate ',contents ',contents "-" updater-of-val-fixer))
-
                 (hash-table-theorems (symbolicate hash-table hash-table '-theorems))
                 (hash-table-definitions (symbolicate hash-table hash-table '-definitions))
                 (hash-table-aggressive (symbolicate hash-table hash-table '-aggressive))
@@ -759,6 +542,7 @@
                       '(,keys-equal
                         ,vals-equal)))
 
+; TODO:
                    (deftheory-static ,hash-table-aggressive
                      ',(append
                         (and key-recognizer
