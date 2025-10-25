@@ -59,11 +59,11 @@
 (defmacro define-vector$a
     (vector dimensions
      &key
-       (index 'i)
+       (index 'nil)
        (%index 'nil)
        (element-recognizer 'nil element-recognizer-supplied-p)
        (element-fixer 'nil element-fixer-supplied-p)
-       (element 'v)
+       (element 'nil)
        (%element 'nil)
        (initial-element 'nil)
        (resizable 'nil)
@@ -101,7 +101,7 @@
                               (booleanp debug))))
 
   (let* (
-; TODO: allow defined constant default length
+; TODO: allow defined constant default length, move to inner `LET*'
          (default-length (if (consp dimensions)
                              (car dimensions)
                              dimensions))
@@ -132,10 +132,12 @@
                 (default-length ',default-length)
                 (default-length-name (symbolicate vector "*" vector "-DEFAULT-LENGTH*"))
 
-                (index ',index)
+                (index (or ',index
+                           (symbolicate vector "I")))
                 (%index (or ',%index
                             (symbolicate index "%" index)))
-                (element ',element)
+                (element (or ',element
+                             (symbolicate vector "V")))
                 (%element (or ',%element
                               (symbolicate element "%" element)))
                 (stobj-property (getpropc element 'stobj))
