@@ -45,9 +45,9 @@
                               (symbolp exec)
                               (booleanp debug))))
   (let* ((vector$a (or logic
-                       (symbolicate vector vector '$a)))
+                       (symbolicate vector vector "$A")))
          (vector$c (or exec
-                       (symbolicate vector vector '$c))))
+                       (symbolicate vector vector "$C"))))
 
     `(with-output
        ,@(and (not debug)
@@ -57,8 +57,8 @@
 
        (make-event
          (let* ((vector ',vector)
-                (vector$corr (symbolicate vector vector '$corr))
-                (vector$corr-contents (symbolicate vector vector$corr '-contents))
+                (vector$corr (symbolicate vector vector "$CORR"))
+                (vector$corr-contents (symbolicate vector vector$corr "-CONTENTS"))
 
                 (vector$c ',vector$c)
                 (stobj-property (getpropc vector$c 'stobj))
@@ -132,24 +132,24 @@
                               (booleanp debug))))
 
   (let* ((vector$a (or logic
-                       (symbolicate vector vector '$a)))
+                       (symbolicate vector vector "$A")))
          (vector$c (or exec
-                       (symbolicate vector vector '$c)))
+                       (symbolicate vector vector "$C")))
 
          (recognizer (or recognizer
                          (symbolicate vector vector (make-predicate-suffix vector))))
          (creator (or creator
-                      (symbolicate vector 'create- vector)))
+                      (symbolicate vector "CREATE-" vector)))
          (fixer (or fixer
-                    (symbolicate vector vector '-fix)))
+                    (symbolicate vector vector "-FIX")))
          (length (or length
-                     (symbolicate vector vector '-length)))
+                     (symbolicate vector vector "-LENGTH")))
          (resizer (or resizer
-                      (symbolicate vector vector '-resize)))
+                      (symbolicate vector vector "-RESIZE")))
          (accessor (or accessor
-                       (symbolicate vector vector '-ref)))
+                       (symbolicate vector vector "-REF")))
          (updater (or updater
-                      (symbolicate vector vector '-set))))
+                      (symbolicate vector vector "-SET"))))
 
     `(with-output
        ,@(and (not debug)
@@ -169,8 +169,8 @@
                 (executable ',executable)
 
 ; TODO: lookup `VECTOR$CORR' and `VECTOR$CORR-CONTENTS' from table.
-                (vector$corr (symbolicate vector vector '$corr))
-                (vector$corr-contents (symbolicate vector vector$corr '-contents))
+                (vector$corr (symbolicate vector vector "$CORR"))
+                (vector$corr-contents (symbolicate vector vector$corr "-CONTENTS"))
 
                 (vector$c ',vector$c)
                 (stobj-property (getpropc vector$c 'stobj))
@@ -200,18 +200,18 @@
 
                 (element-stobj-property (getpropc element 'stobj))
 
-                (creator{correspondence} (symbolicate vector creator '{correspondence}))
-                (creator{preserved} (symbolicate vector creator '{preserved}))
-                (fixer{correspondence} (symbolicate vector fixer '{correspondence}))
-                (fixer{preserved} (symbolicate vector fixer '{preserved}))
-                (length{correspondence} (symbolicate vector length '{correspondence}))
-                (resizer{correspondence} (symbolicate vector resizer '{correspondence}))
-                (resizer{preserved} (symbolicate vector resizer '{preserved}))
-                (accessor{correspondence} (symbolicate vector accessor '{correspondence}))
-                (accessor{guard-thm} (symbolicate vector accessor '{guard-thm}))
-                (updater{correspondence} (symbolicate vector updater '{correspondence}))
-                (updater{guard-thm} (symbolicate vector updater '{guard-thm}))
-                (updater{preserved} (symbolicate vector updater '{preserved}))
+                (creator{correspondence} (symbolicate vector creator "{CORRESPONDENCE}"))
+                (creator{preserved} (symbolicate vector creator "{PRESERVED}"))
+                (fixer{correspondence} (symbolicate vector fixer "{CORRESPONDENCE}"))
+                (fixer{preserved} (symbolicate vector fixer "{PRESERVED}"))
+                (length{correspondence} (symbolicate vector length "{CORRESPONDENCE}"))
+                (resizer{correspondence} (symbolicate vector resizer "{CORRESPONDENCE}"))
+                (resizer{preserved} (symbolicate vector resizer "{PRESERVED}"))
+                (accessor{correspondence} (symbolicate vector accessor "{CORRESPONDENCE}"))
+                (accessor{guard-thm} (symbolicate vector accessor "{GUARD-THM}"))
+                (updater{correspondence} (symbolicate vector updater "{CORRESPONDENCE}"))
+                (updater{guard-thm} (symbolicate vector updater "{GUARD-THM}"))
+                (updater{preserved} (symbolicate vector updater "{PRESERVED}"))
 
                 (exports `((,fixer :logic ,fixer$a
                                    :exec ,fixer$c$inline)
@@ -233,8 +233,8 @@
                                      (cdr updater$c-guard)))
 
 ; TODO: pull theory name from table
-                (aggressive$a (symbolicate vector$a vector$a '-aggressive))
-                (accessor$c-of-resizer$c (symbolicate vector$c accessor$c '-of- resizer$c))
+                (aggressive$a (symbolicate vector$a vector$a "-AGGRESSIVE"))
+                (accessor$c-of-resizer$c (symbolicate vector$c accessor$c "-OF-" resizer$c))
 
                 (resizer$c-index (car (getpropc resizer$c 'formals)))
                 (accessor$c-index (car (getpropc accessor$c 'formals)))
