@@ -74,12 +74,12 @@
      &key
        (key-recognizer 'nil)
        (key-fixer 'nil)
-       (key 'key)
+       (key 'nil)
        (%key 'nil)
        (default-key 'nil)
-       (val-recognizer 'nil val-recognzier-supplied-p)
+       (val-recognizer 'nil val-recognizer-supplied-p)
        (val-fixer 'nil val-fixer-supplied-p)
-       (val 'val)
+       (val 'nil)
        (%val 'nil)
        (default-val 'nil)
        (copyable 't)
@@ -99,8 +99,7 @@
        (keys 'nil)
        (keys-set 'nil)
 
-       ;; TODO: swap to `NIL'
-       (debug 't))
+       (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
                               (valid-hash-table-test-p test)
@@ -137,55 +136,26 @@
                               (or copyable
                                   (and (not keys)
                                        (not keys-set)))
-                              (booleanp testp)
                               (booleanp debug))))
 
-  (let* ((contents (if copyable
-                       (or contents
-                           (symbolicate hash-table hash-table "-CONTENTS"))
-                       hash-table))
-         (recognizer (or recognizer
+  (let* ((recognizer (or recognizer
                          (symbolicate hash-table hash-table (make-predicate-suffix hash-table))))
-         (contents-recognizer (if copyable
-                                  (symbolicate hash-table contents "-P")
-                                  recognizer))
-         (fixer (or fixer
-                    (symbolicate hash-table hash-table "-FIX")))
-         (contents-fixer (if copyable
-                             (symbolicate hash-table contents "-FIX")
-                             fixer))
          (creator (or creator
                       (symbolicate hash-table "CREATE-" hash-table)))
-         (contents-creator (if copyable
-                               (symbolicate hash-table "CREATE-" contents)
-                               creator))
+         (fixer (or fixer
+                    (symbolicate hash-table hash-table "-FIX")))
          (accessor (or accessor
                        (symbolicate hash-table hash-table "-GET")))
-         (contents-accessor (if copyable
-                                (symbolicate hash-table contents "-GET")
-                                accessor))
          (updater (or updater
                       (symbolicate hash-table hash-table "-PUT")))
-         (contents-updater (if copyable
-                               (symbolicate hash-table contents "-PUT")
-                               updater))
          (boundp (or boundp
                      (symbolicate hash-table hash-table "-BOUNDP")))
-         (contents-boundp (if copyable
-                              (symbolicate hash-table contents "-BOUNDP")
-                              boundp))
          (getp (or getp
                    (symbolicate hash-table hash-table "-GETP")))
          (remover (or remover
                       (symbolicate hash-table hash-table "-REM")))
-         (contents-remover (if copyable
-                               (symbolicate hash-table contents "-REM")
-                               remover))
          (count (or count
                     (symbolicate hash-table hash-table "-COUNT")))
-         (contents-count (if copyable
-                             (symbolicate hash-table contents "-COUNT")
-                             count))
          (clear (or clear
                     (symbolicate hash-table hash-table "-CLEAR")))
          (init (or init
@@ -203,9 +173,11 @@
 
        (make-event
          (let* ((hash-table ',hash-table)
+                (%hash-table (symbolicate hash-table "%" hash-table))
                 (test ',test)
 
-                (key ',key)
+                (key (or ',key
+                         (symbolicate hash-table "KEY")))
                 (%key (or ',%key
                           (symbolicate key "%" key)))
                 (key-recognizer ',key-recognizer)
@@ -213,14 +185,15 @@
                 (default-key-name (symbolicate hash-table "*" hash-table "-DEFAULT-KEY*"))
                 (default-key default-key-name)
 
-                (val ',val)
+                (val (or ',val
+                         (symbolicate hash-table "VAL")))
                 (%val (or ',%val
                           (symbolicate val "%" val)))
                 (stobj-property (getpropc val 'stobj))
                 (absstobj-info (getpropc val 'absstobj-info))
                 (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property (w state)))))
                 (val-recognizer (cond
-                                  ('val-recognizer-supplied-p
+                                  (',val-recognizer-supplied-p
                                    ',val-recognizer)
                                   (stobj$a-property
                                    (first (second stobj$a-property)))
@@ -263,6 +236,45 @@
                 (keys ',keys)
                 (keys-set ',keys-set)
 
+                (contents (if copyable
+                              (or contents
+                                  (symbolicate hash-table hash-table "-CONTENTS"))
+                              hash-table))
+                (%contents (symbolicate hash-table "%" contents))
+                (contents-recognizer (if copyable
+                                         (symbolicate hash-table contents "-P")
+                                         recognizer))
+                (contents-creator (if copyable
+                                      (symbolicate hash-table "CREATE-" contents)
+                                      creator))
+                (contents-fixer (if copyable
+                                    (symbolicate hash-table contents "-FIX")
+                                    fixer))
+                (contents-accessor (if copyable
+                                       (symbolicate hash-table contents "-GET")
+                                       accessor))
+                (contents-updater (if copyable
+                                      (symbolicate hash-table contents "-PUT")
+                                      updater))
+                (contents-boundp (if copyable
+                                     (symbolicate hash-table contents "-BOUNDP")
+                                     boundp))
+                (contents-getp (if copyable
+                                   (symbolicate hash-table contents "-GETP")
+                                   getp))
+                (contents-remover (if copyable
+                                      (symbolicate hash-table contents "-REM")
+                                      remover))
+                (contents-count (if copyable
+                                    (symbolicate hash-table contents "-COUNT")
+                                    count))
+                (contents-clear (if copyable
+                                    (symbolicate hash-table contents "-CLEAR")
+                                    clear))
+                (contents-init (if copyable
+                                   (symbolicate hash-table contents "-INIT")
+                                   init))
+
                 (hash-table-begin (symbolicate hash-table hash-table "-BEGIN"))
                 (hash-table-end (symbolicate hash-table hash-table "-END"))
                 (prologue
@@ -300,7 +312,7 @@
                 (contents-accessor-when-not-contents-recognizer (symbolicate hash-table contents-accessor "-WHEN-NOT-" contents-recognizer))
                 (contents-accessor-of-contents-creator (symbolicate hash-table contents-accessor "-OF-" contents-creator))
                 (contents-accessor-of-key-fixer (symbolicate hash-table contents-accessor "-OF-" key-fixer))
-                (contents-accessor-of-contents-fixer (symbolicate hash-table contents-accessor-of-contents-fixer))
+                (contents-accessor-of-contents-fixer (symbolicate hash-table contents-accessor "-OF-" contents-fixer))
                 (contents-accessor-of-contents-updater (symbolicate hash-table contents-accessor "-OF-" contents-updater))
                 (contents-accessor-of-contents-updater-same (symbolicate hash-table contents-accessor-of-contents-updater "-SAME"))
                 (contents-accessor-of-contents-updater-diff (symbolicate hash-table contents-accessor-of-contents-updater "-DIFF"))
@@ -490,9 +502,9 @@
                 (keys-of-remover (symbolicate hash-table keys "-OF-" remover))
                 (keys-of-keys-set (symbolicate hash-table keys "-OF-" keys-set))
 
-                (keys-set{type-prescription} (symblicate hash-table keys-set "{TYPE-PRESCRIPTION}"))
-                (keys-set-when-not-setp (symbolociate hash-table keys-set "-WHEN-NOT-" 'set::setp))
-                (keys-set-when-not-recognizer (symbolciate hash-table keys-set "-WHEN-NOT-" recognizer))
+                (keys-set{type-prescription} (symbolicate hash-table keys-set "{TYPE-PRESCRIPTION}"))
+                (keys-set-when-not-setp (symbolicate hash-table keys-set "-WHEN-NOT-" 'set::setp))
+                (keys-set-when-not-recognizer (symbolicate hash-table keys-set "-WHEN-NOT-" recognizer))
                 (keys-set-of-creator (symbolicate hash-table keys-set "-OF-" creator))
                 (keys-set-of-sfix (symbolicate hash-table keys-set "-OF-" 'set::sfix))
                 (keys-set-of-fixer (symbolicate hash-table keys-set "-OF-" fixer))
@@ -502,13 +514,27 @@
                 (keys-set-of-keys-free (symbolicate hash-table keys-set-of-keys "-FREE"))
                 (keys-set-of-keys-set (symbolicate hash-table keys-set "-OF-" keys-set))
 
-                (contents-keys-equal (symbolicate hash-table contents "-KEYS-EQUAL"))
-                (contents-vals-equal (symbolicate hash-table contents "-VALS-EQUAL"))
+                (contents-keys-equal (symbolicate hash-table (if copyable
+                                                                 contents
+                                                                 hash-table)
+                                                  "-KEYS-EQUAL"))
+                (contents-keys-equal-necc (symbolicate hash-table contents-keys-equal "-NECC"))
+                (contents-keys-equal-witness (symbolicate hash-table contents-keys-equal "-WITNESS"))
+                (contents-vals-equal (symbolicate hash-table (if copyable
+                                                                 contents
+                                                                 hash-table)
+                                                  "-VALS-EQUAL"))
+                (contents-vals-equal-necc (symbolicate hash-table contents-vals-equal "-NECC"))
+                (contents-vals-equal-witness (symbolicate hash-table contents-vals-equal "-WITNESS"))
                 (contents-equal (symbolicate hash-table contents "-EQUAL"))
                 (contents-equal{forward-chaining} (symbolicate hash-table contents-equal "{FORWARD-CHAINING}"))
 
-                (hash-table-keys-equal (symbolicate hash-table hash-table "-KEYS-EQUAL"))
-                (hash-table-vals-equal (symbolicate hash-table hash-table "-VALS-EQUAL"))
+                (keys-equal (symbolicate hash-table hash-table "-KEYS-EQUAL"))
+                (keys-equal-necc (symbolicate hash-table keys-equal "-NECC"))
+                (keys-equal-witness (symbolicate hash-table keys-equal "-WITNESS"))
+                (vals-equal (symbolicate hash-table hash-table "-VALS-EQUAL"))
+                (vals-equal-necc (symbolicate hash-table vals-equal "-NECC"))
+                (vals-equal-witness (symbolicate hash-table vals-equal "-WITNESS"))
                 (hash-table-equal (symbolicate hash-table hash-table "-EQUAL"))
                 (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal "{FORWARD-CHAINING}"))
 
@@ -582,10 +608,64 @@
                              ,vals-equal))))
 
                 (fi-bindings
-                 ;; TODO:
-                 (list ...))
+                 (append
+                  (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
+                                                                '(lambda (key)
+                                                                  t)))
+                        `(lem-hash-table$a::default-key (lambda ()
+                                                          ,default-key-name))
+                        `(lem-hash-table$a::key-fixer ,(or key-fixer
+                                                           '(lambda (key)
+                                                             key)))
+                        `(lem-hash-table$a::val-recognizer ,(or val-recognizer
+                                                                '(lambda (val)
+                                                                  t)))
+                        `(lem-hash-table$a::default-val (lambda ()
+                                                          ,default-val-name))
+                        `(lem-hash-table$a::val-fixer ,(or val-fixer
+                                                           '(lambda (val)
+                                                             val)))
+                        `(lem-hash-table$a::recognizer/unique ,contents-recognizer)
+                        `(lem-hash-table$a::creator/unique ,contents-creator)
+                        `(lem-hash-table$a::fixer/unique ,contents-fixer)
+                        `(lem-hash-table$a::accessor/unique ,contents-accessor)
+                        `(lem-hash-table$a::updater/unique ,contents-updater)
+                        `(lem-hash-table$a::boundp/unique ,contents-boundp)
+                        `(lem-hash-table$a::getp/unique ,contents-getp)
+                        `(lem-hash-table$a::remover/unique ,contents-remover)
+                        `(lem-hash-table$a::count/unique ,contents-count)
+                        `(lem-hash-table$a::clear/unique ,contents-clear)
+                        `(lem-hash-table$a::init/unique ,contents-init))
+                  (and copyable
+                       (list `(lem-hash-table$a::recognizer/copyable ,recognizer)
+                             `(lem-hash-table$a::creator/copyable ,creator)
+                             `(lem-hash-table$a::fixer/copyable ,fixer)
+                             `(lem-hash-table$a::accessor/copyable ,accessor)
+                             `(lem-hash-table$a::updater/copyable ,updater)
+                             `(lem-hash-table$a::boundp/copyable ,boundp)
+                             `(lem-hash-table$a::getp/copyable ,getp)
+                             `(lem-hash-table$a::remover/copyable ,remover)
+                             `(lem-hash-table$a::count/copyable ,count)
+                             `(lem-hash-table$a::clear/copyable ,clear)
+                             `(lem-hash-table$a::init/copyable ,init)
+                             `(lem-hash-table$a::keys ,keys)
+                             `(lem-hash-table$a::keys-set ,keys-set)))))
+                (fi-bindings-with-contents-skolem
+                 (list* `(lem-hash-table$a::keys-equal/unique ,contents-keys-equal)
+                        `(lem-hash-table$a::keys-equal/unique-witness ,contents-keys-equal-witness)
+                        `(lem-hash-table$a::vals-equal/unique ,contents-vals-equal)
+                        `(lem-hash-table$a::vals-equal/unique-witness ,contents-vals-equal-witness)
+                        `(lem-hash-table$a::equal/unique ,contents-equal)
+                        fi-bindings))
                 (fi-bindings-with-skolem
-                 (list* ...))
+                 (append
+                  (and copyable
+                       (list `(lem-hash-table$a::keys-equal/copyable ,keys-equal)
+                             `(lem-hash-table$a::keys-equal/copyable-witness ,keys-equal-witness)
+                             `(lem-hash-table$a::vals-equal/copyable ,vals-equal)
+                             `(lem-hash-table$a::vals-equal/copyable-witness ,vals-equal-witness)
+                             `(lem-hash-table$a::equal/copyable ,hash-table-equal)))
+                  fi-bindings-with-contents-skolem))
 
 ; TODO: collapse contents and full theorems to singles not duplicates, use ,(if
 ; copyable) dispatch on which theorem to instantiate.
@@ -666,7 +746,7 @@
                                (let (,@(and key-fixer
                                             `((,key (,key-fixer ,key))))
                                      (,hash-table (,fixer ,hash-table)))
-                                 (,accessor ,key (cdr ,hash-table))))))
+                                 (,contents-accessor ,key (cdr ,hash-table))))))
 
                     (defun ,contents-updater (,key ,val ,contents)
                       (declare (xargs :guard ,(cond
@@ -1124,18 +1204,18 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-accessor-of-contents-updater
-                      (equal (,contents-accessor ,key (,contents-updater ,%key ,val ,contents))
+                      (equal (,contents-accessor ,%key (,contents-updater ,key ,val ,contents))
 ; TODO: put key, %key in rev order
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
                                  ,(if val-fixer
                                       `(,val-fixer ,val)
                                       val)
-                                 (,contents-accessor ,key ,contents)))
+                                 (,contents-accessor ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1144,12 +1224,12 @@
 
                     (defthm ,contents-accessor-of-contents-updater-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-accessor ,key (,contents-updater ,%key ,val ,contents))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-accessor ,%key (,contents-updater ,key ,val ,contents))
                                       ,(if val-fixer
                                            `(,val-fixer ,val)
                                            val)))
@@ -1161,13 +1241,13 @@
 
                     (defthm ,contents-accessor-of-contents-updater-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-accessor ,key (,contents-updater ,%key ,val ,contents))
-                                      (,contents-accessor ,key ,contents)))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-accessor ,%key (,contents-updater ,key ,val ,contents))
+                                      (,contents-accessor ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1185,15 +1265,15 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-accessor-of-contents-remover
-                      (equal (,contents-accessor ,key (,contents-remover ,%key ,contents))
+                      (equal (,contents-accessor ,%key (,contents-remover ,key ,contents))
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
                                  ,default-val
-                                 (,contents-accessor ,key ,contents)))
+                                 (,contents-accessor ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1202,12 +1282,12 @@
 
                     (defthm ,contents-accessor-of-contents-remover-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-accessor ,key (,contents-remover ,%key ,contents))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-accessor ,%key (,contents-remover ,key ,contents))
                                       ,default-val))
                       :hints
                       (("Goal"
@@ -1217,13 +1297,13 @@
 
                     (defthm ,contents-accessor-of-contents-remover-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-accessor ,key (,contents-remover ,%key ,contents))
-                                      (,contents-accessor ,key ,contents)))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-accessor ,%key (,contents-remover ,key ,contents))
+                                      (,contents-accessor ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1294,17 +1374,17 @@
                                         ,@fi-bindings))))
 
                                (defthmd ,accessor-of-updater
-                                 (equal (,accessor ,key (,updater ,%key ,val ,hash-table))
+                                 (equal (,accessor ,%key (,updater ,key ,val ,hash-table))
                                         (if (equal ,(if key-fixer
-                                                        `(,key-fixer ,key)
-                                                        key)
-                                                   ,(if key-fixer
                                                         `(,key-fixer ,%key)
-                                                        %key))
+                                                        %key)
+                                                   ,(if key-fixer
+                                                        `(,key-fixer ,key)
+                                                        key))
                                             ,(if val-fixer
                                                  `(,val-fixer ,val)
                                                  val)
-                                            (,accessor ,key ,hash-table)))
+                                            (,accessor ,%key ,hash-table)))
                                  :hints
                                  (("Goal"
                                    :by (:functional-instance
@@ -1313,12 +1393,12 @@
 
                                (defthm ,accessor-of-updater-same
                                  (implies (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
-                                          (equal (,accessor ,key (,updater ,%key ,val ,hash-table))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
+                                          (equal (,accessor ,%key (,updater ,key ,val ,hash-table))
                                                  ,(if val-fixer
                                                       `(,val-fixer ,val)
                                                       val)))
@@ -1330,13 +1410,13 @@
 
                                (defthm ,accessor-of-updater-diff
                                  (implies (not (equal ,(if key-fixer
-                                                           `(,key-fixer ,key)
-                                                           key)
-                                                      ,(if key-fixer
                                                            `(,key-fixer ,%key)
-                                                           %key)))
-                                          (equal (,accessor ,key (,updater ,%key ,val ,hash-table))
-                                                 (,accessor ,key ,hash-table)))
+                                                           %key)
+                                                      ,(if key-fixer
+                                                           `(,key-fixer ,key)
+                                                           key)))
+                                          (equal (,accessor ,%key (,updater ,key ,val ,hash-table))
+                                                 (,accessor ,%key ,hash-table)))
                                  :hints
                                  (("Goal"
                                    :by (:functional-instance
@@ -1354,15 +1434,15 @@
                                         ,@fi-bindings))))
 
                                (defthmd ,accessor-of-remover
-                                 (equal (,accessor ,key (,remover ,%key ,hash-table))
+                                 (equal (,accessor ,%key (,remover ,key ,hash-table))
                                         (if (equal ,(if key-fixer
-                                                        `(,key-fixer ,key)
-                                                        key)
-                                                   ,(if key-fixer
                                                         `(,key-fixer ,%key)
-                                                        %key))
+                                                        %key)
+                                                   ,(if key-fixer
+                                                        `(,key-fixer ,key)
+                                                        key))
                                             ,default-val
-                                            (,accessor ,key ,hash-table)))
+                                            (,accessor ,%key ,hash-table)))
                                  :hints
                                  (("Goal"
                                    :by (:functional-instance
@@ -1371,12 +1451,12 @@
 
                                (defthm ,accessor-of-remover-same
                                  (implies (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
-                                          (equal (,accessor ,key (,remover ,%key ,hash-table))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
+                                          (equal (,accessor ,%key (,remover ,key ,hash-table))
                                                  ,default-val))
                                  :hints
                                  (("Goal"
@@ -1386,13 +1466,13 @@
 
                                (defthm ,accessor-of-remover-diff
                                  (implies (not (equal ,(if key-fixer
-                                                           `(,key-fixer ,key)
-                                                           key)
-                                                      ,(if key-fixer
                                                            `(,key-fixer ,%key)
-                                                           %key)))
-                                          (equal (,accessor ,key (,remover ,%key ,hash-table))
-                                                 (,accessor ,key ,hash-table)))
+                                                           %key)
+                                                      ,(if key-fixer
+                                                           `(,key-fixer ,key)
+                                                           key)))
+                                          (equal (,accessor ,%key (,remover ,key ,hash-table))
+                                                 (,accessor ,%key ,hash-table)))
                                  :hints
                                  (("Goal"
                                    :by (:functional-instance
@@ -1495,15 +1575,15 @@
 
                     (defthmd ,contents-updater-of-contents-accessor
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-updater ,key (,contents-accessor ,%key ,contents) ,contents)
-                                      (if (,contents-boundp ,key ,contents)
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-updater ,%key (,contents-accessor ,key ,contents) ,contents)
+                                      (if (,contents-boundp ,%key ,contents)
                                           (,contents-fixer ,contents)
-                                          (,contents-updater ,key ,default-val ,contents))))
+                                          (,contents-updater ,%key ,default-val ,contents))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1512,14 +1592,14 @@
 
                     ;; TODO: compare with free/not in vector macros
                     (defthm ,contents-updater-of-contents-accessor-when-contents-boundp
-                      (implies (and (,contents-boundp ,key ,contents)
+                      (implies (and (,contents-boundp ,%key ,contents)
                                     (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-updater ,key (,contents-accessor ,%key ,contents) ,contents)
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-updater ,%key (,contents-accessor ,key ,contents) ,contents)
                                       (,contents-fixer ,contents)))
                       :hints
                       (("Goal"
@@ -1528,15 +1608,15 @@
                              ,@fi-bindings))))
 
                     (defthm ,contents-updater-of-contents-accessor-when-not-contents-boundp
-                      (implies (and (not (,contents-boundp ,key ,contents))
+                      (implies (and (not (,contents-boundp ,%key ,contents))
                                     (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-updater ,key (,contents-accessor ,%key ,contents) ,contents)
-                                      (,contents-updater ,key ,default-val ,contents)))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-updater ,%key (,contents-accessor ,key ,contents) ,contents)
+                                      (,contents-updater ,%key ,default-val ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1544,17 +1624,17 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-updater-of-contents-updater
-                      (equal (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))
+                      (equal (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
-                                 (,contents-updater ,key ,val ,contents)
-                                 (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
+                                 (,contents-updater ,%key ,%val ,contents)
+                                 (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((,key ,%key ,contents-updater))))
+                      ((:rewrite :loop-stopper ((,%key ,key ,contents-updater))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1563,13 +1643,13 @@
 
                     (defthm ,contents-updater-of-contents-updater-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))
-                                      (,contents-updater ,key ,val ,contents)))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))
+                                      (,contents-updater ,%key ,%val ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1578,15 +1658,15 @@
 
                     (defthm ,contents-updater-of-contents-updater-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))
-                                      (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-updater ,%key ,%val (,contents-updater ,key ,val ,contents))
+                                      (,contents-updater ,key ,val (,contents-updater ,%key ,%val ,contents))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((,key ,%key ,contents-updater))))
+                      ((:rewrite :loop-stopper ((,%key ,key ,contents-updater))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1595,13 +1675,13 @@
 
                     (defthm ,contents-updater-of-contents-remover-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-updater ,key ,val (,contents-remover ,%key ,contents))
-                                      (,contents-updater ,key ,val ,contents)))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-updater ,%key ,val (,contents-remover ,key ,contents))
+                                      (,contents-updater ,%key ,val ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1697,15 +1777,15 @@
 
                              (defthmd ,updater-of-accessor
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (equal (,updater ,key (,accessor ,%key ,hash-table) ,hash-table)
-                                               (if (,boundp ,key ,hash-table)
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (equal (,updater ,%key (,accessor ,key ,hash-table) ,hash-table)
+                                               (if (,boundp ,%key ,hash-table)
                                                    (,fixer ,hash-table)
-                                                   (,updater ,key ,default-val ,hash-table))))
+                                                   (,updater ,%key ,default-val ,hash-table))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1713,14 +1793,14 @@
                                       ,@fi-bindings))))
 
                              (defthm ,updater-of-accessor-when-boundp
-                               (implies (and (,boundp ,key ,hash-table)
+                               (implies (and (,boundp ,%key ,hash-table)
                                              (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,updater ,key (,accessor ,%key ,hash-table) ,hash-table)
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,updater ,%key (,accessor ,key ,hash-table) ,hash-table)
                                                (,fixer ,hash-table)))
                                :hints
                                (("Goal"
@@ -1729,15 +1809,15 @@
                                       ,@fi-bindings))))
 
                              (defthm ,updater-of-accessor-when-not-boundp
-                               (implies (and (not (,boundp ,key ,hash-table))
+                               (implies (and (not (,boundp ,%key ,hash-table))
                                              (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,updater ,key (,accessor ,%key ,hash-table) ,hash-table)
-                                               (,updater ,key ,default-val ,hash-table)))
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,updater ,%key (,accessor ,key ,hash-table) ,hash-table)
+                                               (,updater ,%key ,default-val ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1745,17 +1825,17 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,updater-of-updater
-                               (equal (,updater ,key ,val (,updater ,%key ,%val ,hash-table))
+                               (equal (,updater ,%key ,%val (,updater ,key ,val ,hash-table))
                                       (if (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
-                                          (,updater ,key ,val ,hash-table)
-                                          (,updater ,%key ,%val (,updater ,key ,val ,hash-table))))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
+                                          (,updater ,%key ,%val ,hash-table)
+                                          (,updater ,key ,val (,updater ,%key ,%val ,hash-table))))
                                :rule-classes
-                               ((:rewrite :loop-stopper ((,key ,%key ,updater))))
+                               ((:rewrite :loop-stopper ((,%key ,key ,updater))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1764,13 +1844,13 @@
 
                              (defthm ,updater-of-updater-same
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (equal (,updater ,key ,val (,updater ,%key ,%val ,hash-table))
-                                               (,updater ,key ,val ,hash-table)))
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (equal (,updater ,%key ,%val (,updater ,key ,val ,hash-table))
+                                               (,updater ,%key ,%val ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1779,15 +1859,15 @@
 
                              (defthm ,updater-of-updater-diff
                                (implies (not (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,updater ,key ,val (,updater ,%key ,%val ,hash-table))
-                                               (,updater ,%key ,%val (,updater ,key ,val ,hash-table))))
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,updater ,%key ,%val (,updater ,key ,val ,hash-table))
+                                               (,updater ,key ,val (,updater ,%key ,%val ,hash-table))))
                                :rule-classes
-                               ((:rewrite :loop-stopper ((,key ,%key ,updater))))
+                               ((:rewrite :loop-stopper ((,%key ,key ,updater))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1796,13 +1876,13 @@
 
                              (defthm ,updater-of-remover-same
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (equal (,updater ,key ,val (,remover ,%key ,hash-table))
-                                               (,updater ,key ,val ,hash-table)))
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (equal (,updater ,%key ,val (,remover ,key ,hash-table))
+                                               (,updater ,%key ,val ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1868,15 +1948,15 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-boundp-of-contents-updater
-                      (equal (,contents-boundp ,key (,contents-updater ,%key ,val ,contents))
+                      (equal (,contents-boundp ,%key (,contents-updater ,key ,val ,contents))
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
                                  t
-                                 (,contents-boundp ,key ,contents)))
+                                 (,contents-boundp ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1885,12 +1965,12 @@
 
                     (defthm ,contents-boundp-of-contents-updater-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-boundp ,key (,contents-updater ,%key ,val ,contents))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-boundp ,%key (,contents-updater ,key ,val ,contents))
                                       t))
                       :hints
                       (("Goal"
@@ -1900,13 +1980,13 @@
 
                     (defthm ,contents-boundp-of-contents-updater-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-boundp ,key (,contents-updater ,%key ,val ,contents))
-                                      (,contents-boundp ,key ,contents)))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-boundp ,%key (,contents-updater ,key ,val ,contents))
+                                      (,contents-boundp ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1914,15 +1994,15 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-boundp-of-contents-remover
-                      (equal (,contents-boundp ,key (,contents-remover ,%key ,contents))
+                      (equal (,contents-boundp ,%key (,contents-remover ,key ,contents))
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
                                  nil
-                                 (,contents-boundp ,key ,contents)))
+                                 (,contents-boundp ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1931,12 +2011,12 @@
 
                     (defthm ,contents-boundp-of-contents-remover-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (not (,contents-boundp ,key (,contents-remover ,%key ,contents))))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (not (,contents-boundp ,%key (,contents-remover ,key ,contents))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -1945,13 +2025,13 @@
 
                     (defthm ,contents-boundp-of-contents-remover-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-boundp ,key (,contents-remover ,%key ,contents))
-                                      (,contents-boundp ,key ,contents)))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-boundp ,%key (,contents-remover ,key ,contents))
+                                      (,contents-boundp ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2027,15 +2107,15 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,boundp-of-updater
-                               (equal (,boundp ,key (,updater ,%key ,val ,hash-table))
+                               (equal (,boundp ,%key (,updater ,key ,val ,hash-table))
                                       (if (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
                                           t
-                                          (,boundp ,key ,hash-table)))
+                                          (,boundp ,%key ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2044,12 +2124,12 @@
 
                              (defthm ,boundp-of-updater-same
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (equal (,boundp ,key (,updater ,%key ,val ,hash-table))
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (equal (,boundp ,%key (,updater ,key ,val ,hash-table))
                                                t))
                                :hints
                                (("Goal"
@@ -2059,13 +2139,13 @@
 
                              (defthm ,boundp-of-updater-diff
                                (implies (not (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,boundp ,key (,updater ,%key ,val ,hash-table))
-                                               (,boundp ,key ,hash-table)))
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,boundp ,%key (,updater ,key ,val ,hash-table))
+                                               (,boundp ,%key ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2073,15 +2153,15 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,boundp-of-remover
-                               (equal (,boundp ,key (,remover ,%key ,hash-table))
+                               (equal (,boundp ,%key (,remover ,key ,hash-table))
                                       (if (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
                                           nil
-                                          (,boundp ,key ,hash-table)))
+                                          (,boundp ,%key ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2090,12 +2170,12 @@
 
                              (defthm ,boundp-of-remover-same
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (not (,boundp ,key (,remover ,%key ,hash-table))))
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (not (,boundp ,%key (,remover ,key ,hash-table))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2104,13 +2184,13 @@
 
                              (defthm ,boundp-of-remover-diff
                                (implies (not (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,boundp ,key (,remover ,%key ,hash-table))
-                                               (,boundp ,key ,hash-table)))
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,boundp ,%key (,remover ,key ,hash-table))
+                                               (,boundp ,%key ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2243,15 +2323,15 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-remover-of-contents-updater
-                      (equal (,contents-remover ,key (,contents-updater ,%key ,val ,contents))
+                      (equal (,contents-remover ,%key (,contents-updater ,key ,val ,contents))
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
-                                 (,contents-remover ,key ,contents)
-                                 (,contents-updater ,%key ,val (,contents-remover ,key ,contents))))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
+                                 (,contents-remover ,%key ,contents)
+                                 (,contents-updater ,key ,val (,contents-remover ,%key ,contents))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2260,13 +2340,13 @@
 
                     (defthm ,contents-remover-of-contents-updater-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-remover ,key (,contents-updater ,%key ,val ,contents))
-                                      (,contents-remover ,key ,contents)))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-remover ,%key (,contents-updater ,key ,val ,contents))
+                                      (,contents-remover ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2275,13 +2355,13 @@
 
                     (defthm ,contents-remover-of-contents-updater-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-remover ,key (,contents-updater ,%key ,val ,contents))
-                                      (,contents-updater ,%key ,val (,contents-remover ,key ,contents))))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-remover ,%key (,contents-updater ,key ,val ,contents))
+                                      (,contents-updater ,key ,val (,contents-remover ,%key ,contents))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2299,17 +2379,17 @@
                              ,@fi-bindings))))
 
                     (defthmd ,contents-remover-of-contents-remover
-                      (equal (,contents-remover ,key (,contents-remover ,%key ,contents))
+                      (equal (,contents-remover ,%key (,contents-remover ,key ,contents))
                              (if (equal ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        ,(if key-fixer
                                              `(,key-fixer ,%key)
-                                             %key))
-                                 (,contents-remover ,key ,contents)
-                                 (,contents-remover ,%key (,contents-remover ,key ,contents))))
+                                             %key)
+                                        ,(if key-fixer
+                                             `(,key-fixer ,key)
+                                             key))
+                                 (,contents-remover ,%key ,contents)
+                                 (,contents-remover ,key (,contents-remover ,%key ,contents))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((,key ,%key ,contents-remover))))
+                      ((:rewrite :loop-stopper ((,%key ,key ,contents-remover))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2318,13 +2398,13 @@
 
                     (defthm ,contents-remover-of-contents-remover-same
                       (implies (equal ,(if key-fixer
-                                           `(,key-fixer ,key)
-                                           key)
-                                      ,(if key-fixer
                                            `(,key-fixer ,%key)
-                                           %key))
-                               (equal (,contents-remover ,key (,contents-remover ,%key ,contents))
-                                      (,contents-remover ,key ,contents)))
+                                           %key)
+                                      ,(if key-fixer
+                                           `(,key-fixer ,key)
+                                           key))
+                               (equal (,contents-remover ,%key (,contents-remover ,key ,contents))
+                                      (,contents-remover ,%key ,contents)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2333,15 +2413,15 @@
 
                     (defthm ,contents-remover-of-contents-remover-diff
                       (implies (not (equal ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           ,(if key-fixer
                                                 `(,key-fixer ,%key)
-                                                %key)))
-                               (equal (,contents-remover ,key (,contents-remover ,%key ,contents))
-                                      (,contents-remover ,%key (,contents-remover ,key ,contents))))
+                                                %key)
+                                           ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)))
+                               (equal (,contents-remover ,%key (,contents-remover ,key ,contents))
+                                      (,contents-remover ,key (,contents-remover ,%key ,contents))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((,key ,%key ,contents-remover))))
+                      ((:rewrite :loop-stopper ((,%key ,key ,contents-remover))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -2411,15 +2491,15 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,remover-of-updater
-                               (equal (,remover ,key (,updater ,%key ,val ,hash-table))
+                               (equal (,remover ,%key (,updater ,key ,val ,hash-table))
                                       (if (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
-                                          (,remover ,key ,hash-table)
-                                          (,updater ,%key ,val (,remover ,key ,hash-table))))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
+                                          (,remover ,%key ,hash-table)
+                                          (,updater ,key ,val (,remover ,%key ,hash-table))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2428,13 +2508,13 @@
 
                              (defthm ,remover-of-updater-same
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (equal (,remover ,key (,updater ,%key ,val ,hash-table))
-                                               (,remover ,key ,hash-table)))
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (equal (,remover ,%key (,updater ,key ,val ,hash-table))
+                                               (,remover ,%key ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2443,13 +2523,13 @@
 
                              (defthm ,remover-of-updater-diff
                                (implies (not (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,remover ,key (,updater ,%key ,val ,hash-table))
-                                               (,updater ,%key ,val (,remover ,key ,hash-table))))
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,remover ,%key (,updater ,key ,val ,hash-table))
+                                               (,updater ,key ,val (,remover ,%key ,hash-table))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2467,17 +2547,17 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,remover-of-remover
-                               (equal (,remover ,key (,remover ,%key ,hash-table))
+                               (equal (,remover ,%key (,remover ,key ,hash-table))
                                       (if (equal ,(if key-fixer
-                                                      `(,key-fixer ,key)
-                                                      key)
-                                                 ,(if key-fixer
                                                       `(,key-fixer ,%key)
-                                                      %key))
-                                          (,remover ,key ,hash-table)
-                                          (,remover ,%key (,remover ,key ,hash-table))))
+                                                      %key)
+                                                 ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key))
+                                          (,remover ,%key ,hash-table)
+                                          (,remover ,key (,remover ,%key ,hash-table))))
                                :rule-classes
-                               ((:rewrite :loop-stopper ((,key ,%key ,remover))))
+                               ((:rewrite :loop-stopper ((,%key ,key ,remover))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2486,13 +2566,13 @@
 
                              (defthm ,remover-of-remover-same
                                (implies (equal ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               ,(if key-fixer
                                                     `(,key-fixer ,%key)
-                                                    %key))
-                                        (equal (,remover ,key (,remover ,%key ,hash-table))
-                                               (,remover ,key ,hash-table)))
+                                                    %key)
+                                               ,(if key-fixer
+                                                    `(,key-fixer ,key)
+                                                    key))
+                                        (equal (,remover ,%key (,remover ,key ,hash-table))
+                                               (,remover ,%key ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2501,15 +2581,15 @@
 
                              (defthm ,remover-of-remover-diff
                                (implies (not (equal ,(if key-fixer
-                                                         `(,key-fixer ,key)
-                                                         key)
-                                                    ,(if key-fixer
                                                          `(,key-fixer ,%key)
-                                                         %key)))
-                                        (equal (,remover ,key (,remover ,%key ,hash-table))
-                                               (,remover ,%key (,remover ,key ,hash-table))))
+                                                         %key)
+                                                    ,(if key-fixer
+                                                         `(,key-fixer ,key)
+                                                         key)))
+                                        (equal (,remover ,%key (,remover ,key ,hash-table))
+                                               (,remover ,key (,remover ,%key ,hash-table))))
                                :rule-classes
-                               ((:rewrite :loop-stopper ((,key ,%key ,remover))))
+                               ((:rewrite :loop-stopper ((,%key ,key ,remover))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -3004,8 +3084,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-keys-set
-                               (equal (,keys-set set (,keys-set %set ,hash-table))
-                                      (,keys-set set ,hash-table))
+                               (equal (,keys-set %set (,keys-set set ,hash-table))
+                                      (,keys-set %set ,hash-table))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -3014,142 +3094,205 @@
 
 
                     ;; `CONTENTS-EQUAL'
-                    (defun-sk ,contents-keys-equal (,contents ,%contents)
-                      (declare (xargs :guard (and (,contents-recognizer ,contents)
-                                                  (,contents-recognizer ,%contents))
+                    (defun-sk ,contents-keys-equal (,%contents ,contents)
+                      (declare (xargs :guard (and (,contents-recognizer ,%contents)
+                                                  (,contents-recognizer ,contents))
                                       :verify-guards nil))
                       (forall ,key
                         ,(if key-recognizer
                              `(implies (,key-recognizer ,key)
-                                       (equal (,contents-boundp ,key ,contents)
-                                              (,contents-boundp ,key ,%contents)))
-                             `(equal (,contents-boundp ,key ,contents)
-                                     (,contents-boundp ,key ,%contents))))
+                                       (equal (,contents-boundp ,key ,%contents)
+                                              (,contents-boundp ,key ,contents)))
+                             `(equal (,contents-boundp ,key ,%contents)
+                                     (,contents-boundp ,key ,contents))))
                       :rewrite :direct)
 
-                    (defun-sk ,contents-vals-equal (,contents ,%contents)
-                      (declare (xargs :guard (and (,contents-recognizer ,contents)
-                                                  (,contents-recognizer ,%contents))
+                    (defun-sk ,contents-vals-equal (,%contents ,contents)
+                      (declare (xargs :guard (and (,contents-recognizer ,%contents)
+                                                  (,contents-recognizer ,contents))
                                       :verify-guards nil))
                       (forall ,key
                         ,(if key-recognizer
                              `(implies (,key-recognizer ,key)
-                                       (equal (,contents-accessor ,key ,contents)
-                                              (,contents-accessor ,key ,%contents)))
-                             `(equal (,contents-accessor ,key ,contents)
-                                     (,contents-accessor ,key ,%contents))))
+                                       (equal (,contents-accessor ,key ,%contents)
+                                              (,contents-accessor ,key ,contents)))
+                             `(equal (,contents-accessor ,key ,%contents)
+                                     (,contents-accessor ,key ,contents))))
                       :rewrite :direct)
 
-                    (defun-nx ,contents-equal (,contents ,%contents)
+                    (defun-nx ,contents-equal (,%contents ,contents)
                       (declare (xargs :guard t
                                       :verify-guards nil))
-                      (and (,contents-recognizer ,contents)
-                           (,contents-recognizer ,%contents)
-                           (= (,contents-count ,contents)
-                              (,contents-count ,%contents))
-                           (,contents-keys-equal ,contents ,%contents)
-                           (,contents-vals-equal ,contents ,%contents)))
+                      (and (,contents-recognizer ,%contents)
+                           (,contents-recognizer ,contents)
+                           (= (,contents-count ,%contents)
+                              (,contents-count ,contents))
+                           (,contents-keys-equal ,%contents ,contents)
+                           (,contents-vals-equal ,%contents ,contents)))
 
                     (defthm ,contents-equal{forward-chaining}
-                      (implies (,contents-equal ,contents ,%contents)
-                               (equal ,contents ,%contents))
+                      (implies (,contents-equal ,%contents ,contents)
+                               (equal ,%contents ,contents))
                       :rule-classes
                       ((:forward-chaining :trigger-terms
-                                          ((,contents-equal ,contents ,%contents))
+                                          ((,contents-equal ,%contents ,contents))
                                           :corollary
                                           (implies t
-                                                   (implies (,contents-equal ,contents ,%contents)
-                                                            (equal ,contents ,%contents)))))
+                                                   (implies (,contents-equal ,%contents ,contents)
+                                                            (equal ,%contents ,contents)))))
                       :hints
                       (("Goal"
+                        :in-theory (disable ,contents-recognizer
+                                            ,contents-creator
+                                            ,contents-fixer
+                                            ,contents-accessor
+                                            ,contents-updater
+                                            ,contents-boundp
+                                            ,contents-getp
+                                            ,contents-remover
+                                            ,contents-count
+                                            ,contents-clear
+                                            ,contents-init
+                                            ,contents-keys-equal
+                                            ,contents-keys-equal-necc
+                                            ,contents-vals-equal
+                                            ,contents-vals-equal-necc)
                         :by (:functional-instance
                              lem-hash-table$a::equal/unique{forward-chaining}
-                             ,@fi-bindings))))
+                             ,@fi-bindings-with-contents-skolem))
+                       ("Subgoal 4"
+                        :use ((:instance ,contents-vals-equal-necc
+                                         (,%contents lem-hash-table$a::%hash-table)
+                                         (,contents lem-hash-table$a::hash-table)
+                                         (,key lem-hash-table$a::key))))
+                       ("Subgoal 3"
+                        :expand (:free (,%contents ,contents)
+                                       (,contents-vals-equal ,%contents ,contents)))
+                       ("Subgoal 2"
+                        :use ((:instance ,contents-keys-equal-necc
+                                         (,%contents lem-hash-table$a::%hash-table)
+                                         (,contents lem-hash-table$a::hash-table)
+                                         (,key lem-hash-table$a::key))))
+                       ("Subgoal 1"
+                        :expand (:free (,%contents ,contents)
+                                       (,contents-keys-equal ,%contents ,contents)))))
 
 
                     ;; `HASH-TABLE-EQUAL'
                     ,@(and copyable
-                           `((defun-sk ,keys-equal (,hash-table ,%hash-table)
-                               (declare (xargs :guard (and (,recognizer ,hash-table)
-                                                           (,recognizer ,%hash-table))
+                           `((defun-sk ,keys-equal (,%hash-table ,hash-table)
+                               (declare (xargs :guard (and (,recognizer ,%hash-table)
+                                                           (,recognizer ,hash-table))
                                                :verify-guards nil))
                                (forall ,key
                                  ,(if key-recognizer
                                       `(implies (,key-recognizer ,key)
-                                                (equal (,boundp ,key ,hash-table)
-                                                       (,boundp ,key ,%hash-table)))
-                                      `(equal (,boundp ,key ,hash-table)
-                                              (,boundp ,key ,%hash-table))))
+                                                (equal (,boundp ,key ,%hash-table)
+                                                       (,boundp ,key ,hash-table)))
+                                      `(equal (,boundp ,key ,%hash-table)
+                                              (,boundp ,key ,hash-table))))
                                :rewrite :direct)
 
-                             (defun-sk ,vals-equal (,hash-table ,%hash-table)
-                               (declare (xargs :guard (and (,recognizer ,hash-table)
-                                                           (,recognizer ,%hash-table))
+                             (defun-sk ,vals-equal (,%hash-table ,hash-table)
+                               (declare (xargs :guard (and (,recognizer ,%hash-table)
+                                                           (,recognizer ,hash-table))
                                                :verify-guards nil))
                                (forall ,key
                                  ,(if key-recognizer
                                       `(implies (,key-recognizer ,key)
-                                                (equal (,accessor ,key ,hash-table)
-                                                       (,accessor ,key ,%hash-table)))
-                                      `(equal (,accessor ,key ,hash-table)
-                                              (,accessor ,key ,%hash-table))))
+                                                (equal (,accessor ,key ,%hash-table)
+                                                       (,accessor ,key ,hash-table)))
+                                      `(equal (,accessor ,key ,%hash-table)
+                                              (,accessor ,key ,hash-table))))
                                :rewrite :direct)
 
-                             (defun-nx ,hash-table-equal (,hash-table ,%hash-table)
+                             (defun-nx ,hash-table-equal (,%hash-table ,hash-table)
                                (declare (xargs :guard t
                                                :verify-guards nil))
-                               (and (,recognizer ,hash-table)
-                                    (,recognizer ,%hash-table)
-                                    (equal (,keys ,hash-table)
-                                           (,keys ,%hash-table))
-                                    (= (,count ,hash-table)
-                                       (,count ,%hash-table))
-                                    (,keys-equal ,hash-table ,%hash-table)
-                                    (,vals-equal ,hash-table ,%hash-table)))
+                               (and (,recognizer ,%hash-table)
+                                    (,recognizer ,hash-table)
+                                    (equal (,keys ,%hash-table)
+                                           (,keys ,hash-table))
+                                    (= (,count ,%hash-table)
+                                       (,count ,hash-table))
+                                    (,keys-equal ,%hash-table ,hash-table)
+                                    (,vals-equal ,%hash-table ,hash-table)))
 
                              (defthm ,hash-table-equal{forward-chaining}
-                               (implies (,hash-table-equal ,hash-table ,%hash-table)
-                                        (equal ,hash-table ,%hash-table))
+                               (implies (,hash-table-equal ,%hash-table ,hash-table)
+                                        (equal ,%hash-table ,hash-table))
                                :rule-classes
                                ((:forward-chaining :trigger-terms
-                                                   ((,hash-table-equal ,hash-table ,%hash-table))
+                                                   ((,hash-table-equal ,%hash-table ,hash-table))
                                                    :corollary
                                                    (implies t
-                                                            (implies (,hash-table-equal ,hash-table ,%hash-table)
-                                                                     (equal ,hash-table ,%hash-table)))))
+                                                            (implies (,hash-table-equal ,%hash-table ,hash-table)
+                                                                     (equal ,%hash-table ,hash-table)))))
                                :hints
                                (("Goal"
+                                 :in-theory (disable ,recognizer
+                                                     ,creator
+                                                     ,fixer
+                                                     ,accessor
+                                                     ,updater
+                                                     ,boundp
+                                                     ,getp
+                                                     ,remover
+                                                     ,count
+                                                     ,clear
+                                                     ,init
+                                                     ,keys
+                                                     ,keys-set
+                                                     ,keys-equal
+                                                     ,keys-equal-necc
+                                                     ,vals-equal
+                                                     ,vals-equal-necc)
                                  :by (:functional-instance
                                       lem-hash-table$a::equal/copyable{forward-chaining}
-                                      ,@fi-bindings))))))))
+                                      ,@fi-bindings-with-skolem))
+                                ("Subgoal 4"
+                                 :use ((:instance ,vals-equal-necc
+                                                  (,%hash-table lem-hash-table$a::%hash-table)
+                                                  (,hash-table lem-hash-table$a::hash-table)
+                                                  (,key lem-hash-table$a::key))))
+                                ("Subgoal 3"
+                                 :expand (:free (,%hash-table ,hash-table)
+                                                (,vals-equal ,%hash-table ,hash-table)))
+                                ("Subgoal 2"
+                                 :use ((:instance ,keys-equal-necc
+                                                  (,%hash-table lem-hash-table$a::%hash-table)
+                                                  (,hash-table lem-hash-table$a::hash-table)
+                                                  (,key lem-hash-table$a::key))))
+                                ("Subgoal 1"
+                                 :expand (:free (,%hash-table ,hash-table)
+                                                (,keys-equal ,%hash-table ,hash-table)))))))))
 
-                (stobj$a-property `(stobj$a-property (,',recognizer
-                                                      ,',creator
-                                                      ,',fixer
-                                                      ,',hash-table-equal)
-                                                     ((,',key-recognizer
-                                                       ,',key-fixer
-                                                       ,',key
-                                                       ,',default-key-name)
-                                                      (,',val-recognizer
-                                                       ,',val-fixer
-                                                       ,',val
+                (stobj$a-property `(stobj$a-property (,recognizer
+                                                      ,creator
+                                                      ,fixer
+                                                      ,hash-table-equal)
+                                                     ((,key
+                                                       ,key-recognizer
+                                                       ,default-key-name
+                                                       ,key-fixer)
+                                                      (,val
+                                                       ,val-recognizer
                                                        ,(and (not stobj-property)
-                                                             ',default-val-name))
-                                                      (,',test
-                                                       ,',copyable)
-                                                      (,',accessor
-                                                       ,',updater
-                                                       ,',boundp
-                                                       ,',getp
-                                                       ,',remover
-                                                       ,',count
-                                                       ,',clear
-                                                       ,',init
-                                                       ,(and ',copyable
-                                                             ',keys)
-                                                       ,(and ',copyable
-                                                             ',keys-set))))))
+                                                             default-val-name)
+                                                       ,val-fixer)
+                                                      (,test
+                                                       ,copyable)
+                                                      (,accessor
+                                                       ,updater
+                                                       ,boundp
+                                                       ,getp
+                                                       ,remover
+                                                       ,count
+                                                       ,clear
+                                                       ,init
+                                                       ,@(and copyable
+                                                              (list keys
+                                                                    keys-set)))))))
 
            `(progn
               ,@prologue
@@ -3158,9 +3301,4 @@
 
               ,@epilogue
 
-              (table stobj$a
-                     'stobj$a-property-alist
-                     (putprop ',',hash-table
-                              'stobj$a
-                              ',stobj$a-property
-                              (stobj$a-property-alist world)))))))))
+              (table stobj$a-property ',hash-table ',stobj$a-property)))))))
