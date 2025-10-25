@@ -108,21 +108,21 @@
                               (booleanp debug))))
 
   (let* ((vector$a (or logic
-                       (symbolicate vector vector '$a)))
+                       (symbolicate vector vector "$A")))
          (vector$c (or exec
-                       (symbolicate vector vector '$c)))
+                       (symbolicate vector vector "$C")))
          (recognizer (or recognizer
                          (symbolicate vector vector (make-predicate-suffix vector))))
          (creator (or creator
-                      (symbolicate vector 'create- vector)))
+                      (symbolicate vector "CREATE-" vector)))
          (length (or length
-                     (symbolicate vector vector '-length)))
+                     (symbolicate vector vector "-LENGTH")))
          (resizer (or resizer
-                      (symbolicate vector vector '-resize)))
+                      (symbolicate vector vector "-RESIZE")))
          (accessor (or accessor
-                       (symbolicate vector vector '-ref)))
+                       (symbolicate vector vector "-REF")))
          (updater (or updater
-                      (symbolicate vector vector '-set))))
+                      (symbolicate vector vector "-SET"))))
 
     `(with-output
        ,@(and (not debug)
@@ -207,4 +207,4 @@
 
 ; TODO: pull theory name from table
               (in-theory
-                (disable ,(symbolicate vector$c vector$c '-theorems)))))))))
+                (disable ,(symbolicate vector$c vector$c "-THEOREMS")))))))))
