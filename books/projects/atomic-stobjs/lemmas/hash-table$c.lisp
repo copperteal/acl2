@@ -277,23 +277,23 @@
          (default-value)))
 
 (defthm accessor-of-updater-same
-  (implies (equal key0 key1)
-           (equal (accessor key0 (updater key1 value hash-table))
+  (implies (equal %key key)
+           (equal (accessor %key (updater key value hash-table))
                   value)))
 
 (defthm accessor-of-updater-diff
-  (implies (not (equal key0 key1))
-           (equal (accessor key0 (updater key1 value hash-table))
-                  (accessor key0 hash-table))))
+  (implies (not (equal %key key))
+           (equal (accessor %key (updater key value hash-table))
+                  (accessor %key hash-table))))
 
 (defthm accessor-of-updater
-  (equal (accessor key0 (updater key1 value hash-table))
-         (if (equal key0 key1)
+  (equal (accessor %key (updater key value hash-table))
+         (if (equal %key key)
              value
-             (accessor key0 hash-table)))
+             (accessor %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal key0 key1)))
+    :cases ((equal %key key)))
    ("Subgoal 2"
     :by accessor-of-updater-diff)
    ("Subgoal 1"
@@ -306,23 +306,23 @@
 
 (with-books (("std/alists/hons-remove-assoc" :dir :system))
   (defthm accessor-of-remover-same
-    (implies (equal key0 key1)
-             (equal (accessor key0 (remover key1 hash-table))
+    (implies (equal %key key)
+             (equal (accessor %key (remover key hash-table))
                     (default-value))))
 
   (defthm accessor-of-remover-diff
-    (implies (not (equal key0 key1))
-             (equal (accessor key0 (remover key1 hash-table))
-                    (accessor key0 hash-table)))))
+    (implies (not (equal %key key))
+             (equal (accessor %key (remover key hash-table))
+                    (accessor %key hash-table)))))
 
 (defthm accessor-of-remover
-  (equal (accessor key0 (remover key1 hash-table))
-         (if (equal key0 key1)
+  (equal (accessor %key (remover key hash-table))
+         (if (equal %key key)
              (default-value)
-             (accessor key0 hash-table)))
+             (accessor %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal key0 key1)))
+    :cases ((equal %key key)))
    ("Subgoal 2"
     :by accessor-of-remover-diff)
    ("Subgoal 1"
@@ -359,22 +359,22 @@
   (not (boundp key (creator/copyable))))
 
 (defthm boundp-of-updater-same
-  (implies (equal key0 key1)
-           (equal (boundp key0 (updater key1 value hash-table))
+  (implies (equal %key key)
+           (equal (boundp %key (updater key value hash-table))
                   t)))
 
 (defthm boundp-of-updater-diff
-  (implies (not (equal key0 key1))
-           (equal (boundp key0 (updater key1 value hash-table))
-                  (boundp key0 hash-table))))
+  (implies (not (equal %key key))
+           (equal (boundp %key (updater key value hash-table))
+                  (boundp %key hash-table))))
 
 (defthm boundp-of-updater
-  (equal (boundp key0 (updater key1 value hash-table))
-         (or (equal key0 key1)
-             (boundp key0 hash-table)))
+  (equal (boundp %key (updater key value hash-table))
+         (or (equal %key key)
+             (boundp %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal key0 key1)))
+    :cases ((equal %key key)))
    ("Subgoal 2"
     :by boundp-of-updater-diff)
    ("Subgoal 1"
@@ -382,22 +382,22 @@
 
 (with-books (("std/alists/hons-remove-assoc" :dir :system))
   (defthm boundp-of-remover-same
-    (implies (equal key0 key1)
-             (not (boundp key0 (remover key1 hash-table)))))
+    (implies (equal %key key)
+             (not (boundp %key (remover key hash-table)))))
 
   (defthm boundp-of-remover-diff
-    (implies (not (equal key0 key1))
-             (equal (boundp key0 (remover key1 hash-table))
-                    (boundp key0 hash-table)))))
+    (implies (not (equal %key key))
+             (equal (boundp %key (remover key hash-table))
+                    (boundp %key hash-table)))))
 
 (defthm boundp-of-remover
-  (equal (boundp key0 (remover key1 hash-table))
-         (if (equal key0 key1)
+  (equal (boundp %key (remover key hash-table))
+         (if (equal %key key)
              nil
-             (boundp key0 hash-table)))
+             (boundp %key hash-table)))
   :hints
   (("Goal"
-    :cases ((equal key0 key1)))
+    :cases ((equal %key key)))
    ("Subgoal 2"
     :by boundp-of-remover-diff)
    ("Subgoal 1"
@@ -443,23 +443,23 @@
          (creator/copyable)))
 
 (defthm remover-of-updater-same
-  (implies (equal key0 key1)
-           (equal (remover key0 (updater key1 value hash-table))
-                  (remover key0 hash-table))))
+  (implies (equal %key key)
+           (equal (remover %key (updater key value hash-table))
+                  (remover %key hash-table))))
 
 (defthm remover-of-updater-diff
-  (implies (not (equal key0 key1))
-           (equal (remover key0 (updater key1 value hash-table))
-                  (updater key1 value (remover key0 hash-table)))))
+  (implies (not (equal %key key))
+           (equal (remover %key (updater key value hash-table))
+                  (updater key value (remover %key hash-table)))))
 
 (defthm remover-of-updater
-  (equal (remover key0 (updater key1 value hash-table))
-         (if (equal key0 key1)
-             (remover key0 hash-table)
-             (updater key1 value (remover key0 hash-table))))
+  (equal (remover %key (updater key value hash-table))
+         (if (equal %key key)
+             (remover %key hash-table)
+             (updater key value (remover %key hash-table))))
   :hints
   (("Goal"
-    :cases ((equal key0 key1)))
+    :cases ((equal %key key)))
    ("Subgoal 2"
     :by remover-of-updater-diff)
    ("Subgoal 1"
@@ -467,16 +467,16 @@
 
 (with-books (("std/alists/hons-remove-assoc" :dir :system))
   (defthm remover-of-remover-same
-    (implies (equal key0 key1)
-             (equal (remover key0 (remover key1 hash-table))
-                    (remover key0 hash-table))))
+    (implies (equal %key key)
+             (equal (remover %key (remover key hash-table))
+                    (remover %key hash-table))))
 
   (defthm remover-of-remover-diff
-    (implies (not (equal key0 key1))
-             (equal (remover key0 (remover key1 hash-table))
-                    (remover key1 (remover key0 hash-table))))
+    (implies (not (equal %key key))
+             (equal (remover %key (remover key hash-table))
+                    (remover key (remover %key hash-table))))
     :rule-classes
-    ((:rewrite :loop-stopper ((key0 key1 remover))))))
+    ((:rewrite :loop-stopper ((%key key remover))))))
 
 
 ;;;; `COUNT'
@@ -698,7 +698,9 @@
 ;;;; `CLEAR'
 (defun clear (hash-table)
   (declare (xargs :guard (recognizer/copyable hash-table)))
-  (%clear (keys-set '() (fixer/copyable hash-table))))
+  (let* ((hash-table (fixer/copyable hash-table))
+         (hash-table (keys-set '() hash-table)))
+    (%clear hash-table)))
 
 (defthm clear{type-prescription}
   (implies (recognizer/copyable hash-table)
@@ -726,8 +728,9 @@
                                        (<= 0 rehash-threshold)
                                        (<= rehash-threshold 1))
                                   (not rehash-threshold)))))
-  (%init ht-size rehash-size rehash-threshold
-         (keys-set '() (fixer/copyable hash-table))))
+  (let* ((hash-table (fixer/copyable hash-table))
+         (hash-table (keys-set '() hash-table)))
+    (%init ht-size rehash-size rehash-threshold hash-table)))
 
 (defthm init{type-prescription}
   (implies (recognizer/copyable hash-table)

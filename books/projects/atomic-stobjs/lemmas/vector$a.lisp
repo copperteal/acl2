@@ -398,17 +398,17 @@
 (with-books (("std/lists/resize-list" :dir :system)
              ("std/lists/list-fix" :dir :system))
   (defthm resizer/resizable-of-resizer/resizable
-    (implies (or (<= (nfix length0) (nfix length1))
-                 (<= (length/resizable vector) (nfix length1)))
-             (equal (resizer/resizable length0 (resizer/resizable length1 vector))
-                    (resizer/resizable length0 vector)))
+    (implies (or (<= (nfix %length) (nfix length))
+                 (<= (length/resizable vector) (nfix length)))
+             (equal (resizer/resizable %length (resizer/resizable length vector))
+                    (resizer/resizable %length vector)))
     :hints
     (("Goal"
       :use ((:instance acl2::resize-list-of-resize-list
                        (lst (fixer/resizable vector))
-                       (n (nfix length1))
+                       (n (nfix length))
                        (d (initial-element))
-                       (m (nfix length0))
+                       (m (nfix %length))
                        (e (initial-element))))))))
 
 (with-books (("std/lists/resize-list" :dir :system)
@@ -508,32 +508,32 @@
 
 (with-books (("std/lists/repeat" :dir :system))
   (defthm accessor/resizable-of-updater/resizable-same
-    (implies (and (< (nfix index0) (length/resizable vector))
-                  (equal (nfix index0) (nfix index1)))
-             (equal (accessor/resizable index0 (updater/resizable index1 value vector))
+    (implies (and (< (nfix %index) (length/resizable vector))
+                  (equal (nfix %index) (nfix index)))
+             (equal (accessor/resizable %index (updater/resizable index value vector))
                     (element-fixer value)))
     :hints
     (("Goal"
       :expand (acl2::repeat (default-length) (initial-element))))))
 
 (defthm accessor/resizable-of-updater/resizable-diff
-  (implies (and (< (nfix index0) (length/resizable vector))
-                (not (equal (nfix index0) (nfix index1))))
-           (equal (accessor/resizable index0 (updater/resizable index1 value vector))
-                  (accessor/resizable index0 vector)))
+  (implies (and (< (nfix %index) (length/resizable vector))
+                (not (equal (nfix %index) (nfix index))))
+           (equal (accessor/resizable %index (updater/resizable index value vector))
+                  (accessor/resizable %index vector)))
   :hints
   (("Goal"
     :in-theory (disable update-nth))))
 
 (defthm accessor/resizable-of-updater/resizable
-  (implies (< (nfix index0) (length/resizable vector))
-           (equal (accessor/resizable index0 (updater/resizable index1 value vector))
-                  (if (equal (nfix index0) (nfix index1))
+  (implies (< (nfix %index) (length/resizable vector))
+           (equal (accessor/resizable %index (updater/resizable index value vector))
+                  (if (equal (nfix %index) (nfix index))
                       (element-fixer value)
-                      (accessor/resizable index0 vector))))
+                      (accessor/resizable %index vector))))
   :hints
   (("Goal"
-    :cases ((equal (nfix index0) (nfix index1))))
+    :cases ((equal (nfix %index) (nfix index))))
    ("Subgoal 2"
     :by accessor/resizable-of-updater/resizable-diff)
    ("Subgoal 1"
@@ -574,32 +574,32 @@
 
 (with-books (("std/lists/repeat" :dir :system))
   (defthm accessor/fixed-of-updater/fixed-same
-    (implies (and (< (nfix index0) (default-length))
-                  (equal (nfix index0) (nfix index1)))
-             (equal (accessor/fixed index0 (updater/fixed index1 value vector))
+    (implies (and (< (nfix %index) (default-length))
+                  (equal (nfix %index) (nfix index)))
+             (equal (accessor/fixed %index (updater/fixed index value vector))
                     (element-fixer value)))
     :hints
     (("Goal"
       :expand (acl2::repeat (default-length) (initial-element))))))
 
 (defthm accessor/fixed-of-updater/fixed-diff
-  (implies (and (< (nfix index0) (default-length))
-                (not (equal (nfix index0) (nfix index1))))
-           (equal (accessor/fixed index0 (updater/fixed index1 value vector))
-                  (accessor/fixed index0 vector)))
+  (implies (and (< (nfix %index) (default-length))
+                (not (equal (nfix %index) (nfix index))))
+           (equal (accessor/fixed %index (updater/fixed index value vector))
+                  (accessor/fixed %index vector)))
   :hints
   (("Goal"
     :in-theory (disable update-nth))))
 
 (defthm accessor/fixed-of-updater/fixed
-  (implies (< (nfix index0) (default-length))
-           (equal (accessor/fixed index0 (updater/fixed index1 value vector))
-                  (if (equal (nfix index0) (nfix index1))
+  (implies (< (nfix %index) (default-length))
+           (equal (accessor/fixed %index (updater/fixed index value vector))
+                  (if (equal (nfix %index) (nfix index))
                       (element-fixer value)
-                      (accessor/fixed index0 vector))))
+                      (accessor/fixed %index vector))))
   :hints
   (("Goal"
-    :cases ((equal (nfix index0) (nfix index1))))
+    :cases ((equal (nfix %index) (nfix index))))
    ("Subgoal 2"
     :by accessor/fixed-of-updater/fixed-diff)
    ("Subgoal 1"
@@ -675,8 +675,8 @@
       :expand (acl2::repeat (default-length) (initial-element))))))
 
 (defthm updater/resizable-of-accessor/resizable
-  (implies (equal (nfix index0) (nfix index1))
-           (equal (updater/resizable index0 (accessor/resizable index1 vector) vector)
+  (implies (equal (nfix %index) (nfix index))
+           (equal (updater/resizable %index (accessor/resizable index vector) vector)
                   (fixer/resizable vector)))
   :hints
   (("Goal"
@@ -688,22 +688,22 @@
                         length/resizable
                         accessor/resizable)
     :use (:instance updater/resizable-of-accessor/resizable-free
-                    (index index0)
-                    (value (accessor/resizable index1 vector))))))
+                    (index %index)
+                    (value (accessor/resizable index vector))))))
 
 (with-books (("std/basic/nfix" :dir :system)
              ("std/lists/update-nth" :dir :system))
   (defthm updater/resizable-of-updater/resizable-same
-    (implies (equal (nfix index0) (nfix index1))
-             (equal (updater/resizable index0 value0 (updater/resizable index1 value1 vector))
-                    (updater/resizable index0 value0 vector))))
+    (implies (equal (nfix %index) (nfix index))
+             (equal (updater/resizable %index %value (updater/resizable index value vector))
+                    (updater/resizable %index %value vector))))
 
   (defthm updater/resizable-of-updater/resizable-diff
-    (implies (not (equal (nfix index0) (nfix index1)))
-             (equal (updater/resizable index0 value0 (updater/resizable index1 value1 vector))
-                    (updater/resizable index1 value1 (updater/resizable index0 value0 vector))))
+    (implies (not (equal (nfix %index) (nfix index)))
+             (equal (updater/resizable %index %value (updater/resizable index value vector))
+                    (updater/resizable index value (updater/resizable %index %value vector))))
     :rule-classes
-    ((:rewrite :loop-stopper ((index0 index1 updater/resizable))))
+    ((:rewrite :loop-stopper ((%index index updater/resizable))))
     :hints
     (("Goal"
       :in-theory (disable acl2::update-nth-of-update-nth-diff
@@ -712,22 +712,22 @@
                           nth
                           acl2::update-nth-when-zp)
       :use ((:instance acl2::update-nth-of-update-nth-diff
-                       (n1 (nfix index0))
-                       (n2 (nfix index1))
-                       (v1 (element-fixer value0))
-                       (v2 (element-fixer value1))
+                       (n1 (nfix %index))
+                       (n2 (nfix index))
+                       (v1 (element-fixer %value))
+                       (v2 (element-fixer value))
                        (x (fixer/resizable vector))))))))
 
 (defthm updater/resizable-of-updater/resizable
-  (equal (updater/resizable index0 value0 (updater/resizable index1 value1 vector))
-         (if (equal (nfix index0) (nfix index1))
-             (updater/resizable index0 value0 vector)
-             (updater/resizable index1 value1 (updater/resizable index0 value0 vector))))
+  (equal (updater/resizable %index %value (updater/resizable index value vector))
+         (if (equal (nfix %index) (nfix index))
+             (updater/resizable %index %value vector)
+             (updater/resizable index value (updater/resizable %index %value vector))))
   :rule-classes
-  ((:rewrite :loop-stopper ((index0 index1 updater/resizable))))
+  ((:rewrite :loop-stopper ((%index index updater/resizable))))
   :hints
   (("Goal"
-    :cases ((equal (nfix index0) (nfix index1))))
+    :cases ((equal (nfix %index) (nfix index))))
    ("Subgoal 2"
     :by updater/resizable-of-updater/resizable-diff)
    ("Subgoal 1"
@@ -787,8 +787,8 @@
       :expand (acl2::repeat (default-length) (initial-element))))))
 
 (defthm updater/fixed-of-accessor/fixed
-  (implies (equal (nfix index0) (nfix index1))
-           (equal (updater/fixed index0 (accessor/fixed index1 vector) vector)
+  (implies (equal (nfix %index) (nfix index))
+           (equal (updater/fixed %index (accessor/fixed index vector) vector)
                   (fixer/fixed vector)))
   :hints
   (("Goal"
@@ -800,22 +800,22 @@
                         length/fixed
                         accessor/fixed)
     :use (:instance updater/fixed-of-accessor/fixed-free
-                    (index index0)
-                    (value (accessor/fixed index1 vector))))))
+                    (index %index)
+                    (value (accessor/fixed index vector))))))
 
 (with-books (("std/basic/nfix" :dir :system)
              ("std/lists/update-nth" :dir :system))
   (defthm updater/fixed-of-updater/fixed-same
-    (implies (equal (nfix index0) (nfix index1))
-             (equal (updater/fixed index0 value0 (updater/fixed index1 value1 vector))
-                    (updater/fixed index0 value0 vector))))
+    (implies (equal (nfix %index) (nfix index))
+             (equal (updater/fixed %index %value (updater/fixed index value vector))
+                    (updater/fixed %index %value vector))))
 
   (defthm updater/fixed-of-updater/fixed-diff
-    (implies (not (equal (nfix index0) (nfix index1)))
-             (equal (updater/fixed index0 value0 (updater/fixed index1 value1 vector))
-                    (updater/fixed index1 value1 (updater/fixed index0 value0 vector))))
+    (implies (not (equal (nfix %index) (nfix index)))
+             (equal (updater/fixed %index %value (updater/fixed index value vector))
+                    (updater/fixed index value (updater/fixed %index %value vector))))
     :rule-classes
-    ((:rewrite :loop-stopper ((index0 index1 updater/fixed))))
+    ((:rewrite :loop-stopper ((%index index updater/fixed))))
     :hints
     (("Goal"
       :in-theory (disable acl2::update-nth-of-update-nth-diff
@@ -824,22 +824,22 @@
                           nth
                           acl2::update-nth-when-zp)
       :use ((:instance acl2::update-nth-of-update-nth-diff
-                       (n1 (nfix index0))
-                       (n2 (nfix index1))
-                       (v1 (element-fixer value0))
-                       (v2 (element-fixer value1))
+                       (n1 (nfix %index))
+                       (n2 (nfix index))
+                       (v1 (element-fixer %value))
+                       (v2 (element-fixer value))
                        (x (fixer/fixed vector))))))))
 
 (defthm updater/fixed-of-updater/fixed
-  (equal (updater/fixed index0 value0 (updater/fixed index1 value1 vector))
-         (if (equal (nfix index0) (nfix index1))
-             (updater/fixed index0 value0 vector)
-             (updater/fixed index1 value1 (updater/fixed index0 value0 vector))))
+  (equal (updater/fixed %index %value (updater/fixed index value vector))
+         (if (equal (nfix %index) (nfix index))
+             (updater/fixed %index %value vector)
+             (updater/fixed index value (updater/fixed %index %value vector))))
   :rule-classes
-  ((:rewrite :loop-stopper ((index0 index1 updater/fixed))))
+  ((:rewrite :loop-stopper ((%index index updater/fixed))))
   :hints
   (("Goal"
-    :cases ((equal (nfix index0) (nfix index1))))
+    :cases ((equal (nfix %index) (nfix index))))
    ("Subgoal 2"
     :by updater/fixed-of-updater/fixed-diff)
    ("Subgoal 1"

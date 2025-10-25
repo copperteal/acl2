@@ -516,13 +516,13 @@
                                      ,@fi-bindings))))
 
                             (defthm ,resizer-of-resizer
-                              (implies (and (natp length0)
-                                            (natp length1)
-                                            (or (<= length0 length1)
-                                                (<= (,length ,vector) length1))
+                              (implies (and (natp %length)
+                                            (natp length)
+                                            (or (<= %length length)
+                                                (<= (,length ,vector) length))
                                             (,recognizer ,vector))
-                                       (equal (,resizer length0 (,resizer length1 ,vector))
-                                              (,resizer length0 ,vector)))
+                                       (equal (,resizer %length (,resizer length ,vector))
+                                              (,resizer %length ,vector)))
                               :hints
                               (("Goal"
                                 :by (:functional-instance
@@ -661,12 +661,12 @@
                                       ,@fi-bindings))))))
 
                     (defthmd ,accessor-of-updater
-                      (implies (and (natp index0)
-                                    (natp index1))
-                               (equal (,accessor index0 (,updater index1 value ,vector))
-                                      (if (equal index0 index1)
+                      (implies (and (natp %index)
+                                    (natp index))
+                               (equal (,accessor %index (,updater index value ,vector))
+                                      (if (equal %index index)
                                           value
-                                          (,accessor index0 ,vector))))
+                                          (,accessor %index ,vector))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -674,8 +674,8 @@
                              ,@fi-bindings))))
 
                     (defthm ,accessor-of-updater-same
-                      (implies (equal index0 index1)
-                               (equal (,accessor index0 (,updater index1 value ,vector))
+                      (implies (equal %index index)
+                               (equal (,accessor %index (,updater index value ,vector))
                                       value))
                       :hints
                       (("Goal"
@@ -684,11 +684,11 @@
                              ,@fi-bindings))))
 
                     (defthm ,accessor-of-updater-diff
-                      (implies (and (not (equal index0 index1))
-                                    (natp index0)
-                                    (natp index1))
-                               (equal (,accessor index0 (,updater index1 value ,vector))
-                                      (,accessor index0 ,vector)))
+                      (implies (and (not (equal %index index))
+                                    (natp %index)
+                                    (natp index))
+                               (equal (,accessor %index (,updater index value ,vector))
+                                      (,accessor %index ,vector)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -789,13 +789,13 @@
                              ,@fi-bindings))))
 
                     (defthm ,updater-of-accessor
-                      (implies (and (equal index0 index1)
-                                    (natp index0)
-                                    (< index0 ,(if resizable
+                      (implies (and (equal %index index)
+                                    (natp %index)
+                                    (< %index ,(if resizable
                                                    `(,length ,vector)
                                                    default-length-name))
                                     (,recognizer ,vector))
-                               (equal (,updater index0 (,accessor index1 ,vector) ,vector)
+                               (equal (,updater %index (,accessor index ,vector) ,vector)
                                       ,vector))
                       :hints
                       (("Goal"
@@ -807,9 +807,9 @@
                              ,@fi-bindings))))
 
                     (defthm ,updater-of-updater-same
-                      (implies (equal index0 index1)
-                               (equal (,updater index0 value0 (,updater index1 value1 ,vector))
-                                      (,updater index0 value0 ,vector)))
+                      (implies (equal %index index)
+                               (equal (,updater %index %value (,updater index value ,vector))
+                                      (,updater %index %value ,vector)))
                       :hints
                       (("Goal"
                         :by (:functional-instance
@@ -817,13 +817,13 @@
                              ,@fi-bindings))))
 
                     (defthm ,updater-of-updater-diff
-                      (implies (and (not (equal index0 index1))
-                                    (natp index0)
-                                    (natp index1))
-                               (equal (,updater index0 value0 (,updater index1 value1 ,vector))
-                                      (,updater index1 value1 (,updater index0 value0 ,vector))))
+                      (implies (and (not (equal %index index))
+                                    (natp %index)
+                                    (natp index))
+                               (equal (,updater %index %value (,updater index value ,vector))
+                                      (,updater index value (,updater %index %value ,vector))))
                       :rule-classes
-                      ((:rewrite :loop-stopper ((index0 index1 ,updater))))
+                      ((:rewrite :loop-stopper ((%index index ,updater))))
                       :hints
                       (("Goal"
                         :by (:functional-instance
