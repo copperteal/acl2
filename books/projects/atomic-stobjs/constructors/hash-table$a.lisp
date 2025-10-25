@@ -82,6 +82,8 @@
        (val 'nil)
        (%val 'nil)
        (default-val 'nil)
+       (set 'nil)
+       (%set 'nil)
        (copyable 't)
 
        (contents 'nil)
@@ -177,7 +179,7 @@
                 (test ',test)
 
                 (key (or ',key
-                         (symbolicate hash-table "KEY")))
+                         (symbolicate "LEM-HASH-TABLE$A" "K")))
                 (%key (or ',%key
                           (symbolicate key "%" key)))
                 (key-recognizer ',key-recognizer)
@@ -186,7 +188,7 @@
                 (default-key default-key-name)
 
                 (val (or ',val
-                         (symbolicate hash-table "VAL")))
+                         (symbolicate "LEM-HASH-TABLE$A" "V")))
                 (%val (or ',%val
                           (symbolicate val "%" val)))
                 (stobj-property (getpropc val 'stobj))
@@ -219,6 +221,10 @@
                 (default-val (if val-creator
                                  `(,val-creator)
                                  default-val-name))
+                (set (or ',set
+                         (symbolicate "LEM-HASH-TABLE$A" "S")))
+                (%set (or ',%set
+                          (symbolicate set "%" set)))
                 (copyable ',copyable)
 
                 (contents ',contents)
@@ -549,8 +555,6 @@
                              `(lem-hash-table$a::equal/copyable ,hash-table-equal)))
                   fi-bindings-with-contents-skolem))
 
-; TODO: collapse contents and full theorems to singles not duplicates, use ,(if
-; copyable) dispatch on which theorem to instantiate.
                 (body
                  `(with-books (("projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
 ; If hash-table isn't copyable, then all "CONTENTS"-prefixed symbols refer to
@@ -839,12 +843,12 @@
                                  (car ,hash-table)))))
 
                     ,@(and copyable
-                           `((defun ,keys-set (set ,hash-table)
-                               (declare (xargs :guard (and (set::setp set)
+                           `((defun ,keys-set (,set ,hash-table)
+                               (declare (xargs :guard (and (set::setp ,set)
                                                            (,recognizer ,hash-table))))
-                               (let ((set (set::sfix set))
+                               (let ((,set (set::sfix ,set))
                                      (,hash-table (,fixer ,hash-table)))
-                                 (cons set (cdr ,hash-table))))))
+                                 (cons ,set (cdr ,hash-table))))))
 
                     ;; `RECOGNIZER'
                     (defthm ,recognizer{type-prescription}
@@ -915,7 +919,7 @@
 
                     ,@(and copyable
                            `((defthm ,recognizer-of-keys-set
-                               (,recognizer (,keys-set set ,hash-table))
+                               (,recognizer (,keys-set ,set ,hash-table))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -1157,7 +1161,7 @@
 
                     ,@(and copyable
                            `((defthm ,accessor-of-keys-set
-                               (equal (,accessor ,key (,keys-set set ,hash-table))
+                               (equal (,accessor ,key (,keys-set ,set ,hash-table))
                                       (,accessor ,key ,hash-table))
                                :hints
                                (("Goal"
@@ -1583,7 +1587,7 @@
 
                     ,@(and copyable
                            `((defthm ,boundp-of-keys-set
-                               (equal (,boundp ,key (,keys-set set ,hash-table))
+                               (equal (,boundp ,key (,keys-set ,set ,hash-table))
                                       (,boundp ,key ,hash-table))
                                :hints
                                (("Goal"
@@ -1945,7 +1949,7 @@
 
                     ,@(and copyable
                            `((defthm ,count-of-keys-set
-                               (equal (,count (,keys-set set ,hash-table))
+                               (equal (,count (,keys-set ,set ,hash-table))
                                       (,count ,hash-table))
                                :hints
                                (("Goal"
@@ -2069,8 +2073,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-of-keys-set
-                               (equal (,keys (,keys-set set ,hash-table))
-                                      (set::sfix set))
+                               (equal (,keys (,keys-set ,set ,hash-table))
+                                      (set::sfix ,set))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2080,8 +2084,8 @@
                     ;; `KEYS-SET'
                     ,@(and copyable
                            `((defthm ,keys-set{type-prescription}
-                               (and (consp (,keys-set set ,hash-table))
-                                    (true-listp (,keys-set set ,hash-table)))
+                               (and (consp (,keys-set ,set ,hash-table))
+                                    (true-listp (,keys-set ,set ,hash-table)))
                                :rule-classes :type-prescription
                                :hints
                                (("Goal"
@@ -2090,8 +2094,8 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,keys-set-when-not-setp
-                               (implies (not (set::setp set))
-                                        (equal (,keys-set set ,hash-table)
+                               (implies (not (set::setp ,set))
+                                        (equal (,keys-set ,set ,hash-table)
                                                (,keys-set '() ,hash-table)))
                                :hints
                                (("Goal"
@@ -2101,8 +2105,8 @@
 
                              (defthmd ,keys-set-when-not-recognizer
                                (implies (not (,recognizer ,hash-table))
-                                        (equal (,keys-set set ,hash-table)
-                                               (,keys-set set (,creator))))
+                                        (equal (,keys-set ,set ,hash-table)
+                                               (,keys-set ,set (,creator))))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2110,8 +2114,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-creator
-                               (implies (set::emptyp set)
-                                        (equal (,keys-set set (,creator))
+                               (implies (set::emptyp ,set)
+                                        (equal (,keys-set ,set (,creator))
                                                (,creator)))
                                :hints
                                (("Goal"
@@ -2120,8 +2124,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-sfix
-                               (equal (,keys-set (set::sfix set) ,hash-table)
-                                      (,keys-set set ,hash-table))
+                               (equal (,keys-set (set::sfix ,set) ,hash-table)
+                                      (,keys-set ,set ,hash-table))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2129,8 +2133,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-fixer
-                               (equal (,keys-set set (,fixer ,hash-table))
-                                      (,keys-set set ,hash-table))
+                               (equal (,keys-set ,set (,fixer ,hash-table))
+                                      (,keys-set ,set ,hash-table))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2138,8 +2142,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-updater
-                               (equal (,keys-set set (,updater ,key ,val ,hash-table))
-                                      (,updater ,key ,val (,keys-set set ,hash-table)))
+                               (equal (,keys-set ,set (,updater ,key ,val ,hash-table))
+                                      (,updater ,key ,val (,keys-set ,set ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2147,8 +2151,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-remover
-                               (equal (,keys-set set (,remover ,key ,hash-table))
-                                      (,remover ,key (,keys-set set ,hash-table)))
+                               (equal (,keys-set ,set (,remover ,key ,hash-table))
+                                      (,remover ,key (,keys-set ,set ,hash-table)))
                                :hints
                                (("Goal"
                                  :by (:functional-instance
@@ -2156,8 +2160,8 @@
                                       ,@fi-bindings))))
 
                              (defthmd ,keys-set-of-keys-free
-                               (implies (equal (set::sfix set) (,keys ,hash-table))
-                                        (equal (,keys-set set ,hash-table)
+                               (implies (equal (set::sfix ,set) (,keys ,hash-table))
+                                        (equal (,keys-set ,set ,hash-table)
                                                (,fixer ,hash-table)))
                                :hints
                                (("Goal"
@@ -2175,8 +2179,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,keys-set-of-keys-set
-                               (equal (,keys-set %set (,keys-set set ,hash-table))
-                                      (,keys-set %set ,hash-table))
+                               (equal (,keys-set ,%set (,keys-set ,set ,hash-table))
+                                      (,keys-set ,%set ,hash-table))
                                :hints
                                (("Goal"
                                  :by (:functional-instance

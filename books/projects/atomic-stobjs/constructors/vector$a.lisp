@@ -133,11 +133,11 @@
                 (default-length-name (symbolicate vector "*" vector "-DEFAULT-LENGTH*"))
 
                 (index (or ',index
-                           (symbolicate vector "I")))
+                           (symbolicate "LEM-VECTOR$A" "I")))
                 (%index (or ',%index
                             (symbolicate index "%" index)))
                 (element (or ',element
-                             (symbolicate vector "V")))
+                             (symbolicate "LEM-VECTOR$A" "V")))
                 (%element (or ',%element
                               (symbolicate element "%" element)))
                 (stobj-property (getpropc element 'stobj))
