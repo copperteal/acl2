@@ -30,7 +30,11 @@
 (in-package "ACL2")
 
 (defpkg "LEM-HASH-TABLE$A"
-  (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*
-            '(with-books
-              <<)))
+  (set-difference-eq
+   (union-eq *common-lisp-symbols-from-main-lisp-package*
+             *acl2-exports*
+             '(with-books
+               <<))
+   '(key k
+     val v
+     set s)))
