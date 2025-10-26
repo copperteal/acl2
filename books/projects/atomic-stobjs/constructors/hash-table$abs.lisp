@@ -185,8 +185,7 @@
 
        (executable 'nil)
 
-       ;; TODO: 
-       (debug 't))
+       (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
                               (valid-hash-table-test-p test)
@@ -329,11 +328,8 @@
                                  (tenth (fourth (third stobj$a-property)))))
 
                 (key-recognizer (second (first (third stobj$a-property))))
-                ;; (key-fixer (fourth (first (third stobj$a-property))))
                 (val-recognizer (second (second (third stobj$a-property))))
-                ;; (val-fixer (fourth (second (third stobj$a-property))))
                 (val (first (second (third stobj$a-property))))
-                ;; (default-val (third (second (third stobj$a-property))))
 
                 (val-stobj-property (getpropc val 'stobj))
 
@@ -400,7 +396,6 @@
                                      (cdr updater$c-guard)))
 
                 (aggressive$a (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
-                ;; (count$c-of-updater$c (symbolicate hash-table$c count$c "-OF-" updater$c))
                 (accessor$c-key (car (getpropc accessor$c 'formals)))
                 (updater$c-key (car (getpropc updater$c 'formals)))
                 (updater$c-val (cadr (getpropc updater$c 'formals)))
@@ -409,7 +404,6 @@
                 (remover$c-key (car (getpropc remover$c 'formals)))
                 (keys-set$c-set (and keys-set$c
                                      (car (getpropc keys-set$c 'formals)))))
-           (declare (ignorable test)) ; TODO
 
            `(encapsulate ()
 
@@ -447,14 +441,14 @@
                     (("Goal"
                       :in-theory (disable ,hash-table$corr-vals))))
 
-                  ,@(and ',(or (eq test 'eq)
-                               (eq test 'eql))
+                  ,@(and (or (eq test 'eq)
+                             (eq test 'eql))
                          `((defthm ,accessor{guard-thm}
                              (implies (and (,hash-table$corr ,hash-table$c ,hash-table)
                                            ,@(and key-recognizer
                                                   `((,key-recognizer ,accessor$c-key)))
                                            (,recognizer$a ,hash-table))
-                                      ,(if ',(eq test 'eq)
+                                      ,(if (eq test 'eq)
                                            `(symbolp ,accessor$c-key)
                                            `(eqlablep ,accessor$c-key)))
                              :rule-classes nil)))
@@ -515,14 +509,14 @@
                     (("Goal"
                       :in-theory (disable ,hash-table$corr-keys))))
 
-                  ,@(and ',(or (eq test 'eq)
-                               (eq test 'eql))
+                  ,@(and (or (eq test 'eq)
+                             (eq test 'eql))
                          `((defthm ,boundp{guard-thm}
                              (implies (and (,hash-table$corr ,hash-table$c ,hash-table)
                                            ,@(and key-recognizer
                                                   `((,key-recognizer ,boundp$c-key)))
                                            (,recognizer$a ,hash-table))
-                                      ,(if ',(eq test 'eq)
+                                      ,(if (eq test 'eq)
                                            `(symbolp ,boundp$c-key)
                                            `(eqlablep ,boundp$c-key)))
                              :rule-classes nil)))
@@ -542,14 +536,14 @@
                       :in-theory (disable ,hash-table$corr-keys
                                           ,hash-table$corr-vals))))
 
-                  ,@(and ',(or (eq test 'eq)
-                               (eq test 'eql))
+                  ,@(and (or (eq test 'eq)
+                             (eq test 'eql))
                          `((defthm ,getp{guard-thm}
                              (implies (and (,hash-table$corr ,hash-table$c ,hash-table)
                                            ,@(and key-recognizer
                                                   `((,key-recognizer ,getp$c-key)))
                                            (,recognizer$a ,hash-table))
-                                      ,(if ',(eq test 'eq)
+                                      ,(if (eq test 'eq)
                                            `(symbolp ,getp$c-key)
                                            `(eqlablep ,getp$c-key)))
                              :rule-classes nil)))
@@ -574,14 +568,14 @@
                       :expand (,hash-table$corr-vals (,remover$c ,remover$c-key ,hash-table$c)
                                                      (,remover$a ,remover$c-key ,hash-table)))))
 
-                  ,@(and ',(or (eq test 'eq)
-                               (eq test 'eql))
+                  ,@(and (or (eq test 'eq)
+                             (eq test 'eql))
                          `((defthm ,remover{guard-thm}
                              (implies (and (,hash-table$corr ,hash-table$c ,hash-table)
                                            ,@(and key-recognizer
                                                   `((,key-recognizer ,remover$c-key)))
                                            (,recognizer$a ,hash-table))
-                                      ,(if ',(eq test 'eq)
+                                      ,(if (eq test 'eq)
                                            `(symbolp ,remover$c-key)
                                            `(eqlablep ,remover$c-key)))
                              :rule-classes nil)))
@@ -673,7 +667,7 @@
                                                      ,hash-table)))
                     :rule-classes nil)
 
-                  ,@(and ',copyable
+                  ,@(and copyable
                          `((defthm ,keys{correspondence}
                              (implies (and (,hash-table$corr ,hash-table$c,hash-table)
                                            (,recognizer$a ,hash-table))
