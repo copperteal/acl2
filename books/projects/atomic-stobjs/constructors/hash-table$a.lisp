@@ -456,36 +456,39 @@
                       '(,keys-equal
                         ,vals-equal)))
 
-; TODO:
                    (deftheory-static ,hash-table-aggressive
                      ',(append
                         (and key-recognizer
-                             (list updater-when-not-key-recognizer))
+                             (list accessor-when-not-key-recognizer
+                                   updater-when-not-key-recognizer
+                                   boundp-when-not-key-recognizer
+                                   remover-when-not-key-recognizer))
                         (and val-recognizer
                              (list updater-when-not-val-recognizer))
-                        (append
-                         (list count-of-updater
-                               count-of-remover
-                               count-when-not-recognizer
-                               accessor-of-updater
-                               accessor-when-not-boundp
-                               accessor-of-remover
-                               updater-of-accessor
-                               updater-of-updater
-                               boundp-of-updater
-                               boundp-of-remover
-                               boundp-when-not-recognizer
-                               remover-of-updater
-                               remover-when-not-boundp
-                               remover-of-remover)
-                         (and copyable
-                              (list keys-when-not-recognizer
-                                    boundp-when-zp-count
-                                    keys-set-of-keys-free))
-                         (and key-recognizer
-                              (list accessor-when-not-key-recognizer
-                                    boundp-when-not-key-recognizer
-                                    remover-when-not-key-recognizer)))))
+                        (and copyable
+                             (list keys-when-not-recognizer
+                                   keys-set-when-not-setp
+                                   keys-set-when-not-recognizer
+                                   keys-set-of-keys-free))
+                        (list accessor-when-not-recognizer
+                              accessor-of-updater
+                              accessor-when-not-boundp
+                              accessor-of-remover
+                              updater-when-not-recognizer
+                              updater-of-accessor-when-boundp-free
+                              updater-of-accessor
+                              updater-of-updater
+                              boundp-when-not-recognizer
+                              boundp-of-updater
+                              boundp-of-remover
+                              boundp-when-zp-count
+                              remover-when-not-recognizer
+                              remover-of-updater
+                              remover-when-not-boundp
+                              remover-of-remover
+                              count-when-not-recognizer
+                              count-of-updater
+                              count-of-remover)))
 
                    (in-theory
                      (union-theories (current-theory ',hash-table-begin)
