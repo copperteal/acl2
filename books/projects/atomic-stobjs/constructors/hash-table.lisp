@@ -31,13 +31,12 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-(include-book "misc/total-order" :dir :system)
-(include-book "std/osets/top" :dir :system) ; TODO: delete?
-(include-book "std/omaps/core" :dir :system) ; TODO: delete?
-
 (include-book "../type-spec")
 (include-book "../accessors/top")
 (include-book "../utilities/top")
+(include-book "hash-table$c")
+(include-book "hash-table$a")
+(include-book "hash-table$abs")
 
 (deflabel define-hash-table-begin)
 
@@ -69,30 +68,26 @@
                (natp size)))
   :rule-classes :compound-recognizer)
 
-(include-book "hash-table$c")
-(include-book "hash-table$a")
-(include-book "hash-table$abs")
-
 
 ;;;; `DEFINE-HASH-TABLE'
 (defmacro define-hash-table
     (hash-table test
      &key
-       (size 'nil)
-       (element-type 't)
-       (key-recognizer 'nil)
-       (key-fixer 'nil)
-       (key 'key)
-       (default-key 'nil)
-       (val-recognizer 'nil)
-       (val-fixer 'nil)
-       (val 'val)
-       (default-val 'nil)
-       (copyable 't)
+       (size 'nil size-supplied-p)
+       (element-type 't element-type-supplied-p)
+       (key-recognizer 'nil key-recognizer-supplied-p)
+       (key-fixer 'nil key-fixer-supplied-p)
+       (key 'key key-supplied-p)
+       (default-key 'nil default-key-supplied-p)
+       (val-recognizer 'nil val-recognizer-supplied-p)
+       (val-fixer 'nil val-fixer-supplied-p)
+       (val 'val val-supplied-p)
+       (default-val 'nil default-val-supplied-p)
+       (copyable 't copyable-supplied-p)
 
-       (inline 'nil)
-       (memoizable 'nil)
-       (executable 'nil)
+       (inline 'nil inline-supplied-p)
+       (memoizable 'nil memoizable-supplied-p)
+       (executable 'nil executable-supplied-p)
 
        (recognizer 'nil)
        (creator 'nil)
@@ -158,33 +153,33 @@
                               (booleanp debug))))
 
   (let* ((hash-table$a (or logic
-                           (symbolicate hash-table hash-table '$a)))
+                           (symbolicate hash-table hash-table "$A")))
          (hash-table$c (or exec
-                           (symbolicate hash-table hash-table '$c)))
+                           (symbolicate hash-table hash-table "$C")))
          (recognizer (or recognizer
                          (symbolicate hash-table hash-table (make-predicate-suffix hash-table))))
          (creator (or creator
-                      (symbolicate hash-table 'create- hash-table)))
+                      (symbolicate hash-table "CREATE-" hash-table)))
          (accessor (or accessor
-                       (symbolicate hash-table hash-table '-get)))
+                       (symbolicate hash-table hash-table "-GET")))
          (updater (or updater
-                      (symbolicate hash-table hash-table '-put)))
+                      (symbolicate hash-table hash-table "-PUT")))
          (boundp (or boundp
-                     (symbolicate hash-table hash-table '-boundp)))
+                     (symbolicate hash-table hash-table "-BOUNDP")))
          (getp (or getp
-                   (symbolicate hash-table hash-table '-getp)))
+                   (symbolicate hash-table hash-table "-GETP")))
          (remover (or remover
-                      (symbolicate hash-table hash-table '-rem)))
+                      (symbolicate hash-table hash-table "-REM")))
          (count (or count
-                    (symbolicate hash-table hash-table '-count)))
+                    (symbolicate hash-table hash-table "-COUNT")))
          (clear (or clear
-                    (symbolicate hash-table hash-table '-clear)))
+                    (symbolicate hash-table hash-table "-CLEAR")))
          (init (or init
-                   (symbolicate hash-table hash-table '-init)))
+                   (symbolicate hash-table hash-table "-INIT")))
          (keys (or keys
-                   (symbolicate hash-table hash-table '-keys)))
+                   (symbolicate hash-table hash-table "-KEYS")))
          (keys-set (or keys-set
-                       (symbolicate hash-table hash-table '-keys-set))))
+                       (symbolicate hash-table hash-table "-KEYS-SET"))))
 
     `(with-output
        ,@(and (not debug)
@@ -193,71 +188,106 @@
                            :gag-mode t))
 
        (make-event
-         `(progn
-            (define-hash-table$c ,',hash-table$c ,',test
-              :size ,',size
-              :element-type ,',element-type
-              :default-value ,',default-val
-              :copyable ,',copyable
-              :inline ,',inline
-              :memoizable ,',memoizable
-              :executable ,',executable
-              :debug ,',debug)
+         (let* ((hash-table ',hash-table)
+                (test ',test)
+                (size ',size)
+                (element-type ',element-type)
+                (key-recognizer ',key-recognizer)
+                (key-fixer ',key-fixer)
+                (key ',key)
+                (default-key ',default-key)
+                (val-recognizer ',val-recognizer)
+                (val-fixer ',val-fixer)
+                (val ',val)
+                (default-val ',default-val)
+                (copyable ',copyable)
 
-            (define-hash-table$a ,',hash-table$a ,',test
-              :key-recognizer ,',key-recognizer
-              :key-fixer ,',key-fixer
-              :key ,',key
-              :default-key ,',default-key
-              :val-recognizer ,',val-recognizer
-              :val-fixer ,',val-fixer
-              :val ,',val
-              :default-val ,',default-val
-              :copyable ,',copyable
-              :debug ,',debug)
+                (inline ',inline)
+                (memoizable ',memoizable)
+                (executable ',executable)
 
-            (define-hash-table$corr ,',hash-table
-              :logic ,',hash-table$a
-              :exec ,',hash-table$c
-              :copyable ,',copyable
-              :debug ,',debug)
+                (hash-table$a ',hash-table$a)
+                (hash-table$c ',hash-table$c)
+                (recognizer ',recognizer)
+                (creator ',creator)
+                (accessor ',accessor)
+                (updater ',updater)
+                (boundp ',boundp)
+                (getp ',getp)
+                (remover ',remover)
+                (count ',count)
+                (clear ',clear)
+                (init ',init)
+                (keys ',keys)
+                (keys-set ',keys-set)
 
-            (define-hash-table$abs ,',hash-table ,',test
-              :logic ,',hash-table$a
-              :exec ,',hash-table$c
-              :copyable ,',copyable
-              :recognizer ,',recognizer
-              :creator ,',creator
-              :accessor ,',accessor
-              :updater ,',updater
-              :boundp ,',boundp
-              :getp ,',getp
-              :remover ,',remover
-              :count ,',count
-              :clear ,',clear
-              :init ,',init
-              ,@(and ',copyable
-                     `(:keys ,',keys
-                             :keys-set ,',keys-set))
-              :executable ,',executable
-              :debug ,',debug)
+                (debug ',debug))
+           `(progn
+              (define-hash-table$c ,hash-table$c ,test
+                ,@(and ,size-supplied-p
+                       `(:size ,size))
+                ,@(and ,element-type-supplied-p
+                       `(:element-type ,element-type))
+                ,@(and ,default-val-supplied-p
+                       `(:default-value ,default-val))
+                ,@(and ,copyable-supplied-p
+                       `(:copyable ,copyable))
+                ,@(and ,inline-supplied-p
+                       `(:inline ,inline))
+                ,@(and ,memoizable-supplied-p
+                       `(:memoizable ,memoizable))
+                ,@(and ,executable-supplied-p
+                       `(:executable ,executable))
+                :debug ,debug)
 
-            (in-theory
-              (disable ,',(symbolicate hash-table$c hash-table$c '-theorems))))))))
+              (define-hash-table$a ,hash-table$a ,test
+                ,@(and ,key-recognizer-supplied-p
+                       `(:key-recognizer ,key-recognizer))
+                ,@(and ,key-fixer-supplied-p
+                       `(:key-fixer ,key-fixer))
+                ,@(and ,key-supplied-p
+                       `(:key ,key))
+                ,@(and ,default-key-supplied-p
+                       `(:default-key ,default-key))
+                ,@(and ,val-recognizer-supplied-p
+                       `(:val-recognizer ,val-recognizer))
+                ,@(and ,val-fixer-supplied-p
+                       `(:val-fixer ,val-fixer))
+                ,@(and ,val-supplied-p
+                       `(:val ,val))
+                ,@(and ,default-val-supplied-p
+                       `(:default-val ,default-val))
+                ,@(and ,copyable-supplied-p
+                       `(:copyable ,copyable))
+                :debug ,debug)
 
-
-;;;; `HASH-TABLE-THEOREMS'
-(deflabel define-hash-table-end)
+              (define-hash-table$corr ,hash-table
+                  :logic ,hash-table$a
+                  :exec ,hash-table$c
+                  ,@(and ,copyable-supplied-p
+                         `(:copyable ,copyable))
+                  :debug ,debug)
 
-(deftheory-static define-hash-table-theorems
-  (set-difference-theories
-   (set-difference-theories
-    (current-theory 'define-hash-table-end)
-    (current-theory 'define-hash-table-begin))
-   (function-theory 'define-hash-table-end)))
+              (define-hash-table$abs ,hash-table ,test
+                :logic ,hash-table$a
+                :exec ,hash-table$c
+                :copyable ,copyable
+                :recognizer ,recognizer
+                :creator ,creator
+                :accessor ,accessor
+                :updater ,updater
+                :boundp ,boundp
+                :getp ,getp
+                :remover ,remover
+                :count ,count
+                :clear ,clear
+                :init ,init
+                ,@(and copyable
+                       `(:keys ,keys
+                               :keys-set ,keys-set))
+                ,@(and ,executable-supplied-p
+                       `(:executable ,executable))
+                :debug ,debug)
 
-
-;;;; Epilogue
-(in-theory
-  (union-theories (current-theory 'define-hash-table-begin)
-                  (theory 'define-hash-table-theorems)))
+              (in-theory
+                (disable ,(symbolicate hash-table$c hash-table$c "-THEOREMS")))))))))
