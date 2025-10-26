@@ -413,6 +413,11 @@
                       (make-list ,default-length-name
                                  :initial-element ,initial-element))
 
+                    (local
+                      (in-theory
+                        (disable make-list-ac
+                                 (:e make-list-ac))))
+
 ; We don't want to frequently allocate large list literals in proofs.
                     (in-theory
                       (disable (:e ,creator)))

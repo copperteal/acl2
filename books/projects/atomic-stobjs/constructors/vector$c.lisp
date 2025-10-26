@@ -327,6 +327,11 @@
 
                 (body
                  `(with-books (("projects/atomic-stobjs/lemmas/vector$c" :dir :system))
+                    (local
+                      (in-theory
+                        (disable make-list-ac
+                                 (:e make-list-ac))))
+
                     ;; `CONTENTS-RECOGNIZER'
                     (defthm ,contents-recognizer{type-prescription}
                       (booleanp (,contents-recognizer ,contents))
