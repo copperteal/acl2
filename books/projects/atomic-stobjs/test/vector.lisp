@@ -29,10 +29,11 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/vector")
 (include-book "std/basic/nfix" :dir :system)
 (include-book "std/basic/ifix" :dir :system)
 (include-book "centaur/fty/basetypes" :dir :system)
+
+(include-book "../constructors/vector")
 
 (defun consify (x)
   (declare (xargs :guard t))
