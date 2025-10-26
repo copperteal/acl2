@@ -30,15 +30,73 @@
 (in-package "ACL2") ; TODO: reset license headers
 
 (defpkg "ATOMIC-STOBJS"
-  (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*
-            *type-spec-exports*
-            '(package-witness-p
-              symbolicate
-              with-books
-              make-predicate-suffix
-              coupled)
-            '(stobj
-              absstobj-info
-              formals
-              <<)))
+  (set-difference-eq
+   (union-eq *common-lisp-symbols-from-main-lisp-package*
+             *acl2-exports*
+             *type-spec-exports*
+             '(package-witness-p
+               symbolicate
+               with-books
+               make-predicate-suffix
+               coupled)
+             '(stobj
+               absstobj-info
+               formals
+               <<))
+   '(element-type
+     default-value
+
+     inline
+     memoizable
+     executable
+     debug
+
+     vector
+     dimensions
+     default-length
+     specialize-element-type
+     initial-element
+     resizable
+     index
+     %index
+     element-recognizer
+     element-fixer
+     element
+     %element
+
+     hash-table
+     test
+     size
+     copyable
+     key-recognizer
+     key-fixer
+     key
+     %key
+     default-key
+     val-recognizer
+     val-fixer
+     val
+     %val
+     default-val
+     set
+     %set
+
+     contents
+     contents-recognizer
+     recognizer
+     creator
+     fixer
+     length
+     resizer
+     accessor
+     updater
+     boundp
+     getp
+     remover
+     count
+     clear
+     init
+     keys
+     keys-set
+     )))
+
