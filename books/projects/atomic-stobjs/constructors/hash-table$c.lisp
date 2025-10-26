@@ -273,7 +273,7 @@
                           `((defconst ,default-value-name ',default-value)))
 
                    (defstobj ,hash-table
-                     (,contents :type (hash-table ,test ,size ,element-type)
+                     (,contents :type (acl2::hash-table ,test ,size ,element-type)
                                 ,@(and (not stobj-property)
                                        `(:initially ,default-value)))
                      ,@(and ',copyable
@@ -1158,6 +1158,8 @@
                                       (,hash-table (,keys-set '() ,hash-table)))
                                  (,%clear ,hash-table)))
 
+                             (table clear ',hash-table ',clear)
+
                              (defthm ,clear{type-prescription}
                                (implies (,recognizer ,hash-table)
                                         (and (consp (,clear ,hash-table))
@@ -1195,6 +1197,8 @@
                                (let* ((,hash-table (,fixer ,hash-table))
                                       (,hash-table (,keys-set '() ,hash-table)))
                                  (,%init ht-size rehash-size rehash-threshold ,hash-table)))
+
+                             (table init ',hash-table ',init)
 
                              (defthm ,init{type-prescription}
                                (implies (,recognizer ,hash-table)

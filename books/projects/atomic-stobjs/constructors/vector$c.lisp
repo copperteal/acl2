@@ -218,7 +218,7 @@
                           `((defconst ,initial-element-name ',initial-element)))
 
                    (defstobj ,vector
-                     (,contents :type (array ,element-type ,dimensions)
+                     (,contents :type (acl2::array ,element-type ,dimensions)
                                 ,@(and (not stobj-property)
                                        `(:element-type
                                          ,(if specialize-element-type
