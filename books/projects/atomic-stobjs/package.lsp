@@ -41,6 +41,7 @@
                coupled)
              '(stobj
                absstobj-info
+               current-acl2-world
                formals
                <<))
    '(element-type
@@ -99,4 +100,3 @@
      keys
      keys-set
      )))
-

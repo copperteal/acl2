@@ -224,20 +224,20 @@
                                     (getpropc element-type 'absstobj-info)))
                 (stobj$a-property (and (symbolp element-type)
                                        (cdr (assoc element-type (table-alist 'stobj$a-property (w state))))))
-                (element-recognizer (cond
-                                      (stobj$a-property
-                                       (first (second stobj$a-property)))
-                                      (absstobj-info
-                                       (second (second absstobj-info)))
-                                      (stobj-property
-                                       (caadr stobj-property))))
-                (element-creator (cond
-                                   (stobj$a-property
-                                    (second (second stobj$a-property)))
-                                   (absstobj-info
-                                    (second (third absstobj-info)))
-                                   (stobj-property
-                                    (cdadr stobj-property))))
+                (stobj-recognizer (cond
+                                    (stobj$a-property
+                                     (first (second stobj$a-property)))
+                                    (absstobj-info
+                                     (second (second absstobj-info)))
+                                    (stobj-property
+                                     (caadr stobj-property))))
+                (stobj-creator (cond
+                                 (stobj$a-property
+                                  (second (second stobj$a-property)))
+                                 (absstobj-info
+                                  (second (third absstobj-info)))
+                                 (stobj-property
+                                  (cdadr stobj-property))))
                 (default-value ',default-value)
                 (default-value-name (symbolicate hash-table "*" hash-table "-DEFAULT-VALUE*"))
                 (copyable ',copyable)
@@ -392,10 +392,10 @@
                                                          (t
                                                           `(lambda (key)
                                                              t))))
-                        `(lem-hash-table$c::element-recognizer ,(or element-recognizer
+                        `(lem-hash-table$c::element-recognizer ,(or stobj-recognizer
                                                                     `(lambda (value)
                                                                        ,(typep$transform 'value element-type))))
-                        `(lem-hash-table$c::default-value ,(or element-creator
+                        `(lem-hash-table$c::default-value ,(or stobj-creator
                                                                `(lambda ()
                                                                   ,default-value-name)))
                         `(lem-hash-table$c::contents-recognizer ,contents-recognizer)
@@ -479,8 +479,8 @@
                       (implies ,(if (eq element-type t)
                                     `(,recognizer ,hash-table)
                                     `(and (,recognizer ,hash-table)
-                                          ,(if element-recognizer
-                                               `(,element-recognizer value)
+                                          ,(if stobj-recognizer
+                                               `(,stobj-recognizer value)
                                                (typep$transform 'value element-type))))
                                (,recognizer (,updater key value ,hash-table)))
                       :hints
@@ -540,8 +540,8 @@
                     ,@(and (not (eq element-type t))
                            `((defthm ,typep$-of-accessor
                                (implies (,recognizer ,hash-table)
-                                        ,(if element-recognizer
-                                             `(,element-recognizer (,accessor key ,hash-table))
+                                        ,(if stobj-recognizer
+                                             `(,stobj-recognizer (,accessor key ,hash-table))
                                              (typep$transform `(,accessor key ,hash-table) element-type)))
                                :rule-classes
                                (:rewrite
@@ -556,8 +556,8 @@
 
                     (defthm ,accessor-of-creator
                       (equal (,accessor key (,creator))
-                             ,(if element-creator
-                                  `(,element-creator)
+                             ,(if stobj-creator
+                                  `(,stobj-creator)
                                   default-value-name))
                       :hints
                       (("Goal"
@@ -601,8 +601,8 @@
                     (defthmd ,accessor-when-not-boundp
                       (implies (not (,boundp key ,hash-table))
                                (equal (,accessor key ,hash-table)
-                                      ,(if element-creator
-                                           `(,element-creator)
+                                      ,(if stobj-creator
+                                           `(,stobj-creator)
                                            default-value-name)))
                       :hints
                       (("Goal"
@@ -613,8 +613,8 @@
                     (defthmd ,accessor-of-remover
                       (equal (,accessor %key (,remover key ,hash-table))
                              (if (equal %key key)
-                                 ,(if element-creator
-                                      `(,element-creator)
+                                 ,(if stobj-creator
+                                      `(,stobj-creator)
                                       default-value-name)
                                  (,accessor %key ,hash-table)))
                       :hints
@@ -626,8 +626,8 @@
                     (defthm ,accessor-of-remover-same
                       (implies (equal %key key)
                                (equal (,accessor %key (,remover key ,hash-table))
-                                      ,(if element-creator
-                                           `(,element-creator)
+                                      ,(if stobj-creator
+                                           `(,stobj-creator)
                                            default-value-name)))
                       :hints
                       (("Goal"
