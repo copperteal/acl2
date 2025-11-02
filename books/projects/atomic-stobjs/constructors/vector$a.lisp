@@ -330,6 +330,7 @@
                      (union-theories (current-theory ',vector-begin)
                                      (theory ',vector-theorems)))
                    (in-theory
+                     ;; Ensure `:USE' `VECTOR-EQUAL' automagically works.
                      (enable ,contents-equal))))
 
                 (fi-bindings
@@ -514,6 +515,8 @@
                                   'lem-vector$a::recognizer/fixed{type-prescription})
                              ,@fi-bindings))))
 
+                    ;; TODO: for fixed-length vectors of positive length, add
+                    ;; consp conjunct
                     (defthm ,recognizer{compound-recognizer}
                       (implies (,recognizer ,vector)
                                (true-listp ,vector))
@@ -566,6 +569,9 @@
                                   'lem-vector$a::recognizer/resizable-of-updater/resizable
                                   'lem-vector$a::recognizer/fixed-of-updater/fixed)
                              ,@fi-bindings))))
+
+                    ;; `CREATOR'
+                    ;; TODO: add type prescription rule
 
                     ;; `FIXER'
                     (defthm ,fixer{type-prescription}

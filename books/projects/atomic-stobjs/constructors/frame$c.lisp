@@ -275,14 +275,24 @@
                 (memoizable ',memoizable)
                 (executable ',executable)
 
-                (recognizers ',recognizers)
-                (accessors ',accessors)
-                (updaters ',updaters)
                 (recognizer ',recognizer)
                 (creator ',creator)
                 (fixer ',fixer)
                 (view ',view)
+                (recognizers ',recognizers)
+                (accessors ',accessors)
+                (updaters ',updaters)
 
+                (recognizer-stobj-default (symbolicate frame frame "P"))
+                (recognizer (or recognizer
+                                (symbolicate frame frame (make-predicate-suffix frame))))
+                (creator-stobj-default (symbolicate frame "CREATE-" frame))
+                (creator (or creator
+                             (symbolicate frame "CREATE-" frame)))
+                (fixer (or fixer
+                           (symbolicate frame frame "-FIX")))
+                (view (or view
+                          (symbolicate frame frame "-VIEW")))
                 (recognizer-stobj-defaults (loop$ :for field :in fields
                                                  :collect (symbolicate frame frame "-" field "P")))
                 (recognizers (loop$ :for field :in fields
@@ -301,16 +311,6 @@
                                 :as updater :in updaters
                                 :collect (or updater
                                              (symbolicate frame frame "-" field "-SET"))))
-                (recognizer-stobj-default (symbolicate frame frame "P"))
-                (recognizer (or recognizer
-                                (symbolicate frame frame (make-predicate-suffix frame))))
-                (creator-stobj-default (symbolicate frame "CREATE-" frame))
-                (creator (or creator
-                             (symbolicate frame "CREATE-" frame)))
-                (fixer (or fixer
-                           (symbolicate frame frame "-FIX")))
-                (view (or view
-                          (symbolicate frame frame "-VIEW")))
 
                 (frame-begin (symbolicate frame frame "-BEGIN"))
                 (frame-end (symbolicate frame frame "-END"))
@@ -328,7 +328,11 @@
                                                        :type ,element-type
                                                        ,@(and (not stobj-property)
                                                               `(:initially ,initial-element)))))
-                (doublets (append (loop$ :for recognizer :in recognizers
+                (doublets (append (and (not (eq recognizer recognizer-stobj-default))
+                                       `((,recognizer-stobj-default ,recognizer)))
+                                  (and (not (eq creator creator-stobj-default))
+                                       `((,creator-stobj-default ,creator)))
+                                  (loop$ :for recognizer :in recognizers
                                         :as recognizer-stobj-default :in recognizer-stobj-defaults
                                         :when (not (eq recognizer recognizer-stobj-default))
                                         :collect `(,recognizer-stobj-default ,recognizer))
@@ -339,11 +343,7 @@
                                   (loop$ :for updater :in updaters
                                         :as updater-stobj-default :in updater-stobj-defaults
                                         :when (not (eq updater updater-stobj-default))
-                                        :collect `(,updater-stobj-default ,updater))
-                                  (and (not (eq recognizer recognizer-stobj-default))
-                                       `((,recognizer-stobj-default ,recognizer)))
-                                  (and (not (eq creator creator-stobj-default))
-                                       `((,creator-stobj-default ,creator)))))
+                                        :collect `(,updater-stobj-default ,updater))))
                 (prologue
                  `((deflabel ,frame-begin)
 

@@ -163,7 +163,7 @@
 
 ;;;; `DEFINE-HASH-TABLE$ABS'
 (defmacro define-hash-table$abs
-    (hash-table test
+    (hash-table
      &key
        (logic 'nil)
        (exec 'nil)
@@ -188,7 +188,6 @@
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
-                              (valid-hash-table-test-p test)
                               (symbolp logic)
                               (symbolp exec)
                               (booleanp copyable)
@@ -251,7 +250,6 @@
 
        (make-event
          (let* ((hash-table ',hash-table)
-                (test ',test)
                 (copyable ',copyable)
                 (recognizer ',recognizer)
                 (creator ',creator)
@@ -330,6 +328,7 @@
                 (key-recognizer (second (first (third stobj$a-property))))
                 (val-recognizer (second (second (third stobj$a-property))))
                 (val (first (second (third stobj$a-property))))
+                (test (first (third (third stobj$a-property))))
 
                 (val-stobj-property (getpropc val 'stobj))
 

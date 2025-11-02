@@ -39,15 +39,27 @@
       (not (equal x ""))
       (symbolp x)))
 
-(defun %symbolicate-coerce (expr)
-  (declare (xargs :guard t))
-  (cond
-    ((symbolp expr)
-     (symbol-name expr))
-    ((stringp expr)
-     expr)
-    (t
-     "")))
+(encapsulate ()
+  (local
+    (defthm character-listp-of-explode-nonnegative-integer
+      (equal (character-listp (explode-nonnegative-integer n r ans))
+             (character-listp ans))))
+
+  (local
+    (in-theory
+      (disable explode-nonnegative-integer)))
+
+  (defun %symbolicate-coerce (expr)
+    (declare (xargs :guard t))
+    (cond
+      ((symbolp expr)
+       (symbol-name expr))
+      ((stringp expr)
+       expr)
+      ((natp expr)
+       (coerce (explode-nonnegative-integer expr 10 nil) 'string))
+      (t
+       ""))))
 
 (local
   (thm ; ensure `%SYMBOLICATE-COERCE' is known to return a string
@@ -113,8 +125,9 @@ string, it is taken as a <see topic=\"@(url packages)\">package</see> name.  If
 @('witness') is a symbol, its package name is used.  Otherwise, the
 @('symbolicate') form expands to @('nil').  For each @('expri'), if @('expri')
 is a string, it is preserved; if @('expri') is a symbol, it is replaced by its
-name; otherwise, @('expri') is replaced with the empty string.  After this
-evaluation, @('symbolicate') concatenates the strings resulting from @('expr1
-... exprn') and interns a symbol with that name in the package derived from
-@('witness').  The @('symbolicate') form expands to this symbol (assuming
-@('witness') evaluated to a string or symbol).</p>")
+name; if @('expri') is a non-negative integer, it is converted to a base-10
+string by @(see explode-nonnegative-integer); otherwise, @('expri') is replaced
+with the empty string.  After this evaluation, @('symbolicate') concatenates the
+strings resulting from @('expr1 ... exprn') and interns a symbol with that name
+in the package derived from @('witness').  The @('symbolicate') form expands to
+this symbol (assuming @('witness') evaluated to a string or symbol).</p>")

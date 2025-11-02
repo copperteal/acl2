@@ -333,7 +333,7 @@
                                           (symbolicate hash-table updater-of-key-fixer "-1")
                                           updater-of-key-fixer))
                 (updater-of-val-fixer (if (eq updater-of-key-fixer updater-of-val-fixer)
-                                          (symbolicate hash-table updater-of-val-fixer "-1")
+                                          (symbolicate hash-table updater-of-val-fixer "-2")
                                           updater-of-val-fixer))
                 (updater-of-fixer (symbolicate hash-table updater "-OF-" fixer))
                 (updater-of-accessor (symbolicate hash-table updater "-OF-" accessor))
@@ -495,6 +495,7 @@
                                      (theory ',hash-table-theorems)))
 
                    (in-theory
+                     ;; Ensure `:USE' `HASH-TABLE-EQUAL' automagically works.
                      (enable ,keys-equal
                              ,vals-equal))))
 
@@ -929,6 +930,9 @@
                                       lem-hash-table$a::recognizer/copyable-of-keys-set
                                       ,@fi-bindings))))))
 
+                    ;; `CREATOR'
+                    ;; TODO: add type prescription rule
+
                     ;; `FIXER'
                     (defthm ,fixer{type-prescription}
                       ,(if copyable
@@ -975,6 +979,9 @@
                     ,@(and val-recognizer
                            `((defthm ,val-recognizer-of-accessor
                                (,val-recognizer (,accessor ,key ,hash-table))
+                               :rule-classes
+                               (:rewrite
+                                :type-prescription)
                                :hints
                                (("Goal"
                                  :by (:functional-instance

@@ -71,237 +71,136 @@
 
 
 ;;;; Stobj Values
-(defstobj st/0
-  a/0
-  :inline t
-  :non-memoizable t
-  :non-executable t)
+;; (defstobj st/0
+;;   a/0
+;;   :inline t
+;;   :non-memoizable t
+;;   :non-executable t)
 
-(defthm st/0p-of-create-st/0
-  (st/0p (create-st/0)))
+;; (defthm st/0p-of-create-st/0
+;;   (st/0p (create-st/0)))
 
-(defun create-st/0$a ()
-  (declare (xargs :guard t))
-  '(nil))
+;; (defun create-st/0$a ()
+;;   (declare (xargs :guard t))
+;;   '(nil))
 
-(defthm create-st/0$a{rewrite}
-  (equal (create-st/0$a)
-         (create-st/0)))
+;; (defthm create-st/0$a{rewrite}
+;;   (equal (create-st/0$a)
+;;          (create-st/0)))
 
-(in-theory
-  (disable (:d create-st/0$a)
-           (:e create-st/0$a)))
+;; (in-theory
+;;   (disable (:d create-st/0$a)
+;;            (:e create-st/0$a)))
 
-(defun st/0-fix (x)
-  (declare (xargs :guard t))
-  (if (st/0p x)
-      x
-      (create-st/0$a)))
+;; (defun st/0-fix (x)
+;;   (declare (xargs :guard t))
+;;   (if (st/0p x)
+;;       x
+;;       (create-st/0$a)))
 
-(defthm st/0-fix{rewrite}
-  (equal (st/0-fix x)
-         (if (st/0p x)
-             x
-             (create-st/0))))
+;; (defthm st/0-fix{rewrite}
+;;   (equal (st/0-fix x)
+;;          (if (st/0p x)
+;;              x
+;;              (create-st/0))))
 
-(in-theory
-  (disable (:d create-st/0)
-           (:e create-st/0)))
+;; (in-theory
+;;   (disable (:d create-st/0)
+;;            (:e create-st/0)))
 
-(defstobj st/1
-  a/1
-  :inline t
-  :non-memoizable t
-  :non-executable t)
+;; (defstobj st/1
+;;   a/1
+;;   :inline t
+;;   :non-memoizable t
+;;   :non-executable t)
 
-(defthm st/1p-of-create-st/1
-  (st/1p (create-st/1)))
+;; (defthm st/1p-of-create-st/1
+;;   (st/1p (create-st/1)))
 
-(defun create-st/1$a ()
-  (declare (xargs :guard t))
-  '(nil))
+;; (defun create-st/1$a ()
+;;   (declare (xargs :guard t))
+;;   '(nil))
 
-(defthm create-st/1$a{rewrite}
-  (equal (create-st/1$a)
-         (create-st/1)))
+;; (defthm create-st/1$a{rewrite}
+;;   (equal (create-st/1$a)
+;;          (create-st/1)))
 
-(in-theory
-  (disable (:d create-st/1$a)
-           (:e create-st/1$a)))
+;; (in-theory
+;;   (disable (:d create-st/1$a)
+;;            (:e create-st/1$a)))
 
-(defun st/1-fix (x)
-  (declare (xargs :guard t))
-  (if (st/1p x)
-      x
-      (create-st/1$a)))
+;; (defun st/1-fix (x)
+;;   (declare (xargs :guard t))
+;;   (if (st/1p x)
+;;       x
+;;       (create-st/1$a)))
 
-(defthm st/1-fix{rewrite}
-  (equal (st/1-fix x)
-         (if (st/1p x)
-             x
-             (create-st/1))))
+;; (defthm st/1-fix{rewrite}
+;;   (equal (st/1-fix x)
+;;          (if (st/1p x)
+;;              x
+;;              (create-st/1))))
 
-(in-theory
-  (disable (:d create-st/1)
-           (:e create-st/1)))
+;; (in-theory
+;;   (disable (:d create-st/1)
+;;            (:e create-st/1)))
 
-(defstobj st/2
-  a/2
-  :inline t
-  :non-memoizable t
-  :non-executable t)
+;; (defstobj st/2
+;;   a/2
+;;   :inline t
+;;   :non-memoizable t
+;;   :non-executable t)
 
-(defthm st/2p-of-create-st/2
-  (st/2p (create-st/2)))
+;; (defthm st/2p-of-create-st/2
+;;   (st/2p (create-st/2)))
 
-(defun create-st/2$a ()
-  (declare (xargs :guard t))
-  '(nil))
+;; (defun create-st/2$a ()
+;;   (declare (xargs :guard t))
+;;   '(nil))
 
-(defthm create-st/2$a{rewrite}
-  (equal (create-st/2$a)
-         (create-st/2)))
+;; (defthm create-st/2$a{rewrite}
+;;   (equal (create-st/2$a)
+;;          (create-st/2)))
 
-(in-theory
-  (disable (:d create-st/2$a)
-           (:e create-st/2$a)))
+;; (in-theory
+;;   (disable (:d create-st/2$a)
+;;            (:e create-st/2$a)))
 
-(defun st/2-fix (x)
-  (declare (xargs :guard t))
-  (if (st/2p x)
-      x
-      (create-st/2$a)))
+;; (defun st/2-fix (x)
+;;   (declare (xargs :guard t))
+;;   (if (st/2p x)
+;;       x
+;;       (create-st/2$a)))
 
-(defthm st/2-fix{rewrite}
-  (equal (st/2-fix x)
-         (if (st/2p x)
-             x
-             (create-st/2))))
+;; (defthm st/2-fix{rewrite}
+;;   (equal (st/2-fix x)
+;;          (if (st/2p x)
+;;              x
+;;              (create-st/2))))
 
-(in-theory
-  (disable (:d create-st/2)
-           (:e create-st/2)))
-
-
-(atomic-stobjs::define-frame$a frame/st
-  (f0 :recognizer st/0p
-      :fixer st/0-fix
-      :stobj st/0
-      :initial-element (create-st/0$a))
-  (f1 :recognizer st/1p
-      :fixer st/1-fix
-      :stobj st/1
-      :initial-element (create-st/1$a))
-  (f2 :recognizer st/2p
-      :fixer st/2-fix
-      :stobj st/2
-      :initial-element (create-st/2$a)))
+;; (in-theory
+;;   (disable (:d create-st/2)
+;;            (:e create-st/2)))
 
 
-;;;; `DEFINE-FRAME$A/INSTANCE'
-(defmacro define-frame$a/instance (field)
-  (declare (xargs :guard (symbolp field)))
-  (let* ((witness "ACL2")
-         (field-recognizer (symbolicate witness field '-recognizer))
-         (field-fixer (symbolicate witness field '-fixer))
-         (initial-field (symbolicate witness 'initial- field))
-
-         (booleanp-of-field-recognizer (symbolicate witness 'booleanp-of- field-recognizer))
-         (field-recognizer-of-initial-field (symbolicate witness field-recognizer '-of- initial-field))
-         (field-recognizer-of-field-fixer (symbolicate witness field-recognizer '-of- field-fixer))
-         (field-fixer-when-field-recognizer (symbolicate witness field-fixer '-of- field-recognizer))
-         (field-fixer-when-not-field-recognizer (symbolicate witness field-fixer '-when-not- field-recognizer)))
-    `(encapsulate (((,field-recognizer *) => *)
-                   ((,field-fixer *) => *)
-                   ((,initial-field) => *))
-       (local
-         (defun ,field-recognizer (,field)
-           (declare (xargs :guard t)
-                    (ignore ,field))
-           t))
-
-       (local
-         (defun ,initial-field ()
-           (declare (xargs :guard t))
-           t))
-
-       (local
-         (defun ,field-fixer (,field)
-           (declare (xargs :guard t))
-           (if (,field-recognizer ,field)
-               ,field
-               (,initial-field))))
-
-       (defthm ,booleanp-of-field-recognizer
-         (booleanp (,field-recognizer ,field))
-         :rule-classes
-         (:rewrite
-          :type-prescription))
-
-       (defthm ,field-recognizer-of-initial-field
-         (,field-recognizer (,initial-field)))
-
-       (defthm ,field-recognizer-of-field-fixer
-         (,field-recognizer (,field-fixer ,field)))
-
-       (defthm ,field-fixer-when-field-recognizer
-         (implies (,field-recognizer ,field)
-                  (equal (,field-fixer ,field)
-                         ,field)))
-
-       (defthm ,field-fixer-when-not-field-recognizer
-         (implies (not (,field-recognizer ,field))
-                  (equal (,field-fixer ,field)
-                         (,initial-field)))))))
-
-(define-frame$a/instance f0)
-(define-frame$a/instance f1)
-(define-frame$a/instance f2)
-(define-frame$a/instance f3)
-(define-frame$a/instance f4)
-
-
-;;;; Functional Instances
-(defthm f0-fixer-of-f0-fixer
-  (equal (f0-fixer (f0-fixer f0))
-         (f0-fixer f0)))
-
-(defthm f1-fixer-of-f1-fixer
-  (equal (f1-fixer (f1-fixer f1))
-         (f1-fixer f1)))
-
-(defthm f2-fixer-of-f2-fixer
-  (equal (f2-fixer (f2-fixer f2))
-         (f2-fixer f2)))
-
-(defthm f3-fixer-of-f3-fixer
-  (equal (f3-fixer (f3-fixer f3))
-         (f3-fixer f3)))
-
-(defthm f4-fixer-of-f4-fixer
-  (equal (f4-fixer (f4-fixer f4))
-         (f4-fixer f4)))
-
-(atomic-stobjs::define-frame$a fr$a/0
-  (f0 :recognizer f0-recognizer
-      :fixer f0-fixer
-      :initial-element (initial-f0))
-  (f1 :recognizer f1-recognizer
-      :fixer f1-fixer
-      :initial-element (initial-f1))
-  (f2 :recognizer f2-recognizer
-      :fixer f2-fixer
-      :initial-element (initial-f2))
-  (f3 :recognizer f3-recognizer
-      :fixer f3-fixer
-      :initial-element (initial-f3))
-  (f4 :recognizer f4-recognizer
-      :fixer f4-fixer
-      :initial-element (initial-f4))
-  :testp t)
+;; (atomic-stobjs::define-frame$a frame/st
+;;   (f0 :recognizer st/0p
+;;       :fixer st/0-fix
+;;       :stobj st/0
+;;       :initial-element (create-st/0$a))
+;;   (f1 :recognizer st/1p
+;;       :fixer st/1-fix
+;;       :stobj st/1
+;;       :initial-element (create-st/1$a))
+;;   (f2 :recognizer st/2p
+;;       :fixer st/2-fix
+;;       :stobj st/2
+;;       :initial-element (create-st/2$a)))
 
 
 ;;;; Concrete Tests
+(atomic-stobjs::define-frame$a fr$a/empty)
+
 (atomic-stobjs::define-frame$a fr$a
   (f0 :recognizer natp
       :fixer nfix
@@ -313,7 +212,7 @@
       :fixer string-fix
       :initial-element ""))
 
-(atomic-stobjs::define-frame$a fr$a-big
+(atomic-stobjs::define-frame$a fr$a/big
   (f0) (f1) (f2) (f3)
   (f4) (f5) (f6) (f7)
   (f8) (f9) (f10) (f11)
