@@ -47,6 +47,7 @@
            (null (cdr dimensions)))
       (natp dimensions)))
 
+;; TODO: add a type-prescription rule
 (defthm valid-vector-dimensions-p{compound-recognizer}
 ; TODO: Is this theorem useful?
   (implies (valid-vector-dimensions-p dimensions)
@@ -174,20 +175,20 @@
                                     (getpropc element-type 'absstobj-info)))
                 (stobj$a-property (and (symbolp element-type)
                                        (cdr (assoc element-type (table-alist 'stobj$a-property (w state))))))
-                (element-recognizer (cond
-                                      (stobj$a-property
-                                       (first (second stobj$a-property)))
-                                      (absstobj-info
-                                       (second (second absstobj-info)))
-                                      (stobj-property
-                                       (caadr stobj-property))))
-                (element-creator (cond
-                                   (stobj$a-property
-                                    (second (second stobj$a-property)))
-                                   (absstobj-info
-                                    (second (third absstobj-info)))
-                                   (stobj-property
-                                    (cdadr stobj-property))))
+                (stobj-recognizer (cond
+                                    (stobj$a-property
+                                     (first (second stobj$a-property)))
+                                    (absstobj-info
+                                     (second (second absstobj-info)))
+                                    (stobj-property
+                                     (caadr stobj-property))))
+                (stobj-creator (cond
+                                 (stobj$a-property
+                                  (second (second stobj$a-property)))
+                                 (absstobj-info
+                                  (second (third absstobj-info)))
+                                 (stobj-property
+                                  (cdadr stobj-property))))
                 (specialize-element-type ',specialize-element-type)
                 (initial-element ',initial-element)
                 (initial-element-name (symbolicate vector "*" vector "-INITIAL-ELEMENT*"))
@@ -257,7 +258,7 @@
                 (resizer{rewrite} (symbolicate vector resizer "{REWRITE}"))
 
 ; TODO: Unfold type spec to name `TYPEP$-OF-ACCESSOR'
-                (typep$-of-accessor (symbolicate vector (or element-recognizer "TYPEP$") "-OF-" accessor))
+                (typep$-of-accessor (symbolicate vector (or stobj-recognizer "TYPEP$") "-OF-" accessor))
                 (accessor-of-creator (symbolicate vector accessor "-OF-" creator))
                 (accessor-of-resizer (symbolicate vector accessor "-OF-" resizer))
                 (accessor-of-resizer-inner (symbolicate vector accessor-of-resizer "-INNER"))
@@ -300,10 +301,10 @@
                 (fi-bindings
                  (list `(lem-vector$c::default-length (lambda ()
                                                         ,default-length))
-                       `(lem-vector$c::element-recognizer ,(or element-recognizer
+                       `(lem-vector$c::element-recognizer ,(or stobj-recognizer
                                                                `(lambda (value)
                                                                   ,(typep$transform 'value element-type))))
-                       `(lem-vector$c::initial-element ,(or element-creator
+                       `(lem-vector$c::initial-element ,(or stobj-creator
                                                             `(lambda ()
                                                                ,initial-element-name)))
                        `(lem-vector$c::contents-recognizer ,contents-recognizer)
@@ -327,7 +328,7 @@
 
                 (body
                  `(with-books (("projects/atomic-stobjs/lemmas/vector$c" :dir :system))
-                    (local
+                    (local ; TODO: use crafted extension of minimal theory
                       (in-theory
                         (disable make-list-ac
                                  (:e make-list-ac))))
@@ -403,8 +404,8 @@
                                                   `(,length ,vector)
                                                   default-length-name))
                                     ,@(and (not (eq element-type t))
-                                           (if element-recognizer
-                                               `((,element-recognizer value))
+                                           (if stobj-recognizer
+                                               `((,stobj-recognizer value))
                                                `(,(typep$transform 'value element-type))))
                                     (,recognizer ,vector))
                                (,recognizer (,updater index value ,vector)))
@@ -591,8 +592,8 @@
                                                            `(,length ,vector)
                                                            default-length-name))
                                              (,recognizer ,vector))
-                                        ,(if element-recognizer
-                                             `(,element-recognizer (,accessor index ,vector))
+                                        ,(if stobj-recognizer
+                                             `(,stobj-recognizer (,accessor index ,vector))
 ; TODO: Check if `TYPEP$-OF-ACCESSOR' fails for member, unsigned-byte, or
 ; signed-byte.
                                              (typep$transform `(,accessor index ,vector) element-type)))
@@ -611,8 +612,8 @@
                       (implies (and (natp index)
                                     (< index ,default-length-name))
                                (equal (,accessor index (,creator))
-                                      ,(if element-creator
-                                           `(,element-creator)
+                                      ,(if stobj-creator
+                                           `(,stobj-creator)
                                            initial-element-name)))
                       :hints
                       (("Goal"
@@ -628,8 +629,8 @@
                                         (equal (,accessor index (,resizer length ,vector))
                                                (if (< index (,length ,vector))
                                                    (,accessor index ,vector)
-                                                   ,(if element-creator
-                                                        `(,element-creator)
+                                                   ,(if stobj-creator
+                                                        `(,stobj-creator)
                                                         initial-element-name))))
                                :hints
                                (("Goal"
@@ -656,8 +657,8 @@
                                              (< index length)
                                              (<= (,length ,vector) index))
                                         (equal (,accessor index (,resizer length ,vector))
-                                               ,(if element-creator
-                                                    `(,element-creator)
+                                               ,(if stobj-creator
+                                                    `(,stobj-creator)
                                                     initial-element-name)))
                                :hints
                                (("Goal"
@@ -715,8 +716,8 @@
                              ,@fi-bindings))))
 
                     (defthm ,updater-of-creator
-                      (implies (and (equal value ,(if element-creator
-                                                      `(,element-creator)
+                      (implies (and (equal value ,(if stobj-creator
+                                                      `(,stobj-creator)
                                                       initial-element-name))
                                     (natp index)
                                     (< index ,default-length-name))
@@ -735,8 +736,8 @@
                                              (< index length)
                                              (equal value (if (< index (,length ,vector))
                                                               (,accessor index ,vector)
-                                                              ,(if element-creator
-                                                                   `(,element-creator)
+                                                              ,(if stobj-creator
+                                                                   `(,stobj-creator)
                                                                    initial-element-name))))
                                         (equal (,updater index value (,resizer length ,vector))
                                                (,resizer length ,vector)))
@@ -761,8 +762,8 @@
                                       ,@fi-bindings))))
 
                              (defthm ,updater-of-resizer-outer
-                               (implies (and (equal value ,(if element-creator
-                                                               `(,element-creator)
+                               (implies (and (equal value ,(if stobj-creator
+                                                               `(,stobj-creator)
                                                                initial-element-name))
                                              (natp index)
                                              (natp length)
