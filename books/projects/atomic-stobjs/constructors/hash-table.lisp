@@ -262,13 +262,13 @@
                 :debug ,debug)
 
               (define-hash-table$corr ,hash-table
-                  :logic ,hash-table$a
-                  :exec ,hash-table$c
-                  ,@(and ,copyable-supplied-p
-                         `(:copyable ,copyable))
-                  :debug ,debug)
+                :logic ,hash-table$a
+                :exec ,hash-table$c
+                ,@(and ,copyable-supplied-p
+                       `(:copyable ,copyable))
+                :debug ,debug)
 
-              (define-hash-table$abs ,hash-table ,test
+              (define-hash-table$abs ,hash-table
                 :logic ,hash-table$a
                 :exec ,hash-table$c
                 :copyable ,copyable

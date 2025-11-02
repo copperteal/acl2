@@ -27,7 +27,7 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "ACL2") ; TODO: delete?
 (set-verify-guards-eagerness 2)
 
 ;;; `HONS-REMOVE-DUPLICATES'
