@@ -126,7 +126,7 @@ string, it is taken as a <see topic=\"@(url packages)\">package</see> name.  If
 @('symbolicate') form expands to @('nil').  For each @('expri'), if @('expri')
 is a string, it is preserved; if @('expri') is a symbol, it is replaced by its
 name; if @('expri') is a non-negative integer, it is converted to a base-10
-string by @(see explode-nonnegative-integer); otherwise, @('expri') is replaced
+string by @(tsee explode-nonnegative-integer); otherwise, @('expri') is replaced
 with the empty string.  After this evaluation, @('symbolicate') concatenates the
 strings resulting from @('expr1 ... exprn') and interns a symbol with that name
 in the package derived from @('witness').  The @('symbolicate') form expands to
