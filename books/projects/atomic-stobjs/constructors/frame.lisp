@@ -38,9 +38,7 @@
 ||#
 
 (include-book "../type-spec")
-(include-book "../accessors/top")
 (include-book "../utilities/top")
-(include-book "copy")
 (include-book "frame$c")
 (include-book "frame$a")
 (include-book "frame$abs")

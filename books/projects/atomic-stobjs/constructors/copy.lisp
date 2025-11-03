@@ -32,7 +32,6 @@
 
 (include-book "std/osets/top" :dir :system) ; TODO: remove?
 
-(include-book "../accessors/top")
 (include-book "../utilities/top")
 
 (deflabel stobj-copy-begin)
