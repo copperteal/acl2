@@ -76,7 +76,8 @@
       (enable double-containment
               pick-a-point-subset-strategy)))
 
-  ;; TODO: Make "example usage" of std/osets using this theorem.
+  ;; TODO: Make "example usage" of std/osets using this theorem and add to std
+  ;; lib XDOC.
   (defthm delete-of-insert-diff
     (implies (not (equal a b))
              (equal (delete a (insert b x))
