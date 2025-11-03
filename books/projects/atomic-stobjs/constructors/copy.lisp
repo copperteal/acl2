@@ -58,7 +58,7 @@
   `(getprop ,stobj
             'copier
             nil
-            'acl2::current-acl2-world
+            'current-acl2-world
             (stobj-copier-alist (w state))))
 
 (defmacro stobj-copier{rewrite} (stobj)
@@ -66,7 +66,7 @@
   `(getprop ,stobj
             'copier{rewrite}
             nil
-            'acl2::current-acl2-world
+            'current-acl2-world
             (stobj-copier-alist (w state))))
 
 (defun stobj-coupled-alist (world)
@@ -80,7 +80,7 @@
   `(getprop ,stobj
             'coupled
             nil
-            'acl2::current-acl2-world
+            'current-acl2-world
             (stobj-coupled-alist (w state))))
 
 (defun make-vector-copy-events (stobj$a %stobj stobj state)
@@ -1076,12 +1076,12 @@
          (stobj$a-lookup-alist (stobj$a-lookup-alist world))
          (stobjs$a (loop$ :for stobj :in stobjs
                          :collect (getprop stobj 'stobj$a
-                                           nil 'acl2::current-acl2-world
+                                           nil 'current-acl2-world
                                            stobj$a-lookup-alist)))
          (stobj$a-property-alist (stobj$a-property-alist world))
          (stobj$a-properties (loop$ :for stobj$a :in stobjs$a
                                    :collect (getprop stobj$a 'stobj$a
-                                                     nil 'acl2::current-acl2-world
+                                                     nil 'current-acl2-world
                                                      stobj$a-property-alist)))
          (field-recognizers$a (loop$ :for stobj$a :in stobjs$a
                                     :as recognizer :in field-recognizers

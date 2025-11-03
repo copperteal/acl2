@@ -609,6 +609,8 @@
                                       (,creator))
                            :exec ,frame))
 
+                    (table fixer ',frame ',fixer)
+
                     (with-books (("std/lists/nth" :dir :system))
                       (defthm ,fixer{rewrite}
                         (equal (,fixer ,frame)
