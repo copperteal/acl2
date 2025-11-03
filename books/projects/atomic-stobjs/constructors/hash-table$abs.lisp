@@ -158,7 +158,11 @@
                      (= (,count$c ,hash-table$c)
                         (,count$a ,hash-table$a))
                      (,hash-table$corr-keys ,hash-table$c ,hash-table$a)
-                     (,hash-table$corr-vals ,hash-table$c ,hash-table$a)))))))))
+                     (,hash-table$corr-vals ,hash-table$c ,hash-table$a)))
+
+              (table corr ',hash-table ',(list hash-table$corr-keys
+                                               hash-table$corr-vals
+                                               hash-table$corr))))))))
 
 
 ;;;; `DEFINE-HASH-TABLE$ABS'
@@ -266,13 +270,13 @@
                 (keys-set ',keys-set)
                 (executable ',executable)
 
-; TODO: get these from a table
-                (hash-table$corr (symbolicate hash-table hash-table "$CORR"))
-                (hash-table$corr-keys (symbolicate hash-table hash-table$corr "-KEYS"))
-                (hash-table$corr-vals (symbolicate hash-table hash-table$corr "-VALS"))
+                (world (w state))
+                (hash-table$corr-list (cdr (assoc hash-table (table-alist 'corr world))))
+                (hash-table$corr-keys (first hash-table$corr-list))
+                (hash-table$corr-vals (second hash-table$corr-list))
+                (hash-table$corr (third hash-table$corr-list))
 
                 (hash-table$c ',hash-table$c)
-                (world (w state))
                 (stobj-property (getpropc hash-table$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))

@@ -29,6 +29,7 @@
 
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
+; HERE: consolidate notes and TODOs
 
 (include-book "std/osets/top" :dir :system) ; TODO: remove?
 

@@ -96,7 +96,10 @@
                      (= (,length$c ,vector$c)
                         (,length$a ,vector$a))
                      (,vector$corr-contents ,vector$c
-                                            ,vector$a)))))))))
+                                            ,vector$a)))
+
+              (table corr ',vector ',(list vector$corr-contents
+                                           vector$corr))))))))
 
 
 ;;;; `DEFINE-VECTOR$ABS'
@@ -168,12 +171,12 @@
                 (updater ',updater)
                 (executable ',executable)
 
-; TODO: lookup `VECTOR$CORR' and `VECTOR$CORR-CONTENTS' from table.
-                (vector$corr (symbolicate vector vector "$CORR"))
-                (vector$corr-contents (symbolicate vector vector$corr "-CONTENTS"))
+                (world (w state))
+                (vector$corr-list (cdr (assoc vector (table-alist 'corr world))))
+                (vector$corr-contents (first vector$corr-list))
+                (vector$corr (second vector$corr-list))
 
                 (vector$c ',vector$c)
-                (world (w state))
                 (stobj-property (getpropc vector$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))
