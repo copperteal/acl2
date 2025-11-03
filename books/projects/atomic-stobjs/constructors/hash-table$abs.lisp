@@ -76,10 +76,10 @@
                               (symbolp exec)
                               (booleanp copyable)
                               (booleanp debug))))
-  (let* ((hash-table$a (or logic
-                           (symbolicate hash-table hash-table "$A")))
-         (hash-table$c (or exec
-                           (symbolicate hash-table hash-table "$C"))))
+  (let ((hash-table$a (or logic
+                          (symbolicate hash-table hash-table "$A")))
+        (hash-table$c (or exec
+                          (symbolicate hash-table hash-table "$C"))))
 
     `(with-output
        ,@(and (not debug)
@@ -272,11 +272,12 @@
                 (hash-table$corr-vals (symbolicate hash-table hash-table$corr "-VALS"))
 
                 (hash-table$c ',hash-table$c)
+                (world (w state))
                 (stobj-property (getpropc hash-table$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))
-                (fixer$c (cdr (assoc hash-table$c (table-alist 'fixer (w state)))))
-                (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table (w state))))
+                (fixer$c (cdr (assoc hash-table$c (table-alist 'fixer world))))
+                (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
                                     fixer$c))
                 (accessor$c (if copyable
                                 (third (third stobj-property))
@@ -297,10 +298,10 @@
                              (eighth (third stobj-property))
                              (seventh (third stobj-property))))
                 (clear$c (if copyable
-                             (cdr (assoc hash-table$c (table-alist 'clear (w state))))
+                             (cdr (assoc hash-table$c (table-alist 'clear world)))
                              (eighth (third stobj-property))))
                 (init$c (if copyable
-                            (cdr (assoc hash-table$c (table-alist 'init (w state))))
+                            (cdr (assoc hash-table$c (table-alist 'init world)))
                             (ninth (third stobj-property))))
                 (keys$c (and copyable
                              (nth 10 (third stobj-property))))
@@ -308,7 +309,7 @@
                                  (nth 11 (third stobj-property))))
 
                 (hash-table$a ',hash-table$a)
-                (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a-property (w state)))))
+                (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a-property world))))
                 (recognizer$a (first (second stobj$a-property)))
                 (creator$a (second (second stobj$a-property)))
                 (fixer$a (third (second stobj$a-property)))
@@ -389,7 +390,7 @@
                                                :exec ,keys-set$c)))))
 
                 (updater$c-guard
-                 (cdr (untranslate (getpropc updater$c 'guard) nil (w state))))
+                 (cdr (untranslate (getpropc updater$c 'guard) nil world)))
                 (updater$c-guard (if val-stobj-property
                                      (cddr updater$c-guard)
                                      (cdr updater$c-guard)))

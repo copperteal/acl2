@@ -140,9 +140,10 @@
                              (symbolicate "LEM-VECTOR$A" "V")))
                 (%element (or ',%element
                               (symbolicate element "%" element)))
+                (world (w state))
                 (stobj-property (getpropc element 'stobj))
                 (absstobj-info (getpropc element 'absstobj-info))
-                (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property (w state)))))
+                (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
                 (element-recognizer (cond
                                       (',element-recognizer-supplied-p
                                        ',element-recognizer)
@@ -165,7 +166,7 @@
                                  (stobj$a-property
                                   (third (second stobj$a-property)))
                                  (t
-                                  (cdr (assoc element (table-alist 'fixer (w state)))))))
+                                  (cdr (assoc element (table-alist 'fixer world))))))
                 (initial-element-name (symbolicate vector "*" vector "-INITIAL-ELEMENT*"))
                 (initial-element (if element-creator
                                      `(,element-creator)

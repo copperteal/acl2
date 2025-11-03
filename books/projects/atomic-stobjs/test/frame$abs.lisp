@@ -29,6 +29,8 @@
 
 (in-package "ACL2")
 
+(include-book "../constructors/frame$c")
+(include-book "../constructors/frame$a")
 (include-book "../constructors/frame$abs")
 
 (defun symbol-fix (x)
