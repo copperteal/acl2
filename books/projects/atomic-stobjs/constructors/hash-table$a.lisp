@@ -191,9 +191,10 @@
                          (symbolicate "LEM-HASH-TABLE$A" "V")))
                 (%val (or ',%val
                           (symbolicate val "%" val)))
+                (world (w state))
                 (stobj-property (getpropc val 'stobj))
                 (absstobj-info (getpropc val 'absstobj-info))
-                (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property (w state)))))
+                (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
                 (val-recognizer (cond
                                   (',val-recognizer-supplied-p
                                    ',val-recognizer)
@@ -216,7 +217,7 @@
                              (stobj$a-property
                               (third (second stobj$a-property)))
                              (t
-                              (cdr (assoc val (table-alist 'fixer (w state)))))))
+                              (cdr (assoc val (table-alist 'fixer world))))))
                 (default-val-name (symbolicate hash-table "*" hash-table "-DEFAULT-VAL*"))
                 (default-val (if val-creator
                                  `(,val-creator)

@@ -44,10 +44,10 @@
                               (symbolp logic)
                               (symbolp exec)
                               (booleanp debug))))
-  (let* ((vector$a (or logic
-                       (symbolicate vector vector "$A")))
-         (vector$c (or exec
-                       (symbolicate vector vector "$C"))))
+  (let ((vector$a (or logic
+                      (symbolicate vector vector "$A")))
+        (vector$c (or exec
+                      (symbolicate vector vector "$C"))))
 
     `(with-output
        ,@(and (not debug)
@@ -173,11 +173,12 @@
                 (vector$corr-contents (symbolicate vector vector$corr "-CONTENTS"))
 
                 (vector$c ',vector$c)
+                (world (w state))
                 (stobj-property (getpropc vector$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))
-                (fixer$c (cdr (assoc vector$c (table-alist 'fixer (w state)))))
-                (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table (w state))))
+                (fixer$c (cdr (assoc vector$c (table-alist 'fixer world))))
+                (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
                                     fixer$c))
                 (length$c (second (third stobj-property)))
                 (resizer$c (third (third stobj-property)))
@@ -185,7 +186,7 @@
                 (updater$c (fifth (third stobj-property)))
 
                 (vector$a ',vector$a)
-                (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a-property (w state)))))
+                (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a-property world))))
                 (recognizer$a (first (second stobj$a-property)))
                 (creator$a (second (second stobj$a-property)))
                 (fixer$a (third (second stobj$a-property)))
@@ -227,7 +228,7 @@
                                      :exec ,updater$c)))
 
                 (updater$c-guard
-                 (cdr (untranslate (getpropc updater$c 'guard) nil (w state))))
+                 (cdr (untranslate (getpropc updater$c 'guard) nil world)))
                 (updater$c-guard (if element-stobj-property
                                      (cddr updater$c-guard)
                                      (cdr updater$c-guard)))
