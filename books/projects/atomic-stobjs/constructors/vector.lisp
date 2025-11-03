@@ -203,8 +203,4 @@
                 :updater ,updater
                 ,@(and ,executable-supplied-p
                        `(:executable ,executable))
-                :debug ,debug)
-
-; TODO: pull theory name from table
-              (in-theory
-                (disable ,(symbolicate vector$c vector$c "-THEOREMS")))))))))
+                :debug ,debug)))))))
