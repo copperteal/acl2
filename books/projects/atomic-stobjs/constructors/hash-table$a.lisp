@@ -931,9 +931,6 @@
                                       lem-hash-table$a::recognizer/copyable-of-keys-set
                                       ,@fi-bindings))))))
 
-                    ;; `CREATOR'
-                    ;; TODO: add type prescription rule
-
                     ;; `FIXER'
                     (defthm ,fixer{type-prescription}
                       ,(if copyable

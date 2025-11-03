@@ -316,8 +316,6 @@
                 (recognizer-of-creator (symbolicate frame recognizer "-OF-" creator))
                 (recognizer-of-view (symbolicate frame recognizer "-OF-" view))
 
-                (creator{type-prescription} (symbolicate frame creator "{TYPE-PRESCRIPTION}"))
-
                 (fixer{rewrite} (symbolicate frame fixer "{REWRITE}"))
                 (fixer-when-recognizer (symbolicate frame fixer "-WHEN-" recognizer))
                 (fixer-when-not-recognizer (symbolicate frame fixer "-WHEN-NOT-" recognizer))
@@ -521,14 +519,6 @@
 
                     (defthm ,recognizer-of-view
                       (,recognizer (,view ,@fields ,frame)))
-
-                    ;; `CREATOR'
-                    (defthm ,creator{type-prescription}
-                      ,(if (null fields)
-                           `(null (,creator))
-                           `(and (consp (,creator))
-                                 (true-listp (,creator))))
-                      :rule-classes :type-prescription)
 
                     ;; `FIXER'
                     (with-books (("std/lists/nth" :dir :system))
