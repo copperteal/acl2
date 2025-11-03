@@ -305,27 +305,28 @@
                       '(,contents-equal)))
 
                    (deftheory-static ,vector-aggressive
-                     ',(append (list fixer
-                                     accessor-when-large
-                                     accessor-when-not-natp
-                                     accessor-when-not-recognizer
-                                     accessor-of-updater
-                                     updater-when-large
-                                     updater-when-not-natp
-                                     updater-when-not-recognizer
-                                     updater-of-accessor-free
-                                     updater-of-updater)
-                               (and resizable
-                                    (list length-when-not-recognizer
-                                          resizer-when-not-natp
-                                          resizer-when-not-recognizer
-                                          resizer-of-length-free
-                                          resizer-of-resizer{case-split}
-                                          resizer-of-updater
-                                          accessor-of-resizer{case-split}
-                                          updater-of-resizer{case-split}))
-                               (and element-recognizer
-                                    (list updater-when-not-element-recognizer))))
+                     ',(append
+                        (list fixer
+                              accessor-when-large
+                              accessor-when-not-natp
+                              accessor-when-not-recognizer
+                              accessor-of-updater
+                              updater-when-large
+                              updater-when-not-natp
+                              updater-when-not-recognizer
+                              updater-of-accessor-free
+                              updater-of-updater)
+                        (and resizable
+                             (list length-when-not-recognizer
+                                   resizer-when-not-natp
+                                   resizer-when-not-recognizer
+                                   resizer-of-length-free
+                                   resizer-of-resizer{case-split}
+                                   resizer-of-updater
+                                   accessor-of-resizer{case-split}
+                                   updater-of-resizer{case-split}))
+                        (and element-recognizer
+                             (list updater-when-not-element-recognizer))))
 
                    (in-theory
                      (union-theories (current-theory ',vector-begin)

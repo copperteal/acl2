@@ -355,7 +355,8 @@
 
                    (deftheory-static ,frame-aggressive
                      ',(append
-                        (list view-collapse)
+                        (list fixer
+                              view-collapse)
                         (loop$ :for i :from 1 :to (len fields)
                               :as recognizer :in recognizers
                               :when recognizer
