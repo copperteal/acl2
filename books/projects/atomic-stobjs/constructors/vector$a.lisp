@@ -571,9 +571,6 @@
                                   'lem-vector$a::recognizer/fixed-of-updater/fixed)
                              ,@fi-bindings))))
 
-                    ;; `CREATOR'
-                    ;; TODO: add type prescription rule
-
                     ;; `FIXER'
                     (defthm ,fixer{type-prescription}
                       (true-listp (,fixer ,vector))
