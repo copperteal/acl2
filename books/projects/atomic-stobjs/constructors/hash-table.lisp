@@ -284,7 +284,4 @@
                                :keys-set ,keys-set))
                 ,@(and ,executable-supplied-p
                        `(:executable ,executable))
-                :debug ,debug)
-
-              (in-theory
-                (disable ,(symbolicate hash-table$c hash-table$c "-THEOREMS")))))))))
+                :debug ,debug)))))))
