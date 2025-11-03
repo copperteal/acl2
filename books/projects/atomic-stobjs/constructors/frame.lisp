@@ -31,10 +31,8 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-;;; cert.pl
 #||
-(include-book "std/top" :dir :system)
-(include-book "../lemmas/top")
+(include-book "std/lists/top" :dir :system)
 ||#
 
 (include-book "../type-spec")
@@ -43,14 +41,8 @@
 (include-book "frame$a")
 (include-book "frame$abs")
 
-(defthm symbol-list-listp{compound-recognizer}
-  ;; TODO: move this. where?
-  (implies (symbol-list-listp x)
-           (true-listp x))
-  :rule-classes :compound-recognizer)
-
-(deflabel define-frame-begin)
-
+
+;;;; Constants
 (defconst *field-keywords*
   '(:element-type :recognizer :fixer :stobj
     :initial-element :accessor :updater))
@@ -61,44 +53,15 @@
     :logic :exec :debug))
 
 
-(defun make-doublets (x y) ; TODO: move this, where?
-  (declare (xargs :guard t))
-  (and (consp x)
-       (consp y)
-       (cons (list (car x) (car y))
-             (make-doublets (cdr x) (cdr y)))))
-
-(defun make-doublets-x1 (x1 list) ; TODO: move this, where?
-  (declare (xargs :guard t))
-  (and (consp list)
-       (cons (list x1 (car list))
-             (make-doublets-x1 x1 (cdr list)))))
-
-(defun make-doublets-x2 (list x2) ; TODO: move this, where?
-  (declare (xargs :guard t))
-  (and (consp list)
-       (cons (list (car list) x2)
-             (make-doublets-x2 (cdr list) x2))))
-
-
-(defun make-rewrite-corollaries (clauses)
-  ;; TODO: move this. where?
-  (declare (xargs :guard (true-listp clauses)))
-  (and (consp clauses)
-       (cons (list :rewrite :corollary (car clauses))
-             (make-rewrite-corollaries (cdr clauses)))))
-
-
-;;;; `VALID-FRAME' Predicates
-(defun valid-frame-descriptor-p (descriptor)
+;;;; `DEFINE-FRAME' Predicates
+(defun frame-descriptor-p (descriptor)
   (declare (xargs :guard t))
   (and (consp descriptor)
        (let ((name (car descriptor))
              (kvl (cdr descriptor)))
          (and (symbolp name)
               (keyword-value-listp kvl)
-              (subsetp (evens kvl) *field-keywords*
-                       :test 'eq)
+              (subsetp (evens kvl) *field-keywords* :test 'eq)
               (let ((element-type (assoc-keyword :element-type kvl))
                     (recognizer (cadr (assoc-keyword :recognizer kvl)))
                     (fixer (cadr (assoc-keyword :fixer kvl)))
@@ -121,15 +84,21 @@
                      (symbolp accessor)
                      (symbolp updater)))))))
 
-(defun valid-frame-body-p (body)
+(defun frame-descriptor-list-p (fds)
+  (declare (xargs :guard t))
+  (if (atom fds)
+      (null fds)
+      (and (frame-descriptor-p (car fds))
+           (frame-descriptor-list-p (cdr fds)))))
+
+(defun frame-body-p (body)
   (declare (xargs :guard t))
   (and (true-listp body)
        (if (consp (car body))
-           (and (valid-frame-descriptor-p (car body))
-                (valid-frame-body-p (cdr body)))
+           (and (frame-descriptor-p (car body))
+                (frame-body-p (cdr body)))
            (and (keyword-value-listp body)
-                (subsetp (evens body) *body-keywords*
-                         :test 'eq)
+                (subsetp (evens body) *body-keywords* :test 'eq)
                 (let ((inline (cadr (assoc-keyword :inline body)))
                       (memoizable (cadr (assoc-keyword :memoizable body)))
                       (executable (cadr (assoc-keyword :executable body)))
@@ -149,77 +118,113 @@
                        (symbolp exec)
                        (booleanp debug)))))))
 
-(defun valid-frame-form-p (form)
+(defthm frame-body-p-when-frame-descriptor-list-p
+  (implies (frame-descriptor-list-p fds)
+           (frame-body-p fds))
+  :hints
+  (("Goal"
+    :induct (len fds))))
+
+(defun frame-form-p (form)
   (declare (xargs :guard t))
   (and (true-listp form)
        (eq (car form) 'define-frame)
        (symbolp (cadr form))
-       (valid-frame-body-p (cddr form))))
+       (frame-body-p (cddr form))))
 
 
-;;;; Parse `DEFINE-FRAME' Forms
-(defun split-body (body)
-  (declare (xargs :guard (valid-frame-body-p body)))
-  (cond
-    ((atom body)
-     (mv nil nil))
-    ((atom (car body))
-     (mv nil body))
-    (t
-     (mv-let (fds kvl)
-             (split-body (cdr body))
-       (mv (cons (car body) fds) kvl)))))
+;;;; `DEFINE-FRAME' Parser
+(with-books (("std/lists/rev" :dir :system))
+  (defun split-body (fds body)
+    (declare (xargs :guard (and (frame-descriptor-list-p fds)
+                                (frame-body-p body))))
+    (if (or (atom body)
+            (atom (car body)))
+        (mv (reverse fds) body)
+        (split-body (cons (car body) fds) (cdr body))))
 
-(defun parse-fds (frame fds)
-  (declare (xargs :guard (and (symbolp frame)
-                              (valid-frame-body-p fds)
-                              (alistp fds))))
-  (if (consp fds)
-      (mv-let (fields element-types recognizers fixers stobjs
-                      initial-elements accessors updaters)
-              (parse-fds frame (cdr fds))
-        (let* ((descriptor (car fds))
-               (field (car descriptor))
-               (kvl (cdr descriptor))
-               (element-type-supplied (assoc-keyword :element-type kvl))
-               (element-type (if element-type-supplied
-                                 (cadr element-type-supplied)
-                                 't))
-               (recognizer (cadr (assoc-keyword :recognizer kvl)))
-               (fixer (cadr (assoc-keyword :fixer kvl)))
-               (stobj (cadr (assoc-keyword :stobj kvl)))
-               (initial-element (cadr (assoc-keyword :initial-element kvl)))
-               (accessor (or (cadr (assoc-keyword :accessor kvl))
-                             (symbolicate frame frame '- field)))
-               (updater (or (cadr (assoc-keyword :updater kvl))
-                            (symbolicate frame frame '- field '-set))))
-          (mv (cons field fields)
-              (cons element-type element-types)
-              (cons recognizer recognizers)
-              (cons fixer fixers)
-              (cons stobj stobjs)
-              (cons initial-element initial-elements)
-              (cons accessor accessors)
-              (cons updater updaters))))
-      (mv nil nil nil nil
-          nil nil nil nil)))
+  (local
+    (defthm frame-descriptor-list-p-of-rev
+      (implies (frame-descriptor-list-p fds)
+               (frame-descriptor-list-p (acl2::rev fds)))
+      :hints
+      (("Goal"
+        :in-theory (disable frame-descriptor-p)))))
 
-(defun parse-kvl (frame kvl)
-  (declare (xargs :guard (and (symbolp frame)
-                              (valid-frame-body-p kvl)
+  (defthm split-body-values
+    (implies (and (frame-descriptor-list-p fds)
+                  (frame-body-p body))
+             (mv-let (fds kvl)
+                     (split-body fds body)
+               (and (frame-descriptor-list-p fds)
+                    (frame-body-p kvl)
+                    (keyword-value-listp kvl))))))
+
+(defun parse-fds (fds fields element-types element-type-supplies
+                  recognizers fixers stobjs
+                  initial-elements initial-element-supplies
+                  accessors updaters)
+  (declare (xargs :guard (and (frame-descriptor-list-p fds)
+                              (symbol-listp fields)
+                              (true-listp element-types)
+                              (boolean-listp element-type-supplies)
+                              (symbol-listp recognizers)
+                              (symbol-listp fixers)
+                              (symbol-listp stobjs)
+                              (true-listp initial-elements)
+                              (boolean-listp initial-element-supplies)
+                              (symbol-listp accessors)
+                              (symbol-listp updaters))))
+  (if (atom fds)
+      (mv (reverse fields)
+          (reverse element-types)
+          (reverse element-type-supplies)
+          (reverse recognizers)
+          (reverse fixers)
+          (reverse stobjs)
+          (reverse initial-elements)
+          (reverse initial-element-supplies)
+          (reverse accessors)
+          (reverse updaters))
+      (let* ((descriptor (car fds))
+             (field (car descriptor))
+             (kvl (cdr descriptor))
+             (element-type (assoc-keyword :element-type kvl))
+             (element-type-supplied-p (and element-type
+                                           t))
+             (element-type (if element-type
+                               (cadr element-type)
+                               't))
+             (recognizer (cadr (assoc-keyword :recognizer kvl)))
+             (fixer (cadr (assoc-keyword :fixer kvl)))
+             (stobj (cadr (assoc-keyword :stobj kvl)))
+             (initial-element (assoc-keyword :initial-element kvl))
+             (initial-element-supplied-p (and initial-element
+                                              t))
+             (initial-element (cadr initial-element))
+             (accessor (cadr (assoc-keyword :accessor kvl)))
+             (updater (cadr (assoc-keyword :updater kvl))))
+        (parse-fds (cdr fds)
+                   (cons field fields)
+                   (cons element-type element-types)
+                   (cons element-type-supplied-p element-type-supplies)
+                   (cons recognizer recognizers)
+                   (cons fixer fixers)
+                   (cons stobj stobjs)
+                   (cons initial-element initial-elements)
+                   (cons initial-element-supplied-p initial-element-supplies)
+                   (cons accessor accessors)
+                   (cons updater updaters)))))
+
+(defun parse-kvl (kvl)
+  (declare (xargs :guard (and (frame-body-p kvl)
                               (keyword-value-listp kvl))))
-  (let* ((inline-supplied (assoc-keyword :inline kvl))
-         (inline (if inline-supplied
-                     (cadr inline-supplied)
-                     'nil))
+  (let* ((inline (cadr (assoc-keyword :inline kvl)))
          (memoizable (cadr (assoc-keyword :memoizable kvl)))
          (executable (cadr (assoc-keyword :executable kvl)))
-         (recognizer (or (cadr (assoc-keyword :recognizer kvl))
-                         (symbolicate frame frame (make-predicate-suffix frame))))
-         (creator (or (cadr (assoc-keyword :creator kvl))
-                      (symbolicate frame 'create- frame)))
-         (fixer (or (cadr (assoc-keyword :fixer kvl))
-                    (symbolicate frame frame '-fix)))
+         (recognizer (cadr (assoc-keyword :recognizer kvl)))
+         (creator (cadr (assoc-keyword :creator kvl)))
+         (fixer (cadr (assoc-keyword :fixer kvl)))
          (logic (cadr (assoc-keyword :logic kvl)))
          (exec (cadr (assoc-keyword :exec kvl)))
          (debug (cadr (assoc-keyword :debug kvl))))
@@ -228,85 +233,50 @@
         logic exec debug)))
 
 (defun parse-form (form)
-  (declare (xargs :guard (valid-frame-form-p form)))
-  (let ((frame (cadr form))
-        (body (cddr form)))
+  (declare (xargs :guard (frame-form-p form)))
+  (let ((body (cddr form)))
     (mv-let (fds kvl)
-            (split-body body)
-      (mv-let (inline memoizable executable
-                      recognizer creator fixer
-                      logic exec debug)
-              (parse-kvl frame kvl)
-        (mv-let (fields element-types recognizers fixers stobjs
-                        initial-elements accessors updaters)
-                (parse-fds frame fds)
-          (mv recognizer creator fixer
-              fields element-types recognizers fixers stobjs
-              initial-elements accessors updaters
+            (split-body () body)
+      (mv-let (fields element-types element-type-supplies
+                      recognizers fixers stobjs
+                      initial-elements initial-element-supplies
+                      accessors updaters)
+              (parse-fds fds () () () () () () () () () ())
+        (mv-let (inline memoizable executable
+                        recognizer creator fixer
+                        logic exec debug)
+                (parse-kvl kvl)
+          (mv fields element-types element-type-supplies
+              recognizers fixers stobjs
+              initial-elements initial-element-supplies
+              accessors updaters
               inline memoizable executable
+              recognizer creator fixer
               logic exec debug))))))
 
 
 ;;;; `DEFINE-FRAME'
-(defun make-field-descriptors$c (fields types elements)
-  (declare (xargs :guard (and (symbol-listp fields)
-                              (true-listp types)
-                              (true-listp elements)
-                              (= (len fields) (len types))
-                              (= (len types) (len elements)))))
-  (and (consp fields)
-       (cons (list (car fields)
-                   :element-type (car types)
-                   :initial-element (car elements))
-             (make-field-descriptors$c (cdr fields) (cdr types) (cdr elements)))))
-
-(defun make-field-descriptors$a (fields recognizers fixers stobjs elements)
-  (declare (xargs :guard (and (symbol-listp fields)
-                              (symbol-listp recognizers)
-                              (symbol-listp fixers)
-                              (symbol-listp stobjs)
-                              (true-listp elements)
-                              (= (len fields) (len recognizers))
-                              (= (len recognizers) (len fixers))
-                              (= (len fixers) (len stobjs))
-                              (= (len stobjs) (len elements)))))
-  (and (consp fields)
-       (cons (list (car fields)
-                   :recognizer (car recognizers)
-                   :fixer (car fixers)
-                   :stobj (car stobjs)
-                   :initial-element (car elements))
-             (make-field-descriptors$a
-              (cdr fields) (cdr recognizers) (cdr fixers) (cdr stobjs) (cdr elements)))))
-
-(defun make-field-descriptors$abs (fields accessors updaters stobjs)
-  (declare (xargs :guard (and (symbol-listp fields)
-                              (symbol-listp accessors)
-                              (symbol-listp updaters)
-                              (symbol-listp stobjs)
-                              (= (len fields) (len accessors))
-                              (= (len accessors) (len updaters))
-                              (= (len updaters) (len stobjs)))))
-  (and (consp fields)
-       (cons (list (car fields)
-                   :accessor (car accessors)
-                   :updater (car updaters)
-                   :stobj (car stobjs))
-             (make-field-descriptors$abs (cdr fields) (cdr accessors) (cdr updaters) (cdr stobjs)))))
-
 (defmacro define-frame (&whole form frame &body body)
-  (declare (xargs :guard (valid-frame-form-p form))
+  (declare (xargs :guard (frame-form-p form))
            (ignore body))
-  (mv-let (recognizer creator fixer
-                      fields element-types recognizers fixers stobjs
-                      initial-elements accessors updaters
-                      inline memoizable executable
-                      logic exec debug)
-          (parse-form form)
+  (mv-let (fields element-types element-type-supplies
+                  recognizers fixers stobjs
+                  initial-elements initial-element-supplies
+                  accessors updaters
+                  inline memoizable executable
+                  recognizer creator fixer
+                  logic exec debug)
+          (parse-form form) ; HERE
     (let* ((frame$a (or logic
-                        (symbolicate frame frame '$a)))
+                        (symbolicate frame frame "$A")))
            (frame$c (or exec
-                        (symbolicate frame frame '$c))))
+                        (symbolicate frame frame "$C")))
+           (recognizer (or recognizer
+                           (symbolicate frame frame (make-predicate-suffix frame))))
+           (creator (or creator
+                        (symbolicate frame "CREATE-" frame)))
+           (fixer (or fixer
+                      (symbolicate frame frame "-FIX"))))
 
       `(with-output
          ,@(and (not debug)
@@ -315,55 +285,87 @@
                              :gag-mode t))
 
          (make-event
-           (let* ((field-descriptors$c (make-field-descriptors$c
-                                        ',fields ',element-types ',initial-elements))
-                  (field-descriptors$a (make-field-descriptors$a
-                                        ',fields ',recognizers ',fixers ',stobjs ',initial-elements))
-                  (field-descriptors$abs (make-field-descriptors$abs
-                                          ',fields ',accessors ',updaters ',stobjs)))
+           (let* ((frame ',frame)
+                  (fields ',fields)
+                  (element-types ',element-types)
+                  (element-type-supplies ',element-type-supplies)
+                  (recognizers ',recognizers)
+                  (fixers ',fixers)
+                  (stobjs ',stobjs)
+                  (initial-elements ',initial-elements)
+                  (initial-element-supplies ',initial-element-supplies)
+
+                  (inline ',inline)
+                  (memoizable ',memoizable)
+                  (executable ',executable)
+
+                  (frame$a ',frame$a)
+                  (frame$c ',frame$c)
+                  (recognizer ',recognizer)
+                  (creator ',creator)
+                  (fixer ',fixer)
+                  (accessors ',accessors)
+                  (updaters ',updaters)
+
+                  (debug ',debug))
 
              `(progn
-                (define-frame$c ,',frame$c
-                  ,@field-descriptors$c
-                  :inline ,',inline
-                  :memoizable ,',memoizable
-                  :executable ,',executable
-                  :debug ,',debug)
+                (define-frame$c ,frame$c
+                  ,@(loop$ :for field :in fields
+                          :as element-type :in element-types
+                          :as element-type-supplied-p :in element-type-supplies
+                          :as initial-element :in initial-elements
+                          :as initial-element-supplied-p :in initial-element-supplies
+                          :collect `(,field ,@(and element-type-supplied-p
+                                                   `(:element-type ,element-type))
+                                            ,@(and initial-element-supplied-p
+                                                   `(:initial-element ,initial-element))))
+                  ,@(and inline
+                         `(:inline ,inline))
+                  ,@(and memoizable
+                         `(:memoizable ,memoizable))
+                  ,@(and executable
+                         `(:executable ,executable))
+                  :debug ,debug)
 
-                (define-frame$a ,',frame$a
-                  ,@field-descriptors$a
-                  :debug ,',debug)
+                (define-frame$a ,frame$a
+                  ,@(loop$ :for field :in fields
+                          :as recognizer :in recognizers
+                          :as fixer :in fixers
+                          :as stobj :in stobjs
+                          :as initial-element :in initial-elements
+                          :as initial-element-supplied-p :in initial-element-supplies
+                          :collect `(,field ,@(and recognizer
+                                                   `(:recognizer ,recognizer))
+                                            ,@(and fixer
+                                                   `(:fixer ,fixer))
+                                            ,@(and stobj
+                                                   `(:stobj ,stobj))
+                                            ,@(and initial-element-supplied-p
+                                                   `(:initial-element ,initial-element))))
+                  :debug ,debug)
 
-                (define-frame$corr ,',frame
-                  :logic ,',frame$a
-                  :exec ,',frame$c
-                  :debug ,',debug)
+                (define-frame$corr ,frame
+                  :logic ,frame$a
+                  :exec ,frame$c
+                  :debug ,debug)
 
-                (define-frame$abs ,',frame
-                  ,@field-descriptors$abs
-                  :logic ,',frame$a
-                  :exec ,',frame$c
-                  :recognizer ,',recognizer
-                  :creator ,',creator
-                  :fixer ,',fixer
-                  :executable ,',executable
-                  :debug ,',debug)
-
-                (in-theory (disable ,',(symbolicate frame$c frame$c '-theorems))))))))))
-
-
-;;;; `DEFINE-FRAME-THEOREMS'
-(deflabel define-frame-end)
-
-(deftheory-static define-frame-theorems
-  (set-difference-theories
-   (set-difference-theories
-    (current-theory 'define-frame-end)
-    (current-theory 'define-frame-begin))
-   (function-theory 'define-frame-end)))
-
-
-;;;; Epilogue
-(in-theory
-  (union-theories (current-theory 'define-frame-begin)
-                  (theory 'define-frame-theorems)))
+                (define-frame$abs ,frame
+                  ,@(loop$ :for field :in fields
+                          :as accessor :in accessors
+                          :as updater :in updaters
+                          :as stobj :in stobjs
+                          :collect `(,field ,@(and accessor
+                                                   `(:accessor ,accessor))
+                                            ,@(and updater
+                                                   `(:updater ,updater))
+                                            ,@(and stobj
+                                                   `(:stobj ,stobj))))
+                  :logic ,frame$a
+                  :exec ,frame$c
+                  :recognizer ,recognizer
+                  :creator ,creator
+                  :fixer ,fixer
+                  ,@(and executable
+                         `(:executable ,executable))
+                  :debug ,debug))))))))
