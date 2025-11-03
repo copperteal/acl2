@@ -471,7 +471,8 @@
                                    keys-set-when-not-setp
                                    keys-set-when-not-recognizer
                                    keys-set-of-keys-free))
-                        (list accessor-when-not-recognizer
+                        (list fixer
+                              accessor-when-not-recognizer
                               accessor-of-updater
                               accessor-when-not-boundp
                               accessor-of-remover
@@ -958,8 +959,6 @@
                                   'lem-hash-table$a::fixer/unique-when-recognizer/unique)
                              ,@fi-bindings))))
 
-; TODO: ensure fixer is in aggressive theory for
-; this an other macros
                     (defthm ,fixer-when-not-recognizer
                       (implies (not (,recognizer ,hash-table))
                                (equal (,fixer ,hash-table)
