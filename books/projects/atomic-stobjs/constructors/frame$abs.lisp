@@ -85,16 +85,19 @@
                 (recognizer$a (first (second stobj$a-property)))
                 (accessors$a (sixth (third stobj$a-property))))
 
-           `(defun-nx ,frame$corr (,frame$c ,frame$a)
-              (declare (xargs :stobjs ,frame$c
-                              :guard (,recognizer$a ,frame$a)
-                              :verify-guards nil))
-              (and (,recognizer$c ,frame$c)
-                   (,recognizer$a ,frame$a)
-                   ,@(loop$ :for accessor$c :in accessors$c
-                           :as accessor$a :in accessors$a
-                           :collect `(equal (,accessor$c ,frame$c)
-                                            (,accessor$a ,frame$a))))))))))
+           `(progn
+              (defun-nx ,frame$corr (,frame$c ,frame$a)
+                (declare (xargs :stobjs ,frame$c
+                                :guard (,recognizer$a ,frame$a)
+                                :verify-guards nil))
+                (and (,recognizer$c ,frame$c)
+                     (,recognizer$a ,frame$a)
+                     ,@(loop$ :for accessor$c :in accessors$c
+                             :as accessor$a :in accessors$a
+                             :collect `(equal (,accessor$c ,frame$c)
+                                              (,accessor$a ,frame$a)))))
+
+              (table corr ',frame ',frame$corr)))))))
 
 
 ;;;; `FRAME$ABS' Predicates
@@ -312,10 +315,9 @@
                                 :collect (or updater
                                              (symbolicate frame frame "-" field "-SET"))))
 
-                ;; TODO: get this from a table?
-                (frame$corr (symbolicate frame frame "$CORR"))
-
                 (world (w state))
+                (frame$corr (cdr (assoc frame (table-alist 'corr world))))
+
                 (stobj-property (getpropc frame$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))

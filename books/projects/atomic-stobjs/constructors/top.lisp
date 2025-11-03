@@ -36,34 +36,22 @@
 (include-book "frame")
 
 (defconst *exports*
-  '(valid-vector-dimensions-p
-    define-vector$c
+  '(define-vector$c
     define-vector$a
     define-vector$corr
     define-vector$abs
     define-vector
-    define-vector-theorems ; TODO: re-examine
 
-    valid-hash-table-test-p
-    valid-hash-table-size-p
     define-hash-table$c
     define-hash-table$a
     define-hash-table$corr
     define-hash-table$abs
     define-hash-table
-    define-hash-table-theorems
 
-    valid-frame-body-p
     define-frame$c
     define-frame$a
     define-frame$corr
     define-frame$abs
     define-frame
-    define-frame-theorems
 
-    stobj-copier
-    stobj-copier-alist
-    stobj-coupled
-    stobj-coupled-alist
-    stobj-copier{rewrite}
     define-stobj-copier))
