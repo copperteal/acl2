@@ -32,13 +32,10 @@
 (set-verify-guards-eagerness 2)
 
 (include-book "../type-spec")
-(include-book "../accessors/top")
 (include-book "../utilities/top")
 (include-book "hash-table$c")
 (include-book "hash-table$a")
 (include-book "hash-table$abs")
-
-(deflabel define-hash-table-begin)
 
 
 ;;;; `HASH-TABLE' Guard Predicates
