@@ -687,6 +687,8 @@
                                    :collect `(equal (,accessor ,%frame)
                                                     (,accessor ,frame)))))
 
+                    (table equal ',frame ',frame-equal)
+
                     (with-books (("std/lists/nth" :dir :system))
                       (local
                         (defthm nth-of-cons
@@ -719,8 +721,7 @@
 
                 (stobj$a-property `(stobj$a-property (,recognizer
                                                       ,creator
-                                                      ,fixer
-                                                      ,frame-equal)
+                                                      ,fixer)
                                                      (,fields
                                                       ,recognizers
                                                       ,initial-element-names
