@@ -38,25 +38,6 @@
 (include-book "../utilities/top")
 
 
-;;;; `VECTOR' Guard Predicates
-(defun valid-vector-dimensions-p (dimensions)
-; TODO: refactor into separate file
-  (declare (xargs :guard t))
-  (or (and (consp dimensions)
-           (natp (car dimensions))
-           (null (cdr dimensions)))
-      (natp dimensions)))
-
-;; TODO: add a type-prescription rule
-(defthm valid-vector-dimensions-p{compound-recognizer}
-; TODO: Is this theorem useful?
-  (implies (valid-vector-dimensions-p dimensions)
-           (or (natp dimensions)
-               (and (consp dimensions)
-                    (true-listp dimensions))))
-  :rule-classes :compound-recognizer)
-
-
 ;;;; `DEFINE-VECTOR$C'
 (defmacro define-vector$c
     (vector dimensions
@@ -83,7 +64,10 @@
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp vector)
-                              (valid-vector-dimensions-p dimensions)
+                              (or (and (consp dimensions)
+                                       (natp (car dimensions))
+                                       (null (cdr dimensions)))
+                                  (natp dimensions))
                               (if (acl2-type-spec-p element-type)
                                   (typep$ initial-element element-type)
 ; TODO: What's the best macro-guard for a value that is expected to be a stobj

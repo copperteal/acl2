@@ -84,9 +84,6 @@
                                   (,accessor$a index ,vector$a))))
                 :rewrite :direct)
 
-; TODO: Put `VECTOR$CORR-CONTENTS' and `VECTOR$CORR' in a table.  Make them
-; nameable by the user.
-
               (defun-nx ,vector$corr (,vector$c ,vector$a)
                 (declare (xargs :stobjs ,vector$c
                                 :guard (,recognizer$a ,vector$a)
@@ -236,7 +233,6 @@
                                      (cddr updater$c-guard)
                                      (cdr updater$c-guard)))
 
-; TODO: pull theory name from table
                 (aggressive$a (symbolicate vector$a vector$a "-AGGRESSIVE"))
                 (accessor$c-of-resizer$c (symbolicate vector$c accessor$c "-OF-" resizer$c))
 
