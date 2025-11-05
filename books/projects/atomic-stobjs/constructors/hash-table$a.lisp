@@ -2207,6 +2207,8 @@
                            (,keys-equal ,%hash-table ,hash-table)
                            (,vals-equal ,%hash-table ,hash-table)))
 
+                    (table equal ',hash-table ',hash-table-equal)
+
                     (defthm ,hash-table-equal{forward-chaining}
                       (implies (,hash-table-equal ,%hash-table ,hash-table)
                                (equal ,%hash-table ,hash-table))
@@ -2261,8 +2263,7 @@
 
                 (stobj$a-property `(stobj$a-property (,recognizer
                                                       ,creator
-                                                      ,fixer
-                                                      ,hash-table-equal)
+                                                      ,fixer)
                                                      ((,key
                                                        ,key-recognizer
                                                        ,default-key-name

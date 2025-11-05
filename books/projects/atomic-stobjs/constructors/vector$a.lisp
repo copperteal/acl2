@@ -1262,6 +1262,8 @@
 ; `VECTOR-EQUAL{FORWARD-CHAINING}' ensures true equality is proven if both
 ; arguments are vectors of the same length with the same elements.
 
+                    (table equal ',vector ',vector-equal)
+
                     (defthm ,vector-equal{forward-chaining}
                       (implies (,vector-equal ,%vector ,vector)
                                (equal ,%vector ,vector))
@@ -1304,9 +1306,7 @@
 
                 (stobj$a-property `(stobj$a-property (,recognizer
                                                       ,creator
-                                                      ,fixer
-; TODO: Track `VECTOR-EQUAL' and `CONTENTS-EQUAL' in their own table.
-                                                      ,vector-equal)
+                                                      ,fixer)
                                                      ((,element
                                                        ,element-recognizer
                                                        ,(and (not stobj-property)
