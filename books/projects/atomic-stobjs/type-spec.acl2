@@ -57,6 +57,10 @@
               *compound-type-specifier-names*
               *compound-real-type-specifier-names*
               interval-designator-p
+              memberp-eq
+              memberp-eql
+              memberp-equal
+              memberp
               acl2-type-spec-p
               typep$runtime
               typep$transform

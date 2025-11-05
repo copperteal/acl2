@@ -65,19 +65,19 @@
 
 
 ;;;; `MEMBERP'
-(defun memberp-eq (x list)
+(defun-inline memberp-eq (x list)
   (declare (xargs :guard (and (symbolp x)
                               (true-listp list))))
   (and (member x list :test 'eq)
        t))
 
-(defun memberp-eql (x list)
+(defun-inline memberp-eql (x list)
   (declare (xargs :guard (and (eqlablep x)
                               (true-listp list))))
   (and (member x list :test 'eql)
        t))
 
-(defun memberp-equal (x list)
+(defun-inline memberp-equal (x list)
   (declare (xargs :guard (true-listp list)))
   (and (member x list :test 'equal)
        t))

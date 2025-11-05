@@ -38,34 +38,6 @@
 (include-book "hash-table$abs")
 
 
-;;;; `HASH-TABLE' Guard Predicates
-(defun valid-hash-table-test-p (test)
-  (declare (xargs :guard t))
-; TODO: refactor into separate file
-  (and (member test '(eq eql hons-equal equal))
-       t))
-
-(defthm valid-hash-table-test-p{compound-recognizer}
-; TODO: Is this theorem useful?
-  (implies (valid-hash-table-test-p test)
-           (and (symbolp test)
-                (not (booleanp test))))
-  :rule-classes :compound-recognizer)
-
-(defun valid-hash-table-size-p (size)
-  (declare (xargs :guard t))
-; TODO: refactor into separate file
-  (or (null size)
-      (natp size)))
-
-(defthm valid-hash-table-size-p{compound-recognizer}
-; TODO: Is this theorem useful?
-  (implies (valid-hash-table-size-p size)
-           (or (null size)
-               (natp size)))
-  :rule-classes :compound-recognizer)
-
-
 ;;;; `DEFINE-HASH-TABLE'
 (defmacro define-hash-table
     (hash-table test
@@ -105,8 +77,10 @@
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
-                              (valid-hash-table-test-p test)
-                              (valid-hash-table-size-p size)
+                              (symbolp test)
+                              (member test '(eq eql hons-equal equal) :test 'eq)
+                              (or (null size)
+                                  (natp size))
                               (if (acl2-type-spec-p element-type)
                                   (typep$ default-val element-type)
                                   (symbolp element-type))
