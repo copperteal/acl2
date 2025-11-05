@@ -37,24 +37,6 @@
 (include-book "../utilities/top")
 
 
-;;;; `VECTOR' Guard Predicates
-(defun valid-vector-dimensions-p (dimensions)
-; TODO: refactor into separate file
-  (declare (xargs :guard t))
-  (or (and (consp dimensions)
-           (natp (car dimensions))
-           (null (cdr dimensions)))
-      (natp dimensions)))
-
-(defthm valid-vector-dimensions-p{compound-recognizer}
-; TODO: Is this theorem useful?
-  (implies (valid-vector-dimensions-p dimensions)
-           (or (natp dimensions)
-               (and (consp dimensions)
-                    (true-listp dimensions))))
-  :rule-classes :compound-recognizer)
-
-
 ;;;; `DEFINE-VECTOR$A'
 (defmacro define-vector$a
     (vector dimensions
@@ -79,7 +61,10 @@
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp vector)
-                              (valid-vector-dimensions-p dimensions)
+                              (or (and (consp dimensions)
+                                       (natp (car dimensions))
+                                       (null (cdr dimensions)))
+                                  (natp dimensions))
                               (symbol-listp (list index
                                                   %index
                                                   element-recognizer
