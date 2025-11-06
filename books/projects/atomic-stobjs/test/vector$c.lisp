@@ -37,7 +37,6 @@
 ;;;; Stobj Valued
 (defstobj foo$c
   a
-  :inline t
   :non-memoizable t
   :non-executable t)
 
