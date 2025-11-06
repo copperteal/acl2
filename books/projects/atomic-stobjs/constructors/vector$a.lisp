@@ -43,8 +43,8 @@
      &key
        (index 'nil)
        (%index 'nil)
-       (element-recognizer 'nil element-recognizer-supplied-p)
-       (element-fixer 'nil element-fixer-supplied-p)
+       (element-recognizer 'nil)
+       (element-fixer 'nil)
        (element 'nil)
        (%element 'nil)
        (initial-element 'nil)
@@ -110,8 +110,7 @@
               (absstobj-info (getpropc element 'absstobj-info))
               (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
               (element-recognizer (cond
-                                    (',element-recognizer-supplied-p
-                                     ',element-recognizer)
+                                    (',element-recognizer)
                                     (stobj$a-property
                                      (first (second stobj$a-property)))
                                     (absstobj-info
@@ -126,8 +125,7 @@
                                  (stobj-property
                                   (cdadr stobj-property))))
               (element-fixer (cond
-                               (',element-fixer-supplied-p
-                                ',element-fixer)
+                               (',element-fixer)
                                (stobj$a-property
                                 (third (second stobj$a-property)))
                                (t
@@ -502,8 +500,6 @@
                                 'lem-vector$a::recognizer/fixed{type-prescription})
                            ,@fi-bindings))))
 
-                  ;; TODO: for fixed-length vectors of positive length, add
-                  ;; consp conjunct
                   (defthm ,recognizer{compound-recognizer}
                     (implies (,recognizer ,vector)
                              (true-listp ,vector))

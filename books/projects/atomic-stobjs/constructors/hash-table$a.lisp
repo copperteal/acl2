@@ -49,8 +49,8 @@
        (key 'nil)
        (%key 'nil)
        (default-key 'nil)
-       (val-recognizer 'nil val-recognizer-supplied-p)
-       (val-fixer 'nil val-fixer-supplied-p)
+       (val-recognizer 'nil)
+       (val-fixer 'nil)
        (val 'nil)
        (%val 'nil)
        (default-val 'nil)
@@ -140,8 +140,7 @@
               (absstobj-info (getpropc val 'absstobj-info))
               (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
               (val-recognizer (cond
-                                (',val-recognizer-supplied-p
-                                 ',val-recognizer)
+                                (',val-recognizer)
                                 (stobj$a-property
                                  (first (second stobj$a-property)))
                                 (absstobj-info
@@ -156,8 +155,7 @@
                              (stobj-property
                               (cdadr stobj-property))))
               (val-fixer (cond
-                           (',val-fixer-supplied-p
-                            ',val-fixer)
+                           (',val-fixer)
                            (stobj$a-property
                             (third (second stobj$a-property)))
                            (t
@@ -413,7 +411,6 @@
                      (current-theory ',hash-table-end)
                      (current-theory ',hash-table-begin))
                     (union-theories (function-theory ',hash-table-end)
-; TODO: double check theory
                                     '((:i ,contents-recognizer)
                                       (:i ,contents-accessor)
                                       (:i ,contents-updater)
@@ -944,7 +941,6 @@
                                 'lem-hash-table$a::fixer/unique-when-not-recognizer/unique)
                            ,@fi-bindings))))
 
-; TODO: ensure aggressive theory correct. In what ways?
                   ;; `ACCESSOR'
                   ,@(and val-recognizer
                          `((defthm ,val-recognizer-of-accessor
@@ -1237,7 +1233,6 @@
                                 'lem-hash-table$a::updater/unique-of-fixer/unique)
                            ,@fi-bindings))))
 
-                  ;; TODO: compare with free/not in vector macros
                   (defthmd ,updater-of-accessor-when-boundp-free
                     (implies (and (,boundp ,key ,hash-table)
                                   (equal ,(if val-fixer
