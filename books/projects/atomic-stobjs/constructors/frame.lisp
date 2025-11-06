@@ -268,107 +268,103 @@
                   logic exec debug)
           (parse-form form)
 
-    (let* ()
+    `(with-output
+       ,@(and (not debug)
+              *constructor-output*)
 
-      `(with-output
-         ,@(and (not debug)
-                '#!acl2(:off (warning! observation prove event history proof-tree)
-                             :summary-off (rules)
-                             :gag-mode t))
+       (make-event
+         (let* ((frame ',frame)
+                (logic ',logic)
+                (exec ',exec)
+                (fields ',fields)
+                (element-types ',element-types)
+                (element-type-supplies ',element-type-supplies)
+                (recognizers ',recognizers)
+                (fixers ',fixers)
+                (stobjs ',stobjs)
+                (initial-elements ',initial-elements)
+                (initial-element-supplies ',initial-element-supplies)
 
-         (make-event
-           (let* ((frame ',frame)
-                  (logic ',logic)
-                  (exec ',exec)
-                  (fields ',fields)
-                  (element-types ',element-types)
-                  (element-type-supplies ',element-type-supplies)
-                  (recognizers ',recognizers)
-                  (fixers ',fixers)
-                  (stobjs ',stobjs)
-                  (initial-elements ',initial-elements)
-                  (initial-element-supplies ',initial-element-supplies)
+                (inline ',inline)
+                (memoizable ',memoizable)
+                (executable ',executable)
 
-                  (inline ',inline)
-                  (memoizable ',memoizable)
-                  (executable ',executable)
+                (recognizer ',recognizer)
+                (creator ',creator)
+                (fixer ',fixer)
+                (accessors ',accessors)
+                (updaters ',updaters)
 
-                  (recognizer ',recognizer)
-                  (creator ',creator)
-                  (fixer ',fixer)
-                  (accessors ',accessors)
-                  (updaters ',updaters)
+                (debug ',debug)
 
-                  (debug ',debug)
+                (frame$a (or logic
+                             (symbolicate frame frame "$A")))
+                (frame$c (or exec
+                             (symbolicate frame frame "$C")))
+                (recognizer (or recognizer
+                                (symbolicate frame frame (make-predicate-suffix frame))))
+                (creator (or creator
+                             (symbolicate frame "CREATE-" frame)))
+                (fixer (or fixer
+                           (symbolicate frame frame "-FIX"))))
 
-                  (frame$a (or logic
-                               (symbolicate frame frame "$A")))
-                  (frame$c (or exec
-                               (symbolicate frame frame "$C")))
-                  (recognizer (or recognizer
-                                  (symbolicate frame frame (make-predicate-suffix frame))))
-                  (creator (or creator
-                               (symbolicate frame "CREATE-" frame)))
-                  (fixer (or fixer
-                             (symbolicate frame frame "-FIX"))))
+           `(progn
+              (define-frame$c ,frame$c
+                ,@(loop$ :for field :in fields
+                        :as element-type :in element-types
+                        :as element-type-supplied-p :in element-type-supplies
+                        :as initial-element :in initial-elements
+                        :as initial-element-supplied-p :in initial-element-supplies
+                        :collect `(,field ,@(and element-type-supplied-p
+                                                 `(:element-type ,element-type))
+                                          ,@(and initial-element-supplied-p
+                                                 `(:initial-element ,initial-element))))
+                ,@(and inline
+                       `(:inline ,inline))
+                ,@(and memoizable
+                       `(:memoizable ,memoizable))
+                ,@(and executable
+                       `(:executable ,executable))
+                :debug ,debug)
 
-             `(progn
-                (define-frame$c ,frame$c
-                  ,@(loop$ :for field :in fields
-                          :as element-type :in element-types
-                          :as element-type-supplied-p :in element-type-supplies
-                          :as initial-element :in initial-elements
-                          :as initial-element-supplied-p :in initial-element-supplies
-                          :collect `(,field ,@(and element-type-supplied-p
-                                                   `(:element-type ,element-type))
-                                            ,@(and initial-element-supplied-p
-                                                   `(:initial-element ,initial-element))))
-                  ,@(and inline
-                         `(:inline ,inline))
-                  ,@(and memoizable
-                         `(:memoizable ,memoizable))
-                  ,@(and executable
-                         `(:executable ,executable))
-                  :debug ,debug)
+              (define-frame$a ,frame$a
+                ,@(loop$ :for field :in fields
+                        :as recognizer :in recognizers
+                        :as fixer :in fixers
+                        :as stobj :in stobjs
+                        :as initial-element :in initial-elements
+                        :as initial-element-supplied-p :in initial-element-supplies
+                        :collect `(,field ,@(and recognizer
+                                                 `(:recognizer ,recognizer))
+                                          ,@(and fixer
+                                                 `(:fixer ,fixer))
+                                          ,@(and stobj
+                                                 `(:stobj ,stobj))
+                                          ,@(and initial-element-supplied-p
+                                                 `(:initial-element ,initial-element))))
+                :debug ,debug)
 
-                (define-frame$a ,frame$a
-                  ,@(loop$ :for field :in fields
-                          :as recognizer :in recognizers
-                          :as fixer :in fixers
-                          :as stobj :in stobjs
-                          :as initial-element :in initial-elements
-                          :as initial-element-supplied-p :in initial-element-supplies
-                          :collect `(,field ,@(and recognizer
-                                                   `(:recognizer ,recognizer))
-                                            ,@(and fixer
-                                                   `(:fixer ,fixer))
-                                            ,@(and stobj
-                                                   `(:stobj ,stobj))
-                                            ,@(and initial-element-supplied-p
-                                                   `(:initial-element ,initial-element))))
-                  :debug ,debug)
+              (define-frame$corr ,frame
+                :logic ,frame$a
+                :exec ,frame$c
+                :debug ,debug)
 
-                (define-frame$corr ,frame
-                  :logic ,frame$a
-                  :exec ,frame$c
-                  :debug ,debug)
-
-                (define-frame$abs ,frame
-                  ,@(loop$ :for field :in fields
-                          :as accessor :in accessors
-                          :as updater :in updaters
-                          :as stobj :in stobjs
-                          :collect `(,field ,@(and accessor
-                                                   `(:accessor ,accessor))
-                                            ,@(and updater
-                                                   `(:updater ,updater))
-                                            ,@(and stobj
-                                                   `(:stobj ,stobj))))
-                  :logic ,frame$a
-                  :exec ,frame$c
-                  :recognizer ,recognizer
-                  :creator ,creator
-                  :fixer ,fixer
-                  ,@(and executable
-                         `(:executable ,executable))
-                  :debug ,debug))))))))
+              (define-frame$abs ,frame
+                ,@(loop$ :for field :in fields
+                        :as accessor :in accessors
+                        :as updater :in updaters
+                        :as stobj :in stobjs
+                        :collect `(,field ,@(and accessor
+                                                 `(:accessor ,accessor))
+                                          ,@(and updater
+                                                 `(:updater ,updater))
+                                          ,@(and stobj
+                                                 `(:stobj ,stobj))))
+                :logic ,frame$a
+                :exec ,frame$c
+                :recognizer ,recognizer
+                :creator ,creator
+                :fixer ,fixer
+                ,@(and executable
+                       `(:executable ,executable))
+                :debug ,debug)))))))
