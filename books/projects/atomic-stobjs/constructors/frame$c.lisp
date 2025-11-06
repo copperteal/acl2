@@ -517,6 +517,8 @@
                                           (,creator))
                                :exec ,body)))
 
+                    (table view ',frame ',view)
+
                     (defthm ,view{type-prescription}
                       ,(if (null fields)
                            `(null (,view ,@fields ,frame))
