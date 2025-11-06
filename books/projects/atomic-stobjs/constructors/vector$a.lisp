@@ -1297,13 +1297,6 @@
                       :expand (:free (,%vector ,vector)
                                      (,contents-equal ,%vector ,vector)))))))
 
-; TODO: Compare `STOBJ$A-PROPERTY' with `STOBJ-PROPERTY' and `ABSSTOBJ-INFO' to
-; see if there's a more intuitive layout.  Also compare with frame and
-; hash-table.  Maybe `RECOGNIZER-AUX' should be made available?  Should theory
-; names be accessible from a property or table?
-
-; TODO: Make `VECTOR-EQUAL' and `CONTENTS-EQUAL' user nameable.
-
               (stobj$a-property `(stobj$a-property (,recognizer
                                                     ,creator
                                                     ,fixer)
