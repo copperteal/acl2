@@ -92,100 +92,100 @@
                               (symbolp exec)
                               (booleanp debug))))
 
-  (let* ((vector$a (or logic
-                       (symbolicate vector vector "$A")))
-         (vector$c (or exec
-                       (symbolicate vector vector "$C")))
-         (recognizer (or recognizer
-                         (symbolicate vector vector (make-predicate-suffix vector))))
-         (creator (or creator
-                      (symbolicate vector "CREATE-" vector)))
-         (length (or length
-                     (symbolicate vector vector "-LENGTH")))
-         (resizer (or resizer
-                      (symbolicate vector vector "-RESIZE")))
-         (accessor (or accessor
-                       (symbolicate vector vector "-REF")))
-         (updater (or updater
-                      (symbolicate vector vector "-SET"))))
+  `(with-output
+     ,@(and (not debug)
+            '#!acl2(:off (warning! observation prove event history proof-tree)
+                         :summary-off (rules)
+                         :gag-mode t))
 
-    `(with-output
-       ,@(and (not debug)
-              '#!acl2(:off (warning! observation prove event history proof-tree)
-                           :summary-off (rules)
-                           :gag-mode t))
+     (make-event
+       (let* ((vector ',vector)
+              (logic ',logic)
+              (exec ',exec)
+              (dimensions ',dimensions)
+              (element-type ',element-type)
+              (specialize-element-type ',specialize-element-type)
+              (element-recognizer ',element-recognizer)
+              (element-fixer ',element-fixer)
+              (element ',element)
+              (initial-element ',initial-element)
+              (resizable ',resizable)
 
-       (make-event
-         (let* ((vector ',vector)
-                (dimensions ',dimensions)
-                (element-type ',element-type)
-                (specialize-element-type ',specialize-element-type)
-                (element-recognizer ',element-recognizer)
-                (element-fixer ',element-fixer)
-                (element ',element)
-                (initial-element ',initial-element)
-                (resizable ',resizable)
+              (inline ',inline)
+              (memoizable ',memoizable)
+              (executable ',executable)
 
-                (inline ',inline)
-                (memoizable ',memoizable)
-                (executable ',executable)
+              (recognizer ',recognizer)
+              (creator ',creator)
+              (length ',length)
+              (resizer ',resizer)
+              (accessor ',accessor)
+              (updater ',updater)
 
-                (vector$c ',vector$c)
-                (vector$a ',vector$a)
-                (recognizer ',recognizer)
-                (creator ',creator)
-                (length ',length)
-                (resizer ',resizer)
-                (accessor ',accessor)
-                (updater ',updater)
+              (debug ',debug)
 
-                (debug ',debug))
+              (vector$a (or logic
+                            (symbolicate vector vector "$A")))
+              (vector$c (or exec
+                            (symbolicate vector vector "$C")))
+              (recognizer (or recognizer
+                              (symbolicate vector vector (make-predicate-suffix vector))))
+              (creator (or creator
+                           (symbolicate vector "CREATE-" vector)))
+              (length (or length
+                          (symbolicate vector vector "-LENGTH")))
+              (resizer (or resizer
+                           (symbolicate vector vector "-RESIZE")))
+              (accessor (or accessor
+                            (symbolicate vector vector "-REF")))
+              (updater (or updater
+                           (symbolicate vector vector "-SET"))))
 
-           `(progn
-              (define-vector$c ,vector$c ,dimensions
-                ,@(and ,element-type-supplied-p
-                       `(:element-type ,element-type))
-                ,@(and ,specialize-element-type-supplied-p
-                       `(:specialize-element-type ,specialize-element-type))
-                ,@(and ,initial-element-supplied-p
-                       `(:initial-element ,initial-element))
-                ,@(and ,resizable-supplied-p
-                       `(:resizable ,resizable))
-                ,@(and ,inline-supplied-p
-                       `(:inline ,inline))
-                ,@(and ,memoizable-supplied-p
-                       `(:memoizable ,memoizable))
-                ,@(and ,executable-supplied-p
-                       `(:executable ,executable))
-                :debug ,debug)
+         `(progn
+            (define-vector$c ,vector$c ,dimensions
+              ,@(and ,element-type-supplied-p
+                     `(:element-type ,element-type))
+              ,@(and ,specialize-element-type-supplied-p
+                     `(:specialize-element-type ,specialize-element-type))
+              ,@(and ,initial-element-supplied-p
+                     `(:initial-element ,initial-element))
+              ,@(and ,resizable-supplied-p
+                     `(:resizable ,resizable))
+              ,@(and ,inline-supplied-p
+                     `(:inline ,inline))
+              ,@(and ,memoizable-supplied-p
+                     `(:memoizable ,memoizable))
+              ,@(and ,executable-supplied-p
+                     `(:executable ,executable))
+              :debug ,debug)
 
-              (define-vector$a ,vector$a ,dimensions
-                ,@(and ,element-recognizer-supplied-p
-                       `(:element-recognizer ,element-recognizer))
-                ,@(and ,element-fixer-supplied-p
-                       `(:element-fixer ,element-fixer))
-                ,@(and ,element-supplied-p
-                       `(:element ,element))
-                ,@(and ,initial-element-supplied-p
-                       `(:initial-element ,initial-element))
-                ,@(and ,resizable-supplied-p
-                       `(:resizable ,resizable))
-                :debug ,debug)
+            (define-vector$a ,vector$a ,dimensions
+              ,@(and ,element-recognizer-supplied-p
+                     `(:element-recognizer ,element-recognizer))
+              ,@(and ,element-fixer-supplied-p
+                     `(:element-fixer ,element-fixer))
+              ,@(and ,element-supplied-p
+                     `(:element ,element))
+              ,@(and ,initial-element-supplied-p
+                     `(:initial-element ,initial-element))
+              ,@(and ,resizable-supplied-p
+                     `(:resizable ,resizable))
+              :debug ,debug)
 
-              (define-vector$corr ,vector
-                :logic ,vector$a
-                :exec ,vector$c
-                :debug ,debug)
+            (define-vector$corr ,vector
+              :logic ,vector$a
+              :exec ,vector$c
+              :debug ,debug)
 
-              (define-vector$abs ,vector
-                :logic ,vector$a
-                :exec ,vector$c
-                :recognizer ,recognizer
-                :creator ,creator
-                :length ,length
-                :resizer ,resizer
-                :accessor ,accessor
-                :updater ,updater
-                ,@(and ,executable-supplied-p
-                       `(:executable ,executable))
-                :debug ,debug)))))))
+            (define-vector$abs ,vector
+              :logic ,vector$a
+              :exec ,vector$c
+              :recognizer ,recognizer
+              :creator ,creator
+              :length ,length
+              :resizer ,resizer
+              :accessor ,accessor
+              :updater ,updater
+              ,@(and ,executable-supplied-p
+                     `(:executable ,executable))
+              :debug ,debug))))))
