@@ -389,6 +389,24 @@
 
                 (body
                  `(encapsulate ()
+
+                    (local
+                      (defthm ,(symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS")
+                        (equal (len (cons a d))
+                               (1+ (len d)))))
+
+                    ,@(loop$ :for stobj-copier :in stobj-copier-list
+                            :as recognizer :in stobj-recognizers
+                            :as field :in fields
+                            :as %field :in %fields
+                            :when stobj-copier
+                            :collect `(local
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copier "{REWRITE}")
+                                          (implies (and (,recognizer ,%field)
+                                                        (,recognizer ,field))
+                                                   (equal (,stobj-copier ,%field ,field)
+                                                          ,field)))))
+
                     (local
                       (in-theory
                         (set-difference-theories
@@ -530,6 +548,10 @@
                       (,recognizer (,view ,@fields ,frame)))
 
                     (with-books (("std/lists/nth" :dir :system))
+                      (local
+                        (in-theory
+                          (disable acl2::nth-when-zp)))
+
                       (defthmd ,view{rewrite}
                         (implies (and (syntaxp (not (and (consp ,frame)
                                                          (eq (car ,frame) ',creator))))
@@ -558,6 +580,10 @@
 
                     ,@(and fields
                            `((with-books (("std/lists/nth" :dir :system))
+                               (local
+                                 (in-theory
+                                   (disable acl2::nth-when-zp)))
+
                                ,@(let ((arguments (loop$ :for accessor :in accessors
                                                         :collect `(,accessor ,frame))))
                                    (loop$ :for updater :in updaters
@@ -580,6 +606,10 @@
 
                     ,@(and fields
                            `((with-books (("std/lists/nth" :dir :system))
+                               (local
+                                 (in-theory
+                                   (disable acl2::nth-when-zp)))
+
                                ,@(let ((hypotheses (loop$ :for field :in fields
                                                          :as element-type :in element-types
                                                          :as stobj-recognizer :in stobj-recognizers
@@ -617,6 +647,10 @@
                     (table fixer ',frame ',fixer)
 
                     (with-books (("std/lists/nth" :dir :system))
+                      (local
+                        (in-theory
+                          (disable acl2::nth-when-zp)))
+
                       (defthm ,fixer{rewrite}
                         (equal (,fixer ,frame)
                                (,view ,@(loop$ :for accessor :in accessors

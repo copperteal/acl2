@@ -57,7 +57,6 @@
 ;;;; Stobj Values
 ;; (defstobj foo$c
 ;;   a
-;;   :inline t
 ;;   :non-memoizable t
 ;;   :non-executable t)
 
@@ -95,7 +94,6 @@
 ;; (defstobj %foo$c
 ;;   %a
 ;;   :congruent-to foo$c
-;;   :inline t
 ;;   :non-memoizable t
 ;;   :non-executable t)
 
