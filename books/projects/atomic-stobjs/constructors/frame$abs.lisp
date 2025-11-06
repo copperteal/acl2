@@ -55,49 +55,52 @@
                                (exec 'nil)
 
                                (debug 'nil))
+
   (declare (xargs :guard (and (symbolp frame)
                               (symbolp logic)
                               (symbolp exec)
                               (booleanp debug))))
-  (let ((frame$a (or logic
-                     (symbolicate frame frame "$A")))
-        (frame$c (or exec
-                     (symbolicate frame frame "$C"))))
-    `(with-output
-       ,@(and (not debug)
-              '#!acl2(:off (warning! observation prove event history proof-tree)
-                           :summary-off (rules)
-                           :gag-mode t))
 
-       (make-event
-         (let* ((frame ',frame)
-                (frame$corr (symbolicate frame frame "$CORR"))
+  `(with-output
+     ,@(and (not debug)
+            '#!acl2(:off (warning! observation prove event history proof-tree)
+                         :summary-off (rules)
+                         :gag-mode t))
 
-                (frame$c ',frame$c)
-                (stobj-property (getpropc frame$c 'stobj))
-                (recognizer$c (caadr stobj-property))
-                (n (floor (len (third stobj-property)) 4))
-                (accessors$c (loop$ :for i :from 0 :to n
-                                   :collect (nth (+ n (* 2 i)) (third stobj-property))))
+     (make-event
+       (let* ((frame ',frame)
+              (logic ',logic)
+              (exec ',exec)
+              (frame$corr (symbolicate frame frame "$CORR"))
 
-                (frame$a ',frame$a)
-                (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a-property (w state)))))
-                (recognizer$a (first (second stobj$a-property)))
-                (accessors$a (sixth (third stobj$a-property))))
+              (frame$a (or logic
+                           (symbolicate frame frame "$A")))
+              (frame$c (or exec
+                           (symbolicate frame frame "$C")))
 
-           `(progn
-              (defun-nx ,frame$corr (,frame$c ,frame$a)
-                (declare (xargs :stobjs ,frame$c
-                                :guard (,recognizer$a ,frame$a)
-                                :verify-guards nil))
-                (and (,recognizer$c ,frame$c)
-                     (,recognizer$a ,frame$a)
-                     ,@(loop$ :for accessor$c :in accessors$c
-                             :as accessor$a :in accessors$a
-                             :collect `(equal (,accessor$c ,frame$c)
-                                              (,accessor$a ,frame$a)))))
+              (stobj-property (getpropc frame$c 'stobj))
+              (recognizer$c (caadr stobj-property))
+              (n (floor (len (third stobj-property)) 4))
+              (accessors$c (loop$ :for i :from 0 :to n
+                                 :collect (nth (+ n (* 2 i)) (third stobj-property))))
 
-              (table corr ',frame ',frame$corr)))))))
+              (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a-property (w state)))))
+              (recognizer$a (first (second stobj$a-property)))
+              (accessors$a (sixth (third stobj$a-property))))
+
+         `(progn
+            (defun-nx ,frame$corr (,frame$c ,frame$a)
+              (declare (xargs :stobjs ,frame$c
+                              :guard (,recognizer$a ,frame$a)
+                              :verify-guards nil))
+              (and (,recognizer$c ,frame$c)
+                   (,recognizer$a ,frame$a)
+                   ,@(loop$ :for accessor$c :in accessors$c
+                           :as accessor$a :in accessors$a
+                           :collect `(equal (,accessor$c ,frame$c)
+                                            (,accessor$a ,frame$a)))))
+
+            (table corr ',frame ',frame$corr))))))
 
 
 ;;;; `FRAME$ABS' Predicates
@@ -277,6 +280,7 @@
                   recognizer creator fixer
                   executable debug)
           (parse-form$abs form)
+
     `(with-output
        ,@(and (not debug)
               '#!acl2(:off (warning! observation prove event history proof-tree)
@@ -296,6 +300,7 @@
                 (stobjs ',stobjs)
                 (executable ',executable)
 
+                ;; Interface Symbols
                 (frame$a (or frame$a
                              (symbolicate frame frame "$A")))
                 (frame$c (or frame$c
@@ -318,6 +323,7 @@
                 (world (w state))
                 (frame$corr (cdr (assoc frame (table-alist 'corr world))))
 
+                ;; `FRAME$C'
                 (stobj-property (getpropc frame$c 'stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))
@@ -330,6 +336,7 @@
                 (updaters$c (loop$ :for i :from 0 :to n
                                   :collect (nth (+ 1 n (* 2 i)) (third stobj-property))))
 
+                ;; `FRAME$A'
                 (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a-property world))))
                 (recognizer$a (first (second stobj$a-property)))
                 (creator$a (second (second stobj$a-property)))
@@ -338,11 +345,13 @@
                 (accessors$a (sixth (third stobj$a-property)))
                 (updaters$a (seventh (third stobj$a-property)))
 
+                ;; Theorem Names
                 (creator{correspondence} (symbolicate frame creator "{CORRESPONDENCE}"))
                 (creator{preserved} (symbolicate frame creator "{PRESERVED}"))
                 (fixer{correspondence} (symbolicate frame fixer "{CORRESPONDENCE}"))
                 (fixer{preserved} (symbolicate frame fixer "{PRESERVED}"))
 
+                ;; Exports
                 (exports `((,fixer :logic ,fixer$a
                                    :exec ,fixer$c$inline)
                            ,@(loop$ :for accessor :in accessors
@@ -360,6 +369,7 @@
                                    :collect `(,updater :logic ,updater$a
                                                        :exec ,updater$c))))
 
+                ;; Miscellaneous
                 (updater$c-guards (frame$abs-updater$c-guards updaters$c () state))
 
                 (updater$c-fields (frame$abs-updater$c-fields updaters$c () state)))

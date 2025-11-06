@@ -266,17 +266,9 @@
                   inline memoizable executable
                   recognizer creator fixer
                   logic exec debug)
-          (parse-form form) ; HERE
-    (let* ((frame$a (or logic
-                        (symbolicate frame frame "$A")))
-           (frame$c (or exec
-                        (symbolicate frame frame "$C")))
-           (recognizer (or recognizer
-                           (symbolicate frame frame (make-predicate-suffix frame))))
-           (creator (or creator
-                        (symbolicate frame "CREATE-" frame)))
-           (fixer (or fixer
-                      (symbolicate frame frame "-FIX"))))
+          (parse-form form)
+
+    (let* ()
 
       `(with-output
          ,@(and (not debug)
@@ -286,6 +278,8 @@
 
          (make-event
            (let* ((frame ',frame)
+                  (logic ',logic)
+                  (exec ',exec)
                   (fields ',fields)
                   (element-types ',element-types)
                   (element-type-supplies ',element-type-supplies)
@@ -299,15 +293,24 @@
                   (memoizable ',memoizable)
                   (executable ',executable)
 
-                  (frame$a ',frame$a)
-                  (frame$c ',frame$c)
                   (recognizer ',recognizer)
                   (creator ',creator)
                   (fixer ',fixer)
                   (accessors ',accessors)
                   (updaters ',updaters)
 
-                  (debug ',debug))
+                  (debug ',debug)
+
+                  (frame$a (or logic
+                               (symbolicate frame frame "$A")))
+                  (frame$c (or exec
+                               (symbolicate frame frame "$C")))
+                  (recognizer (or recognizer
+                                  (symbolicate frame frame (make-predicate-suffix frame))))
+                  (creator (or creator
+                               (symbolicate frame "CREATE-" frame)))
+                  (fixer (or fixer
+                             (symbolicate frame frame "-FIX"))))
 
              `(progn
                 (define-frame$c ,frame$c
