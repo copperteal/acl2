@@ -209,6 +209,7 @@
                   initial-elements accessors updaters
                   recognizer creator fixer view debug)
           (parse-form$a form)
+
     `(with-output
        ,@(and (not debug)
               '#!acl2(:off (warning! observation prove event history proof-tree)
@@ -282,6 +283,7 @@
                 (accessors ',accessors)
                 (updaters ',updaters)
 
+                ;; Interface Symbols
                 (recognizer (or recognizer
                                 (symbolicate frame frame (make-predicate-suffix frame))))
                 (creator (or creator
@@ -299,6 +301,7 @@
                                 :collect (or updater
                                              (symbolicate frame frame "-" field "-SET"))))
 
+                ;; Prologue
                 (frame-begin (symbolicate frame frame "-BEGIN"))
                 (frame-end (symbolicate frame frame "-END"))
                 (defconst-forms (loop$ :for initial-element-name :in initial-element-names
@@ -311,6 +314,7 @@
 
                    ,@defconst-forms))
 
+                ;; Theorem Names
                 (recognizer{type-prescription} (symbolicate frame recognizer "{TYPE-PRESCRIPTION}"))
                 (recognizer{compound-recognizer} (symbolicate frame recognizer "{COMPOUND-RECOGNIZER}"))
                 (recognizer-of-creator (symbolicate frame recognizer "-OF-" creator))
@@ -327,6 +331,7 @@
                 (frame-equal (symbolicate frame frame "-EQUAL"))
                 (frame-equal{forward-chaining} (symbolicate frame frame-equal "{FORWARD-CHAINING}"))
 
+                ;; Epilogue
                 (frame-theorems (symbolicate frame frame "-THEOREMS"))
                 (frame-definitions (symbolicate frame frame "-DEFINITIONS"))
                 (frame-aggressive (symbolicate frame frame "-AGGRESSIVE"))

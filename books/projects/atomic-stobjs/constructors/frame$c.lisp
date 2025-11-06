@@ -219,6 +219,7 @@
                   inline memoizable executable
                   recognizer creator fixer view debug)
           (parse-form$c form)
+
     `(with-output
        ,@(and (not debug)
               '#!acl2(:off (warning! observation prove event history proof-tree)
@@ -283,6 +284,7 @@
                 (accessors ',accessors)
                 (updaters ',updaters)
 
+                ;; Interface Symbols
                 (recognizer-stobj-default (symbolicate frame frame "P"))
                 (recognizer (or recognizer
                                 (symbolicate frame frame (make-predicate-suffix frame))))
@@ -312,6 +314,7 @@
                                 :collect (or updater
                                              (symbolicate frame frame "-" field "-SET"))))
 
+                ;; Prologue
                 (frame-begin (symbolicate frame frame "-BEGIN"))
                 (frame-end (symbolicate frame frame "-END"))
                 (defconst-forms (loop$ :for initial-element-name :in initial-element-names
@@ -356,6 +359,7 @@
                      :non-memoizable ,(not memoizable)
                      :non-executable ,(not executable))))
 
+                ;; Theorem Names
                 (recognizer{type-prescription} (symbolicate frame recognizer "{TYPE-PRESCRIPTION}"))
                 (recognizer{compound-recognizer} (symbolicate frame recognizer "{COMPOUND-RECOGNIZER}"))
                 (recognizer-of-creator (symbolicate frame recognizer "-OF-" creator))
@@ -364,6 +368,7 @@
                 (view{rewrite} (symbolicate frame view "{REWRITE}"))
                 (fixer{rewrite} (symbolicate frame fixer "{REWRITE}"))
 
+                ;; Epilogue
                 (frame-theorems (symbolicate frame frame '-theorems))
                 (epilogue
                  `((in-theory
