@@ -46,11 +46,11 @@
        (element-type 't element-type-supplied-p)
        (key-recognizer 'nil key-recognizer-supplied-p)
        (key-fixer 'nil key-fixer-supplied-p)
-       (key 'key key-supplied-p)
+       (key 'nil key-supplied-p)
        (default-key 'nil default-key-supplied-p)
        (val-recognizer 'nil val-recognizer-supplied-p)
        (val-fixer 'nil val-fixer-supplied-p)
-       (val 'val val-supplied-p)
+       (val 'nil val-supplied-p)
        (default-val 'nil default-val-supplied-p)
        (copyable 't copyable-supplied-p)
 

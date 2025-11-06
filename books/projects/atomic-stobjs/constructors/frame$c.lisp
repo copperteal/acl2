@@ -325,7 +325,7 @@
                                             :as stobj-property :in stobj-property-list
                                             :as initial-element :in initial-elements
                                             :collect `(,accessor
-; TODO: check this works with non-atomic array and hash-table
+; TODO: STOBJ check this works with non-atomic array and hash-table
                                                        :type ,element-type
                                                        ,@(and (not stobj-property)
                                                               `(:initially ,initial-element)))))
@@ -496,7 +496,7 @@
                                               (return body))
                                              ((car stobj-property-list)
                                               (let* ((st (car element-types))
-                                                     ;; TODO: Get from formals?
+                                                     ;; TODO: STOBJ Get from formals?
                                                      (%st (symbolicate st "%" st))
                                                      (stobj-copier (car stobj-copier-list)))
                                                 (setq body `(stobj-let ((,%st (,(car accessors) ,frame) ,(car updaters)))

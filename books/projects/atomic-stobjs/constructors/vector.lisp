@@ -46,7 +46,7 @@
        (specialize-element-type 'nil specialize-element-type-supplied-p)
        (element-recognizer 'nil element-recognizer-supplied-p)
        (element-fixer 'nil element-fixer-supplied-p)
-       (element 'x element-supplied-p)
+       (element 'nil element-supplied-p)
        (initial-element 'nil initial-element-supplied-p)
        (resizable 'nil resizable-supplied-p)
 
