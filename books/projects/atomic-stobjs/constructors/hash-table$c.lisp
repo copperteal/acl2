@@ -103,9 +103,7 @@
 
   `(with-output
      ,@(and (not debug)
-            '#!acl2(:off (warning! observation prove event history proof-tree)
-                         :summary-off (rules)
-                         :gag-mode t))
+            *constructor-output*)
 
      (make-event
        (let* ((hash-table ',hash-table)

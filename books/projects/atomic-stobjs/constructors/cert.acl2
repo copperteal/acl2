@@ -29,3 +29,7 @@
 
 (ld "../type-spec.acl2")
 (ld "../package.lsp")
+
+(defconst atomic-stobjs::*constructor-output*
+  '(:off (:other-than summary)
+    :gag-mode t))
