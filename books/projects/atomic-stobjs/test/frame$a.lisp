@@ -73,7 +73,6 @@
 ;;;; Stobj Values
 ;; (defstobj st/0
 ;;   a/0
-;;   :inline t
 ;;   :non-memoizable t
 ;;   :non-executable t)
 
@@ -110,7 +109,6 @@
 
 ;; (defstobj st/1
 ;;   a/1
-;;   :inline t
 ;;   :non-memoizable t
 ;;   :non-executable t)
 
@@ -147,7 +145,6 @@
 
 ;; (defstobj st/2
 ;;   a/2
-;;   :inline t
 ;;   :non-memoizable t
 ;;   :non-executable t)
 
