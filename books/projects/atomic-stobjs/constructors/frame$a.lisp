@@ -652,7 +652,7 @@
                                    :collect `(equal (,accessor ,%frame)
                                                     (,accessor ,frame)))))
 
-                    (table equal ',frame ',frame-equal)
+                    (table equality ',frame ',frame-equal)
 
                     (with-books (("std/lists/nth" :dir :system))
                       (local

@@ -123,7 +123,7 @@
               (test ',test)
 
               (key (or ',key
-                       (symbolicate "LEM-HASH-TABLE$A" "K")))
+                       (symbolicate hash-table "K")))
               (%key (or ',%key
                         (symbolicate key "%" key)))
               (key-recognizer ',key-recognizer)
@@ -132,7 +132,7 @@
               (default-key default-key-name)
 
               (val (or ',val
-                       (symbolicate "LEM-HASH-TABLE$A" "V")))
+                       (symbolicate hash-table "V")))
               (%val (or ',%val
                         (symbolicate val "%" val)))
               (world (w state))
@@ -156,7 +156,7 @@
                                `(,val-creator)
                                default-val-name))
               (set (or ',set
-                       (symbolicate "LEM-HASH-TABLE$A" "S")))
+                       (symbolicate hash-table "S")))
               (%set (or ',%set
                         (symbolicate set "%" set)))
               (copyable ',copyable)
@@ -2222,7 +2222,7 @@
                          (,keys-equal ,%hash-table ,hash-table)
                          (,vals-equal ,%hash-table ,hash-table)))
 
-                  (table equal ',hash-table ',hash-table-equal)
+                  (table equality ',hash-table ',hash-table-equal)
 
                   (defthm ,hash-table-equal{forward-chaining}
                     (implies (,hash-table-equal ,%hash-table ,hash-table)
