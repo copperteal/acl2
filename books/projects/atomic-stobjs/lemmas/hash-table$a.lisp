@@ -628,6 +628,14 @@
            (true-listp set))
   :rule-classes :compound-recognizer)
 
+(defthm keysp-when-emptyp
+  (implies (set::emptyp set)
+           (equal (keysp set)
+                  (not set)))
+  :hints
+  (("Goal"
+    :in-theory (enable set::emptyp))))
+
 (defthm keysp-of-keys-fix
   (keysp (keys-fix set)))
 
