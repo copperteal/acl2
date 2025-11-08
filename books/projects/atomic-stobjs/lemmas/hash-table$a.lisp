@@ -671,6 +671,13 @@
     :in-theory (enable set::cardinality)
     :expand (keysp (set::insert key set)))))
 
+(defthm keysp-of-delete
+  (implies (keysp set)
+           (keysp (set::delete key set)))
+  :hints
+  (("Goal"
+    :in-theory (enable set::delete))))
+
 
 ;;;; `KEYS-FIX'
 (defthm keys-fix{type-prescription}
