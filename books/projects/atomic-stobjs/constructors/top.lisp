@@ -30,13 +30,18 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
+(include-book "congruent")
 (include-book "copy")
 (include-book "vector")
 (include-book "hash-table")
 (include-book "frame")
 
 (defconst *exports*
-  '(define-vector$c
+  '(define-congruent
+
+    define-copy
+
+    define-vector$c
     define-vector$a
     define-vector$corr
     define-vector$abs
@@ -52,6 +57,4 @@
     define-frame$a
     define-frame$corr
     define-frame$abs
-    define-frame
-
-    define-stobj-copier))
+    define-frame))
