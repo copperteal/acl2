@@ -76,7 +76,7 @@
               (frame$c (or exec
                            (symbolicate frame frame "$C")))
 
-              (stobj-property (getpropc frame$c 'stobj))
+              (stobj-property (getpropc frame$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
               (n (floor (len (third stobj-property)) 4))
               (accessors$c (loop$ :for i :from 0 :to n
@@ -252,7 +252,7 @@
   (if (atom updaters$c)
       (reverse acc)
       (frame$abs-updater$c-guards (cdr updaters$c)
-                                  (cons (cadr (untranslate (getpropc (car updaters$c) 'guard)
+                                  (cons (cadr (untranslate (getpropc (car updaters$c) 'acl2::guard)
                                                            nil
                                                            (w state)))
                                         acc)
@@ -266,7 +266,7 @@
   (if (atom updaters$c)
       (reverse acc)
       (frame$abs-updater$c-fields (cdr updaters$c)
-                                  (cons (car (getpropc (car updaters$c) 'formals))
+                                  (cons (car (getpropc (car updaters$c) 'acl2::formals))
                                         acc)
                                   state)))
 
@@ -320,7 +320,7 @@
                 (frame$corr (cdr (assoc frame (table-alist 'corr world))))
 
                 ;; `FRAME$C'
-                (stobj-property (getpropc frame$c 'stobj))
+                (stobj-property (getpropc frame$c 'acl2::stobj))
                 (recognizer$c (caadr stobj-property))
                 (creator$c (cdadr stobj-property))
                 (fixer$c (cdr (assoc frame$c (table-alist 'fixer world))))

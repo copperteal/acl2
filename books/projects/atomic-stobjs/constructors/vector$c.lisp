@@ -102,23 +102,17 @@
 
               (element-type ',element-type)
               (stobj-property (and (symbolp element-type)
-                                   (getpropc element-type 'stobj)))
-              (absstobj-info (and (symbolp element-type)
-                                  (getpropc element-type 'absstobj-info)))
+                                   (getpropc element-type 'acl2::stobj)))
               (stobj$a-property (and (symbolp element-type)
                                      (cdr (assoc element-type (table-alist 'stobj$a-property (w state))))))
               (stobj-recognizer (cond
                                   (stobj$a-property
                                    (first (second stobj$a-property)))
-                                  (absstobj-info
-                                   (second (second absstobj-info)))
                                   (stobj-property
                                    (caadr stobj-property))))
               (stobj-creator (cond
                                (stobj$a-property
                                 (second (second stobj$a-property)))
-                               (absstobj-info
-                                (second (third absstobj-info)))
                                (stobj-property
                                 (cdadr stobj-property))))
               (specialize-element-type ',specialize-element-type)
@@ -209,6 +203,8 @@
                    :non-executable ,(not executable))))
 
               ;; Theorem Names
+              (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
+
               (contents-recognizer{type-prescription} (symbolicate vector contents-recognizer "{TYPE-PRESCRIPTION}"))
               (contents-recognizer{compound-recognizer} (symbolicate vector contents-recognizer "{COMPOUND-RECOGNIZER}"))
 
@@ -306,6 +302,23 @@
 
               (body
                `(with-books (("projects/atomic-stobjs/lemmas/vector$c" :dir :system))
+
+                  ,@(and stobj-property
+                         `((local
+                             (defthm ,stobj-recognizer-of-stobj-creator
+                               (,stobj-recognizer (,stobj-creator))))))
+
+                  (local
+                    (in-theory
+                      (union-theories (current-theory 'acl2::ground-zero)
+                                      (set-difference-theories
+                                       (universal-theory :here)
+                                       (universal-theory ',vector-begin)))))
+
+                  (local
+                    (in-theory
+                      (enable type-spec-theory)))
+
                   (local
                     (in-theory
                       (disable make-list-ac

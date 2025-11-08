@@ -224,41 +224,29 @@
                 (stobjs ',stobjs)
                 (world (w state))
                 (stobj-property-list (loop$ :for stobj :in stobjs
-                                           :collect (getprop stobj 'stobj nil 'current-acl2-world world)))
-                (absstobj-info-list (loop$ :for stobj :in stobjs
-                                          :collect (getprop stobj 'absstobj-info nil 'current-acl2-world world)))
+                                           :collect (getprop stobj
+                                                             'acl2::stobj
+                                                             nil
+                                                             'acl2::current-acl2-world
+                                                             world)))
                 (stobj$a-property-alist (table-alist 'stobj$a-property world))
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
                                              :collect (cdr (assoc stobj stobj$a-property-alist))))
                 (recognizers ',recognizers)
                 (recognizers (loop$ :for recognizer :in recognizers
-                                   :as stobj-property :in stobj-property-list
-                                   :as absstobj-info :in absstobj-info-list
                                    :as stobj$a-property :in stobj$a-property-list
                                    :collect (cond
                                               (recognizer)
                                               (stobj$a-property
-                                               (first (second stobj$a-property)))
-                                              (absstobj-info
-                                               (second (second absstobj-info)))
-                                              (stobj-property
-                                               (caadr stobj-property)))))
-                (creators (loop$ :for stobj-property :in stobj-property-list
-                                :as absstobj-info :in absstobj-info-list
-                                :as stobj$a-property :in stobj$a-property-list
+                                               (first (second stobj$a-property))))))
+                (creators (loop$ :for stobj$a-property :in stobj$a-property-list
                                 :collect (cond
                                            (stobj$a-property
-                                            (second (second stobj$a-property)))
-                                           (absstobj-info
-                                            (second (third absstobj-info)))
-                                           (stobj-property
-                                            (cdadr stobj-property)))))
+                                            (second (second stobj$a-property))))))
                 (fixer-alist (table-alist 'fixer world))
                 (fixers ',fixers)
                 (fixers (loop$ :for fixer :in fixers
                               :as stobj :in stobjs
-                              :as stobj-property :in stobj-property-list
-                              :as absstobj-info :in absstobj-info-list
                               :as stobj$a-property :in stobj$a-property-list
                               :collect (cond
                                          (fixer)
@@ -398,49 +386,24 @@
 
                     ,@(loop$ :for i :from 1 :to (len fields)
                             :as field :in fields
-                            :as recognizer :in recognizers
-                            :as fixer :in fixers
-                            :when (and recognizer
-                                       fixer)
-                            :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer "-OF-" fixer "-" i)
-                                          (,recognizer (,fixer ,field)))))
-
-                    ,@(loop$ :for i :from 1 :to (len fields)
-                            :as field :in fields
-                            :as recognizer :in recognizers
-                            :as fixer :in fixers
-                            :when (and recognizer
-                                       fixer)
-                            :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-WHEN-" recognizer "-" i)
-                                          (implies (,recognizer ,field)
-                                                   (equal (,fixer ,field)
-                                                          ,field)))))
-
-                    ,@(loop$ :for i :from 1 :to (len fields)
-                            :as field :in fields
                             :as initial-element :in initial-elements
                             :as recognizer :in recognizers
                             :as fixer :in fixers
                             :when (and recognizer
                                        fixer)
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-WHEN-NOT-" recognizer "-" i)
-                                          (implies (not (,recognizer ,field))
-                                                   (equal (,fixer ,field)
-                                                          ,initial-element)))))
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "{REWRITE}" "-" i)
+                                          (equal (,fixer ,field)
+                                                 (if (,recognizer ,field)
+                                                     ,field
+                                                     ,initial-element)))))
 
                     (local
                       (in-theory
-                        (set-difference-theories
-                         (union-theories
-                          (union-theories (current-theory 'acl2::ground-zero)
-                                          (set-difference-theories
-                                           (universal-theory :here)
-                                           (universal-theory ',frame-begin)))
-                          '())
-                         '())))
+                        (union-theories (current-theory 'acl2::ground-zero)
+                                        (set-difference-theories
+                                         (universal-theory :here)
+                                         (universal-theory ',frame-begin)))))
 
                     (defun ,recognizer (,frame)
                       (declare (xargs :guard t))

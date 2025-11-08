@@ -755,3 +755,63 @@
            acl2-type-spec-p
            typep$runtime
            typep$transform))
+
+(deftheory type-spec-theory
+  '((:e interval-designator-p)
+    (:t interval-designator-p)
+    (:e memberp-eq$inline)
+    (:t memberp-eq$inline)
+    (:e memberp-eql$inline)
+    (:t memberp-eql$inline)
+    (:e memberp-equal$inline)
+    (:t memberp-equal$inline)
+    memberp-eq{rewrite}
+    memberp-eql{rewrite}
+    memberp-iff-member
+    (:e acl2-type-spec-p)
+    (:t acl2-type-spec-p)
+    apply$-warrant-acl2-type-spec-p-necc
+    apply$-acl2-type-spec-p
+    acl2-type-spec-p{compound-recognizer}
+    acl2-type-spec-p-when-atom
+    (:e typep$runtime)
+    (:t typep$runtime)
+    (:e typep$transform)
+    (:t typep$transform)
+    apply$-warrant-typep$transform-necc
+    apply$-typep$transform
+    (:t typep$transform{type-prescription})
+    typep$-atom
+    typep$-bit
+    typep$-character
+    typep$-complex/atomic
+    typep$-cons
+    typep$-double-float
+    typep$-integer/atomic
+    typep$-list
+    typep$-nil
+    typep$-null
+    typep$-number
+    typep$-ratio
+    typep$-rational/atomic
+    typep$-real/atomic
+    typep$-signed-byte/atomic
+    typep$-standard-char
+    typep$-string/atomic
+    typep$-symbol
+    typep$-t
+    typep$-unsigned-byte/atomic
+    typep$-and
+    typep$-complex/compound
+    typep$-integer/compound
+    typep$-member
+    typep$-mod
+    typep$-not
+    typep$-or
+    typep$-rational/compound
+    typep$-real/compound
+    typep$-satisfies
+    typep$-signed-byte/compound
+    typep$-string/compound
+    typep$-unsigned-byte/compound
+    typep$-is-total))

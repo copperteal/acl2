@@ -39,11 +39,7 @@
                with-books
                make-predicate-suffix
                coupled)
-             '(stobj
-               absstobj-info
-               current-acl2-world
-               formals
-               <<))
+             '(<<))
    '(element-type
      default-value
 

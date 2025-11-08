@@ -136,24 +136,15 @@
               (%val (or ',%val
                         (symbolicate val "%" val)))
               (world (w state))
-              (stobj-property (getpropc val 'stobj))
-              (absstobj-info (getpropc val 'absstobj-info))
+              (stobj-property (getpropc val 'acl2::stobj))
               (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
               (val-recognizer (cond
                                 (',val-recognizer)
                                 (stobj$a-property
-                                 (first (second stobj$a-property)))
-                                (absstobj-info
-                                 (second (second absstobj-info)))
-                                (stobj-property
-                                 (caadr stobj-property))))
+                                 (first (second stobj$a-property)))))
               (val-creator (cond
                              (stobj$a-property
-                              (second (second stobj$a-property)))
-                             (absstobj-info
-                              (second (third absstobj-info)))
-                             (stobj-property
-                              (cdadr stobj-property))))
+                              (second (second stobj$a-property)))))
               (val-fixer (cond
                            (',val-fixer)
                            (stobj$a-property
@@ -262,6 +253,9 @@
                         `((defconst ,default-val-name ',',default-val)))))
 
               ;; Theorem Names
+              (key-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" key-fixer "{REWRITE}-1"))
+              (val-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" val-fixer "{REWRITE}-2"))
+
               (recognizer{type-prescription} (symbolicate hash-table recognizer "{TYPE-PRESCRIPTION}"))
               (recognizer{compound-recognizer} (symbolicate hash-table recognizer "{COMPOUND-RECOGNIZER}"))
               (recognizer-of-creator (symbolicate hash-table recognizer "-OF-" creator))
@@ -535,6 +529,32 @@
 
               (body
                `(with-books (("projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
+
+                  ,@(and key-fixer
+                         key-recognizer
+                         `((local
+                             (defthm ,key-fixer{rewrite}
+                               (equal (,key-fixer ,key)
+                                      (if (,key-recognizer ,key)
+                                          ,key
+                                          ,default-key))))))
+
+                  ,@(and val-fixer
+                         val-recognizer
+                         `((local
+                             (defthm ,val-fixer{rewrite}
+                               (equal (,val-fixer ,val)
+                                      (if (,val-recognizer ,val)
+                                          ,val
+                                          ,default-val))))))
+
+                  (local
+                    (in-theory
+                      (union-theories (current-theory 'acl2::ground-zero)
+                                      (set-difference-theories
+                                       (universal-theory :here)
+                                       (universal-theory ',hash-table-begin)))))
+
 ; If hash-table isn't copyable, then all "CONTENTS"-prefixed symbols refer to
 ; their non-prefixed base.
                   (defun ,contents-recognizer (,contents)
