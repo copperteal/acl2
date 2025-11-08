@@ -106,24 +106,15 @@
               (%element (or ',%element
                             (symbolicate element "%" element)))
               (world (w state))
-              (stobj-property (getpropc element 'stobj))
-              (absstobj-info (getpropc element 'absstobj-info))
+              (stobj-property (getpropc element 'acl2::stobj))
               (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
               (element-recognizer (cond
                                     (',element-recognizer)
                                     (stobj$a-property
-                                     (first (second stobj$a-property)))
-                                    (absstobj-info
-                                     (second (second absstobj-info)))
-                                    (stobj-property
-                                     (caadr stobj-property))))
+                                     (first (second stobj$a-property)))))
               (element-creator (cond
                                  (stobj$a-property
-                                  (second (second stobj$a-property)))
-                                 (absstobj-info
-                                  (second (third absstobj-info)))
-                                 (stobj-property
-                                  (cdadr stobj-property))))
+                                  (second (second stobj$a-property)))))
               (element-fixer (cond
                                (',element-fixer)
                                (stobj$a-property
@@ -172,6 +163,8 @@
                         `((defconst ,initial-element-name ',',initial-element)))))
 
               ;; Theorem Names
+              (element-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" element-fixer "{REWRITE}"))
+
               (recognizer-aux (symbolicate vector vector "-AUX-P"))
               (recognizer-aux{type-prescription} (symbolicate vector recognizer-aux "{TYPE-PRESCRIPTION}"))
               (recognizer-aux{compound-recognizer} (symbolicate vector recognizer-aux "{COMPOUND-RECOGNIZER}"))
@@ -368,6 +361,28 @@
 
               (body
                `(with-books (("projects/atomic-stobjs/lemmas/vector$a" :dir :system))
+
+                  ,@(and element-fixer
+                         element-recognizer
+                         `((local
+                             (defthm ,element-fixer{rewrite}
+                               (equal (,element-fixer ,element)
+                                      (if (,element-recognizer ,element)
+                                          ,element
+                                          ,initial-element))))))
+
+                  (local
+                    (in-theory
+                      (union-theories (current-theory 'acl2::ground-zero)
+                                      (set-difference-theories
+                                       (universal-theory :here)
+                                       (universal-theory ',vector-begin)))))
+
+                  (local
+                    (in-theory
+                      (disable make-list-ac
+                               (:e make-list-ac))))
+
 ; Fixed-length vectors with specialized elements need a predicate to check
 ; element-wise validity.
                   ,@(and (not resizable)
@@ -398,11 +413,6 @@
                     (declare (xargs :guard t))
                     (make-list ,default-length-name
                                :initial-element ,initial-element))
-
-                  (local
-                    (in-theory
-                      (disable make-list-ac
-                               (:e make-list-ac))))
 
 ; We don't want to frequently allocate large list literals in proofs.
                   (in-theory

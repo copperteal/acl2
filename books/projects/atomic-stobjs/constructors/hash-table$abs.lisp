@@ -68,7 +68,7 @@
               (hash-table$c (or exec
                                 (symbolicate hash-table hash-table "$C")))
 
-              (stobj-property (getpropc hash-table$c 'stobj))
+              (stobj-property (getpropc hash-table$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
               (accessor$c (if copyable
                               (third (third stobj-property))
@@ -249,7 +249,7 @@
               (hash-table$corr (third hash-table$corr-list))
 
               ;; `HASH-TABLE$C'
-              (stobj-property (getpropc hash-table$c 'stobj))
+              (stobj-property (getpropc hash-table$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
               (creator$c (cdadr stobj-property))
               (fixer$c (cdr (assoc hash-table$c (table-alist 'fixer world))))
@@ -307,7 +307,7 @@
               (val (first (second (third stobj$a-property))))
               (test (first (third (third stobj$a-property))))
 
-              (val-stobj-property (getpropc val 'stobj))
+              (val-stobj-property (getpropc val 'acl2::stobj))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate hash-table creator "{CORRESPONDENCE}"))
@@ -369,20 +369,20 @@
 
               ;; Miscellaneous
               (updater$c-guard
-               (cdr (untranslate (getpropc updater$c 'guard) nil world)))
+               (cdr (untranslate (getpropc updater$c 'acl2::guard) nil world)))
               (updater$c-guard (if val-stobj-property
                                    (cddr updater$c-guard)
                                    (cdr updater$c-guard)))
 
               (aggressive$a (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
-              (accessor$c-key (car (getpropc accessor$c 'formals)))
-              (updater$c-key (car (getpropc updater$c 'formals)))
-              (updater$c-val (cadr (getpropc updater$c 'formals)))
-              (boundp$c-key (car (getpropc boundp$c 'formals)))
-              (getp$c-key (car (getpropc getp$c 'formals)))
-              (remover$c-key (car (getpropc remover$c 'formals)))
+              (accessor$c-key (car (getpropc accessor$c 'acl2::formals)))
+              (updater$c-key (car (getpropc updater$c 'acl2::formals)))
+              (updater$c-val (cadr (getpropc updater$c 'acl2::formals)))
+              (boundp$c-key (car (getpropc boundp$c 'acl2::formals)))
+              (getp$c-key (car (getpropc getp$c 'acl2::formals)))
+              (remover$c-key (car (getpropc remover$c 'acl2::formals)))
               (keys-set$c-set (and keys-set$c
-                                   (car (getpropc keys-set$c 'formals)))))
+                                   (car (getpropc keys-set$c 'acl2::formals)))))
 
          `(encapsulate ()
 
