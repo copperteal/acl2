@@ -376,6 +376,7 @@
 
               (keysp{type-prescription} (symbolicate hash-table keysp "{TYPE-PRESCRIPTION}"))
               (keysp{compound-recognizer} (symbolicate hash-table keysp "{COMPOUND-RECOGNIZER}"))
+              (keysp-when-emptyp (symbolicate hash-table keysp "-WHEN-EMPTYP"))
               (keysp-of-keys-fix (symbolicate hash-table keysp "-OF-" keys-fix))
               (setp-when-keysp (symbolicate hash-table "SETP-WHEN-" keysp))
               (key-recognizer-of-head-when-keysp (symbolicate hash-table key-recognizer "-OF-HEAD-WHEN-" keysp))
@@ -2099,6 +2100,16 @@
                              (("Goal"
                                :by (:functional-instance
                                     lem-hash-table$a::keysp{compound-recognizer}
+                                    ,@fi-bindings))))
+
+                           (defthm ,keysp-when-emptyp
+                             (implies (set::emptyp ,set)
+                                      (equal (,keysp ,set)
+                                             (not ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp-when-emptyp
                                     ,@fi-bindings))))
 
                            (defthm ,keysp-of-keys-fix
