@@ -384,6 +384,7 @@
               (in-when-keysp (symbolicate hash-table "IN-WHEN-" keysp))
               (in-when-keysp{case-split} (symbolicate hash-table in-when-keysp "{CASE-SPLIT}"))
               (keysp-of-insert (symbolicate hash-table keysp "-OF-INSERT"))
+              (keysp-of-delete (symbolicate hash-table keysp "-OF-DELETE"))
 
               (keys-fix{type-prescription} (symbolicate hash-table keys-fix "{TYPE-PRESCRIPTION}"))
               (keys-fix-when-keysp (symbolicate hash-table keys-fix "-WHEN-" keysp))
@@ -2182,6 +2183,15 @@
                              (("Goal"
                                :by (:functional-instance
                                     lem-hash-table$a::keysp-of-insert
+                                    ,@fi-bindings))))
+
+                           (defthm ,keysp-of-delete
+                             (implies (,keysp ,set)
+                                      (,keysp (set::delete ,key ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp-of-delete
                                     ,@fi-bindings))))))
 
                   ;; `KEYS-FIX'
