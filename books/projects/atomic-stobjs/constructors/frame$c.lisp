@@ -234,32 +234,27 @@
                 (world (w state))
                 (stobj-property-list (loop$ :for element-type :in element-types
                                            :collect (and (symbolp element-type)
-                                                         (getprop element-type 'stobj nil 'current-acl2-world world))))
-                (absstobj-info-list (loop$ :for element-type :in element-types
-                                          :collect (and (symbolp element-type)
-                                                        (getprop element-type 'absstobj-info nil 'current-acl2-world world))))
+                                                         (getprop element-type
+                                                                  'acl2::stobj
+                                                                  nil
+                                                                  'acl2::current-acl2-world
+                                                                  world))))
                 (stobj$a-property-alist (table-alist 'stobj$a-property world))
                 (stobj$a-property-list (loop$ :for element-type :in element-types
                                              :collect (and (symbolp element-type)
                                                            (cdr (assoc element-type stobj$a-property-alist)))))
                 (stobj-recognizers (loop$ :for stobj-property :in stobj-property-list
-                                         :as absstobj-info :in absstobj-info-list
                                          :as stobj$a-property :in stobj$a-property-list
                                          :collect (cond
                                                     (stobj$a-property
                                                      (first (second stobj$a-property)))
-                                                    (absstobj-info
-                                                     (second (second absstobj-info)))
                                                     (stobj-property
                                                      (caadr stobj-property)))))
                 (stobj-creators (loop$ :for stobj-property :in stobj-property-list
-                                      :as absstobj-info :in absstobj-info-list
                                       :as stobj$a-property :in stobj$a-property-list
                                       :collect (cond
                                                  (stobj$a-property
                                                   (second (second stobj$a-property)))
-                                                 (absstobj-info
-                                                  (second (third absstobj-info)))
                                                  (stobj-property
                                                   (cdadr stobj-property)))))
                 (stobj-copier-alist (table-alist 'copier world))
@@ -358,6 +353,8 @@
                      :non-executable ,(not executable))))
 
                 ;; Theorem Names
+                (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
+
                 (recognizer{type-prescription} (symbolicate frame recognizer "{TYPE-PRESCRIPTION}"))
                 (recognizer{compound-recognizer} (symbolicate frame recognizer "{COMPOUND-RECOGNIZER}"))
                 (recognizer-of-creator (symbolicate frame recognizer "-OF-" creator))
@@ -391,7 +388,7 @@
                  `(encapsulate ()
 
                     (local
-                      (defthm ,(symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS")
+                      (defthm ,len-of-cons
                         (equal (len (cons a d))
                                (1+ (len d)))))
 
@@ -409,16 +406,20 @@
 
                     (local
                       (in-theory
-                        (set-difference-theories
-                         (union-theories
-                          (union-theories (current-theory 'acl2::ground-zero)
-                                          (set-difference-theories
-                                           (universal-theory :here)
-                                           (universal-theory ',frame-begin)))
-                          '())
-                         '(len
-                           nth
-                           update-nth))))
+                        (union-theories (current-theory 'acl2::ground-zero)
+                                        (set-difference-theories
+                                         (universal-theory :here)
+                                         (universal-theory ',frame-begin)))))
+
+                    (local
+                      (in-theory
+                        (enable type-spec-theory)))
+
+                    (local
+                      (in-theory
+                        (disable len
+                                 nth
+                                 update-nth)))
 
                     ,@(loop$ :for field :in fields
                             :as recognizer :in recognizers

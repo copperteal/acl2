@@ -45,7 +45,7 @@
   :copyable nil)
 
 
-;;;; Stobj Valued
+;;;; Stobj Values
 (defstobj foo$c
   a
   :non-memoizable t

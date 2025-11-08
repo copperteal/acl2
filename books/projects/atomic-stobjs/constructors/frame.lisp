@@ -276,7 +276,7 @@
                 (world (w state))
                 (stobj-property-list (loop$ :for element-type :in element-types
                                            :collect (and (symbolp element-type)
-                                                         (getprop element-type 'stobj nil 'current-acl2-world world))))
+                                                         (getprop element-type 'acl2::stobj nil 'acl2::current-acl2-world world))))
                 (recognizers ',recognizers)
                 (fixers ',fixers)
                 (initial-elements ',initial-elements)

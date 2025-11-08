@@ -63,7 +63,7 @@
               (vector$c (or exec
                             (symbolicate vector vector "$C")))
 
-              (stobj-property (getpropc vector$c 'stobj))
+              (stobj-property (getpropc vector$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
               (length$c (second (third stobj-property)))
               (accessor$c (fourth (third stobj-property)))
@@ -175,7 +175,7 @@
               (vector$corr (second vector$corr-list))
 
               ;; `VECTOR$C'
-              (stobj-property (getpropc vector$c 'stobj))
+              (stobj-property (getpropc vector$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
               (creator$c (cdadr stobj-property))
               (fixer$c (cdr (assoc vector$c (table-alist 'fixer world))))
@@ -200,7 +200,7 @@
               (resizable (first (second (third stobj$a-property))))
               (default-length-name (second (second (third stobj$a-property))))
 
-              (element-stobj-property (getpropc element 'stobj))
+              (element-stobj-property (getpropc element 'acl2::stobj))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate vector creator "{CORRESPONDENCE}"))
@@ -232,7 +232,7 @@
 
               ;; Miscellaneous
               (updater$c-guard
-               (cdr (untranslate (getpropc updater$c 'guard) nil world)))
+               (cdr (untranslate (getpropc updater$c 'acl2::guard) nil world)))
               (updater$c-guard (if element-stobj-property
                                    (cddr updater$c-guard)
                                    (cdr updater$c-guard)))
@@ -240,10 +240,10 @@
               (aggressive$a (symbolicate vector$a vector$a "-AGGRESSIVE"))
               (accessor$c-of-resizer$c (symbolicate vector$c accessor$c "-OF-" resizer$c))
 
-              (resizer$c-index (car (getpropc resizer$c 'formals)))
-              (accessor$c-index (car (getpropc accessor$c 'formals)))
-              (updater$c-index (car (getpropc updater$c 'formals)))
-              (updater$c-value (cadr (getpropc updater$c 'formals))))
+              (resizer$c-index (car (getpropc resizer$c 'acl2::formals)))
+              (accessor$c-index (car (getpropc accessor$c 'acl2::formals)))
+              (updater$c-index (car (getpropc updater$c 'acl2::formals)))
+              (updater$c-value (cadr (getpropc updater$c 'acl2::formals))))
 
          `(encapsulate ()
 

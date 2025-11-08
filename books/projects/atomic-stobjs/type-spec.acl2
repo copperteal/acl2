@@ -64,7 +64,8 @@
               acl2-type-spec-p
               typep$runtime
               typep$transform
-              typep$)
+              typep$
+              type-spec-theory)
             *atomic-type-specifiers*
             *atomic-real-subtype-specifiers*
             *compound-type-specifier-names*

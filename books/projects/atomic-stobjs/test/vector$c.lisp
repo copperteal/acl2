@@ -34,7 +34,7 @@
 (atomic-stobjs::define-vector$c arr$c/nargs 31)
 
 
-;;;; Stobj Valued
+;;;; Stobj Values
 (defstobj foo$c
   a
   :non-memoizable t
