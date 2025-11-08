@@ -42,13 +42,6 @@
       "-P"
       "P"))
 
-(local
-  (thm ; ensure `MAKE-PREDICATE-SUFFIX' is known to return a string
-    (stringp (make-predicate-suffix sos))
-    :hints
-    (("Goal"
-      :in-theory '((:t make-predicate-suffix))))))
-
 ;;; `COUPLED-FN'
 (encapsulate ()
   (local
@@ -56,25 +49,23 @@
       (implies (character-listp x)
                (character-listp (remove-equal a x)))))
 
-  (defun coupled-fn (names)
-    (declare (xargs :guard (symbol-listp names)))
-    (and (consp names)
-         (cons (let ((name (car names)))
-                 (list (symbolicate name (coerce (remove #\% (coerce (symbol-name name)
-                                                                     'list))
-                                                 'string)
-                                    '-coupled)
-                       name))
-               (coupled-fn (cdr names))))))
-
-(local
-  (thm ; ensure `COUPLED-FN' is known to return a symbol-list
-    (implies (symbol-listp names)
-             (symbol-list-listp (coupled-fn names)))))
+  (defun coupled-fn (names acc)
+    (declare (xargs :guard (and (symbol-listp names)
+                                (symbol-list-listp acc))))
+    (if (atom names)
+        (reverse acc)
+        (coupled-fn (cdr names)
+                    (cons (let ((name (car names)))
+                            (list (symbolicate name (coerce (remove #\% (coerce (symbol-name name)
+                                                                                'list))
+                                                            'string)
+                                               "-COUPLED")
+                                  name))
+                          acc)))))
 
 (defmacro coupled (&rest names)
   (declare (xargs :guard (symbol-listp names)))
-  (let ((expressions (coupled-fn names)))
+  (let ((expressions (coupled-fn names ())))
     (list 'force (if (null (cdr expressions))
                      (car expressions)
                      (cons 'and expressions)))))
