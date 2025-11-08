@@ -56,22 +56,22 @@
 
 ;;;; length zero, type t
 ;;; dimensions, element-type, resizable
-(atomic-stobjs::define-vector arr/0-t-nil 0
+(atomic-stobjs::define-vector vec/0-t-nil 0
   :element-type t
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/0-t-t 0
+(atomic-stobjs::define-vector vec/0-t-t 0
   :element-type t
   :resizable t)
 
-(atomic-stobjs::define-vector arr/0-cons-\(A\ B\)-nil 0
+(atomic-stobjs::define-vector vec/0-cons-\(A\ B\)-nil 0
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
   :initial-element (a b)
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/0-cons-\(A\ B\)-t 0
+(atomic-stobjs::define-vector vec/0-cons-\(A\ B\)-t 0
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
@@ -81,22 +81,22 @@
 
 ;;;; length 1013, type t
 ;;; dimensions, element-type, resizable
-(atomic-stobjs::define-vector arr/1013-t-nil 1013
+(atomic-stobjs::define-vector vec/1013-t-nil 1013
   :element-type t
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/1013-t-t 1013
+(atomic-stobjs::define-vector vec/1013-t-t 1013
   :element-type t
   :resizable t)
 
-(atomic-stobjs::define-vector arr/1013-cons-\(A\ B\)-nil 1013
+(atomic-stobjs::define-vector vec/1013-cons-\(A\ B\)-nil 1013
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
   :initial-element (a b)
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/1013-cons-\(A\ B\)-t 1013
+(atomic-stobjs::define-vector vec/1013-cons-\(A\ B\)-t 1013
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
@@ -106,14 +106,14 @@
 
 ;;;; length zero, type including nil
 ;;; dimensions, element-type, resizable
-(atomic-stobjs::define-vector arr/0-\(MEMBER\ T\ NIL\)-nil 0
+(atomic-stobjs::define-vector vec/0-\(MEMBER\ T\ NIL\)-nil 0
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/0-\(MEMBER\ T\ NIL\)-t 0
+(atomic-stobjs::define-vector vec/0-\(MEMBER\ T\ NIL\)-t 0
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
@@ -123,14 +123,14 @@
 
 ;;;; length 1234, type including nil
 ;;; dimensions, element-type, resizable
-(atomic-stobjs::define-vector arr/1234-\(MEMBER\ T\ NIL\)-nil 1234
+(atomic-stobjs::define-vector vec/1234-\(MEMBER\ T\ NIL\)-nil 1234
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/1234-\(MEMBER\ T\ NIL\)-t 1234
+(atomic-stobjs::define-vector vec/1234-\(MEMBER\ T\ NIL\)-t 1234
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
@@ -140,14 +140,14 @@
 
 ;;;; length zero, type not including nil
 ;;; dimensions, element-type, resizable
-(atomic-stobjs::define-vector arr/0-signed-byte-nil 0
+(atomic-stobjs::define-vector vec/0-signed-byte-nil 0
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
   :initial-element 0
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/0-signed-byte-t 0
+(atomic-stobjs::define-vector vec/0-signed-byte-t 0
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
@@ -157,14 +157,14 @@
 
 ;;;; length #xbead, type not including nil
 ;;; dimensions, element-type, resizable
-(atomic-stobjs::define-vector arr/bead-signed-byte-nil #xbead
+(atomic-stobjs::define-vector vec/bead-signed-byte-nil #xbead
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
   :initial-element 0
   :resizable nil)
 
-(atomic-stobjs::define-vector arr/bead-signed-byte-t #xbead
+(atomic-stobjs::define-vector vec/bead-signed-byte-t #xbead
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
