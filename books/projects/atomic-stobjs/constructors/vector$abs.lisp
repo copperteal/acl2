@@ -82,8 +82,7 @@
                 (implies (and (natp index)
                               (< index (,length$c ,vector$c)))
                          (equal (,accessor$c index ,vector$c)
-                                (,accessor$a index ,vector$a))))
-              :rewrite :direct)
+                                (,accessor$a index ,vector$a)))))
 
             (defun-nx ,vector$corr (,vector$c ,vector$a)
               (declare (xargs :stobjs ,vector$c
@@ -173,6 +172,8 @@
               (vector$corr-list (cdr (assoc vector (table-alist 'corr world))))
               (vector$corr-contents (first vector$corr-list))
               (vector$corr (second vector$corr-list))
+              (vector$corr-contents-necc (symbolicate vector vector$corr-contents "-NECC"))
+              (vector$corr-contents-witness (symbolicate vector vector$corr-contents "-WITNESS"))
 
               ;; `VECTOR$C'
               (stobj-property (getpropc vector$c 'acl2::stobj))
@@ -290,7 +291,14 @@
                                             `(,accessor$c-of-resizer$c)))
                                     (,vector$corr-contents))
                     :expand (,vector$corr-contents (,resizer$c ,resizer$c-index ,vector$c)
-                                                   (,resizer$a ,resizer$c-index ,vector)))))
+                                                   (,resizer$a ,resizer$c-index ,vector)))
+                   ("Subgoal 2"
+                    :use ((:instance ,vector$corr-contents-necc
+                                     (index (,vector$corr-contents-witness
+                                             (,resizer$c ,resizer$c-index ,vector$c)
+                                             (,resizer$a ,resizer$c-index ,vector)))
+                                     (,vector$c ,vector$c)
+                                     (,vector$a ,vector))))))
 
                 (defthm ,resizer{preserved}
                   (implies (and (natp ,resizer$c-index)
@@ -311,7 +319,11 @@
                   :hints
                   (("Goal"
                     :in-theory (e/d (,aggressive$a)
-                                    (,vector$corr-contents)))))
+                                    (,vector$corr-contents))
+                    :use ((:instance ,vector$corr-contents-necc
+                                     (index ,accessor$c-index)
+                                     (,vector$c ,vector$c)
+                                     (,vector$a ,vector))))))
 
                 (defthm ,accessor{guard-thm}
                   (implies (and (,vector$corr ,vector$c ,vector)
@@ -342,7 +354,14 @@
                     :in-theory (e/d (,aggressive$a)
                                     (,vector$corr-contents))
                     :expand (,vector$corr-contents (,updater$c ,updater$c-index ,updater$c-value ,vector$c)
-                                                   (,updater$a ,updater$c-index ,updater$c-value ,vector)))))
+                                                   (,updater$a ,updater$c-index ,updater$c-value ,vector)))
+                   ("Subgoal 1"
+                    :use ((:instance ,vector$corr-contents-necc
+                                     (index (,vector$corr-contents-witness
+                                             (,updater$c ,updater$c-index ,updater$c-value ,vector$c)
+                                             (,updater$a ,updater$c-index ,updater$c-value ,vector)))
+                                     (,vector$c ,vector$c)
+                                     (,vector$a ,vector))))))
 
                 (defthm ,updater{guard-thm}
                   (implies (and (,vector$corr ,vector$c ,vector)

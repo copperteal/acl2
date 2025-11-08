@@ -856,8 +856,7 @@
                   (< index (length/resizable %vector))
                   (< index (length/resizable vector)))
              (equal (accessor/resizable index %vector)
-                    (accessor/resizable index vector))))
-  :rewrite :direct)
+                    (accessor/resizable index vector)))))
 
 (defun-nx equal/resizable (%vector vector)
   (declare (xargs :guard (and (recognizer/resizable %vector)
@@ -938,8 +937,7 @@
                   (< index (length/fixed %vector))
                   (< index (length/fixed vector)))
              (equal (accessor/fixed index %vector)
-                    (accessor/fixed index vector))))
-  :rewrite :direct)
+                    (accessor/fixed index vector)))))
 
 (defun-nx equal/fixed (%vector vector)
   (declare (xargs :guard (and (recognizer/fixed %vector)
