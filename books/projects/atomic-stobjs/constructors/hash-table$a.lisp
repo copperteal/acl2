@@ -380,6 +380,8 @@
               (setp-when-keysp (symbolicate hash-table "SETP-WHEN-" keysp))
               (key-recognizer-of-head-when-keysp (symbolicate hash-table key-recognizer "-OF-HEAD-WHEN-" keysp))
               (keysp-of-tail-when-keysp (symbolicate hash-table keysp "-OF-TAIL-WHEN-" keysp))
+              (in-when-keysp (symbolicate hash-table "IN-WHEN-" keysp))
+              (in-when-keysp{case-split} (symbolicate hash-table in-when-keysp "{CASE-SPLIT}"))
               (keysp-of-insert (symbolicate hash-table keysp "-OF-INSERT"))
 
               (keys-fix{type-prescription} (symbolicate hash-table keys-fix "{TYPE-PRESCRIPTION}"))
@@ -462,7 +464,8 @@
                                  keys-set-of-keys-free))
                       (and copyable
                            key-recognizer
-                           (list keys-fix))
+                           (list in-when-keysp{case-split}
+                                 keys-fix))
                       (list fixer
                             accessor-when-not-recognizer
                             accessor-of-updater
@@ -2135,6 +2138,31 @@
                                     lem-hash-table$a::keysp-of-tail-when-keysp
                                     ,@fi-bindings))))
 
+                           (defthmd ,in-when-keysp{case-split}
+                             (implies (and (,keysp ,set)
+                                           (not (,key-recognizer ,key)))
+                                      (not (set::in ,key ,set)))
+                             :rule-classes
+                             ((:rewrite :corollary
+                                        (implies (and (,keysp ,set)
+                                                      (not (case-split (,key-recognizer ,key))))
+                                                 (not (set::in ,key ,set)))))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::in-when-keysp
+                                    ,@fi-bindings))))
+
+                           (defthm ,in-when-keysp
+                             (implies (and (,keysp ,set)
+                                           (not (,key-recognizer ,key)))
+                                      (not (set::in ,key ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::in-when-keysp
+                                    ,@fi-bindings))))
+
                            (defthm ,keysp-of-insert
                              (implies (,keysp set)
                                       (equal (,keysp (set::insert key set))
@@ -2377,8 +2405,7 @@
                                      (equal (,boundp ,key ,%hash-table)
                                             (,boundp ,key ,hash-table)))
                            `(equal (,boundp ,key ,%hash-table)
-                                   (,boundp ,key ,hash-table))))
-                    :rewrite :direct)
+                                   (,boundp ,key ,hash-table)))))
 
                   (defun-sk ,vals-equal (,%hash-table ,hash-table)
                     (declare (xargs :guard (and (,recognizer ,%hash-table)
@@ -2390,8 +2417,7 @@
                                      (equal (,accessor ,key ,%hash-table)
                                             (,accessor ,key ,hash-table)))
                            `(equal (,accessor ,key ,%hash-table)
-                                   (,accessor ,key ,hash-table))))
-                    :rewrite :direct)
+                                   (,accessor ,key ,hash-table)))))
 
                   (defun-nx ,hash-table-equal (,%hash-table ,hash-table)
                     (declare (xargs :guard t
