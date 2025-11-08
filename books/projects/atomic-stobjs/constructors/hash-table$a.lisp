@@ -2426,7 +2426,8 @@
                                      (equal (,boundp ,key ,%hash-table)
                                             (,boundp ,key ,hash-table)))
                            `(equal (,boundp ,key ,%hash-table)
-                                   (,boundp ,key ,hash-table)))))
+                                   (,boundp ,key ,hash-table))))
+                    :rewrite :direct)
 
                   (defun-sk ,vals-equal (,%hash-table ,hash-table)
                     (declare (xargs :guard (and (,recognizer ,%hash-table)
@@ -2438,7 +2439,8 @@
                                      (equal (,accessor ,key ,%hash-table)
                                             (,accessor ,key ,hash-table)))
                            `(equal (,accessor ,key ,%hash-table)
-                                   (,accessor ,key ,hash-table)))))
+                                   (,accessor ,key ,hash-table))))
+                    :rewrite :direct)
 
                   (defun-nx ,hash-table-equal (,%hash-table ,hash-table)
                     (declare (xargs :guard t

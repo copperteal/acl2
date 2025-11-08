@@ -1260,7 +1260,8 @@
                                     (< ,index (,length ,%vector))
                                     (< ,index (,length ,vector)))
                                (equal (,accessor ,index ,%vector)
-                                      (,accessor ,index ,vector)))))
+                                      (,accessor ,index ,vector))))
+                    :rewrite :direct)
 
                   (defun-nx ,vector-equal (,%vector ,vector)
                     (declare (xargs :guard (and (,recognizer ,%vector)

@@ -96,25 +96,27 @@
               (declare (xargs :stobjs ,hash-table$c
                               :guard t
                               :verify-guards nil))
-              (forall key
-                ,(let ((identity `(equal (,boundp$c key ,hash-table$c)
-                                         (,boundp$a key ,hash-table$a))))
+              (forall k
+                ,(let ((identity `(equal (,boundp$c k ,hash-table$c)
+                                         (,boundp$a k ,hash-table$a))))
                    (if key-recognizer
-                       `(implies (,key-recognizer key)
+                       `(implies (,key-recognizer k)
                                  ,identity)
-                       identity))))
+                       identity)))
+              :rewrite :direct)
 
             (defun-sk ,hash-table$corr-vals (,hash-table$c ,hash-table$a)
               (declare (xargs :stobjs ,hash-table$c
                               :guard t
                               :verify-guards nil))
-              (forall key
-                ,(let ((identity `(equal (,accessor$c key ,hash-table$c)
-                                         (,accessor$a key ,hash-table$a))))
+              (forall k
+                ,(let ((identity `(equal (,accessor$c k ,hash-table$c)
+                                         (,accessor$a k ,hash-table$a))))
                    (if key-recognizer
-                       `(implies (,key-recognizer key)
+                       `(implies (,key-recognizer k)
                                  ,identity)
-                       identity))))
+                       identity)))
+              :rewrite :direct)
 
             (defun-nx ,hash-table$corr (,hash-table$c ,hash-table$a)
               (declare (xargs :stobjs ,hash-table$c
@@ -243,11 +245,7 @@
               (world (w state))
               (hash-table$corr-list (cdr (assoc hash-table (table-alist 'corr world))))
               (hash-table$corr-keys (first hash-table$corr-list))
-              (hash-table$corr-keys-necc (symbolicate hash-table hash-table$corr-keys "-NECC"))
-              (hash-table$corr-keys-witness (symbolicate hash-table hash-table$corr-keys "-WITNESS"))
               (hash-table$corr-vals (second hash-table$corr-list))
-              (hash-table$corr-vals-necc (symbolicate hash-table hash-table$corr-vals "-NECC"))
-              (hash-table$corr-vals-witness (symbolicate hash-table hash-table$corr-vals "-WITNESS"))
               (hash-table$corr (third hash-table$corr-list))
 
               ;; `HASH-TABLE$C'
@@ -422,12 +420,7 @@
                   :rule-classes nil
                   :hints
                   (("Goal"
-                    :in-theory (disable ,hash-table$corr-keys
-                                        ,hash-table$corr-vals)
-                    :use ((:instance ,hash-table$corr-vals-necc
-                                     (key ,accessor$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))))
+                    :in-theory (disable ,hash-table$corr-vals))))
 
                 ,@(and (or (eq test 'eq)
                            (eq test 'eql))
@@ -457,33 +450,11 @@
                                     (,hash-table$corr-keys
                                      ,hash-table$corr-vals)))
                    ("Subgoal 4"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key (,hash-table$corr-keys-witness
-                                           (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
-                                           (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table)))
                     :expand (,hash-table$corr-keys (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
                                                    (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))
                    ("Subgoal 3"
-                    :use ((:instance ,hash-table$corr-vals-necc
-                                     (key (,hash-table$corr-vals-witness
-                                           (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
-                                           (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table)))
                     :expand (,hash-table$corr-vals (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
-                                                   (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))
-                   ("Subgoal 2"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key ,updater$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))
-                   ("Subgoal 1"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key ,updater$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))))
+                                                   (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))))
 
                 ,@(and updater$c-guard
                        `((defthm ,updater{guard-thm}
@@ -517,11 +488,7 @@
                   :rule-classes nil
                   :hints
                   (("Goal"
-                    :in-theory (disable ,hash-table$corr-keys)
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key ,boundp$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))))
+                    :in-theory (disable ,hash-table$corr-keys))))
 
                 ,@(and (or (eq test 'eq)
                            (eq test 'eql))
@@ -548,17 +515,7 @@
                   :hints
                   (("Goal"
                     :in-theory (disable ,hash-table$corr-keys
-                                        ,hash-table$corr-vals))
-                   ("Subgoal 2"
-                    :use ((:instance ,hash-table$corr-vals-necc
-                                     (key ,getp$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))
-                   ("Subgoal 1"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key ,getp$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))))
+                                        ,hash-table$corr-vals))))
 
                 ,@(and (or (eq test 'eq)
                            (eq test 'eql))
@@ -586,33 +543,11 @@
                                     (,hash-table$corr-keys
                                      ,hash-table$corr-vals)))
                    ("Subgoal 4"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key (,hash-table$corr-keys-witness
-                                           (,remover$c ,remover$c-key ,hash-table$c)
-                                           (,remover$a ,remover$c-key ,hash-table)))
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table)))
                     :expand (,hash-table$corr-keys (,remover$c ,remover$c-key ,hash-table$c)
                                                    (,remover$a ,remover$c-key ,hash-table)))
                    ("Subgoal 3"
-                    :use ((:instance ,hash-table$corr-vals-necc
-                                     (key (,hash-table$corr-vals-witness
-                                           (,remover$c ,remover$c-key ,hash-table$c)
-                                           (,remover$a ,remover$c-key ,hash-table)))
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table)))
                     :expand (,hash-table$corr-vals (,remover$c ,remover$c-key ,hash-table$c)
-                                                   (,remover$a ,remover$c-key ,hash-table)))
-                   ("Subgoal 2"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key ,remover$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))
-                   ("Subgoal 1"
-                    :use ((:instance ,hash-table$corr-keys-necc
-                                     (key ,remover$c-key)
-                                     (,hash-table$c ,hash-table$c)
-                                     (,hash-table$a ,hash-table))))))
+                                                   (,remover$a ,remover$c-key ,hash-table)))))
 
                 ,@(and (or (eq test 'eq)
                            (eq test 'eql))
@@ -730,26 +665,13 @@
                            :rule-classes nil
                            :hints
                            (("Goal"
-                             :do-not-induct t
                              :in-theory (e/d (,aggressive$a)
                                              (,hash-table$corr-keys
                                               ,hash-table$corr-vals)))
                             ("Subgoal 2"
-                             :use ((:instance ,hash-table$corr-keys-necc
-                                              (key (,hash-table$corr-keys-witness
-                                                    (,keys-set$c ,keys-set$c-set ,hash-table$c)
-                                                    (,keys-set$a ,keys-set$c-set ,hash-table)))
-                                              (,hash-table$c ,hash-table$c)
-                                              (,hash-table$a ,hash-table)))
                              :expand (,hash-table$corr-keys (,keys-set$c ,keys-set$c-set ,hash-table$c)
                                                             (,keys-set$a ,keys-set$c-set ,hash-table)))
                             ("Subgoal 1"
-                             :use ((:instance ,hash-table$corr-vals-necc
-                                              (key (,hash-table$corr-vals-witness
-                                                    (,keys-set$c ,keys-set$c-set ,hash-table$c)
-                                                    (,keys-set$a ,keys-set$c-set ,hash-table)))
-                                              (,hash-table$c ,hash-table$c)
-                                              (,hash-table$a ,hash-table)))
                              :expand (,hash-table$corr-vals (,keys-set$c ,keys-set$c-set ,hash-table$c)
                                                             (,keys-set$a ,keys-set$c-set ,hash-table)))))
 

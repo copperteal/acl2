@@ -1879,7 +1879,8 @@
   (forall key
     (implies (key-recognizer key)
              (equal (boundp/unique key %hash-table)
-                    (boundp/unique key hash-table)))))
+                    (boundp/unique key hash-table))))
+  :rewrite :direct)
 
 (defun-sk vals-equal/unique (%hash-table hash-table)
   (declare (xargs :guard (and (recognizer/unique %hash-table)
@@ -1888,7 +1889,8 @@
   (forall key
     (implies (key-recognizer key)
              (equal (accessor/unique key %hash-table)
-                    (accessor/unique key hash-table)))))
+                    (accessor/unique key hash-table))))
+  :rewrite :direct)
 
 (defun-nx equal/unique (%hash-table hash-table)
   (declare (xargs :guard t
@@ -1912,9 +1914,11 @@
                     (recognizer/unique hash-table)
                     (not (omap::emptyp %hash-table))
                     (not (omap::emptyp hash-table))
-                    (not (equal (omap::head-key %hash-table)
-                                (omap::head-key hash-table))))
-               (not (keys-equal/unique %hash-table hash-table)))
+                    (keys-equal/unique %hash-table hash-table))
+               (equal (omap::head-key %hash-table)
+                      (omap::head-key hash-table)))
+      :rule-classes
+      ((:rewrite :match-free :all))
       :hints
       (("Goal"
         :do-not-induct t
@@ -1922,7 +1926,8 @@
                     (mv-nth 0 (omap::head hash-table)))
                 (<< (mv-nth 0 (omap::head hash-table))
                     (mv-nth 0 (omap::head %hash-table))))
-        :in-theory (enable omap::head-key-minimal))
+        :in-theory (e/d (omap::head-key-minimal)
+                        (keys-equal/unique-necc)))
        ("Subgoal 2"
         :cases ((keys-equal/unique %hash-table hash-table))
         :use ((:instance keys-equal/unique-necc
@@ -1948,6 +1953,8 @@
                     (keys-equal/unique %hash-table hash-table))
                (keys-equal/unique (omap::tail %hash-table)
                                   (omap::tail hash-table)))
+      :rule-classes
+      ((:rewrite :match-free :all))
       :hints
       (("Goal"
         :do-not-induct t
@@ -1993,9 +2000,11 @@
                     (not (omap::emptyp %hash-table))
                     (not (omap::emptyp hash-table))
                     (keys-equal/unique %hash-table hash-table)
-                    (not (equal (omap::head-val %hash-table)
-                                (omap::head-val hash-table))))
-               (not (vals-equal/unique %hash-table hash-table)))
+                    (vals-equal/unique %hash-table hash-table))
+               (equal (omap::head-val %hash-table)
+                      (omap::head-val hash-table)))
+      :rule-classes
+      ((:rewrite :match-free :all))
       :hints
       (("Goal"
         :in-theory (disable keys-equal/unique-necc
@@ -2034,6 +2043,8 @@
                     (vals-equal/unique %hash-table hash-table))
                (vals-equal/unique (omap::tail %hash-table)
                                   (omap::tail hash-table)))
+      :rule-classes
+      ((:rewrite :match-free :all))
       :hints
       (("Goal"
         :do-not-induct t
@@ -2118,7 +2129,8 @@
   (forall key
     (implies (key-recognizer key)
              (equal (boundp/copyable key %hash-table)
-                    (boundp/copyable key hash-table)))))
+                    (boundp/copyable key hash-table))))
+  :rewrite :direct)
 
 (defun-sk vals-equal/copyable (%hash-table hash-table)
   (declare (xargs :guard (and (recognizer/copyable %hash-table)
@@ -2127,7 +2139,8 @@
   (forall key
     (implies (key-recognizer key)
              (equal (accessor/copyable key %hash-table)
-                    (accessor/copyable key hash-table)))))
+                    (accessor/copyable key hash-table))))
+  :rewrite :direct)
 
 (defun-nx equal/copyable (%hash-table hash-table)
   (declare (xargs :guard t
@@ -2161,13 +2174,7 @@
                     (keys-equal/unique (cdr %hash-table)
                                        (cdr hash-table)))
                (keys-equal/copyable %hash-table
-                                    hash-table))
-      :hints
-      (("Goal"
-        :use ((:instance keys-equal/unique-necc
-                         (key (keys-equal/copyable-witness %hash-table hash-table))
-                         (%hash-table (cdr %hash-table))
-                         (hash-table (cdr hash-table))))))))
+                                    hash-table))))
 
   (local
     (defthmd keys-equal/unique-when-keys-equal/copyable
@@ -2207,13 +2214,7 @@
                     (vals-equal/unique (cdr %hash-table)
                                        (cdr hash-table)))
                (vals-equal/copyable %hash-table
-                                    hash-table))
-      :hints
-      (("Goal"
-        :use ((:instance vals-equal/unique-necc
-                         (key (vals-equal/copyable-witness %hash-table hash-table))
-                         (%hash-table (cdr %hash-table))
-                         (hash-table (cdr hash-table))))))))
+                                    hash-table))))
 
   (local
     (defthmd vals-equal/unique-when-vals-equal/copyable
