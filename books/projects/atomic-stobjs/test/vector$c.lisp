@@ -31,7 +31,7 @@
 
 (include-book "../constructors/vector$c")
 
-(atomic-stobjs::define-vector$c arr$c/nargs 31)
+(atomic-stobjs::define-vector$c vec$c/nargs 31)
 
 
 ;;;; Stobj Values
@@ -40,144 +40,144 @@
   :non-memoizable t
   :non-executable t)
 
-(atomic-stobjs::define-vector$c arr$c/foo$c-0 0
+(atomic-stobjs::define-vector$c vec$c/foo$c-0 0
   :element-type foo$c
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/foo$c-1 0
+(atomic-stobjs::define-vector$c vec$c/foo$c-1 0
   :element-type foo$c
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/foo$c-2 997
+(atomic-stobjs::define-vector$c vec$c/foo$c-2 997
   :element-type foo$c
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/foo$c-3 997
+(atomic-stobjs::define-vector$c vec$c/foo$c-3 997
   :element-type foo$c
   :resizable t)
 
 
 ;;;; type t
-(atomic-stobjs::define-vector$c arr$c/t-0 0
+(atomic-stobjs::define-vector$c vec$c/t-0 0
   :element-type t
   :initial-element nil
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/t-1 0
+(atomic-stobjs::define-vector$c vec$c/t-1 0
   :element-type t
   :initial-element nil
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/t-2 0
+(atomic-stobjs::define-vector$c vec$c/t-2 0
   :element-type t
   :initial-element (a b)
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/t-3 0
+(atomic-stobjs::define-vector$c vec$c/t-3 0
   :element-type t
   :initial-element c
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/t-4 997
+(atomic-stobjs::define-vector$c vec$c/t-4 997
   :element-type t
   :initial-element nil
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/t-5 997
+(atomic-stobjs::define-vector$c vec$c/t-5 997
   :element-type t
   :initial-element nil
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/t-6 997
+(atomic-stobjs::define-vector$c vec$c/t-6 997
   :element-type t
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/t-7 997
+(atomic-stobjs::define-vector$c vec$c/t-7 997
   :element-type t
   :initial-element t
   :resizable t)
 
 
 ;;;; type boolean
-(atomic-stobjs::define-vector$c arr$c/bool-0 0
+(atomic-stobjs::define-vector$c vec$c/bool-0 0
   :element-type (member t nil)
   :initial-element nil
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/bool-1 0
-  :element-type (member t nil)
-  :initial-element nil
-  :resizable t)
-
-(atomic-stobjs::define-vector$c arr$c/bool-2 0
-  :element-type (member t nil)
-  :initial-element t
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/bool-3 0
-  :element-type (member t nil)
-  :initial-element t
-  :resizable t)
-
-(atomic-stobjs::define-vector$c arr$c/bool-4 997
-  :element-type (member t nil)
-  :initial-element nil
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/bool-5 997
+(atomic-stobjs::define-vector$c vec$c/bool-1 0
   :element-type (member t nil)
   :initial-element nil
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/bool-6 997
+(atomic-stobjs::define-vector$c vec$c/bool-2 0
   :element-type (member t nil)
   :initial-element t
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/bool-7 997
+(atomic-stobjs::define-vector$c vec$c/bool-3 0
+  :element-type (member t nil)
+  :initial-element t
+  :resizable t)
+
+(atomic-stobjs::define-vector$c vec$c/bool-4 997
+  :element-type (member t nil)
+  :initial-element nil
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c vec$c/bool-5 997
+  :element-type (member t nil)
+  :initial-element nil
+  :resizable t)
+
+(atomic-stobjs::define-vector$c vec$c/bool-6 997
+  :element-type (member t nil)
+  :initial-element t
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c vec$c/bool-7 997
   :element-type (member t nil)
   :initial-element t
   :resizable t)
 
 
 ;;;; type signed-byte
-(atomic-stobjs::define-vector$c arr$c/sb-0 0
+(atomic-stobjs::define-vector$c vec$c/sb-0 0
   :element-type (signed-byte 1511)
   :initial-element 11
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/sb-1 0
-  :element-type (signed-byte 1511)
-  :initial-element 11
-  :resizable t)
-
-(atomic-stobjs::define-vector$c arr$c/sb-2 0
-  :element-type (signed-byte 1511)
-  :initial-element -13
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/sb-3 0
-  :element-type (signed-byte 1511)
-  :initial-element -13
-  :resizable t)
-
-(atomic-stobjs::define-vector$c arr$c/sb-4 997
-  :element-type (signed-byte 1511)
-  :initial-element 11
-  :resizable nil)
-
-(atomic-stobjs::define-vector$c arr$c/sb-5 997
+(atomic-stobjs::define-vector$c vec$c/sb-1 0
   :element-type (signed-byte 1511)
   :initial-element 11
   :resizable t)
 
-(atomic-stobjs::define-vector$c arr$c/sb-6 997
+(atomic-stobjs::define-vector$c vec$c/sb-2 0
   :element-type (signed-byte 1511)
   :initial-element -13
   :resizable nil)
 
-(atomic-stobjs::define-vector$c arr$c/sb-7 997
+(atomic-stobjs::define-vector$c vec$c/sb-3 0
+  :element-type (signed-byte 1511)
+  :initial-element -13
+  :resizable t)
+
+(atomic-stobjs::define-vector$c vec$c/sb-4 997
+  :element-type (signed-byte 1511)
+  :initial-element 11
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c vec$c/sb-5 997
+  :element-type (signed-byte 1511)
+  :initial-element 11
+  :resizable t)
+
+(atomic-stobjs::define-vector$c vec$c/sb-6 997
+  :element-type (signed-byte 1511)
+  :initial-element -13
+  :resizable nil)
+
+(atomic-stobjs::define-vector$c vec$c/sb-7 997
   :element-type (signed-byte 1511)
   :initial-element -13
   :resizable t)
