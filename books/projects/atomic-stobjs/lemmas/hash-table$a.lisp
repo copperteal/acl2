@@ -108,6 +108,23 @@
                val
                (default-val)))))
 
+(defun keysp (set)
+  (declare (xargs :guard t))
+  (if (atom set)
+      (null set)
+      (and (key-recognizer (car set))
+           (or (null (cdr set))
+               (and (consp (cdr set))
+                    (<< (car set)
+                        (cadr set))
+                    (keysp (cdr set)))))))
+
+(defun keys-fix (set)
+  (declare (xargs :guard (keysp set)))
+  (if (keysp set)
+      set
+      ()))
+
 (defun recognizer/unique (hash-table)
   (declare (xargs :guard t))
   (if (atom hash-table)
@@ -124,7 +141,7 @@
 (defun recognizer/copyable (hash-table)
   (declare (xargs :guard t))
   (and (consp hash-table)
-       (set::setp (car hash-table))
+       (keysp (car hash-table))
        (recognizer/unique (cdr hash-table))))
 
 (defun creator/unique ()
@@ -318,14 +335,46 @@
     (car hash-table)))
 
 (defun keys-set (set hash-table)
-  (declare (xargs :guard (and (set::setp set)
+  (declare (xargs :guard (and (keysp set)
                               (recognizer/copyable hash-table))))
-  (let ((set (set::sfix set))
+  (let ((set (keys-fix set))
         (hash-table (fixer/copyable hash-table)))
     (cons set (cdr hash-table))))
 
 
 ;;;; `OMAPS'
+(local
+  (defthm keysp{definition}
+    (equal (keysp set)
+           (and (set::setp set)
+                (or (set::emptyp set)
+                    (and (key-recognizer (set::head set))
+                         (keysp (set::tail set))))))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (keysp set)
+                        (set::setp set)))
+     (:rewrite :corollary
+               (implies (and (keysp set)
+                             (not (set::emptyp set)))
+                        (key-recognizer (set::head set))))
+     (:rewrite :corollary
+               (implies (and (keysp set)
+                             (not (set::emptyp set)))
+                        (keysp (set::tail set))))
+     (:definition :controller-alist ((keysp t))))
+    :hints
+    (("Goal"
+      :in-theory (enable set::setp
+                         set::emptyp
+                         set::head
+                         set::tail
+                         set::sfix)))))
+
+(local
+  (in-theory
+    (disable keysp)))
+
 (local
   (defthm recognizer/unique{definition}
     (equal (recognizer/unique hash-table)
@@ -363,8 +412,7 @@
 
 (local
   (in-theory
-    (disable (:d recognizer/unique)
-             (:i recognizer/unique))))
+    (disable recognizer/unique)))
 
 (local
   (defthm accessor/unique{definition}
@@ -390,8 +438,7 @@
 
 (local
   (in-theory
-    (disable (:d accessor/unique)
-             (:i accessor/unique))))
+    (disable accessor/unique)))
 
 (local
   (defthm updater/unique{definition}
@@ -411,8 +458,7 @@
 
 (local
   (in-theory
-    (disable (:d updater/unique)
-             (:i updater/unique))))
+    (disable updater/unique)))
 
 (local
   (defthm boundp/unique{definition}
@@ -432,8 +478,7 @@
 
 (local
   (in-theory
-    (disable (:d boundp/unique)
-             (:i boundp/unique))))
+    (disable boundp/unique)))
 
 (local
   (encapsulate ()
@@ -523,8 +568,7 @@
 
 (local
   (in-theory
-    (disable (:d remover/unique)
-             (:i remover/unique))))
+    (disable remover/unique)))
 
 (local
   (defthm count/unique{definition}
@@ -542,8 +586,7 @@
 
 (local
   (in-theory
-    (disable (:d count/unique)
-             (:i count/unique))))
+    (disable count/unique)))
 
 (local
   (defun recognizer/unique{induction}-fn (hash-table)
@@ -573,6 +616,67 @@
     :rule-classes
     ((:induction :pattern (accessor/unique key hash-table)
                  :scheme (accessor/unique{induction}-fn key hash-table)))))
+
+
+;;;; `KEYSP'
+(defthm keysp{type-prescription}
+  (booleanp (keysp set))
+  :rule-classes :type-prescription)
+
+(defthm keysp{compound-recognizer}
+  (implies (keysp set)
+           (true-listp set))
+  :rule-classes :compound-recognizer)
+
+(defthm keysp-of-keys-fix
+  (keysp (keys-fix set)))
+
+(defthm setp-when-keysp
+  (implies (keysp set)
+           (set::setp set)))
+
+(defthm key-recognizer-of-head-when-keysp
+  (implies (and (keysp set)
+                (not (set::emptyp set)))
+           (key-recognizer (set::head set))))
+
+(defthm keysp-of-tail-when-keysp
+  (implies (and (keysp set)
+                (not (set::emptyp set)))
+           (keysp (set::tail set))))
+
+(defthm in-when-not-key-recognizer
+  (implies (and (keysp set)
+                (not (key-recognizer key)))
+           (not (set::in key set)))
+  :hints
+  (("Goal"
+    :in-theory (enable set::in))))
+
+(defthm keysp-of-insert
+  (implies (keysp set)
+           (equal (keysp (set::insert key set))
+                  (key-recognizer key)))
+  :hints
+  (("Goal"
+    :induct (set::cardinality set)
+    :in-theory (enable set::cardinality)
+    :expand (keysp (set::insert key set)))))
+
+
+;;;; `KEYS-FIX'
+(defthm keys-fix{type-prescription}
+  (true-listp (keys-fix set))
+  :rule-classes :type-prescription)
+
+(defthm keys-fix-when-keysp
+  (implies (keysp set)
+           (equal (keys-fix set)
+                  set)))
+
+(defthm keys-fix-when-not-keysp
+  (implies (not (keysp set))
+           (not (keys-fix set))))
 
 
 ;;;; `RECOGNIZER/UNIQUE'
@@ -1666,8 +1770,8 @@
   (true-listp (keys hash-table))
   :rule-classes :type-prescription)
 
-(defthm setp-of-keys
-  (set::setp (keys hash-table)))
+(defthm keysp-of-keys
+  (keysp (keys hash-table)))
 
 (defthm keys-when-not-recognizer/copyable
   (implies (not (recognizer/copyable hash-table))
@@ -1690,7 +1794,7 @@
 
 (defthm keys-of-keys-set
   (equal (keys (keys-set set hash-table))
-         (set::sfix set)))
+         (keys-fix set)))
 
 
 ;;;; `KEYS-SET'
@@ -1699,8 +1803,8 @@
        (true-listp (keys-set set hash-table)))
   :rule-classes :type-prescription)
 
-(defthm keys-set-when-not-setp
-  (implies (not (set::setp set))
+(defthm keys-set-when-not-keysp
+  (implies (not (keysp set))
            (equal (keys-set set hash-table)
                   (keys-set '() hash-table))))
 
@@ -1712,10 +1816,13 @@
 (defthm keys-set-of-creator/copyable
   (implies (set::emptyp set)
            (equal (keys-set set (creator/copyable))
-                  (creator/copyable))))
+                  (creator/copyable)))
+  :hints
+  (("Goal"
+    :in-theory (enable set::emptyp))))
 
-(defthm keys-set-of-sfix
-  (equal (keys-set (set::sfix set) hash-table)
+(defthm keys-set-of-keys-fix
+  (equal (keys-set (keys-fix set) hash-table)
          (keys-set set hash-table)))
 
 (defthm keys-set-of-fixer/copyable
@@ -1731,7 +1838,7 @@
          (remover/copyable key (keys-set set hash-table))))
 
 (defthm keys-set-of-keys-free
-  (implies (equal (set::sfix set) (keys hash-table))
+  (implies (equal (keys-fix set) (keys hash-table))
            (equal (keys-set set hash-table)
                   (fixer/copyable hash-table))))
 

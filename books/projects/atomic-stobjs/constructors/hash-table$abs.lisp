@@ -89,7 +89,7 @@
               (boundp$a (third (fourth (third stobj$a-property))))
               (count$a (sixth (fourth (third stobj$a-property))))
               (keys$a (and copyable
-                           (ninth (fourth (third stobj$a-property))))))
+                           (nth 10 (fourth (third stobj$a-property))))))
 
          `(progn
             (defun-sk ,hash-table$corr-keys (,hash-table$c ,hash-table$a)
@@ -297,10 +297,12 @@
               (count$a (sixth (fourth (third stobj$a-property))))
               (clear$a (seventh (fourth (third stobj$a-property))))
               (init$a (eighth (fourth (third stobj$a-property))))
+              (keys$ap (and copyable
+                            (ninth (fourth (third stobj$a-property)))))
               (keys$a (and copyable
-                           (ninth (fourth (third stobj$a-property)))))
+                           (nth 10 (fourth (third stobj$a-property)))))
               (keys-set$a (and copyable
-                               (tenth (fourth (third stobj$a-property)))))
+                               (nth 11 (fourth (third stobj$a-property)))))
 
               (key-recognizer (second (first (third stobj$a-property))))
               (val-recognizer (second (second (third stobj$a-property))))
@@ -656,7 +658,7 @@
 
                          (defthm ,keys-set{correspondence}
                            (implies (and (,hash-table$corr ,hash-table$c,hash-table)
-                                         (set::setp ,keys-set$c-set)
+                                         (,keys$ap ,keys-set$c-set)
                                          (,recognizer$a ,hash-table))
                                     (,hash-table$corr (,keys-set$c ,keys-set$c-set ,hash-table$c)
                                                       (,keys-set$a ,keys-set$c-set ,hash-table)))
@@ -674,7 +676,7 @@
                                                             (,keys-set$a ,keys-set$c-set ,hash-table)))))
 
                          (defthm ,keys-set{preserved}
-                           (implies (and (set::setp v)
+                           (implies (and (,keys$ap v)
                                          (,recognizer$a ,hash-table))
                                     (,recognizer$a (,keys-set$a v ,hash-table)))
                            :rule-classes nil)))))

@@ -70,6 +70,8 @@
        (count 'nil)
        (clear 'nil)
        (init 'nil)
+       (keysp 'nil)
+       (keys-fix 'nil)
        (keys 'nil)
        (keys-set 'nil)
 
@@ -106,10 +108,14 @@
                                                   count
                                                   clear
                                                   init
+                                                  keysp
+                                                  keys-fix
                                                   keys
                                                   keys-set))
                               (or copyable
-                                  (and (not keys)
+                                  (and (not keysp)
+                                       (not keys-fix)
+                                       (not keys)
                                        (not keys-set)))
                               (booleanp debug))))
 
@@ -173,6 +179,8 @@
               (count ',count)
               (clear ',clear)
               (init ',init)
+              (keysp ',keysp)
+              (keys-fix ',keys-fix)
               (keys ',keys)
               (keys-set ',keys-set)
 
@@ -199,6 +207,10 @@
                          (symbolicate hash-table hash-table "-CLEAR")))
               (init (or init
                         (symbolicate hash-table hash-table "-INIT")))
+              (keysp (or keysp
+                         (symbolicate hash-table hash-table "-KEYS-P")))
+              (keys-fix (or keys-fix
+                            (symbolicate hash-table hash-table "-KEYS-FIX")))
               (keys (or keys
                         (symbolicate hash-table hash-table "-KEYS")))
               (keys-set (or keys-set
@@ -362,8 +374,20 @@
               (init{type-prescription} (symbolicate hash-table init "{TYPE-PRESCRIPTION}"))
               (init{rewrite} (symbolicate hash-table init "{REWRITE}"))
 
+              (keysp{type-prescription} (symbolicate hash-table keysp "{TYPE-PRESCRIPTION}"))
+              (keysp{compound-recognizer} (symbolicate hash-table keysp "{COMPOUND-RECOGNIZER}"))
+              (keysp-of-keys-fix (symbolicate hash-table keysp "-OF-" keys-fix))
+              (setp-when-keysp (symbolicate hash-table "SETP-WHEN-" keysp))
+              (key-recognizer-of-head-when-keysp (symbolicate hash-table key-recognizer "-OF-HEAD-WHEN-" keysp))
+              (keysp-of-tail-when-keysp (symbolicate hash-table keysp "-OF-TAIL-WHEN-" keysp))
+              (keysp-of-insert (symbolicate hash-table keysp "-OF-INSERT"))
+
+              (keys-fix{type-prescription} (symbolicate hash-table keys-fix "{TYPE-PRESCRIPTION}"))
+              (keys-fix-when-keysp (symbolicate hash-table keys-fix "-WHEN-" keysp))
+              (keys-fix-when-not-keysp (symbolicate hash-table keys-fix "-WHEN-NOT-" keysp))
+
               (keys{type-prescription} (symbolicate hash-table keys "{TYPE-PRESCRIPTION}"))
-              (setp-of-keys (symbolicate hash-table 'set::setp "-OF-" keys))
+              (keysp-of-keys (symbolicate hash-table (if key-recognizer keysp "SETP") "-OF-" keys))
               (keys-when-not-recognizer (symbolicate hash-table keys "-WHEN-NOT-" recognizer))
               (keys-of-creator (symbolicate hash-table keys "-OF-" creator))
               (keys-of-fixer (symbolicate hash-table keys "-OF-" fixer))
@@ -372,10 +396,10 @@
               (keys-of-keys-set (symbolicate hash-table keys "-OF-" keys-set))
 
               (keys-set{type-prescription} (symbolicate hash-table keys-set "{TYPE-PRESCRIPTION}"))
-              (keys-set-when-not-setp (symbolicate hash-table keys-set "-WHEN-NOT-" 'set::setp))
+              (keys-set-when-not-keysp (symbolicate hash-table keys-set "-WHEN-NOT-" (if key-recognizer keysp "SETP")))
               (keys-set-when-not-recognizer (symbolicate hash-table keys-set "-WHEN-NOT-" recognizer))
               (keys-set-of-creator (symbolicate hash-table keys-set "-OF-" creator))
-              (keys-set-of-sfix (symbolicate hash-table keys-set "-OF-" 'set::sfix))
+              (keys-set-of-keys-fix (symbolicate hash-table keys-set "-OF-" (if key-recognizer keys-fix "SFIX")))
               (keys-set-of-fixer (symbolicate hash-table keys-set "-OF-" fixer))
               (keys-set-of-updater (symbolicate hash-table keys-set "-OF-" updater))
               (keys-set-of-remover (symbolicate hash-table keys-set "-OF-" remover))
@@ -393,9 +417,9 @@
               (hash-table-equal{forward-chaining} (symbolicate hash-table hash-table-equal "{FORWARD-CHAINING}"))
 
               ;; Epilogue
-              (hash-table-theorems (symbolicate hash-table hash-table '-theorems))
-              (hash-table-definitions (symbolicate hash-table hash-table '-definitions))
-              (hash-table-aggressive (symbolicate hash-table hash-table '-aggressive))
+              (hash-table-theorems (symbolicate hash-table hash-table "-THEOREMS"))
+              (hash-table-definitions (symbolicate hash-table hash-table "-DEFINITIONS"))
+              (hash-table-aggressive (symbolicate hash-table hash-table "-AGGRESSIVE"))
               (epilogue
                `((deflabel ,hash-table-end)
 
@@ -433,9 +457,12 @@
                            (list updater-when-not-val-recognizer))
                       (and copyable
                            (list keys-when-not-recognizer
-                                 keys-set-when-not-setp
+                                 keys-set-when-not-keysp
                                  keys-set-when-not-recognizer
                                  keys-set-of-keys-free))
+                      (and copyable
+                           key-recognizer
+                           (list keys-fix))
                       (list fixer
                             accessor-when-not-recognizer
                             accessor-of-updater
@@ -469,7 +496,15 @@
               ;; Functional Instantiation
               (fi-bindings
                (append
-                (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
+                (list `(lem-hash-table$a::keysp ,(if (and copyable
+                                                          key-recognizer)
+                                                     keysp
+                                                     'set::setp))
+                      `(lem-hash-table$a::keys-fix ,(if (and copyable
+                                                             key-recognizer)
+                                                        keys-fix
+                                                        'set::sfix))
+                      `(lem-hash-table$a::key-recognizer ,(or key-recognizer
                                                               '(lambda (key)
                                                                 t)))
                       `(lem-hash-table$a::default-key (lambda ()
@@ -555,6 +590,29 @@
                                        (universal-theory :here)
                                        (universal-theory ',hash-table-begin)))))
 
+                  (local
+                    (in-theory
+                      (enable acl2::fast-<<-is-<<)))
+
+                  ,@(and copyable
+                         key-recognizer
+                         `((defun ,keysp (,set)
+                             (declare (xargs :guard t))
+                             (if (atom ,set)
+                                 (null ,set)
+                                 (and (,key-recognizer (car ,set))
+                                      (or (null (cdr ,set))
+                                          (and (consp (cdr ,set))
+                                               (<< (car ,set)
+                                                   (cadr ,set))
+                                               (,keysp (cdr ,set)))))))
+
+                           (defun ,keys-fix (,set)
+                             (declare (xargs :guard (,keysp ,set)))
+                             (if (,keysp ,set)
+                                 ,set
+                                 ()))))
+
 ; If hash-table isn't copyable, then all "CONTENTS"-prefixed symbols refer to
 ; their non-prefixed base.
                   (defun ,contents-recognizer (,contents)
@@ -576,7 +634,9 @@
                          `((defun ,recognizer (,hash-table)
                              (declare (xargs :guard t))
                              (and (consp ,hash-table)
-                                  (set::setp (car ,hash-table))
+                                  ,(if key-recognizer
+                                       `(,keysp (car ,hash-table))
+                                       `(set::setp (car ,hash-table)))
                                   (,contents-recognizer (cdr ,hash-table))))))
 
                   (defun ,contents-creator ()
@@ -840,9 +900,13 @@
 
                   ,@(and copyable
                          `((defun ,keys-set (,set ,hash-table)
-                             (declare (xargs :guard (and (set::setp ,set)
+                             (declare (xargs :guard (and ,(if key-recognizer
+                                                              `(,keysp ,set)
+                                                              `(set::setp ,set))
                                                          (,recognizer ,hash-table))))
-                             (let ((,set (set::sfix ,set))
+                             (let ((,set ,(if key-recognizer
+                                              `(,keys-fix ,set)
+                                              `(set::sfix ,set)))
                                    (,hash-table (,fixer ,hash-table)))
                                (cons ,set (cdr ,hash-table))))))
 
@@ -852,6 +916,10 @@
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
+                      ,@(and (not key-recognizer)
+                             `(:in-theory (enable set::setp
+                                                  set::sfix
+                                                  set::emptyp)))
                       :by (:functional-instance
                            ,(if copyable
                                 'lem-hash-table$a::recognizer/copyable{type-prescription}
@@ -918,6 +986,10 @@
                              (,recognizer (,keys-set ,set ,hash-table))
                              :hints
                              (("Goal"
+                               ,@(and (not key-recognizer)
+                                      `(:in-theory (enable set::setp
+                                                           set::sfix
+                                                           set::emptyp)))
                                :by (:functional-instance
                                     lem-hash-table$a::recognizer/copyable-of-keys-set
                                     ,@fi-bindings))))))
@@ -2004,6 +2076,106 @@
                                 'lem-hash-table$a::init/unique{rewrite})
                            ,@fi-bindings))))
 
+                  ;; `KEYSP'
+                  ,@(and copyable
+                         key-recognizer
+                         `((defthm ,keysp{type-prescription}
+                             (booleanp (,keysp ,set))
+                             :rule-classes :type-prescription
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp{type-prescription}
+                                    ,@fi-bindings))))
+
+                           (defthm ,keysp{compound-recognizer}
+                             (implies (,keysp ,set)
+                                      (true-listp ,set))
+                             :rule-classes :compound-recognizer
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp{compound-recognizer}
+                                    ,@fi-bindings))))
+
+                           (defthm ,keysp-of-keys-fix
+                             (,keysp (,keys-fix ,set))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp-of-keys-fix
+                                    ,@fi-bindings))))
+
+                           (defthm ,setp-when-keysp
+                             (implies (,keysp ,set)
+                                      (set::setp ,set))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::setp-when-keysp
+                                    ,@fi-bindings))))
+
+                           (defthm ,key-recognizer-of-head-when-keysp
+                             (implies (and (,keysp ,set)
+                                           (not (set::emptyp ,set)))
+                                      (,key-recognizer (set::head ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::key-recognizer-of-head-when-keysp
+                                    ,@fi-bindings))))
+
+                           (defthm ,keysp-of-tail-when-keysp
+                             (implies (and (,keysp ,set)
+                                           (not (set::emptyp ,set)))
+                                      (,keysp (set::tail ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp-of-tail-when-keysp
+                                    ,@fi-bindings))))
+
+                           (defthm ,keysp-of-insert
+                             (implies (,keysp set)
+                                      (equal (,keysp (set::insert key set))
+                                             (,key-recognizer key)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp-of-insert
+                                    ,@fi-bindings))))))
+
+                  ;; `KEYS-FIX'
+                  ,@(and copyable
+                         key-recognizer
+                         `((defthm ,keys-fix{type-prescription}
+                             (true-listp (,keys-fix ,set))
+                             :rule-classes :type-prescription
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keys-fix{type-prescription}
+                                    ,@fi-bindings))))
+
+                           (defthm ,keys-fix-when-keysp
+                             (implies (,keysp ,set)
+                                      (equal (,keys-fix ,set)
+                                             ,set))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keys-fix-when-keysp
+                                    ,@fi-bindings))))
+
+                           (defthm ,keys-fix-when-not-keysp
+                             (implies (not (,keysp ,set))
+                                      (not (,keys-fix ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keys-fix-when-not-keysp
+                                    ,@fi-bindings))))))
+
                   ;; `KEYS'
                   ,@(and copyable
                          `((defthm ,keys{type-prescription}
@@ -2015,12 +2187,14 @@
                                     lem-hash-table$a::keys{type-prescription}
                                     ,@fi-bindings))))
 
-                           (defthm ,setp-of-keys
-                             (set::setp (,keys ,hash-table))
+                           (defthm ,keysp-of-keys
+                             ,(if key-recognizer
+                                  `(,keysp (,keys ,hash-table))
+                                  `(set::setp (,keys ,hash-table)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::setp-of-keys
+                                    lem-hash-table$a::keysp-of-keys
                                     ,@fi-bindings))))
 
                            (defthmd ,keys-when-not-recognizer
@@ -2069,7 +2243,9 @@
 
                            (defthm ,keys-of-keys-set
                              (equal (,keys (,keys-set ,set ,hash-table))
-                                    (set::sfix ,set))
+                                    ,(if key-recognizer
+                                         `(,keys-fix ,set)
+                                         `(set::sfix ,set)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
@@ -2088,14 +2264,16 @@
                                     lem-hash-table$a::keys-set{type-prescription}
                                     ,@fi-bindings))))
 
-                           (defthmd ,keys-set-when-not-setp
-                             (implies (not (set::setp ,set))
+                           (defthmd ,keys-set-when-not-keysp
+                             (implies (not ,(if key-recognizer
+                                                `(,keysp ,set)
+                                                `(set::setp ,set)))
                                       (equal (,keys-set ,set ,hash-table)
                                              (,keys-set '() ,hash-table)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keys-set-when-not-setp
+                                    lem-hash-table$a::keys-set-when-not-keysp
                                     ,@fi-bindings))))
 
                            (defthmd ,keys-set-when-not-recognizer
@@ -2118,13 +2296,16 @@
                                     lem-hash-table$a::keys-set-of-creator/copyable
                                     ,@fi-bindings))))
 
-                           (defthm ,keys-set-of-sfix
-                             (equal (,keys-set (set::sfix ,set) ,hash-table)
+                           (defthm ,keys-set-of-keys-fix
+                             (equal (,keys-set ,(if key-recognizer
+                                                    `(,keys-fix ,set)
+                                                    `(set::sfix ,set))
+                                               ,hash-table)
                                     (,keys-set ,set ,hash-table))
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keys-set-of-sfix
+                                    lem-hash-table$a::keys-set-of-keys-fix
                                     ,@fi-bindings))))
 
                            (defthm ,keys-set-of-fixer
@@ -2155,7 +2336,10 @@
                                     ,@fi-bindings))))
 
                            (defthmd ,keys-set-of-keys-free
-                             (implies (equal (set::sfix ,set) (,keys ,hash-table))
+                             (implies (equal ,(if key-recognizer
+                                                  `(,keys-fix ,set)
+                                                  `(set::sfix ,set))
+                                             (,keys ,hash-table))
                                       (equal (,keys-set ,set ,hash-table)
                                              (,fixer ,hash-table)))
                              :hints
@@ -2299,7 +2483,13 @@
                                                      ,clear
                                                      ,init
                                                      ,@(and copyable
-                                                            (list keys
+                                                            (list (if key-recognizer
+                                                                      keysp
+                                                                      'set::setp)
+                                                                  (if key-recognizer
+                                                                      keys-fix
+                                                                      'set::sfix)
+                                                                  keys
                                                                   keys-set)))))))
 
          `(progn

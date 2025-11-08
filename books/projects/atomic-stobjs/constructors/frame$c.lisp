@@ -364,7 +364,7 @@
                 (fixer{rewrite} (symbolicate frame fixer "{REWRITE}"))
 
                 ;; Epilogue
-                (frame-theorems (symbolicate frame frame '-theorems))
+                (frame-theorems (symbolicate frame frame "-THEOREMS"))
                 (epilogue
                  `((in-theory
                      (enable ,view{rewrite}
