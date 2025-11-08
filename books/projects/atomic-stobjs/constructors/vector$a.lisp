@@ -98,11 +98,11 @@
               (default-length-name (symbolicate vector "*" vector "-DEFAULT-LENGTH*"))
 
               (index (or ',index
-                         (symbolicate "LEM-VECTOR$A" "I")))
+                         (symbolicate vector "I")))
               (%index (or ',%index
                           (symbolicate index "%" index)))
               (element (or ',element
-                           (symbolicate "LEM-VECTOR$A" "V")))
+                           (symbolicate vector "V")))
               (%element (or ',%element
                             (symbolicate element "%" element)))
               (world (w state))
@@ -1268,7 +1268,7 @@
 ; `VECTOR-EQUAL{FORWARD-CHAINING}' ensures true equality is proven if both
 ; arguments are vectors of the same length with the same elements.
 
-                  (table equal ',vector ',vector-equal)
+                  (table equality ',vector ',vector-equal)
 
                   (defthm ,vector-equal{forward-chaining}
                     (implies (,vector-equal ,%vector ,vector)
