@@ -576,11 +576,10 @@
                                                (,view ,@fields ,frame))))
 
                     ;; `ACCESSORS'
-                    ,@(loop$ :for i :from 1 :to (len fields)
-                            :as recognizer :in recognizers
+                    ,@(loop$ :for recognizer :in recognizers
                             :as accessor :in accessors
                             :when recognizer
-                            :collect `(defthm ,(symbolicate frame recognizer "-OF-" accessor "-" i)
+                            :collect `(defthm ,(symbolicate frame recognizer "-OF-" accessor)
                                         (,recognizer (,accessor ,frame))
                                         :rule-classes
                                         (:rewrite

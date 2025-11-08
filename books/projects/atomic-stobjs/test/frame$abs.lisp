@@ -98,7 +98,7 @@
   (f2))
 
 
-(atomic-stobjs::define-frame$c fr-big$c
+(atomic-stobjs::define-frame$c fr/big$c
   (f0) (f1) (f2) (f3)
   (f4) (f5) (f6) (f7)
   (f8) (f9) (f10) (f11)
@@ -108,7 +108,7 @@
   (f24) (f25) (f26) (f27)
   (f28) (f29) (f30) (f31))
 
-(atomic-stobjs::define-frame$a fr-big$a
+(atomic-stobjs::define-frame$a fr/big$a
   (f0) (f1) (f2) (f3)
   (f4) (f5) (f6) (f7)
   (f8) (f9) (f10) (f11)
@@ -118,9 +118,9 @@
   (f24) (f25) (f26) (f27)
   (f28) (f29) (f30) (f31))
 
-(atomic-stobjs::define-frame$corr fr-big)
+(atomic-stobjs::define-frame$corr fr/big)
 
-(atomic-stobjs::define-frame$abs fr-big
+(atomic-stobjs::define-frame$abs fr/big
   (f0) (f1) (f2) (f3)
   (f4) (f5) (f6) (f7)
   (f8) (f9) (f10) (f11)
