@@ -376,6 +376,7 @@
 
               (keysp{type-prescription} (symbolicate hash-table keysp "{TYPE-PRESCRIPTION}"))
               (keysp{compound-recognizer} (symbolicate hash-table keysp "{COMPOUND-RECOGNIZER}"))
+              (keysp{definition} (symbolicate hash-table keysp "{DEFINITION}"))
               (keysp-when-emptyp (symbolicate hash-table keysp "-WHEN-EMPTYP"))
               (keysp-of-keys-fix (symbolicate hash-table keysp "-OF-" keys-fix))
               (setp-when-keysp (symbolicate hash-table "SETP-WHEN-" keysp))
@@ -484,8 +485,9 @@
                                  keys-set-of-keys-free))
                       (and copyable
                            key-recognizer
-                           (list in-when-keysp{case-split}
-                                 keys-fix))
+                           (list keys-fix
+                                 keysp{definition}
+                                 in-when-keysp{case-split}))
                       (list fixer
                             accessor-when-not-recognizer
                             accessor-of-updater
@@ -2143,10 +2145,24 @@
                                     lem-hash-table$a::keysp{compound-recognizer}
                                     ,@fi-bindings))))
 
+                           (defthmd ,keysp{definition}
+                             (equal (,keysp ,set)
+                                    (and (set::setp ,set)
+                                         (or (set::emptyp ,set)
+                                             (and (,key-recognizer (set::head ,set))
+                                                  (,keysp (set::tail ,set))))))
+                             :rule-classes
+                             ((:definition :controller-alist ((,keysp t))))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp{definition}
+                                    ,@fi-bindings))))
+
                            (defthm ,keysp-when-emptyp
                              (implies (set::emptyp ,set)
                                       (equal (,keysp ,set)
-                                             (not ,set)))
+                                             (set::setp ,set)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
