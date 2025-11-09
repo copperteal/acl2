@@ -143,11 +143,16 @@
                         (symbolicate val "%" val)))
               (world (w state))
               (stobj-property (getpropc val 'acl2::stobj))
+              (absstobj-info (and stobj-property
+                                  (getpropc val 'acl2::absstobj-info)))
               (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
               (val-recognizer (cond
                                 (',val-recognizer)
                                 (stobj$a-property
                                  (first (second stobj$a-property)))))
+              (guard-val-recognizer (if stobj-property
+                                        (caadr stobj-property)
+                                        val-recognizer))
               (val-creator (cond
                              (stobj$a-property
                               (second (second stobj$a-property)))))
@@ -540,8 +545,9 @@
                       `(lem-hash-table$a::val-recognizer ,(or val-recognizer
                                                               '(lambda (val)
                                                                 t)))
-                      `(lem-hash-table$a::default-val (lambda ()
-                                                        ,default-val-name))
+                      `(lem-hash-table$a::default-val ,(or val-creator
+                                                           `(lambda ()
+                                                              ,default-val-name)))
                       `(lem-hash-table$a::val-fixer ,(or val-fixer
                                                          '(lambda (val)
                                                            val)))
@@ -614,6 +620,11 @@
                                       (set-difference-theories
                                        (universal-theory :here)
                                        (universal-theory ',hash-table-begin)))))
+
+                  ,@(and absstobj-info
+                         `((local
+                             (in-theory
+                               (enable ,@(strip-cars (cdr absstobj-info)))))))
 
                   (local
                     (in-theory
@@ -727,15 +738,15 @@
                   (defun ,contents-updater (,key ,val ,contents)
                     (declare (xargs :guard ,(cond
                                               ((and key-recognizer
-                                                    val-recognizer)
+                                                    guard-val-recognizer)
                                                `(and (,key-recognizer ,key)
-                                                     (,val-recognizer ,val)
+                                                     (,guard-val-recognizer ,val)
                                                      (,contents-recognizer ,contents)))
                                               (key-recognizer
                                                `(and (,key-recognizer ,key)
                                                      (,contents-recognizer ,contents)))
-                                              (val-recognizer
-                                               `(and (,val-recognizer ,val)
+                                              (guard-val-recognizer
+                                               `(and (,guard-val-recognizer ,val)
                                                      (,contents-recognizer ,contents)))
                                               (t
                                                `(,contents-recognizer ,contents)))
@@ -762,15 +773,15 @@
                          `((defun ,updater (,key ,val ,hash-table)
                              (declare (xargs :guard ,(cond
                                                        ((and key-recognizer
-                                                             val-recognizer)
+                                                             guard-val-recognizer)
                                                         `(and (,key-recognizer ,key)
-                                                              (,val-recognizer ,val)
+                                                              (,guard-val-recognizer ,val)
                                                               (,recognizer ,hash-table)))
                                                        (key-recognizer
                                                         `(and (,key-recognizer ,key)
                                                               (,recognizer ,hash-table)))
-                                                       (val-recognizer
-                                                        `(and (,val-recognizer ,val)
+                                                       (guard-val-recognizer
+                                                        `(and (,guard-val-recognizer ,val)
                                                               (,recognizer ,hash-table)))
                                                        (t
                                                         `(,recognizer ,hash-table)))))
