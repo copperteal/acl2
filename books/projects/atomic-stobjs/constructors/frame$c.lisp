@@ -378,7 +378,14 @@
                       (set-difference-theories
                        (current-theory ',frame-end)
                        (current-theory ',frame-begin))
-                      (function-theory ',frame-end)))
+                      ',(append
+                         (list recognizer
+                               creator
+                               view
+                               fixer)
+                         recognizers
+                         accessors
+                         updaters)))
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)

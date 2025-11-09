@@ -428,28 +428,45 @@
               (epilogue
                `((deflabel ,hash-table-end)
 
+                 (deftheory-static ,hash-table-definitions
+                   ',(append
+                      (list contents-recognizer
+                            contents-creator
+                            contents-fixer
+                            contents-accessor
+                            contents-updater
+                            contents-boundp
+                            contents-getp
+                            contents-remover
+                            contents-count
+                            contents-clear
+                            contents-init
+                            hash-table-equal)
+                      (and copyable
+                           key-recognizer
+                           (list keysp
+                                 keys-fix))
+                      (and copyable
+                           (list recognizer
+                                 creator
+                                 fixer
+                                 accessor
+                                 updater
+                                 boundp
+                                 getp
+                                 remover
+                                 count
+                                 clear
+                                 init
+                                 keys
+                                 keys-set))))
+
                  (deftheory-static ,hash-table-theorems
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',hash-table-end)
                      (current-theory ',hash-table-begin))
-                    (union-theories (function-theory ',hash-table-end)
-                                    '((:i ,contents-recognizer)
-                                      (:i ,contents-accessor)
-                                      (:i ,contents-updater)
-                                      (:i ,contents-boundp)
-                                      (:i ,contents-remover)
-                                      (:i ,contents-count)))))
-
-                 (deftheory-static ,hash-table-definitions
-                   (set-difference-theories
-                    (set-difference-theories
-                     (set-difference-theories
-                      (current-theory ',hash-table-end)
-                      (current-theory ',hash-table-begin))
-                     (theory ',hash-table-theorems))
-                    '(,keys-equal
-                      ,vals-equal)))
+                    (theory ',hash-table-definitions)))
 
                  (deftheory-static ,hash-table-aggressive
                    ',(append
