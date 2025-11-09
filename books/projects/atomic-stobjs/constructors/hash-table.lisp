@@ -134,6 +134,8 @@
               (test ',test)
               (size ',size)
               (element-type ',element-type)
+              (stobj-property (and (symbolp element-type)
+                                   (getpropc element-type 'acl2::stobj)))
               (key-recognizer ',key-recognizer)
               (key-fixer ',key-fixer)
               (key ',key)
@@ -223,8 +225,11 @@
                      `(:val-recognizer ,val-recognizer))
               ,@(and ,val-fixer-supplied-p
                      `(:val-fixer ,val-fixer))
-              ,@(and ,val-supplied-p
-                     `(:val ,val))
+              ,@(and (or ,val-supplied-p
+                         stobj-property)
+                     `(:val ,(if stobj-property
+                                 element-type
+                                 val)))
               ,@(and ,default-val-supplied-p
                      `(:default-val ,default-val))
               ,@(and ,copyable-supplied-p

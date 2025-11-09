@@ -305,11 +305,13 @@
                                (nth 11 (fourth (third stobj$a-property)))))
 
               (key-recognizer (second (first (third stobj$a-property))))
-              (val-recognizer (second (second (third stobj$a-property))))
               (val (first (second (third stobj$a-property))))
+              (val-stobj-property (getpropc val 'acl2::stobj))
+              (val-recognizer (if val-stobj-property
+                                  (caadr val-stobj-property)
+                                  (second (second (third stobj$a-property)))))
               (test (first (third (third stobj$a-property))))
 
-              (val-stobj-property (getpropc val 'acl2::stobj))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate hash-table creator "{CORRESPONDENCE}"))
