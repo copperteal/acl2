@@ -259,25 +259,22 @@
               (epilogue
                `((deflabel ,vector-end)
 
+                 (deftheory-static ,vector-definitions
+                   ',(list recognizer
+                           creator
+                           fixer
+                           length
+                           resizer
+                           accessor
+                           updater
+                           vector-equal))
+
                  (deftheory-static ,vector-theorems
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',vector-end)
                      (current-theory ',vector-begin))
-                    (union-theories (function-theory ',vector-end)
-                                    '(,@(and element-recognizer
-                                             `((:i ,(if resizable
-                                                        recognizer
-                                                        recognizer-aux))))))))
-
-                 (deftheory-static ,vector-definitions
-                   (set-difference-theories
-                    (set-difference-theories
-                     (set-difference-theories
-                      (current-theory ',vector-end)
-                      (current-theory ',vector-begin))
-                     (theory ',vector-theorems))
-                    '(,contents-equal)))
+                    (theory ',vector-definitions)))
 
                  (deftheory-static ,vector-aggressive
                    ',(append

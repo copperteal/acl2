@@ -265,7 +265,14 @@
                     (set-difference-theories
                      (current-theory ',vector-end)
                      (current-theory ',vector-begin))
-                    (function-theory ',vector-end)))
+                    ',(list contents-recognizer
+                            recognizer
+                            creator
+                            length
+                            resizer
+                            accessor
+                            updater
+                            fixer)))
 
                  (in-theory
                    (union-theories (current-theory ',vector-begin)

@@ -343,7 +343,24 @@
                     (set-difference-theories
                      (current-theory ',hash-table-end)
                      (current-theory ',hash-table-begin))
-                    (function-theory ',hash-table-end)))
+                    ',(append
+                       (list contents-recognizer
+                             recognizer
+                             creator
+                             accessor
+                             updater
+                             boundp
+                             getp
+                             remover
+                             count
+                             %clear
+                             %init
+                             fixer)
+                       (and copyable
+                            (list keys
+                                  keys-set
+                                  clear
+                                  init)))))
 
                  (in-theory
                    (union-theories (current-theory ',hash-table-begin)

@@ -330,19 +330,22 @@
 
                    (deflabel ,frame-end)
 
+                   (deftheory-static ,frame-definitions
+                     ',(append
+                        (list recognizer
+                              creator
+                              fixer
+                              view
+                              frame-equal)
+                        accessors
+                        updaters))
+
                    (deftheory-static ,frame-theorems
                      (set-difference-theories
                       (set-difference-theories
                        (current-theory ',frame-end)
                        (current-theory ',frame-begin))
-                      (function-theory ',frame-end)))
-
-                   (deftheory-static ,frame-definitions
-                     (set-difference-theories
-                      (set-difference-theories
-                       (current-theory ',frame-end)
-                       (current-theory ',frame-begin))
-                      (theory ',frame-theorems)))
+                      (theory ',frame-definitions)))
 
                    (deftheory-static ,frame-aggressive
                      ',(append
