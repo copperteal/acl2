@@ -541,7 +541,7 @@
                              omap::update))
          ("Subgoal *1/6"
           :use (:instance remover/unique{definition}-lemma-0
-                          (pair (CAR HASH-TABLE))
+                          (pair (car hash-table))
                           (hash-table (cdr hash-table))
                           (key (default-key))))
          ("Subgoal *1/5"
@@ -660,6 +660,19 @@
   :hints
   (("Goal"
     :in-theory (enable set::in))))
+
+(defthm keysp-when-subset
+  (implies (and (not (set::emptyp %set))
+                (not (keysp %set))
+                (keysp set))
+           (not (set::subset %set set)))
+  :hints
+  (("Goal"
+    :induct (set::cardinality %set)
+    :in-theory (enable set::cardinality)
+    :expand (set::subset %set set))
+   ("Subgoal *1/"
+    :in-theory (enable set::emptyp))))
 
 (defthm keysp-of-insert
   (implies (keysp set)
