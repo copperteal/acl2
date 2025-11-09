@@ -630,11 +630,12 @@
                                                    (cadr ,set))
                                                (,keysp (cdr ,set)))))))
 
-                           (defun ,keys-fix (,set)
+                           (defun-inline ,keys-fix (,set)
                              (declare (xargs :guard (,keysp ,set)))
-                             (if (,keysp ,set)
-                                 ,set
-                                 ()))))
+                             (mbe :logic (if (,keysp ,set)
+                                             ,set
+                                             ())
+                                  :exec ,set))))
 
 ; If hash-table isn't copyable, then all "CONTENTS"-prefixed symbols refer to
 ; their non-prefixed base.
@@ -1356,6 +1357,15 @@
                                          (,accessor ,key ,hash-table)))
                              (equal (,updater ,key ,val ,hash-table)
                                     (,fixer ,hash-table)))
+                    :rule-classes
+                    ((:rewrite :corollary
+                               (implies (and (,boundp ,key ,hash-table)
+                                             (case-split (equal ,(if val-fixer
+                                                                     `(,val-fixer ,val)
+                                                                     val)
+                                                                (,accessor ,key ,hash-table))))
+                                        (equal (,updater ,key ,val ,hash-table)
+                                               (,fixer ,hash-table)))))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -1375,6 +1385,18 @@
                                     (if (,boundp ,%key ,hash-table)
                                         (,fixer ,hash-table)
                                         (,updater ,%key ,default-val ,hash-table))))
+                    :rule-classes
+                    ((:rewrite :corollary
+                               (implies (case-split (equal ,(if key-fixer
+                                                                `(,key-fixer ,%key)
+                                                                %key)
+                                                           ,(if key-fixer
+                                                                `(,key-fixer ,key)
+                                                                key)))
+                                        (equal (,updater ,%key (,accessor ,key ,hash-table) ,hash-table)
+                                               (if (,boundp ,%key ,hash-table)
+                                                   (,fixer ,hash-table)
+                                                   (,updater ,%key ,default-val ,hash-table))))))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -2421,6 +2443,14 @@
                                              (,keys ,hash-table))
                                       (equal (,keys-set ,set ,hash-table)
                                              (,fixer ,hash-table)))
+                             :rule-classes
+                             ((:rewrite :corollary
+                                        (implies (case-split (equal ,(if key-recognizer
+                                                                         `(,keys-fix ,set)
+                                                                         `(set::sfix ,set))
+                                                                    (,keys ,hash-table)))
+                                                 (equal (,keys-set ,set ,hash-table)
+                                                        (,fixer ,hash-table)))))
                              :hints
                              (("Goal"
                                :by (:functional-instance
