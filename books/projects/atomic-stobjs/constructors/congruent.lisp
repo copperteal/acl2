@@ -34,6 +34,34 @@
 (include-book "../utilities/symbolicate")
 
 
+;;;; `PROTECT-EXPORTS'
+(defun protect-exports (foundation exports acc state)
+  (declare (xargs :mode :program
+                  :stobjs state
+                  :guard (and (symbolp foundation)
+                              (alistp exports)
+                              (alistp acc))
+                  :verify-guards nil))
+  (cond
+    ((atom exports)
+     (reverse acc))
+    ((acl2::unprotected-export-p foundation
+                                 (cadr (assoc-keyword :exec
+                                                      (cdar exports)))
+                                 (w state))
+     (protect-exports foundation
+                      (cdr exports)
+                      (cons (append (car exports)
+                                    (list :protect t))
+                            acc)
+                      state))
+    (t
+     (protect-exports foundation
+                      (cdr exports)
+                      (cons (car exports) acc)
+                      state))))
+
+
 ;;;; `DEFINE-CONGRUENT'
 (defmacro define-congruent (stobj &key
                                     (executable 'nil)
@@ -65,7 +93,8 @@
               (exports (loop$ :for entry :in (cdddr absstobj-info)
                              :collect (list (symbolicate stobj "%" (first entry))
                                             :logic (second entry)
-                                            :exec (third entry)))))
+                                            :exec (third entry))))
+              (exports (protect-exports foundation exports () state)))
 
          `(defabsstobj ,%stobj
             :foundation ,foundation

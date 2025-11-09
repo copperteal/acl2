@@ -343,33 +343,21 @@
 
 
 ;;;; `OMAPS'
-(local
-  (defthm keysp{definition}
-    (equal (keysp set)
-           (and (set::setp set)
-                (or (set::emptyp set)
-                    (and (key-recognizer (set::head set))
-                         (keysp (set::tail set))))))
-    :rule-classes
-    ((:rewrite :corollary
-               (implies (keysp set)
-                        (set::setp set)))
-     (:rewrite :corollary
-               (implies (and (keysp set)
-                             (not (set::emptyp set)))
-                        (key-recognizer (set::head set))))
-     (:rewrite :corollary
-               (implies (and (keysp set)
-                             (not (set::emptyp set)))
-                        (keysp (set::tail set))))
-     (:definition :controller-alist ((keysp t))))
-    :hints
-    (("Goal"
-      :in-theory (enable set::setp
-                         set::emptyp
-                         set::head
-                         set::tail
-                         set::sfix)))))
+(defthm keysp{definition}
+  (equal (keysp set)
+         (and (set::setp set)
+              (or (set::emptyp set)
+                  (and (key-recognizer (set::head set))
+                       (keysp (set::tail set))))))
+  :rule-classes
+  ((:definition :controller-alist ((keysp t))))
+  :hints
+  (("Goal"
+    :in-theory (enable set::setp
+                       set::emptyp
+                       set::head
+                       set::tail
+                       set::sfix))))
 
 (local
   (in-theory
@@ -631,10 +619,7 @@
 (defthm keysp-when-emptyp
   (implies (set::emptyp set)
            (equal (keysp set)
-                  (not set)))
-  :hints
-  (("Goal"
-    :in-theory (enable set::emptyp))))
+                  (set::setp set))))
 
 (defthm keysp-of-keys-fix
   (keysp (keys-fix set)))
