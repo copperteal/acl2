@@ -118,3 +118,18 @@
   (defthm mergesort-of-remove
     (equal (mergesort (remove x l))
            (delete x (mergesort l)))))
+
+(defsection auxiliary-subset-theorems
+  :extension subset
+
+  "<p>The following theorem is available in
+@('[books]/projects/atomic-stobjs/osets').</p>"
+
+  (local
+    (in-theory
+      (enable subset)))
+
+  (defthm subset-tail-when-subset
+    (implies (and (not (set::emptyp %set))
+                  (set::subset %set set))
+             (set::subset (set::tail %set) set))))
