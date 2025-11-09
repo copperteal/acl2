@@ -668,12 +668,17 @@
                              :in-theory (e/d (,aggressive$a)
                                              (,hash-table$corr-keys
                                               ,hash-table$corr-vals)))
+                            ("Subgoal 3"
+                             :expand ((,hash-table$corr-keys (,keys-set$c ,keys-set$c-set ,hash-table$c)
+                                                             (,keys-set$a ,keys-set$c-set ,hash-table))
+                                      (,hash-table$corr-vals (,keys-set$c ,keys-set$c-set ,hash-table$c)
+                                                             (,keys-set$a ,keys-set$c-set ,hash-table))))
                             ("Subgoal 2"
-                             :expand (,hash-table$corr-keys (,keys-set$c ,keys-set$c-set ,hash-table$c)
-                                                            (,keys-set$a ,keys-set$c-set ,hash-table)))
+                             :expand (,hash-table$corr-vals (,keys-set$c (,keys$a ,hash-table) ,hash-table$c)
+                                                            ,hash-table))
                             ("Subgoal 1"
-                             :expand (,hash-table$corr-vals (,keys-set$c ,keys-set$c-set ,hash-table$c)
-                                                            (,keys-set$a ,keys-set$c-set ,hash-table)))))
+                             :expand (,hash-table$corr-keys (,keys-set$c (,keys$a ,hash-table) ,hash-table$c)
+                                                            ,hash-table))))
 
                          (defthm ,keys-set{preserved}
                            (implies (and (,keys$ap v)
