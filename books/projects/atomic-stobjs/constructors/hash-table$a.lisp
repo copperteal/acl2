@@ -383,6 +383,7 @@
               (keysp-of-tail-when-keysp (symbolicate hash-table keysp "-OF-TAIL-WHEN-" keysp))
               (in-when-keysp (symbolicate hash-table "IN-WHEN-" keysp))
               (in-when-keysp{case-split} (symbolicate hash-table in-when-keysp "{CASE-SPLIT}"))
+              (keysp-when-subset (symbolicate hash-table keysp "-WHEN-SUBSET"))
               (keysp-of-insert (symbolicate hash-table keysp "-OF-INSERT"))
               (keysp-of-delete (symbolicate hash-table keysp "-OF-DELETE"))
 
@@ -2174,6 +2175,18 @@
                                :by (:functional-instance
                                     lem-hash-table$a::in-when-keysp
                                     ,@fi-bindings))))
+
+                           (defthm ,keysp-when-subset
+                             (implies (and (not (set::emptyp ,%set))
+                                           (not (,keysp ,%set))
+                                           (,keysp ,set))
+                                      (not (set::subset ,%set ,set)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::keysp-when-subset
+                                    ,@fi-bindings))))
+
 
                            (defthm ,keysp-of-insert
                              (implies (,keysp set)
