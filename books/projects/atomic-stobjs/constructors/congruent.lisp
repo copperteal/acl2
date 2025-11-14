@@ -91,9 +91,12 @@
                                     :exec (third creator-export)))
               (foundation (car absstobj-info))
               (exports (loop$ :for entry :in (cdddr absstobj-info)
-                             :collect (list (symbolicate stobj "%" (first entry))
-                                            :logic (second entry)
-                                            :exec (third entry))))
+                             :collect (append (list (symbolicate stobj "%" (first entry))
+                                                    :logic (second entry)
+                                                    :exec (third entry))
+                                              (let ((updater (cdr (last entry))))
+                                                (and updater
+                                                     (list :updater (symbolicate stobj "%" updater)))))))
               (exports (protect-exports foundation exports () state)))
 
          `(defabsstobj ,%stobj

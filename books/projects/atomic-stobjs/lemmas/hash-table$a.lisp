@@ -30,8 +30,8 @@
 (in-package "LEM-HASH-TABLE$A")
 (set-verify-guards-eagerness 2)
 
-(include-book "misc/total-order" :dir :system)
-(include-book "std/osets/top" :dir :system)
+(local
+  (include-book "std/osets/top" :dir :system))
 (local
   (include-book "std/omaps/top" :dir :system))
 
@@ -647,10 +647,10 @@
     :in-theory (enable set::in))))
 
 (defthm keysp-when-subset
-  (implies (and (not (set::emptyp %set))
-                (not (keysp %set))
+  (implies (and (not (keysp %set))
                 (keysp set))
-           (not (set::subset %set set)))
+           (equal (set::subset %set set)
+                  (set::emptyp %set)))
   :hints
   (("Goal"
     :induct (set::cardinality %set)

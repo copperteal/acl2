@@ -29,14 +29,43 @@
 
 (in-package "ACL2")
 
-(ld "osets.acl2")
+(include-book "std/portcullis" :dir :system)
+(include-book "misc/total-order" :dir :system)
 
-(defpkg "LEM-HASH-TABLE$A"
-  (set-difference-eq
-   (union-eq *common-lisp-symbols-from-main-lisp-package*
-             *acl2-exports*
-             '(with-books
-               <<))
-   '(key k
-     val v
-     set s)))
+(defconst set::*definitions*
+  '#!set(setp
+         emptyp
+         sfix
+         head
+         tail
+         insert
+         in
+         fast-subset
+         subset
+         fast-measure
+         fast-union
+         fast-intersect
+         fast-intersectp
+         fast-difference
+         delete
+         union
+         intersect
+         intersectp
+         difference
+         cardinality
+         halve-list-aux
+         halve-list
+         mergesort-exec
+         mergesort
+         subset-trigger
+         weak-insert-induction))
+
+(encapsulate ()
+  (local
+    (include-book "std/util/defredundant" :dir :system))
+  (local
+    (include-book "std/osets/top" :dir :system))
+
+  (make-event
+    (b* ((events (std::defredundant-fn set::*definitions* nil state)))
+      (acl2::value events))))
