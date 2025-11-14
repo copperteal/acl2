@@ -102,6 +102,8 @@
               (exec ',exec)
               (dimensions ',dimensions)
               (element-type ',element-type)
+              (stobj-property (and (symbolp element-type)
+                                   (getpropc element-type 'acl2::stobj)))
               (specialize-element-type ',specialize-element-type)
               (element-recognizer ',element-recognizer)
               (element-fixer ',element-fixer)
@@ -162,8 +164,11 @@
                      `(:element-recognizer ,element-recognizer))
               ,@(and ,element-fixer-supplied-p
                      `(:element-fixer ,element-fixer))
-              ,@(and ,element-supplied-p
-                     `(:element ,element))
+              ,@(and (or ,element-supplied-p
+                         stobj-property)
+                     `(:element ,(if stobj-property
+                                     element-type
+                                     element)))
               ,@(and ,initial-element-supplied-p
                      `(:initial-element ,initial-element))
               ,@(and ,resizable-supplied-p
