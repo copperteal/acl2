@@ -34,9 +34,6 @@
 (include-book "../lemmas/hash-table$a")
 ||#
 
-(include-book "misc/total-order" :dir :system)
-(include-book "std/osets/top" :dir :system)
-
 (include-book "../utilities/top")
 
 
@@ -491,7 +488,6 @@
                       (and copyable
                            key-recognizer
                            (list keys-fix
-                                 keysp{definition}
                                  in-when-keysp{case-split}))
                       (list fixer
                             accessor-when-not-recognizer
@@ -1079,6 +1075,8 @@
                               :type-prescription)
                              :hints
                              (("Goal"
+                               ,@(and val-creator
+                                      `(:in-theory (enable (:e ,val-creator))))
                                :by (:functional-instance
                                     ,(if copyable
                                          'lem-hash-table$a::val-recognizer-of-accessor/copyable
@@ -2243,10 +2241,10 @@
                                     ,@fi-bindings))))
 
                            (defthm ,keysp-when-subset
-                             (implies (and (not (set::emptyp ,%set))
-                                           (not (,keysp ,%set))
+                             (implies (and (not (,keysp ,%set))
                                            (,keysp ,set))
-                                      (not (set::subset ,%set ,set)))
+                                      (equal (set::subset ,%set ,set)
+                                             (set::emptyp ,%set)))
                              :hints
                              (("Goal"
                                :by (:functional-instance

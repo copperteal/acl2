@@ -195,12 +195,14 @@
               (resizer$a (second (third (third stobj$a-property))))
               (accessor$a (third (third (third stobj$a-property))))
               (updater$a (fourth (third (third stobj$a-property))))
+
               (element (first (first (third stobj$a-property))))
-              (element-recognizer (second (first (third stobj$a-property))))
+              (element-stobj-property (getpropc element 'acl2::stobj))
+              (element-recognizer (if element-stobj-property
+                                      (caadr element-stobj-property)
+                                      (second (first (third stobj$a-property)))))
               (resizable (first (second (third stobj$a-property))))
               (default-length-name (second (second (third stobj$a-property))))
-
-              (element-stobj-property (getpropc element 'acl2::stobj))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate vector creator "{CORRESPONDENCE}"))

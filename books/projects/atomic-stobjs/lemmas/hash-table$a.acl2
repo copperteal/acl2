@@ -29,6 +29,8 @@
 
 (in-package "ACL2")
 
+(ld "osets.acl2")
+
 (defpkg "LEM-HASH-TABLE$A"
   (set-difference-eq
    (union-eq *common-lisp-symbols-from-main-lisp-package*

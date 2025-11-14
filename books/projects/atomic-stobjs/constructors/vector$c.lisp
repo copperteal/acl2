@@ -103,6 +103,8 @@
               (element-type ',element-type)
               (stobj-property (and (symbolp element-type)
                                    (getpropc element-type 'acl2::stobj)))
+              (absstobj-info (and stobj-property
+                                  (getpropc element-type 'acl2::absstobj-info)))
               (stobj$a-property (and (symbolp element-type)
                                      (cdr (assoc element-type (table-alist 'stobj$a-property (w state))))))
               (stobj-recognizer (cond
@@ -321,6 +323,11 @@
                                       (set-difference-theories
                                        (universal-theory :here)
                                        (universal-theory ',vector-begin)))))
+
+                  ,@(and absstobj-info
+                         `((local
+                             (in-theory
+                               (enable ,@(strip-cars (cdr absstobj-info)))))))
 
                   (local
                     (in-theory

@@ -29,223 +29,460 @@
 
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
-; HERE: consolidate notes and TODOs
 
-(include-book "std/osets/top" :dir :system) ; TODO: remove?
+(include-book "std/osets/top" :dir :system)
 
 (include-book "../utilities/top")
+(include-book "congruent")
 
-(deflabel stobj-copy-begin)
+(deftheory set::theorems
+  (append
+   #!acl2'((:definition fast-alphorder)
+           (:executable-counterpart fast-alphorder)
+           (:type-prescription fast-alphorder)
+           (:executable-counterpart fast-lexorder)
+           (:type-prescription fast-lexorder)
+           (:rewrite fast-lexorder-is-lexorder)
+           (:executable-counterpart fast-<<)
+           (:type-prescription fast-<<)
+           (:executable-counterpart <<)
+           (:type-prescription <<)
+           (:rewrite <<-irreflexive)
+           (:rewrite <<-transitive)
+           (:rewrite <<-asymmetric)
+           (:rewrite <<-trichotomy)
+           (:rewrite <<-implies-lexorder)
+           (:rewrite fast-<<-is-<<))
+
+   #!set'((:executable-counterpart setp)
+          (:type-prescription setp)
+          (:type-prescription setp-type)
+          (:executable-counterpart emptyp)
+          (:type-prescription emptyp)
+          (:type-prescription emptyp-type)
+          (:executable-counterpart sfix)
+          (:type-prescription sfix)
+          (:executable-counterpart head)
+          (:type-prescription head)
+          (:executable-counterpart tail)
+          (:type-prescription tail)
+          (:executable-counterpart insert)
+          (:type-prescription insert)
+          (:executable-counterpart in)
+          (:type-prescription in)
+          (:type-prescription in-type)
+          (:executable-counterpart fast-subset)
+          (:type-prescription fast-subset)
+          (:executable-counterpart subset)
+          (:type-prescription subset)
+          (:type-prescription subset-type)
+          (:executable-counterpart fast-measure)
+          (:type-prescription fast-measure)
+          (:definition fast-union)
+          (:executable-counterpart fast-union)
+          (:type-prescription fast-union)
+          (:induction fast-union)
+          (:definition fast-intersect)
+          (:executable-counterpart fast-intersect)
+          (:type-prescription fast-intersect)
+          (:induction fast-intersect)
+          (:definition fast-intersectp)
+          (:executable-counterpart fast-intersectp)
+          (:type-prescription fast-intersectp)
+          (:induction fast-intersectp)
+          (:definition fast-difference)
+          (:executable-counterpart fast-difference)
+          (:type-prescription fast-difference)
+          (:induction fast-difference)
+          (:executable-counterpart delete)
+          (:type-prescription delete)
+          (:executable-counterpart union)
+          (:type-prescription union)
+          (:executable-counterpart intersect)
+          (:type-prescription intersect)
+          (:definition intersectp)
+          (:executable-counterpart intersectp)
+          (:type-prescription intersectp)
+          (:executable-counterpart difference)
+          (:type-prescription difference)
+          (:executable-counterpart cardinality)
+          (:type-prescription cardinality)
+          (:executable-counterpart halve-list-aux)
+          (:type-prescription halve-list-aux)
+          (:executable-counterpart halve-list)
+          (:type-prescription halve-list)
+          (:definition mergesort-exec)
+          (:executable-counterpart mergesort-exec)
+          (:type-prescription mergesort-exec)
+          (:induction mergesort-exec)
+          (:executable-counterpart mergesort)
+          (:type-prescription mergesort)
+          (:definition all)
+          (:executable-counterpart all)
+          (:type-prescription all)
+          (:induction all)
+          (:executable-counterpart subset-trigger)
+          (:type-prescription subset-trigger)
+          (:rewrite pick-a-point-subset-constraint-helper)
+          (:compound-recognizer sets-are-true-lists-compound-recognizer)
+          (:rewrite sets-are-true-lists-cheap)
+          (:rewrite tail-count)
+          (:linear tail-count)
+          (:rewrite head-count)
+          (:linear head-count)
+          (:built-in-clause tail-count-built-in)
+          (:built-in-clause head-count-built-in)
+          (:rewrite insert-insert)
+          (:rewrite sfix-produces-set)
+          (:rewrite tail-produces-set)
+          (:rewrite insert-produces-set)
+          (:rewrite insert-never-empty)
+          (:rewrite nonempty-means-set)
+          (:rewrite sfix-set-identity)
+          (:rewrite emptyp-sfix-cancel)
+          (:rewrite head-sfix-cancel)
+          (:rewrite tail-sfix-cancel)
+          (:rewrite insert-head)
+          (:rewrite insert-head-tail)
+          (:rewrite repeated-insert)
+          (:rewrite insert-sfix-cancel)
+          (:rewrite head-when-emptyp)
+          (:rewrite tail-when-emptyp)
+          (:rewrite insert-when-emptyp)
+          (:rewrite head-of-insert-a-nil)
+          (:rewrite tail-of-insert-a-nil)
+          (:rewrite sfix-when-emptyp)
+          (:rewrite not-in-self)
+          (:rewrite in-sfix-cancel)
+          (:rewrite never-in-empty)
+          (:rewrite in-set)
+          (:rewrite in-tail)
+          (:rewrite in-tail-or-head)
+          (:rewrite in-head)
+          (:rewrite head-unique)
+          (:rewrite insert-identity)
+          (:rewrite in-insert)
+          (:rewrite subset-insert-x)
+          (:rewrite subset-sfix-cancel-x)
+          (:rewrite subset-sfix-cancel-y)
+          (:rewrite emptyp-subset)
+          (:rewrite emptyp-subset-2)
+          (:rewrite subset-reflexive)
+          (:rewrite subset-insert)
+          (:rewrite subset-tail)
+          (:forward-chaining subset-tail)
+          (:rewrite weak-insert-induction-helper-1)
+          (:rewrite weak-insert-induction-helper-2)
+          (:rewrite weak-insert-induction-helper-3)
+          (:definition weak-insert-induction)
+          (:executable-counterpart weak-insert-induction)
+          (:type-prescription weak-insert-induction)
+          (:induction weak-insert-induction)
+          (:induction use-weak-insert-induction)
+          (:rewrite delete-delete)
+          (:rewrite delete-set)
+          (:rewrite delete-preserves-emptyp)
+          (:rewrite delete-in)
+          (:rewrite delete-sfix-cancel)
+          (:rewrite delete-nonmember-cancel)
+          (:rewrite repeated-delete)
+          (:rewrite delete-insert-cancel)
+          (:rewrite insert-delete-cancel)
+          (:rewrite subset-delete)
+          (:rewrite union-insert-x)
+          (:rewrite union-insert-y)
+          (:rewrite union-set)
+          (:rewrite union-sfix-cancel-x)
+          (:rewrite union-sfix-cancel-y)
+          (:rewrite union-emptyp-x)
+          (:rewrite union-emptyp-y)
+          (:rewrite union-emptyp)
+          (:rewrite union-in)
+          (:rewrite union-subset-x)
+          (:rewrite union-subset-y)
+          (:rewrite union-self)
+          (:rewrite union-associative)
+          (:rewrite union-outer-cancel)
+          (:rewrite intersect-delete-x)
+          (:rewrite intersect-delete-y)
+          (:rewrite intersect-set)
+          (:rewrite intersect-sfix-cancel-x)
+          (:rewrite intersect-sfix-cancel-y)
+          (:rewrite intersect-emptyp-x)
+          (:rewrite intersect-emptyp-y)
+          (:rewrite intersect-in)
+          (:rewrite intersect-subset-x)
+          (:rewrite intersect-subset-y)
+          (:rewrite intersect-self)
+          (:rewrite intersect-associative)
+          (:rewrite intersect-outer-cancel)
+          (:rewrite difference-set)
+          (:rewrite difference-sfix-x)
+          (:rewrite difference-sfix-y)
+          (:rewrite difference-emptyp-x)
+          (:rewrite difference-emptyp-y)
+          (:rewrite difference-in)
+          (:rewrite difference-subset-x)
+          (:rewrite subset-difference)
+          (:rewrite difference-insert-y)
+          (:rewrite difference-delete-x)
+          (:rewrite difference-preserves-subset)
+          (:type-prescription cardinality-type)
+          (:rewrite cardinality-zero-emptyp)
+          (:rewrite cardinality-sfix-cancel)
+          (:rewrite subset-cardinality)
+          (:linear subset-cardinality)
+          (:rewrite proper-subset-cardinality)
+          (:linear proper-subset-cardinality)
+          (:rewrite intersect-cardinality-x)
+          (:linear intersect-cardinality-x)
+          (:rewrite intersect-cardinality-y)
+          (:linear intersect-cardinality-y)
+          (:rewrite expand-cardinality-of-union)
+          (:rewrite expand-cardinality-of-difference)
+          (:rewrite intersect-cardinality-non-subset)
+          (:linear intersect-cardinality-non-subset)
+          (:rewrite intersect-cardinality-subset-2)
+          (:rewrite intersect-cardinality-non-subset-2)
+          (:rewrite mergesort-set)
+          (:rewrite in-mergesort-under-iff)
+          (:rewrite mergesort-set-identity)
+          (:rewrite insert-under-set-equiv)
+          (:rewrite delete-under-set-equiv)
+          (:rewrite union-under-set-equiv)
+          (:rewrite intersect-under-set-equiv)
+          (:rewrite difference-under-set-equiv)
+          (:rewrite mergesort-under-set-equiv)
+          (:congruence set-equiv-implies-equal-mergesort-1))))
 
 
-;;;; `DEFINE-STOBJ-COPIER'
-(make-event
-  `(progn
-     (table stobj-copier nil nil :guard (and (member key '(stobj-copier-alist
-                                                           stobj-coupled-alist))
-                                             (plist-worldp val)))
-     (table stobj-copier 'stobj-copier-alist '())
-     (table stobj-copier 'stobj-coupled-alist '())))
-
-(defun stobj-copier-alist (world)
-  (declare (xargs :guard (plist-worldp world)
-                  :verify-guards nil))
-  (cdr (assoc-eq 'stobj-copier-alist
-                 (table-alist 'stobj-copier world))))
-
-(defmacro stobj-copier (stobj)
-  (declare (xargs :guard t))
-  `(getprop ,stobj
-            'copier
-            nil
-            'current-acl2-world
-            (stobj-copier-alist (w state))))
-
-(defmacro stobj-copier{rewrite} (stobj)
-  (declare (xargs :guard t))
-  `(getprop ,stobj
-            'copier{rewrite}
-            nil
-            'current-acl2-world
-            (stobj-copier-alist (w state))))
-
-(defun stobj-coupled-alist (world)
-  (declare (xargs :guard (plist-worldp world)
-                  :verify-guards nil))
-  (cdr (assoc-eq 'stobj-coupled-alist
-                 (table-alist 'stobj-copier world))))
-
-(defmacro stobj-coupled (stobj)
-  (declare (xargs :guard t))
-  `(getprop ,stobj
-            'coupled
-            nil
-            'current-acl2-world
-            (stobj-coupled-alist (w state))))
-
-(defun make-vector-copy-events (stobj$a %stobj stobj state)
+;;;; `MAKE-VECTOR-COPY-EVENTS'
+(defun make-vector-copy-events (vector state)
   (declare (xargs :stobjs state
-                  :guard (and (symbolp stobj$a)
-                              (symbolp %stobj)
-                              (symbolp stobj))
+                  :guard (symbolp vector)
                   :verify-guards nil))
-  (let* ((copier (symbolicate stobj stobj '-copy))
-         (copier{rewrite} (symbolicate stobj copier '{rewrite}))
-         (copier-rec (symbolicate stobj copier '-rec))
+  (let* ((%vector (symbolicate vector "%" vector))
+         (copy (symbolicate vector vector "-COPY"))
+         (copy-rec (symbolicate vector copy "-REC"))
+         (copy{rewrite} (symbolicate vector copy "{REWRITE}"))
 
-         (coupled (symbolicate stobj stobj '-coupled))
-         (witness (symbolicate stobj coupled '-witness))
+         (index (symbolicate vector "I"))
+         (%index (symbolicate index "%" index))
 
-         (recognizer (stobj-recognizer stobj))
-         (exports (stobj$abs-exports stobj))
-         (fixer (car (first exports)))
-         (length (car (second exports)))
-         (resizer (car (third exports)))
-         (accessor (car (fourth exports)))
-         (%accessor (symbolicate stobj '% accessor))
-         (updater (car (fifth exports)))
-         (%updater (symbolicate stobj '% updater))
+         (coupledp (symbolicate vector vector "-COUPLED-P"))
+         (coupledp-witness (symbolicate vector coupledp "-WITNESS"))
 
-         (stobj$a-aggressive (symbolicate stobj stobj$a '-aggressive))
-         (%stobj$a (symbolicate stobj '% stobj$a))
-         (recognizer$a (stobj$a-recognizer stobj$a))
-         (creator$a (stobj$a-creator stobj$a))
-         (fixer$a (stobj$a-fixer stobj$a))
-         (stobj$a-equal (stobj$a-equal stobj$a))
-         (length$a (stobj$a-vector-length stobj$a))
-         (accessor$a (stobj$a-vector-accessor stobj$a))
-         (updater$a (stobj$a-vector-updater stobj$a))
-         (resizer$a (stobj$a-vector-resizer stobj$a))
-         (resizablep (stobj$a-vector-resizablep stobj$a))
+         ;; `VECTOR'
+         (stobj-property (getpropc vector 'acl2::stobj))
+         (recognizer (caadr stobj-property))
+         (fixer (first (third stobj-property)))
+         (length (second (third stobj-property)))
+         (resizer (third (third stobj-property)))
+         (accessor (fourth (third stobj-property)))
+         (updater (fifth (third stobj-property)))
 
-         (element-recognizer (stobj$a-vector-element-recognizer stobj$a))
-         (element-fixer (stobj$a-vector-element-fixer stobj$a))
-         (element (stobj$a-vector-element stobj$a))
-         (element-copier (stobj-copier element))
-         (element-copier{rewrite} (stobj-copier{rewrite} element))
-         (%element (car (getpropc element-copier 'formals)))
-         (element-coupled (and (stobj-p element)
-                               (stobj-coupled element)))
-         (element$a (stobj$a-lookup element))
-         (element$a-recognizer (stobj$a-recognizer element$a))
-         (element$a-fixer (stobj$a-fixer element$a))
+         ;; `VECTOR$A'
+         (vector$a (symbolicate vector vector "$A"))
+         (%vector$a (symbolicate vector "%" vector$a))
+         (vector$a-theorems (symbolicate vector vector$a "-THEOREMS"))
+         (vector$a-aggressive (symbolicate vector vector$a "-AGGRESSIVE"))
+         (world (w state))
+         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
+         (recognizer$a (first (second stobj$a-property)))
+         (creator$a (second (second stobj$a-property)))
+         (fixer$a (third (second stobj$a-property)))
+         (length$a (first (third (third stobj$a-property))))
+         (resizer$a (second (third (third stobj$a-property))))
+         (accessor$a (third (third (third stobj$a-property))))
+         (updater$a (fourth (third (third stobj$a-property))))
+         (vector$a-equal (cdr (assoc vector$a (table-alist 'equality world))))
 
-         (coupled-when-not-recognizer$a (symbolicate stobj coupled '-when-not- recognizer$a))
-         (coupled-of-creator$a (symbolicate stobj coupled '-of- creator$a))
-         (coupled-of-fixer$a (symbolicate stobj coupled '-of- fixer$a))
-         (element-coupled-of-accessor$a (symbolicate stobj element-coupled '-of- accessor$a))
-         (coupled-of-updater$a (symbolicate stobj coupled '-of- updater$a))
-         (coupled-of-resizer$a (symbolicate stobj coupled '-of- resizer$a))
+         (element (first (first (third stobj$a-property))))
+         (element-stobj-property (getpropc element 'acl2::stobj))
+         (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
+         (element-recognizer (second (first (third stobj$a-property))))
+         (element-creator (second (second element-stobj$a-property)))
+         (initial-element (if element-stobj-property
+                              `(,element-creator)
+                              (third (first (third stobj$a-property)))))
+         (element-fixer (fourth (first (third stobj$a-property))))
 
-         (recognizer$a-of-copier (symbolicate stobj recognizer$a '-of- copier))
-         (length$a-of-copier (symbolicate stobj length$a '-of- copier))
-         (accessor$a-of-copier (symbolicate stobj accessor$a '-of- copier))
-         (recognizer$a-of-copier-rec (symbolicate stobj recognizer$a '-of- copier-rec))
-         (length$a-of-copier-rec (symbolicate stobj length$a '-of- copier-rec))
-         (accessor$a-of-copier-rec (symbolicate stobj accessor$a '-of- copier-rec)))
+         (fixer (if element-stobj-property
+                    (third (third stobj-property))
+                    fixer))
+         (length (if element-stobj-property
+                     (fourth (third stobj-property))
+                     length))
+         (resizer (if element-stobj-property
+                      (fifth (third stobj-property))
+                      resizer))
+         (accessor (if element-stobj-property
+                       (first (third stobj-property))
+                       accessor))
+         (%accessor (symbolicate vector "%" accessor))
+         (updater (if element-stobj-property
+                      (second (third stobj-property))
+                      updater))
+         (%updater (symbolicate vector "%" updater))
 
-    `(encapsulate ()
-       ,@(and (or element-recognizer
-                  element-fixer
-                  element-copier
-                  element-coupled)
-              `((local
+         (element-copy (cdr (assoc element (table-alist 'copy world))))
+         (%element (car (getpropc element-copy 'acl2::formals)))
+         (element-coupled-p (cdr (assoc element (table-alist 'coupledp world))))
+         (element-coupled-p-theory (symbolicate element element "-COUPLED-P-THEORY"))
+
+         (coupledp-begin (symbolicate vector coupledp "-BEGIN"))
+         (coupledp-end (symbolicate vector coupledp "-END"))
+         (coupledp-theory (symbolicate vector coupledp "-THEORY"))
+
+         ;; Theorem Names
+         (booleanp-of-element-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" element-recognizer))
+         (element-recognizer-of-default-element (symbolicate "ATOMIC-STOBJS" element-recognizer "-OF-DEFAULT-ELEMENT"))
+         (element-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" element-fixer "{REWRITE}"))
+
+         (coupledp-when-not-recognizer$a (symbolicate vector coupledp "-WHEN-NOT-" recognizer$a))
+         (coupledp-of-creator$a (symbolicate vector coupledp "-OF-" creator$a))
+         (coupledp-of-fixer$a (symbolicate vector coupledp "-OF-" fixer$a))
+         (coupledp-of-resizer$a (symbolicate vector coupledp "-OF-" resizer$a))
+         (element-coupled-p-of-accessor$a (symbolicate vector element-coupled-p "-OF-" accessor$a))
+         (coupledp-of-updater$a (symbolicate vector coupledp "-OF-" updater$a))
+
+         (recognizer$a-of-copy (symbolicate vector recognizer$a "-OF-" copy))
+         (length$a-of-copy (symbolicate vector length$a "-OF-" copy))
+         (accessor$a-of-copy (symbolicate vector accessor$a "-OF-" copy))
+         (recognizer$a-of-copy-rec (symbolicate vector recognizer$a "-OF-" copy-rec))
+         (length$a-of-copy-rec (symbolicate vector length$a "-OF-" copy-rec))
+         (accessor$a-of-copy-rec (symbolicate vector accessor$a "-OF-" copy-rec)))
+
+    `(progn
+       (deflabel ,coupledp-begin)
+
+       (encapsulate ()
+
+         (local
+           (deflabel prologue-begin))
+
+         ,@(and element-recognizer
+                element-fixer
+                `((local
+                    (defthm ,booleanp-of-element-recognizer
+                      (booleanp (,element-recognizer ,element))
+                      :rule-classes
+                      (:rewrite
+                       :type-prescription)))
+
+                  (local
+                    (defthm ,element-recognizer-of-default-element
+                      (,element-recognizer ,initial-element)
+                      :rule-classes nil))
+
+                  (local
+                    (defthm ,element-fixer{rewrite}
+                      (equal (,element-fixer ,element)
+                             (if (,element-recognizer ,element)
+                                 ,element
+                                 ,initial-element))))))
+
+         (local
+           (deflabel prologue-end))
+
+         (local
+           (in-theory
+             (union-theories
+              (union-theories
+               (theory 'acl2::ground-zero)
+               (union-theories (theory ',vector$a-theorems)
+                               (theory ',vector$a-aggressive)))
+              (set-difference-theories (current-theory 'prologue-end)
+                                       (current-theory 'prologue-begin)))))
+
+         ,@(and element-recognizer
+                element-fixer
+                `((local
+                    (in-theory
+                      (disable ,element-recognizer
+                               ,element-fixer)))))
+
+         ,@(and element-stobj$a-property
+                `((local
+                    (in-theory
+                      (disable ,element-creator)))))
+
+         ,@(and element-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,element-coupled-p-theory)))))
+
+         ,@(and element-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,@(strip-cars (cdr (getpropc element 'acl2::absstobj-info))))))))
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
+
+         (define-congruent ,vector)
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %vector 'acl2::absstobj-info))))))
+
+         ;; `COUPLEDP'
+         ,@(and element-coupled-p
+                `((defun-sk ,coupledp (,vector)
+                    (declare (xargs :guard (,recognizer ,vector)
+                                    :verify-guards nil))
+                    (forall ,index
+                      (,element-coupled-p (,accessor$a ,index ,vector)))
+                    :rewrite :direct)
+
+                  (table coupledp ',vector ',coupledp)
+
+                  (defthm ,coupledp-when-not-recognizer$a
+                    (implies (not (,recognizer$a ,vector))
+                             (,coupledp ,vector)))
+
+                  (defthm ,coupledp-of-creator$a
+                    (,coupledp (,creator$a)))
+
+                  (defthm ,coupledp-of-fixer$a
+                    (equal (,coupledp (,fixer$a ,vector))
+                           (,coupledp ,vector)))
+
+                  (defthm ,coupledp-of-resizer$a
+                    (implies (,coupledp ,vector)
+                             (,coupledp (,resizer$a length ,vector))))
+
+                  (defthm ,element-coupled-p-of-accessor$a
+                    (implies (,coupledp ,vector)
+                             (,element-coupled-p (,accessor$a ,index ,vector))))
+
+                  (defthm ,coupledp-of-updater$a
+                    (implies (and (,coupledp ,vector)
+                                  (,element-coupled-p ,element))
+                             (,coupledp (,updater$a ,index ,element ,vector)))
+                    :hints
+                    (("Goal"
+                      :cases ((< (nfix (,coupledp-witness (,updater ,index ,element ,vector)))
+                                 (,length$a ,vector)))
+                      :in-theory (disable ,coupledp
+                                          nfix)
+                      :expand (,coupledp (,updater$a ,index ,element ,vector)))))
+
                   (in-theory
-                    (disable ,@(and element-recognizer
-                                    (list (if element$a
-                                              element$a-recognizer
-                                              element-recognizer)))
-                             ,@(and element-fixer
-                                    (list (if element$a
-                                              element$a-fixer
-                                              element-fixer)))
-                             ,@(and element-copier
-                                    (list element-copier))
-                             ,@(and element-coupled
-                                    (list element-coupled)))))))
+                    (disable ,coupledp))))
 
-       ,@(and element-coupled
-              `((defun-sk ,coupled (,stobj)
-                  (declare (xargs :guard (,recognizer ,stobj)
-                                  :verify-guards nil))
-                  (forall i
-                    (,element-coupled (,accessor$a i ,stobj)))
-                  :rewrite :direct)
-
-                (table stobj-copier
-                       'stobj-coupled-alist
-                       (putprop ',stobj
-                                'coupled
-                                ',coupled
-                                (stobj-coupled-alist world)))
-
-                (defthm ,coupled-when-not-recognizer$a
-                  (implies (not (,recognizer$a ,stobj))
-                           (,coupled ,stobj))
-                  :hints
-                  (("Goal"
-                    :in-theory (enable ,stobj$a-aggressive))))
-
-                (defthm ,coupled-of-creator$a
-                  (,coupled (,creator$a)))
-
-                (defthm ,coupled-of-fixer$a
-                  (equal (,coupled (,fixer$a ,stobj))
-                         (or (not (,recognizer$a ,stobj))
-                             (,coupled ,stobj)))
-                  :hints
-                  (("Goal"
-                    :cases ((,recognizer$a ,stobj))
-                    :in-theory (disable ,coupled))))
-
-                (in-theory
-                  (disable ,coupled))
-
-                (defthm ,element-coupled-of-accessor$a
-                  (implies (coupled ,stobj)
-                           (,element-coupled (,accessor$a i ,stobj)))
-                  :hints
-                  (("Goal"
-                    :in-theory (enable ,stobj$a-aggressive))))
-
-                (defthm ,coupled-of-updater$a
-                  (implies (coupled ,element ,stobj)
-                           (,coupled (,updater$a i ,element ,stobj)))
-                  :hints
-                  (("Goal"
-                    :cases ((< (nfix (,witness (,updater$a i ,element ,stobj)))
-                               (,length$a ,stobj)))
-                    :in-theory (e/d (,stobj$a-aggressive)
-                                    (,element-coupled-of-accessor$a
-                                     nfix
-                                     (:e force)))
-                    :expand ((,coupled (,updater$a i ,element ,stobj))))))
-
-                ,@(and resizablep
-                       `((defthm ,coupled-of-resizer$a
-                           (implies (coupled ,stobj)
-                                    (,coupled (,resizer$a l ,stobj)))
-                           :hints
-                           (("Goal"
-                             :cases ((< (nfix (,witness (,resizer$a l ,stobj)))
-                                        (nfix l)))
-                             :in-theory (e/d (,stobj$a-aggressive)
-                                             (,element-coupled-of-accessor$a
-                                              nfix
-                                              (:e force)))
-                             :expand ((,coupled (,resizer$a l ,stobj))))))))))
-
-       (defun ,copier-rec (l ,%stobj ,stobj)
-         (declare (xargs :stobjs (,%stobj ,stobj)
-                         :guard (and (= (,length ,%stobj) (,length ,stobj))
-                                     (natp l)
-                                     (<= l (,length ,stobj)))))
-         (if (zp l)
-             (,fixer ,%stobj)
-             ,(if element-copier
-                  `(let ((l (1- l)))
-                     (stobj-let ((,element (,accessor l ,stobj) ,updater))
-                                (,%stobj)
+         (defun ,copy-rec (,index ,%vector ,vector)
+           (declare (xargs :stobjs (,%vector ,vector)
+                           :guard (and (= (,length ,%vector) (,length ,vector))
+                                       (natp ,index)
+                                       (<= ,index (,length ,vector)))))
+           (if (zp ,index)
+               (,fixer ,%vector)
+               ,(if element-copy
+                    `(let ((,index (1- ,index)))
+                       (stobj-let ((,element (,accessor ,index ,vector) ,updater))
+                                  (,%vector)
 ;;; TODO: `CONCRETE-ACCESSOR' gives error:
 ;;; ```
 ;;; HARD ACL2 ERROR in ASSERT$:  Assertion failed:
@@ -253,744 +490,820 @@
 ;;; '''
 ;;; when ACCESSOR is used instead of %ACCESSOR here (respectively UPDATER vs %UPDATER).
 ;;; Is this a bug?
-                                (stobj-let ((,%element (,%accessor l ,%stobj) ,%updater))
-                                           (,%element)
-                                           (,element-copier ,%element ,element)
-                                  ,%stobj)
-                       (,copier-rec l ,%stobj ,stobj)))
-                  `(let* ((l (1- l))
-                          (,element (,accessor l ,stobj))
-                          (,%stobj (,updater l ,element ,%stobj)))
-                     (,copier-rec l ,%stobj ,stobj)))))
+                                  (stobj-let ((,%element (,%accessor ,index ,%vector) ,%updater))
+                                             (,%element)
+                                             (,element-copy ,%element ,element)
+                                    ,%vector)
+                         (,copy-rec ,index ,%vector ,vector)))
+                    `(let* ((,index (1- ,index))
+                            (,element (,accessor ,index ,vector))
+                            (,%vector (,updater ,index ,element ,%vector)))
+                       (,copy-rec ,index ,%vector ,vector)))))
 
-       (local
-         (defthm ,recognizer$a-of-copier-rec
-           (,recognizer$a (,copier-rec l ,%stobj ,stobj))
-           ,@(and element-coupled
-                  `(:hints
-                    (("Goal"
-                      :in-theory (disable ,element-coupled-of-accessor$a
-                                          ,element-copier{rewrite})))))))
+         (local
+           (defthm ,recognizer$a-of-copy-rec
+             (,recognizer$a (,copy-rec ,index ,%vector ,vector))))
 
-       (local
-         (defthm ,length$a-of-copier-rec
-           (equal (,length$a (,copier-rec l ,%stobj ,stobj))
-                  (,length$a ,%stobj))
-           ,@(and element-coupled
-                  `(:hints
-                    (("Goal"
-                      :in-theory (disable ,element-coupled-of-accessor$a
-                                          ,element-copier{rewrite})))))))
+         (local
+           (defthm ,length$a-of-copy-rec
+             (equal (,length$a (,copy-rec ,index ,%vector ,vector))
+                    (,length$a ,%vector))))
 
-       (local
-         (defthm ,accessor$a-of-copier-rec
-           ,(if element-coupled
-                `(implies (and (coupled ,stobj)
-                               (force (< (nfix i) (,length$a ,%stobj))))
-                          (equal (,accessor$a i (,copier-rec l ,%stobj ,stobj))
-                                 (if (< (nfix i) (nfix l))
-                                     (,accessor$a i ,stobj)
-                                     (,accessor$a i ,%stobj))))
-                `(implies (force (< (nfix i) (,length$a ,%stobj)))
-                          (equal (,accessor$a i (,copier-rec l ,%stobj ,stobj))
-                                 (if (< (nfix i) (nfix l))
-                                     (,accessor$a i ,stobj)
-                                     (,accessor$a i ,%stobj)))))
+         (local
+           (defthm ,accessor$a-of-copy-rec
+             (implies ,(if element-coupled-p
+                           `(and (,coupledp ,vector)
+                                 (< (nfix i) (,length$a ,%vector)))
+                           `(< (nfix ,%index) (,length$a ,%vector)))
+                      (equal (,accessor$a ,%index (,copy-rec ,index ,%vector ,vector))
+                             (if (< (nfix ,%index) (nfix ,index))
+                                 (,accessor$a ,%index ,vector)
+                                 (,accessor$a ,%index ,%vector))))))
+
+         (in-theory
+           (disable ,copy-rec))
+
+         (defun ,copy (,%vector ,vector)
+           (declare (xargs :stobjs (,%vector ,vector)))
+           (let* ((length (,length ,vector))
+                  (,%vector (if (= (,length ,%vector) length)
+                                ,%vector
+                                (,resizer length ,%vector))))
+             (,copy-rec length ,%vector ,vector)))
+
+         (table copy ',vector ',copy)
+
+         (defthm ,recognizer$a-of-copy
+           (,recognizer$a (,copy ,%vector ,vector)))
+
+         (defthm ,length$a-of-copy
+           (equal (,length$a (,copy ,%vector ,vector))
+                  (,length$a ,vector)))
+
+         (local
+           (defthm ,accessor$a-of-copy
+             (implies ,(if element-coupled-p
+                           `(and (,coupledp ,vector)
+                                 (< (nfix ,index) (,length$a ,vector)))
+                           `(< (nfix ,index) (,length$a ,vector)))
+                      (equal (,accessor$a ,index (,copy ,%vector ,vector))
+                             (,accessor$a ,index ,vector)))))
+
+         (in-theory
+           (disable ,copy))
+
+         (defthm ,copy{rewrite}
+           ,(if element-coupled-p
+                `(implies (case-split (,coupledp ,vector))
+                          (equal (,copy ,%vector ,vector)
+                                 (,fixer ,vector)))
+                `(equal (,copy ,%vector ,vector)
+                        (,fixer$a ,vector)))
            :hints
            (("Goal"
-             :in-theory (enable ,stobj$a-aggressive)))))
+             :use ((:instance ,vector$a-equal
+                              (,%vector$a (,copy ,%vector ,vector))
+                              (,vector$a (,fixer$a ,vector))))))))
 
-       (defun ,copier (,%stobj ,stobj)
-         (declare (xargs :stobjs (,%stobj ,stobj)))
-         (let* ((l (,length ,stobj))
-                (,%stobj (if (= (,length ,%stobj) l)
-                             ,%stobj
-                             (,resizer l ,%stobj))))
-           (,copier-rec l ,%stobj ,stobj)))
+       (deflabel ,coupledp-end)
 
-       (table stobj-copier
-              'stobj-copier-alist
-              (putprop ',stobj
-                       'copier
-                       ',copier
-                       (stobj-copier-alist world)))
+       (deftheory-static ,coupledp-theory
+         (set-difference-theories (current-theory ',coupledp-end)
+                                  (current-theory ',coupledp-begin))))))
 
-       (defthm ,recognizer$a-of-copier
-         (,recognizer$a (,copier ,%stobj ,stobj)))
-
-       (defthm ,length$a-of-copier
-         (equal (,length$a (,copier ,%stobj ,stobj))
-                (,length$a ,stobj)))
-
-       (local
-         (defthm ,accessor$a-of-copier
-           (implies ,(if element-coupled
-                         `(and (coupled ,stobj)
-                               (force (< (nfix i) (,length$a ,stobj))))
-                         `(force (< (nfix i) (,length$a ,stobj))))
-                    (equal (,accessor$a i (,copier ,%stobj ,stobj))
-                           (,accessor$a i ,stobj)))))
-
-       (in-theory
-         (disable ,copier-rec
-                  ,copier))
-
-       (defthm ,copier{rewrite}
-         ,(if element-coupled
-              `(implies (coupled ,stobj)
-                        (equal (,copier ,%stobj ,stobj)
-                               (,fixer ,stobj)))
-              `(equal (,copier ,%stobj ,stobj)
-                      (,fixer ,stobj)))
-         :hints
-         (("Goal"
-           :use ((:instance ,stobj$a-equal
-                            (,%stobj$a (,copier ,%stobj ,stobj))
-                            (,stobj$a (,fixer ,stobj)))))))
-
-       (table stobj-copier
-              'stobj-copier-alist
-              (putprop ',stobj
-                       'copier{rewrite}
-                       ',copier{rewrite}
-                       (stobj-copier-alist world))))))
-
-(defun make-hash-table-copy-events (stobj$a %stobj stobj state)
+(defun make-hash-table-copy-events (hash-table state)
   (declare (xargs :stobjs state
-                  :guard (and (symbolp stobj$a)
-                              (symbolp %stobj)
-                              (symbolp stobj))
+                  :guard (symbolp hash-table)
                   :verify-guards nil))
-  (let* ((copier (symbolicate stobj stobj '-copy))
-         (copier{rewrite} (symbolicate stobj copier '{rewrite}))
-         (copier-rec (symbolicate stobj copier '-rec))
+  (let* ((%hash-table (symbolicate hash-table "%" hash-table))
+         (copy (symbolicate hash-table hash-table "-COPY"))
+         (copy-rec (symbolicate hash-table copy "-REC"))
+         (copy{rewrite} (symbolicate hash-table copy "{REWRITE}"))
 
-         (coupled (symbolicate stobj stobj '-coupled))
-         (coupled-keys (symbolicate stobj coupled '-keys))
-         (coupled-keys-witness (symbolicate stobj coupled-keys '-witness))
-         (coupled-keys-necc (symbolicate stobj coupled-keys '-necc))
-         (coupled-vals (symbolicate stobj coupled '-vals))
-         (coupled-vals-witness (symbolicate stobj coupled-vals '-witness))
-         (coupled-vals-necc (symbolicate stobj coupled-vals '-necc))
+         (coupledp (symbolicate hash-table hash-table "-COUPLED-P"))
+         (coupled-keys-p (symbolicate hash-table hash-table "-COUPLED-KEYS-P"))
+         (coupled-keys-p-witness (symbolicate hash-table coupled-keys-p "-WITNESS"))
+         (coupled-keys-p-necc (symbolicate hash-table coupled-keys-p "-NECC"))
+         (coupled-vals-p (symbolicate hash-table hash-table "-COUPLED-VALS-P"))
+         (coupled-vals-p-witness (symbolicate hash-table coupled-vals-p "-WITNESS"))
+         (coupled-vals-p-necc (symbolicate hash-table coupled-vals-p "-NECC"))
 
-         (recognizer (stobj-recognizer stobj))
-         (exports (stobj$abs-exports stobj))
-         (fixer (car (first exports)))
-         (accessor (car (second exports)))
-         (%accessor (symbolicate stobj '% accessor))
-         (updater (car (third exports)))
-         (%updater (symbolicate stobj '% updater))
-         (count (car (seventh exports)))
-         (init (car (ninth exports)))
-         (keys (car (tenth exports)))
-         (keys-set (car (nth 10 exports)))
+         ;; `HASH-TABLE'
+         (stobj-property (getpropc hash-table 'acl2::stobj))
+         (recognizer (caadr stobj-property))
+         (fixer (first (third stobj-property)))
+         (accessor (second (third stobj-property)))
+         (updater (third (third stobj-property)))
+         (count (seventh (third stobj-property)))
+         (init (ninth (third stobj-property)))
+         (keys (tenth (third stobj-property)))
+         (keys-set (nth 10 (third stobj-property)))
 
-         (stobj$a-aggressive (symbolicate stobj stobj$a '-aggressive))
-         (%stobj$a (symbolicate stobj '% stobj$a))
-         (recognizer$a (stobj$a-recognizer stobj$a))
-         (creator$a (stobj$a-creator stobj$a))
-         (fixer$a (stobj$a-fixer stobj$a))
-         (stobj$a-equal (stobj$a-equal stobj$a))
-         (accessor$a (stobj$a-hash-table-accessor stobj$a))
-         (updater$a (stobj$a-hash-table-updater stobj$a))
-         (boundp$a (stobj$a-hash-table-boundp stobj$a))
-         (count$a (stobj$a-hash-table-count stobj$a))
-         (keys$a (stobj$a-hash-table-keys stobj$a))
-         (keys-set$a (stobj$a-hash-table-keys-set stobj$a))
+         ;; `HASH-TABLE$A'
+         (hash-table$a (symbolicate hash-table hash-table "$A"))
+         (%hash-table$a (symbolicate hash-table "%" hash-table$a))
+         (hash-table$a-theorems (symbolicate hash-table hash-table$a "-THEOREMS"))
+         (hash-table$a-aggressive (symbolicate hash-table hash-table$a "-AGGRESSIVE"))
+         (world (w state))
+         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
+         (recognizer$a (first (second stobj$a-property)))
+         (creator$a (second (second stobj$a-property)))
+         (fixer$a (third (second stobj$a-property)))
+         (accessor$a (first (fourth (third stobj$a-property))))
+         (updater$a (second (fourth (third stobj$a-property))))
+         (boundp$a (third (fourth (third stobj$a-property))))
+         (remover$a (fifth (fourth (third stobj$a-property))))
+         (count$a (sixth (fourth (third stobj$a-property))))
+         (keysp$a (nth 8 (fourth (third stobj$a-property))))
+         (keys$a-fix (nth 9 (fourth (third stobj$a-property))))
+         (keys$a (nth 10 (fourth (third stobj$a-property))))
+         (keys-set$a (nth 11 (fourth (third stobj$a-property))))
+         (hash-table$a-equal (cdr (assoc hash-table$a (table-alist 'equality world))))
 
-         (key-recognizer (stobj$a-hash-table-key-recognizer stobj$a))
-         (key-fixer (stobj$a-hash-table-key-fixer stobj$a))
-         (key (stobj$a-hash-table-key stobj$a))
-         ;; (default-key (stobj$a-hash-table-default-key stobj$a))
+         (key (first (first (third stobj$a-property))))
+         (key-recognizer (second (first (third stobj$a-property))))
+         (default-key (third (first (third stobj$a-property))))
+         (key-fixer (fourth (first (third stobj$a-property))))
 
-         (val-recognizer (stobj$a-hash-table-val-recognizer stobj$a))
-         (val-fixer (stobj$a-hash-table-val-fixer stobj$a))
-         (val (stobj$a-hash-table-val stobj$a))
-         (val-copier (stobj-copier val))
-         (val-copier{rewrite} (stobj-copier{rewrite} val))
-         (%val (car (getpropc val-copier 'formals)))
-         (val-coupled (stobj-coupled val))
-         (val$a (stobj$a-lookup val))
-         (val$a-recognizer (stobj$a-recognizer val$a))
-         (val$a-creator (stobj$a-creator val$a))
-         (val$a-fixer (stobj$a-fixer val$a))
+         (val (first (second (third stobj$a-property))))
+         (val-stobj-property (getpropc val 'acl2::stobj))
+         (val-stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
+         (val-recognizer (second (second (third stobj$a-property))))
+         (val-creator (second (second val-stobj$a-property)))
+         (default-val (if val-stobj-property
+                          `(,val-creator)
+                          (third (second (third stobj$a-property)))))
+         (val-fixer (fourth (second (third stobj$a-property))))
 
-         (coupled-keys-when-not-recognizer$a (symbolicate stobj coupled-keys '-when-not- recognizer$a))
-         (coupled-keys-of-creator$a (symbolicate stobj coupled-keys '-of- creator$a))
-         (coupled-keys-of-fixer$a (symbolicate stobj coupled-keys '-of- fixer$a))
-         (coupled-keys-of-updater$a-when-boundp$a (symbolicate stobj coupled-keys '-of- updater$a '-when- boundp$a))
-         (coupled-keys-of-updater$a-when-not-boundp$a (symbolicate stobj coupled-keys '-of- updater$a '-when-not- boundp$a))
-         (coupled-keys-of-updater$a-when-not-boundp$a-lemma
-          (symbolicate stobj coupled-keys-of-updater$a-when-not-boundp$a '-lemma))
+         (fixer (if val-stobj-property
+                    (third (third stobj-property))
+                    fixer))
+         (accessor (if val-stobj-property
+                       (first (third stobj-property))
+                       accessor))
+         (%accessor (symbolicate hash-table "%" accessor))
+         (updater (if val-stobj-property
+                      (second (third stobj-property))
+                      updater))
+         (%updater (symbolicate hash-table "%" updater))
 
-         (coupled-vals-when-not-recognizer$a (symbolicate stobj coupled-vals '-when-not- recognizer$a))
-         (coupled-vals-of-creator$a (symbolicate stobj coupled-vals '-of- creator$a))
-         (coupled-vals-of-fixer$a (symbolicate stobj coupled-vals '-of- fixer$a))
-         (coupled-vals-of-updater$a (symbolicate stobj coupled-vals '-of- updater$a))
-         (coupled-vals-of-updater$a-lemma (symbolicate stobj coupled-vals-of-updater$a '-lemma))
-         (coupled-vals-of-keys-set$a (symbolicate stobj coupled-vals '-of- keys-set$a))
+         (val-copy (cdr (assoc val (table-alist 'copy world))))
+         (%val (car (getpropc val-copy 'acl2::formals)))
+         (val-coupled-p (cdr (assoc val (table-alist 'coupledp world))))
+         (val-coupled-p-theory (symbolicate val val "-COUPLED-P-THEORY"))
 
-         (coupled-when-not-recognizer$a (symbolicate stobj coupled '-when-not- recognizer$a))
-         (coupled-of-creator$a (symbolicate stobj coupled '-of- creator$a))
-         (coupled-of-fixer$a (symbolicate stobj coupled '-of- fixer$a))
-         (coupled-of-updater$a (symbolicate stobj coupled '-of- updater$a))
-         (coupled-of-updater$a-lemma-0 (symbolicate stobj coupled-of-updater$a '-lemma-0))
-         (coupled-of-updater$a-lemma-1 (symbolicate stobj coupled-of-updater$a '-lemma-1))
-         (cardinality-of-keys$a (symbolicate stobj 'cardinality-of- keys$a))
-         (in-of-keys$a (symbolicate stobj 'in-of- keys$a))
-         (val-coupled-of-accessor$a (symbolicate stobj val-coupled '-of- accessor$a))
-         (emptyp-of-keys$a (symbolicate stobj 'emptyp-of- keys$a))
-         (key-recognizer-of-head-when-coupled (symbolicate stobj key-recognizer '-of-head-when- coupled))
+         (coupledp-begin (symbolicate hash-table coupledp "-BEGIN"))
+         (coupledp-end (symbolicate hash-table coupledp "-END"))
+         (coupledp-theory (symbolicate hash-table coupledp "-THEORY"))
 
-         (recognizer$a-of-copier (symbolicate stobj recognizer$a '-of- copier))
-         (coupled-of-copier (symbolicate stobj coupled '-of- copier))
-         (coupled-of-copier/lemma-0 (symbolicate stobj coupled-of-copier '/lemma-0))
-         (coupled-of-copier/lemma-1 (symbolicate stobj coupled-of-copier '/lemma-1))
-         (keys$a-of-copier (symbolicate stobj keys$a '-of- copier))
-         (count$a-of-copier (symbolicate stobj count$a '-of- copier))
-         (boundp$a-of-copier (symbolicate stobj boundp$a '-of- copier))
-         (accessor$a-of-copier (symbolicate stobj accessor$a '-of- copier))
-         (recognizer$a-of-copier-rec (symbolicate stobj recognizer$a '-of- copier-rec))
-         (keys$a-of-copier-rec (symbolicate stobj keys$a '-of- copier-rec))
-         (copier-rec-of-updater$a (symbolicate stobj copier-rec '-of- updater$a))
-         (count$a-of-copier-rec (symbolicate stobj count$a '-of- copier-rec))
-         (boundp$a-of-copier-rec (symbolicate stobj boundp$a '-of- copier-rec))
-         (accessor$a-of-copier-rec (symbolicate stobj accessor$a '-of- copier-rec)))
+         ;; Theorem Names
+         (booleanp-of-key-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" key-recognizer))
+         (key-recognizer-of-default-key (symbolicate "ATOMIC-STOBJS" key-recognizer "-OF-DEFAULT-KEY"))
+         (key-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" key-fixer "{REWRITE}"))
 
-    `(encapsulate ()
-       ,@(and (or key-recognizer
-                  key-fixer
-                  val-recognizer
-                  val-fixer
-                  val-copier
-                  val-coupled)
-              `((local
-                  (in-theory
-                    (disable ,@(and key-recognizer
-                                    (list key-recognizer))
-                             ,@(and key-fixer
-                                    (list key-fixer))
-                             ,@(and val-recognizer
-                                    (list (if val$a
-                                              val$a-recognizer
-                                              val-recognizer)))
-                             ,@(and val-fixer
-                                    (list (if val$a
-                                              val$a-fixer
-                                              val-fixer)))
-                             ,@(and val-copier
-                                    (list val-copier))
-                             ,@(and val-coupled
-                                    (list val-coupled)))))))
+         (booleanp-of-val-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" val-recognizer))
+         (val-recognizer-of-default-val (symbolicate "ATOMIC-STOBJS" val-recognizer "-OF-DEFAULT-VAL"))
+         (val-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" val-fixer "{REWRITE}"))
 
-       (local
-         (in-theory
-           (acl2::enable* set::expensive-rules)))
+         (coupled-keys-p-when-not-recognizer$a (symbolicate hash-table coupled-keys-p "-WHEN-NOT-" recognizer$a))
+         (coupled-keys-p-of-creator$a (symbolicate hash-table coupled-keys-p "-OF-" creator$a))
+         (coupled-keys-p-of-fixer$a (symbolicate hash-table coupled-keys-p "-OF-" fixer$a))
+         (coupled-keys-p-of-updater$a-when-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" updater$a "-WHEN-" boundp$a))
+         (coupled-keys-p-of-updater$a-when-not-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" updater$a "-WHEN-NOT-" boundp$a))
+         (coupled-keys-p-of-remover$a-when-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" remover$a "-WHEN-" boundp$a))
+         (coupled-keys-p-of-remover$a-when-not-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" remover$a "-WHEN-NOT-" boundp$a))
 
-       (defun-sk ,coupled-keys (,stobj)
-         (declare (xargs :guard (,recognizer ,stobj)
-                         :verify-guards nil))
-         (forall ,key
-           (equal (set::in ,key (,keys$a ,stobj))
-                  ,(if key-recognizer
-                       `(and (,key-recognizer ,key)
-                             (,boundp$a ,key ,stobj))
-                       `(,boundp$a ,key ,stobj))))
-         :rewrite :direct)
+         (coupled-vals-p-when-not-recognizer$a (symbolicate hash-table coupled-vals-p "-WHEN-NOT-" recognizer$a))
+         (coupled-vals-p-of-creator$a (symbolicate hash-table coupled-vals-p "-OF-" creator$a))
+         (coupled-vals-p-of-fixer$a (symbolicate hash-table coupled-vals-p "-OF-" fixer$a))
+         (coupled-vals-p-of-updater$a (symbolicate hash-table coupled-vals-p "-OF-" updater$a))
+         (coupled-vals-p-of-remover$a (symbolicate hash-table coupled-vals-p "-OF-" remover$a))
+         (coupled-vals-p-of-keys-set$a (symbolicate hash-table coupled-vals-p "-OF-" keys-set$a))
+         (coupled-vals-p-of-keys-set$a-lemma (symbolicate hash-table coupled-vals-p-of-keys-set$a "-LEMMA"))
 
-       (defthm ,coupled-keys-when-not-recognizer$a
-         (implies (not (,recognizer$a ,stobj))
-                  (,coupled-keys ,stobj))
-         :hints
-         (("Goal"
-           :in-theory (enable ,stobj$a-aggressive))))
+         (coupledp-when-not-recognizer$a (symbolicate hash-table coupledp "-WHEN-NOT-" recognizer$a))
+         (coupledp-of-creator$a (symbolicate hash-table coupledp "-OF-" creator$a))
+         (coupledp-of-fixer$a (symbolicate hash-table coupledp "-OF-" fixer$a))
+         (coupledp-of-updater$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-" boundp$a))
+         (coupledp-of-updater$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
+         (coupledp-of-remover$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-" boundp$a))
+         (coupledp-of-remover$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-NOT-" boundp$a))
+         (cardinality-of-keys$a (symbolicate hash-table "CARDINALITY-OF-" keys$a))
+         (in-of-keys$a (symbolicate hash-table "IN-OF-" keys$a))
+         (val-coupled-p-of-accessor$a (symbolicate hash-table val-coupled-p "-OF-" accessor$a))
+         (emptyp-of-keys$a (symbolicate hash-table "EMPTYP-OF-" keys$a))
 
-       (defthm ,coupled-keys-of-creator$a
-         (,coupled-keys (,creator$a)))
+         (recognizer$a-of-copy (symbolicate hash-table recognizer$a "-OF-" copy))
+         (coupledp-of-copy (symbolicate hash-table coupledp "-OF-" copy))
+         (coupledp-of-copy/lemma-0 (symbolicate hash-table coupledp-of-copy "/LEMMA-0"))
+         (coupledp-of-copy/lemma-1 (symbolicate hash-table coupledp-of-copy "/LEMMA-1"))
+         (keys$a-of-copy (symbolicate hash-table keys$a "-OF-" copy))
+         (boundp$a-of-copy (symbolicate hash-table boundp$a "-OF-" copy))
+         (accessor$a-of-copy (symbolicate hash-table accessor$a "-OF-" copy))
+         (count$a-of-copy (symbolicate hash-table count$a "-OF-" copy))
 
-       (defthm ,coupled-keys-of-fixer$a
-         (equal (,coupled-keys (,fixer$a ,stobj))
-                (or (not (,recognizer$a ,stobj))
-                    (,coupled-keys ,stobj))))
+         (recognizer$a-of-copy-rec (symbolicate hash-table recognizer$a "-OF-" copy-rec))
+         (keys$a-of-copy-rec (symbolicate hash-table keys$a "-OF-" copy-rec))
+         (copy-rec-of-updater$a (symbolicate hash-table copy-rec "-OF-" updater$a))
+         (boundp$a-of-copy-rec (symbolicate hash-table boundp$a "-OF-" copy-rec))
+         (accessor$a-of-copy-rec (symbolicate hash-table accessor$a "-OF-" copy-rec))
+         (count$a-of-copy-rec (symbolicate hash-table count$a "-OF-" copy-rec)))
+
+    `(progn
+       (deflabel ,coupledp-begin)
 
        (encapsulate ()
-         (local
-           (in-theory (enable ,stobj$a-aggressive)))
-
-         (defthm ,coupled-keys-of-updater$a-when-boundp$a
-           (implies (and (,boundp$a ,key ,stobj)
-                         (,coupled-keys ,stobj))
-                    (,coupled-keys (,updater$a ,key ,val ,stobj))))
 
          (local
-           (defthm ,coupled-keys-of-updater$a-when-not-boundp$a-lemma
-             (implies (let* ((,keys$a (,keys$a ,stobj))
-                             (trimmed (set::delete ,key ,keys$a)))
-                        (and ,@(and key-recognizer
-                                    `((,key-recognizer ,key)))
-                             (not (,boundp$a ,key ,stobj))
-                             (set::in ,key ,keys$a)
-                             (,coupled-keys (,keys-set$a trimmed ,stobj))))
-                      (,coupled-keys (,updater$a ,key ,val ,stobj)))
+           (deflabel prologue-begin))
+
+         (local
+           (defthm head-not-in-tail
+             (implies (and (not (set::emptyp set))
+                           (equal head (set::head set))
+                           (equal tail (set::tail set)))
+                      (not (set::in head tail)))))
+
+         (local
+           (defthm head-in-set
+             (implies (and (not (set::emptyp set))
+                           (equal head (set::head set)))
+                      (set::in head set))))
+
+         (local
+           (defthm in-tail-iff
+             (implies (and (not (set::emptyp set))
+                           (not (equal element (set::head set))))
+                      (equal (set::in element (set::tail set))
+                             (set::in element set)))
              :hints
              (("Goal"
-               :in-theory (disable ,coupled-keys
-                                   ,coupled-keys-necc)
-               :use ((:instance ,coupled-keys-necc
-                                (,key (,coupled-keys-witness (,updater$a ,key ,val ,stobj)))
-                                (,stobj (let* ((,keys$a (,keys$a ,stobj))
-                                               (trimmed (set::delete ,key ,keys$a)))
-                                          (,keys-set$a trimmed ,stobj)))))
-               :expand (,coupled-keys (,updater$a ,key ,val ,stobj))))))
+               :expand (set::in element set)))))
 
-         (defthm ,coupled-keys-of-updater$a-when-not-boundp$a
-           (implies (let* ((,keys$a (,keys$a ,stobj))
+         (local
+           (defthm head-of-tail-neq-head
+             (implies (and (not (set::emptyp set))
+                           (not (set::emptyp (set::tail set))))
+                      (not (equal (set::head (set::tail set))
+                                  (set::head set))))
+             :hints
+             (("Goal"
+               :in-theory (enable set::setp
+                                  set::emptyp
+                                  set::head
+                                  set::tail)))))
+
+         ,@(and key-recognizer
+                key-fixer
+                `((local
+                    (defthm ,booleanp-of-key-recognizer
+                      (booleanp (,key-recognizer ,key))
+                      :rule-classes
+                      (:rewrite
+                       :type-prescription)))
+
+                  (local
+                    (defthm ,key-recognizer-of-default-key
+                      (,key-recognizer ,default-key)
+                      :rule-classes nil))
+
+                  (local
+                    (defthm ,key-fixer{rewrite}
+                      (equal (,key-fixer ,key)
+                             (if (,key-recognizer ,key)
+                                 ,key
+                                 ,default-key))))))
+
+         ,@(and val-recognizer
+                val-fixer
+                `((local
+                    (defthm ,booleanp-of-val-recognizer
+                      (booleanp (,val-recognizer ,val))
+                      :rule-classes
+                      (:rewrite
+                       :type-prescription)))
+
+                  (local
+                    (defthm ,val-recognizer-of-default-val
+                      (,val-recognizer ,default-val)
+                      :rule-classes nil))
+
+                  (local
+                    (defthm ,val-fixer{rewrite}
+                      (equal (,val-fixer ,val)
+                             (if (,val-recognizer ,val)
+                                 ,val
+                                 ,default-val))))))
+
+         (local
+           (deflabel prologue-end))
+
+         (local
+           (in-theory
+             (union-theories
+              (union-theories
+               (union-theories (theory 'acl2::ground-zero)
+                               (theory 'set::theorems))
+               (union-theories (theory ',hash-table$a-theorems)
+                               (theory ',hash-table$a-aggressive)))
+              (set-difference-theories (current-theory 'prologue-end)
+                                       (current-theory 'prologue-begin)))))
+
+         ,@(and key-recognizer
+                key-fixer
+                `((local
+                    (in-theory
+                      (disable ,key-recognizer
+                               ,key-fixer)))))
+
+         ,@(and val-recognizer
+                val-fixer
+                `((local
+                    (in-theory
+                      (disable ,val-recognizer
+                               ,val-fixer)))))
+
+         ,@(and val-stobj$a-property
+                `((local
+                    (in-theory
+                      (disable ,val-creator)))))
+
+         ,@(and val-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,val-coupled-p-theory)))))
+
+         ,@(and val-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,@(strip-cars (cdr (getpropc val 'acl2::absstobj-info))))))))
+
+         (local
+           (in-theory
+             (acl2::enable* set::expensive-rules)))
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
+
+         (define-congruent ,hash-table)
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %hash-table 'acl2::absstobj-info))))))
+
+         ;; `COUPLED-KEYS-P'
+         (defun-sk ,coupled-keys-p (,hash-table)
+           (declare (xargs :guard (,recognizer ,hash-table)
+                           :verify-guards nil))
+           (forall ,key
+             (equal (set::in ,key (,keys$a ,hash-table))
+                    ,(if key-recognizer
+                         `(and (,key-recognizer ,key)
+                               (,boundp$a ,key ,hash-table))
+                         `(,boundp$a ,key ,hash-table))))
+           :rewrite :direct)
+
+         (defthm ,coupled-keys-p-when-not-recognizer$a
+           (implies (not (,recognizer$a ,hash-table))
+                    (,coupled-keys-p ,hash-table)))
+
+         (defthm ,coupled-keys-p-of-creator$a
+           (,coupled-keys-p (,creator$a)))
+
+         (defthm ,coupled-keys-p-of-fixer$a
+           (equal (,coupled-keys-p (,fixer$a ,hash-table))
+                  (,coupled-keys-p ,hash-table)))
+
+         (defthm ,coupled-keys-p-of-updater$a-when-boundp$a
+           (implies (and (,boundp$a ,key ,hash-table)
+                         (,coupled-keys-p ,hash-table))
+                    (,coupled-keys-p (,updater$a ,key ,val ,hash-table))))
+
+         (defthm ,coupled-keys-p-of-updater$a-when-not-boundp$a
+           (implies (let* ((,keys$a (,keys$a ,hash-table))
                            (trimmed (set::delete ,(if key-fixer
                                                       `(,key-fixer ,key)
                                                       key)
                                                  ,keys$a)))
-                      (and (not (,boundp$a ,key ,stobj))
+                      (and (not (,boundp$a ,key ,hash-table))
                            (set::in ,(if key-fixer
                                          `(,key-fixer ,key)
                                          key)
                                     ,keys$a)
-                           (,coupled-keys (,keys-set$a trimmed ,stobj))))
-                    (,coupled-keys (,updater$a ,key ,val ,stobj)))
+                           (,coupled-keys-p (,keys-set$a trimmed ,hash-table))))
+                    (,coupled-keys-p (,updater$a ,key ,val ,hash-table)))
            :hints
            (("Goal"
-             ,@(and key-recognizer
-                    `(:cases ((,key-recognizer ,key))))
-             :in-theory (disable ,coupled-keys)))))
+             :do-not-induct t
+             :in-theory (disable ,coupled-keys-p
+                                 ,coupled-keys-p-necc)
+             :use ((:instance ,coupled-keys-p-necc
+                              (,key (,coupled-keys-p-witness (,updater$a ,default-key ,val ,hash-table)))
+                              (,hash-table (,keys-set$a (set::delete ,default-key (,keys$a ,hash-table))
+                                                        ,hash-table)))
+                   (:instance ,coupled-keys-p-necc
+                              (,key (,coupled-keys-p-witness (,updater$a ,key ,val ,hash-table)))
+                              (,hash-table (,keys-set$a (set::delete k (,keys$a ,hash-table))
+                                                        ,hash-table))))
+             :expand (:free (,key) (,coupled-keys-p (,updater$a ,key ,val ,hash-table))))))
 
-       (in-theory
-         (disable ,coupled-keys))
+         (defthm ,coupled-keys-p-of-remover$a-when-boundp$a
+           (implies (let* ((,keys$a (,keys$a ,hash-table))
+                           (inserted (set::insert ,(if key-fixer
+                                                       `(,key-fixer ,key)
+                                                       key)
+                                                  ,keys$a)))
+                      (and (,boundp$a ,key ,hash-table)
+                           (not (set::in ,(if key-fixer
+                                              `(,key-fixer ,key)
+                                              key)
+                                         ,keys$a))
+                           (,coupled-keys-p (,keys-set$a inserted ,hash-table))))
+                    (,coupled-keys-p (,remover$a ,key ,hash-table)))
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :in-theory (disable ,coupled-keys-p
+                                 ,coupled-keys-p-necc)
+             :use ((:instance ,coupled-keys-p-necc
+                              (,key (,coupled-keys-p-witness (,remover$a ,default-key ,hash-table)))
+                              (,hash-table (,keys-set$a (set::insert ,default-key (,keys$a ,hash-table))
+                                                        ,hash-table)))
+                   (:instance ,coupled-keys-p-necc
+                              (,key (,coupled-keys-p-witness (,remover$a ,key ,hash-table)))
+                              (,hash-table (,keys-set$a (set::insert ,key (,keys$a ,hash-table))
+                                                        ,hash-table))))
+             :expand (:free (,key) (,coupled-keys-p (,remover$a ,key ,hash-table))))))
 
-       ,@(and val-coupled
-              `((defun-sk ,coupled-vals (,stobj)
-                  (declare (xargs :guard (,recognizer ,stobj)
-                                  :verify-guards nil))
-                  (forall ,key
-                    (,val-coupled (,accessor$a ,key ,stobj)))
-                  :rewrite :direct)
+         (defthm ,coupled-keys-p-of-remover$a-when-not-boundp$a
+           (implies (and (not (,boundp$a ,key ,hash-table))
+                         (,coupled-keys-p ,hash-table))
+                    (,coupled-keys-p (,remover$a ,key ,hash-table))))
 
-                (defthm ,coupled-vals-when-not-recognizer$a
-                  (implies (not (,recognizer$a ,stobj))
-                           (,coupled-vals ,stobj))
-                  :hints
-                  (("Goal"
-                    :in-theory (enable ,stobj$a-aggressive))))
+         (in-theory
+           (disable ,coupled-keys-p))
 
-                (defthm ,coupled-vals-of-creator$a
-                  (,coupled-vals (,creator$a)))
+         ,@(and val-coupled-p
+                `((defun-sk ,coupled-vals-p (,hash-table)
+                    (declare (xargs :guard (,recognizer ,hash-table)
+                                    :verify-guards nil))
+                    (forall ,key
+                      (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                    :rewrite :direct)
 
-                (defthm ,coupled-vals-of-fixer$a
-                  (equal (,coupled-vals (,fixer$a ,stobj))
-                         (or (not (,recognizer$a ,stobj))
-                             (,coupled-vals ,stobj))))
+                  (defthm ,coupled-vals-p-when-not-recognizer$a
+                    (implies (not (,recognizer$a ,hash-table))
+                             (,coupled-vals-p ,hash-table)))
 
-                (encapsulate ()
+                  (defthm ,coupled-vals-p-of-creator$a
+                    (,coupled-vals-p (,creator$a)))
+
+                  (defthm ,coupled-vals-p-of-fixer$a
+                    (equal (,coupled-vals-p (,fixer$a ,hash-table))
+                           (,coupled-vals-p ,hash-table)))
+
+                  (defthm ,coupled-vals-p-of-updater$a
+                    (implies (,coupled-vals-p ,hash-table)
+                             (equal (,coupled-vals-p (,updater$a ,key ,val ,hash-table))
+                                    (,val-coupled-p ,val)))
+                    :hints
+                    (("Goal"
+                      :in-theory (disable ,coupled-vals-p
+                                          ,coupled-vals-p-necc)
+                      :use ((:instance ,coupled-vals-p-necc
+                                       (,hash-table (,updater$a ,key ,val ,hash-table))))
+                      :expand (:free (,key ,val)
+                                     (,coupled-vals-p (,updater$a ,key ,val ,hash-table))))))
+
+                  (defthm ,coupled-vals-p-of-remover$a
+                    (implies (,coupled-vals-p ,hash-table)
+                             (,coupled-vals-p (,remover$a ,key ,hash-table))))
+
                   (local
-                    (in-theory (enable ,stobj$a-aggressive)))
-
-                  (local
-                    (defthm ,coupled-vals-of-updater$a-lemma
-                      (implies ,(if key-recognizer
-                                    `(and (,coupled-vals ,stobj)
-                                          (,key-recognizer ,key))
-                                    `(,coupled-vals ,stobj))
-                               (equal (,coupled-vals (,updater$a ,key ,val ,stobj))
-                                      (,val-coupled ,val)))
+                    (defthmd ,coupled-vals-p-of-keys-set$a-lemma
+                      (iff (,coupled-vals-p (,keys-set$a ,keys$a ,hash-table))
+                           (,coupled-vals-p ,hash-table))
                       :hints
                       (("Goal"
-                        :in-theory (disable ,coupled-vals
-                                            ,coupled-vals-necc)
-                        :use ((:instance ,coupled-vals-necc
-                                         (,stobj (,updater$a ,key ,val ,stobj))))
-                        :expand ((,coupled-vals (,updater$a ,key ,val ,stobj))
-                                 (,coupled-vals (,updater$a ,key (,val$a-creator) ,stobj)))))))
+                        :in-theory (disable ,coupled-vals-p
+                                            ,coupled-vals-p-necc))
+                       ("Subgoal 2"
+                        :expand (:free (,keys$a)
+                                       (,coupled-vals-p (,keys-set$a ,keys$a ,hash-table))))
+                       ("Subgoal 1"
+                        :use ((:instance ,coupled-vals-p-necc
+                                         (,key (,coupled-vals-p-witness ,hash-table))
+                                         (,hash-table (,keys-set$a ,keys$a ,hash-table))))
+                        :expand (,coupled-vals-p ,hash-table)))))
 
-                  (defthm ,coupled-vals-of-updater$a
-                    (implies (,coupled-vals ,stobj)
-                             (equal (,coupled-vals (,updater$a ,key ,val ,stobj))
-                                    (,val-coupled ,val)))
+                  (defthm ,coupled-vals-p-of-keys-set$a
+                    (equal (,coupled-vals-p (,keys-set$a ,keys$a ,hash-table))
+                           (,coupled-vals-p ,hash-table))
                     :hints
                     (("Goal"
-                      ,@(and key-recognizer
-                             `(:cases ((,key-recognizer ,key))))
-                      :in-theory (disable ,coupled-vals))))
+                      :use ,coupled-vals-p-of-keys-set$a-lemma)))
 
-                  (defthm ,coupled-vals-of-keys-set$a
-                    (iff (,coupled-vals (,keys-set$a ,keys$a ,stobj))
-                         (,coupled-vals ,stobj))
-                    :hints
-                    (("Goal"
-                      :in-theory (disable ,coupled-vals
-                                          ,coupled-vals-necc))
-                     ("Subgoal 2"
-                      :use ((:instance ,coupled-vals-necc
-                                       (,key (,coupled-vals-witness (,keys-set$a ,keys$a ,stobj)))))
-                      :expand (,coupled-vals (,keys-set$a ,keys$a ,stobj)))
-                     ("Subgoal 1"
-                      :use ((:instance ,coupled-vals-necc
-                                       (,key (,coupled-vals-witness ,stobj))
-                                       (,stobj (,keys-set$a ,keys$a ,stobj))))
-                      :expand (,coupled-vals ,stobj)))))
+                  (in-theory
+                    (disable ,coupled-vals-p))))
 
-                (in-theory
-                  (disable ,coupled-vals))))
+         (defun-nx ,coupledp (,hash-table)
+           (declare (xargs :guard (,recognizer ,hash-table)
+                           :verify-guards nil))
+           (and (= (set::cardinality (,keys$a ,hash-table))
+                   (,count$a ,hash-table))
+                (,coupled-keys-p ,hash-table)
+                ,@(and val-coupled-p
+                       `((,coupled-vals-p ,hash-table)))))
 
-       (defun-nx ,coupled (,stobj)
-         (declare (xargs :guard (,recognizer ,stobj)
-                         :verify-guards nil))
-         (and (= (set::cardinality (,keys$a ,stobj))
-                 (,count$a ,stobj))
-              (,coupled-keys ,stobj)
-              ,@(and val-coupled
-                     `((,coupled-vals ,stobj)))))
+         (table coupledp ',hash-table ',coupledp)
 
-       (table stobj-copier
-              'stobj-coupled-alist
-              (putprop ',stobj
-                       'coupled
-                       ',coupled
-                       (stobj-coupled-alist world)))
+         (defthm ,coupledp-when-not-recognizer$a
+           (implies (not (,recognizer$a ,hash-table))
+                    (,coupledp ,hash-table)))
 
-       (defthm ,coupled-when-not-recognizer$a
-         (implies (not (,recognizer$a ,stobj))
-                  (,coupled ,stobj))
-         :hints
-         (("Goal"
-           :in-theory (enable ,stobj$a-aggressive))))
+         (defthm ,coupledp-of-creator$a
+           (,coupledp (,creator$a)))
 
-       (defthm ,coupled-of-creator$a
-         (,coupled (,creator$a)))
+         (defthm ,coupledp-of-fixer$a
+           (equal (,coupledp (,fixer$a ,hash-table))
+                  (,coupledp ,hash-table)))
 
-       (defthm ,coupled-of-fixer$a
-         (equal (,coupled (,fixer$a ,stobj))
-                (or (not (,recognizer$a ,stobj))
-                    (,coupled ,stobj)))
-         :hints
-         (("Goal"
-           :cases ((,recognizer$a ,stobj))
-           :in-theory (disable ,coupled))))
+         (defthm ,coupledp-of-updater$a-when-boundp$a
+           (implies (and (,boundp$a ,key ,hash-table)
+                         (,coupledp ,hash-table))
+                    ,(if val-coupled-p
+                         `(equal (,coupledp (,updater$a ,key ,val ,hash-table))
+                                 (,val-coupled-p ,val))
+                         `(,coupledp (,updater$a ,key ,val ,hash-table)))))
 
-       (encapsulate ()
+         (defthm ,coupledp-of-updater$a-when-not-boundp$a
+           (implies (let* ((,keys$a (,keys$a ,hash-table))
+                           (trimmed (set::delete ,(if key-fixer
+                                                      `(,key-fixer ,key)
+                                                      key)
+                                                 ,keys$a)))
+                      (and (not (,boundp$a ,key ,hash-table))
+                           (set::in ,(if key-fixer
+                                         `(,key-fixer ,key)
+                                         key)
+                                    ,keys$a)
+                           (,coupledp (,keys-set$a trimmed ,hash-table))))
+                    ,(if val-coupled-p
+                         `(equal (,coupledp (,updater$a ,key ,val ,hash-table))
+                                 (,val-coupled-p ,val))
+                         `(,coupledp (,updater$a ,key ,val ,hash-table)))))
+
+         (defthm ,coupledp-of-remover$a-when-boundp$a
+           (implies (let* ((,keys$a (,keys$a ,hash-table))
+                           (inserted (set::insert ,(if key-fixer
+                                                       `(,key-fixer ,key)
+                                                       key)
+                                                  ,keys$a)))
+                      (and (,boundp$a ,key ,hash-table)
+                           (not (set::in ,(if key-fixer
+                                              `(,key-fixer ,key)
+                                              key)
+                                         ,keys$a))
+                           (,coupledp (,keys-set$a inserted ,hash-table))))
+                    (,coupledp (,remover$a ,key ,hash-table))))
+
+         (defthm ,coupledp-of-remover$a-when-not-boundp$a
+           (implies (and (not (,boundp$a ,key ,hash-table))
+                         (,coupledp ,hash-table))
+                    (,coupledp (,remover$a ,key ,hash-table))))
+
+         (defthm ,cardinality-of-keys$a
+           (implies (,coupledp ,hash-table)
+                    (equal (set::cardinality (,keys$a ,hash-table))
+                           (,count$a ,hash-table))))
+
+         (defthm ,in-of-keys$a
+           (implies (,coupledp ,hash-table)
+                    (equal (set::in ,key (,keys$a ,hash-table))
+                           ,(if key-recognizer
+                                `(and (,key-recognizer ,key)
+                                      (,boundp$a ,key ,hash-table))
+                                `(,boundp$a ,key ,hash-table)))))
+
+         ,@(and val-coupled-p
+                `((defthm ,val-coupled-p-of-accessor$a
+                    (implies (,coupledp ,hash-table)
+                             (,val-coupled-p (,accessor$a ,key ,hash-table))))))
+
+         (defthm ,emptyp-of-keys$a
+           (implies (,coupledp ,hash-table)
+                    (equal (set::emptyp (,keys$a ,hash-table))
+                           (= (,count$a ,hash-table) 0))))
+
+         (in-theory
+           (disable ,coupledp))
+
+         (defun ,copy-rec (set ,%hash-table ,hash-table)
+           (declare (xargs :stobjs (,%hash-table ,hash-table)
+                           :guard (and (,keysp$a set)
+                                       (set::subset set (,keys ,hash-table)))))
+           ,(let ((body
+                   `(if (set::emptyp set)
+                        ;; TODO: replace above condition with (set::emptyp
+                        ;; (,keys$a-fix set)) for performance and remove let
+                        ;; wrapper.
+                        (,fixer ,%hash-table)
+                        ,(if val-copy
+                             `(let ((,key ,(if key-fixer
+                                               `(,key-fixer (set::head set))
+                                               '(set::head set))))
+                                (stobj-let ((,val (,accessor ,key ,hash-table) ,updater))
+                                           (,%hash-table)
+                                           (stobj-let ((,%val (,%accessor ,key ,%hash-table) ,%updater))
+                                                      (,%val)
+                                                      (,val-copy ,%val ,val)
+                                             ,%hash-table)
+                                  (,copy-rec (set::tail set) ,%hash-table ,hash-table)))
+                             `(let* ((,key (set::head set))
+                                     (,val (,accessor ,key ,hash-table))
+                                     (,%hash-table (,updater ,key ,val ,%hash-table)))
+                                (,copy-rec (set::tail set) ,%hash-table ,hash-table))))))
+              (if key-recognizer
+                  `(let ((set (,keys$a-fix set)))
+                     ,body)
+                  body)))
+
          (local
-           (in-theory
-             (enable ,stobj$a-aggressive)))
+           (defthm ,recognizer$a-of-copy-rec
+             (,recognizer$a (,copy-rec set ,%hash-table ,hash-table))))
 
          (local
-           (defthm ,coupled-of-updater$a-lemma-0
-             (implies (and (,boundp$a ,key ,stobj)
-                           (,coupled ,stobj))
-                      ,(if val-coupled
-                           `(equal (,coupled (,updater$a ,key ,val ,stobj))
-                                   (,val-coupled ,val))
-                           `(,coupled (,updater$a ,key ,val ,stobj))))))
+           (defthm ,keys$a-of-copy-rec
+             (equal (,keys$a (,copy-rec set ,%hash-table ,hash-table))
+                    (,keys$a ,%hash-table))))
 
          (local
-           (defthm ,coupled-of-updater$a-lemma-1
-             (implies (and (not (,boundp$a ,key ,stobj))
-                           (let* ((keys (,keys$a ,stobj))
-                                  (trimmed (set::delete ,(if key-fixer
-                                                             `(,key-fixer ,key)
-                                                             key)
-                                                        keys)))
-                             (and (set::in ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
-                                           keys)
-                                  (,coupled (,keys-set$a trimmed ,stobj)))))
-                      ,(if val-coupled
-                           `(equal (,coupled (,updater$a ,key ,val ,stobj))
-                                   (,val-coupled ,val))
-                           `(,coupled (,updater$a ,key ,val ,stobj))))))
+           (defthm ,copy-rec-of-updater$a
+             (implies (and (,coupledp ,hash-table)
+                           (set::subset set (,keys$a ,hash-table)))
+                      (equal (,copy-rec set (,updater$a ,key ,val ,%hash-table) ,hash-table)
+                             (if (set::in ,(if key-fixer
+                                               `(,key-fixer ,key)
+                                               key)
+                                          set)
+                                 (,copy-rec set ,%hash-table ,hash-table)
+                                 (,updater$a ,key ,val (,copy-rec set ,%hash-table ,hash-table)))))
+             :hints
+             (("Goal"
+               :induct (,copy-rec set ,%hash-table ,hash-table)
+               :in-theory (enable set::in)
+               :expand (:free (,key)
+                              (,copy-rec set (,updater$a ,key ,val ,%hash-table) ,hash-table)))
+              ("Subgoal *1/1"
+               :cases ((set::emptyp set))))))
 
-         (defthm ,coupled-of-updater$a
-           (implies (force (if (,boundp$a ,key ,stobj)
-                               (,coupled ,stobj)
-                               (let* ((keys (,keys$a ,stobj))
-                                      (trimmed (set::delete ,(if key-fixer
-                                                                 `(,key-fixer ,key)
-                                                                 key)
-                                                            keys)))
-                                 (and (set::in ,(if key-fixer
-                                                    `(,key-fixer ,key)
-                                                    key)
-                                               keys)
-                                      (,coupled (,keys-set$a trimmed ,stobj))))))
-                    ,(if val-coupled
-                         `(equal (,coupled (,updater$a ,key ,val ,stobj))
-                                 (,val-coupled ,val))
-                         `(,coupled (,updater$a ,key ,val ,stobj))))
+         (local
+           (defthm ,boundp$a-of-copy-rec
+             (implies (and (,coupledp ,hash-table)
+                           (set::subset set (,keys$a ,hash-table)))
+                      (equal (,boundp$a ,key (,copy-rec set ,%hash-table ,hash-table))
+                             (or (,boundp$a ,key ,%hash-table)
+                                 (set::in ,(if key-fixer
+                                               `(,key-fixer ,key)
+                                               key)
+                                          set))))
+             :hints
+             (("Goal"
+               :induct (,copy-rec set ,%hash-table ,hash-table)
+               :in-theory (enable set::in))
+              ("Subgoal *1/1"
+               :cases ((set::emptyp set))))))
+
+         (local
+           (defthm ,accessor$a-of-copy-rec
+             (implies (and (,coupledp ,hash-table)
+                           (set::subset set (,keys$a ,hash-table)))
+                      (equal (,accessor$a ,key (,copy-rec set ,%hash-table ,hash-table))
+                             (if (set::in ,(if key-fixer
+                                               `(,key-fixer ,key)
+                                               key)
+                                          set)
+                                 (,accessor$a ,key ,hash-table)
+                                 (,accessor$a ,key ,%hash-table))))
+             :hints
+             (("Goal"
+               :induct (,copy-rec set ,%hash-table ,hash-table)
+               :in-theory (enable set::in)))))
+
+         (local
+           (defthm ,count$a-of-copy-rec
+             (implies (and (,coupledp ,hash-table)
+                           (set::subset set (,keys$a ,hash-table)))
+                      (equal (,count$a (,copy-rec set ,%hash-table ,hash-table))
+                             (cond
+                               (,(if key-recognizer
+                                     `(or (set::emptyp set)
+                                          (not (,keysp$a set)))
+                                     `(set::emptyp set))
+                                (,count$a ,%hash-table))
+                               ((,boundp$a (set::head set) ,%hash-table)
+                                (,count$a (,copy-rec (set::tail set) ,%hash-table ,hash-table)))
+                               (t
+                                (1+ (,count$a (,copy-rec (set::tail set) ,%hash-table ,hash-table)))))))))
+
+         (in-theory
+           (disable ,copy-rec))
+
+         (defun ,copy (,%hash-table ,hash-table)
+           (declare (xargs :stobjs (,%hash-table ,hash-table)))
+           (let* ((keys (,keys ,hash-table))
+                  (count (,count ,hash-table))
+                  (,%hash-table (,init count nil nil ,%hash-table))
+                  (,%hash-table (,keys-set keys ,%hash-table)))
+             (,copy-rec keys ,%hash-table ,hash-table)))
+
+         (table copy ',hash-table ',copy)
+
+         (defthm ,recognizer$a-of-copy
+           (,recognizer$a (,copy ,%hash-table ,hash-table)))
+
+         (local
+           (defthm ,coupledp-of-copy/lemma-0
+             (implies (and (,(if key-recognizer
+                                 keysp$a
+                                 'set::setp)
+                             %set)
+                           (,coupledp ,hash-table)
+                           (set::subset set (,keys$a ,hash-table)))
+                      (equal (,count$a (,copy-rec set (,keys-set$a %set (,creator$a)) ,hash-table))
+                             (,count$a (,copy-rec set (,creator$a) ,hash-table))))
+             :hints
+             (("Goal"
+               :induct (set::cardinality set)
+               :in-theory (enable (:i set::cardinality))))))
+
+         (local
+           (defthm ,coupledp-of-copy/lemma-1
+             (implies (and (,coupledp ,hash-table)
+                           (set::subset set (,keys$a ,hash-table)))
+                      (equal (,count$a (,copy-rec set (,creator$a) ,hash-table))
+                             (set::cardinality set)))
+             :hints
+             (("Goal"
+               :induct (set::cardinality set)
+               :in-theory (enable set::cardinality)))))
+
+         (local
+           (defthm ,coupledp-of-copy
+             (implies (,coupledp ,hash-table)
+                      (,coupledp (,copy ,%hash-table ,hash-table)))
+             :hints
+             (("Goal"
+               :in-theory (enable ,coupled-keys-p
+                                  ,@(and val-coupled-p
+                                         (list coupled-vals-p)))
+               :expand (:free (set ,%hash-table ,hash-table)
+                              (,coupledp (,copy-rec set ,%hash-table ,hash-table))))
+              ("Subgoal 1"
+               :expand (,coupledp ,hash-table)))))
+
+         (defthm ,keys$a-of-copy
+           (equal (,keys$a (,copy ,%hash-table ,hash-table))
+                  (,keys$a ,hash-table)))
+
+         (local
+           (defthm ,boundp$a-of-copy
+             (implies (,coupledp ,hash-table)
+                      (equal (,boundp$a ,key (,copy ,%hash-table ,hash-table))
+                             (,boundp$a ,key ,hash-table)))))
+
+         (local
+           (defthm ,accessor$a-of-copy
+             (implies (,coupledp ,hash-table)
+                      (equal (,accessor$a ,key (,copy ,%hash-table ,hash-table))
+                             (,accessor$a ,key ,hash-table)))))
+
+         (local
+           (defthm ,count$a-of-copy
+             (implies (,coupledp ,hash-table)
+                      (equal (,count$a (,copy ,%hash-table ,hash-table))
+                             (,count$a ,hash-table)))))
+
+         (in-theory
+           (disable ,copy))
+
+         (defthm ,copy{rewrite}
+           (implies (case-split (,coupledp ,hash-table))
+                    (equal (,copy ,%hash-table ,hash-table)
+                           (,fixer$a ,hash-table)))
            :hints
-           (("Goal"
-             :in-theory (disable ,coupled)))))
+           (("goal"
+             :do-not-induct t
+             :use ((:instance ,hash-table$a-equal
+                              (,%hash-table$a (,copy ,%hash-table ,hash-table))
+                              (,hash-table$a (,fixer$a ,hash-table))))))))
 
-       (defthm ,cardinality-of-keys$a
-         (implies (coupled ,stobj)
-                  (equal (set::cardinality (,keys$a ,stobj))
-                         (,count$a ,stobj))))
+       (deflabel ,coupledp-end)
 
-       (defthm ,in-of-keys$a
-         (implies (,coupled ,stobj)
-                  (equal (set::in ,key (,keys$a ,stobj))
-                         ,(if key-recognizer
-                              `(and (,key-recognizer ,key)
-                                    (,boundp$a ,key ,stobj))
-                              `(,boundp$a ,key ,stobj))))
-         :hints
-         (("Goal"
-           :in-theory (disable ,coupled-keys-necc)
-           :use ((:instance ,coupled-keys-necc)))))
-
-       ,@(and val-coupled
-              `((defthm ,val-coupled-of-accessor$a
-                  (implies (coupled ,stobj)
-                           (,val-coupled (,accessor$a ,key ,stobj))))))
-
-       (in-theory
-         (disable ,coupled))
-
-       (defthm ,emptyp-of-keys$a
-         (implies (coupled ,stobj)
-                  (equal (set::emptyp (,keys$a ,stobj))
-                         (= (,count$a ,stobj) 0)))
-         :hints
-         (("Goal"
-           :in-theory (disable ,cardinality-of-keys$a)
-           :use ((:instance ,cardinality-of-keys$a)))))
-
-       ,@(and key-recognizer
-              `((defthm ,key-recognizer-of-head-when-coupled
-                  (implies (and (not (set::emptyp set))
-                                (,coupled ,stobj)
-                                (set::subset set (,keys$a ,stobj)))
-                           (,key-recognizer (set::head set)))
-                  :rule-classes
-                  ((:forward-chaining :trigger-terms
-                                      ((set::subset set (,keys$a ,stobj)))))
-                  :hints
-                  (("Goal"
-                    :expand (set::subset set (,keys$a ,stobj)))))))
-
-       (defun ,copier-rec (set ,%stobj ,stobj)
-         (declare (xargs :stobjs (,%stobj ,stobj)
-                         :guard (and (set::setp set)
-                                     (set::subset set (,keys ,stobj)))))
-         (if (set::emptyp set)
-             (,fixer ,%stobj)
-             ,(if val-copier
-                  `(let ((key ,(if key-fixer
-                                   `(,key-fixer (set::head set))
-                                   '(set::head set))))
-                     (stobj-let ((,val (,accessor key ,stobj) ,updater))
-                                (,%stobj)
-                                (stobj-let ((,%val (,%accessor key ,%stobj) ,%updater))
-                                           (,%val)
-                                           (,val-copier ,%val ,val)
-                                  ,%stobj)
-                       (,copier-rec (set::tail set) ,%stobj ,stobj)))
-                  `(let* ((key ,(if key-fixer
-                                    `(,key-fixer (set::head set))
-                                    '(set::head set)))
-                          (,val (,accessor key ,stobj))
-                          (,%stobj (,updater key ,val ,%stobj)))
-                     (,copier-rec (set::tail set) ,%stobj ,stobj)))))
-
-       (local
-         (defthm ,recognizer$a-of-copier-rec
-           (,recognizer$a (,copier-rec set ,%stobj ,stobj))
-           ,@(and val-coupled
-                  `(:hints
-                    (("Goal"
-                      :in-theory (disable ,val-coupled-of-accessor$a
-                                          ,val-copier{rewrite})))))))
-
-       (local
-         (defthm ,keys$a-of-copier-rec
-           (equal (,keys$a (,copier-rec set ,%stobj ,stobj))
-                  (,keys$a ,%stobj))
-           ,@(and val-coupled
-                  `(:hints
-                    (("Goal"
-                      :in-theory (disable ,val-coupled-of-accessor$a
-                                          ,val-copier{rewrite})))))))
-
-       (local
-         (defthm ,copier-rec-of-updater$a
-           (implies (and (coupled ,stobj)
-                         (set::subset set (,keys$a ,stobj)))
-                    (equal (,copier-rec set (,updater$a ,key ,val ,%stobj) ,stobj)
-                           (if (set::in ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        set)
-                               (,copier-rec set ,%stobj ,stobj)
-                               (,updater$a ,key ,val (,copier-rec set ,%stobj ,stobj)))))
-           :hints
-           (("Goal"
-             :induct (,copier-rec set ,%stobj ,stobj)
-             :in-theory (enable ,stobj$a-aggressive)
-             :expand ((,copier-rec set (,updater$a ,key ,val ,%stobj) ,stobj))))))
-
-       (local
-         (defthm ,boundp$a-of-copier-rec
-           (implies (and (coupled ,stobj)
-                         (set::subset set (,keys$a ,stobj)))
-                    (equal (,boundp$a ,key (,copier-rec set ,%stobj ,stobj))
-                           (or (,boundp$a ,key ,%stobj)
-                               (set::in ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        set))))
-           :hints
-           (("Goal"
-             :induct (,copier-rec set ,%stobj ,stobj)
-             :in-theory (enable ,stobj$a-aggressive))
-            ("Subgoal *1/2"
-             :cases ((set::in ,(if key-fixer
-                                   `(,key-fixer ,key)
-                                   key)
-                              set))))))
-
-       (local
-         (defthm ,accessor$a-of-copier-rec
-           (implies (and (coupled ,stobj)
-                         (set::subset set (,keys$a ,stobj)))
-                    (equal (,accessor$a ,key (,copier-rec set ,%stobj ,stobj))
-                           (if (set::in ,(if key-fixer
-                                             `(,key-fixer ,key)
-                                             key)
-                                        set)
-                               (,accessor$a ,key ,stobj)
-                               (,accessor$a ,key ,%stobj))))
-           :hints
-           (("Goal"
-             :induct (,copier-rec set ,%stobj ,stobj)
-             :in-theory (enable ,stobj$a-aggressive)))))
-
-       (local
-         (defthm ,count$a-of-copier-rec
-           (implies (and (coupled ,stobj)
-                         (set::subset set (,keys$a ,stobj)))
-                    (equal (,count$a (,copier-rec set ,%stobj ,stobj))
-                           (cond
-                             ((set::emptyp set)
-                              (,count$a ,%stobj))
-                             ((,boundp$a (set::head set) ,%stobj)
-                              (,count$a (,copier-rec (set::tail set) ,%stobj ,stobj)))
-                             (t
-                              (1+ (,count$a (,copier-rec (set::tail set) ,%stobj ,stobj)))))))
-           :hints
-           (("Goal"
-             :in-theory (enable ,stobj$a-aggressive))
-            ("Subgoal *1/2"
-             :use ((:instance set::head-tail-order
-                              (x set)))
-             :expand (set::subset set (,keys$a ,stobj))))))
-
-       (defun ,copier (,%stobj ,stobj)
-         (declare (xargs :stobjs (,%stobj ,stobj)))
-         (let* ((keys (,keys ,stobj))
-                (count (,count ,stobj))
-                (,%stobj (,init count nil nil ,%stobj))
-                (,%stobj (,keys-set keys ,%stobj)))
-           (,copier-rec keys ,%stobj ,stobj)))
-
-       (table stobj-copier
-              'stobj-copier-alist
-              (putprop ',stobj
-                       'copier
-                       ',copier
-                       (stobj-copier-alist world)))
-
-       (defthm ,recognizer$a-of-copier
-         (,recognizer$a (,copier ,%stobj ,stobj)))
-
-       (local
-         (defthm ,coupled-of-copier/lemma-0
-           (implies (and (set::setp %set)
-                         (coupled ,stobj)
-                         (set::subset set (,keys$a ,stobj)))
-                    (equal (,count$a (,copier-rec set (,keys-set$a %set (,creator$a)) ,stobj))
-                           (,count$a (,copier-rec set (,creator$a) ,stobj))))
-           :hints
-           (("Goal"
-             :induct (set::cardinality set)
-             :in-theory (enable (:i set::cardinality))))))
-
-       (local
-         (defthm ,coupled-of-copier/lemma-1
-           (implies (and (coupled ,stobj)
-                         (set::subset set (,keys$a ,stobj)))
-                    (equal (,count$a (,copier-rec set (,creator$a) ,stobj))
-                           (set::cardinality set)))
-           :hints
-           (("Goal"
-             :induct (set::cardinality set)
-             :in-theory (enable (:i set::cardinality)
-                                set::cardinality)))))
-
-       (local
-         (defthm ,coupled-of-copier
-           (implies (coupled ,stobj)
-                    (,coupled (,copier ,%stobj ,stobj)))
-           :hints
-           (("Goal"
-             :in-theory (enable ,coupled-keys
-                                ,@(and val-coupled
-                                       (list coupled-vals)))
-             :expand ((,coupled (,copier-rec (,keys$a ,stobj)
-                                             (,keys-set$a (,keys$a ,stobj) (,creator$a))
-                                             ,stobj)))))))
-
-       (defthm ,keys$a-of-copier
-         (equal (,keys$a (,copier ,%stobj ,stobj))
-                (,keys$a ,stobj)))
-
-       (local
-         (defthm ,count$a-of-copier
-           (implies (coupled ,stobj)
-                    (equal (,count$a (,copier ,%stobj ,stobj))
-                           (,count$a ,stobj)))))
-
-       (local
-         (defthm ,boundp$a-of-copier
-           (implies (coupled ,stobj)
-                    (equal (,boundp$a ,key (,copier ,%stobj ,stobj))
-                           (,boundp$a ,key ,stobj)))))
-
-       (local
-         (defthm ,accessor$a-of-copier
-           (implies (coupled ,stobj)
-                    (equal (,accessor$a ,key (,copier ,%stobj ,stobj))
-                           (,accessor$a ,key ,stobj)))
-           :hints
-           (("Goal"
-             :in-theory (enable ,stobj$a-aggressive)))))
-
-       (in-theory
-         (disable ,copier-rec
-                  ,copier))
-
-       (defthm ,copier{rewrite}
-         (implies (coupled ,stobj)
-                  (equal (,copier ,%stobj ,stobj)
-                         (,fixer ,stobj)))
-         :hints
-         (("goal"
-           :do-not-induct t
-           :use ((:instance ,stobj$a-equal
-                            (,%stobj$a (,copier ,%stobj ,stobj))
-                            (,stobj$a (,fixer ,stobj)))))))
-
-       (table stobj-copier
-              'stobj-copier-alist
-              (putprop ',stobj
-                       'copier{rewrite}
-                       ',copier{rewrite}
-                       (stobj-copier-alist world))))))
+       (deftheory-static ,coupledp-theory
+         (set-difference-theories (current-theory ',coupledp-end)
+                                  (current-theory ',coupledp-begin))))))
 
 (defun make-frame-copy-events (stobj$a %stobj stobj state)
   (declare (xargs :stobjs state
@@ -999,10 +1312,10 @@
                               (symbolp stobj))
                   :verify-guards nil))
   (let* ((world (w state))
-         (copier (symbolicate stobj stobj '-copy))
-         (copier{rewrite} (symbolicate stobj copier '{rewrite}))
+         (copier (symbolicate stobj stobj "-COPY"))
+         (copier{rewrite} (symbolicate stobj copier "{REWRITE}"))
 
-         (coupled (symbolicate stobj stobj '-coupled))
+         (coupled (symbolicate stobj stobj "-COUPLED"))
 
          (recognizer (stobj-recognizer stobj))
          (exports (stobj$abs-exports stobj))
@@ -1026,7 +1339,7 @@
                                             (getprop stobj
                                                      'copier
                                                      nil
-                                                     'current-acl2-world
+                                                     'acl2::current-acl2-world
                                                      stobj-copier-alist))))
          (copier-body
           (loop$ :with body := %stobj
@@ -1042,11 +1355,11 @@
                      (return body))
                     ((car stobjs)
                      (setq body (let* ((element (car stobjs))
-                                       (%element (symbolicate stobj '% element))
+                                       (%element (symbolicate stobj "%" element))
                                        (accessor (car accessors))
                                        (updater (car updaters))
-                                       (%accessor (symbolicate stobj '% accessor))
-                                       (%updater (symbolicate stobj '% updater))
+                                       (%accessor (symbolicate stobj "%" accessor))
+                                       (%updater (symbolicate stobj "%" updater))
                                        (field-copier (car field-copiers)))
                                   `(stobj-let ((,element (,accessor ,stobj) ,updater))
                                               (,%stobj)
@@ -1064,24 +1377,24 @@
                   (setq accessors (cdr accessors))
                   (setq updaters (cdr updaters))
                   (setq field-copiers (cdr field-copiers)))))
-         (stobj-coupled-alist (stobj-coupled-alist world))
+         (stobj-coupledp-alist (stobj-coupledp-alist world))
          (field-couplings (loop$ :for stobj :in stobjs
                                 :collect (and stobj
                                               (getprop stobj
                                                        'coupled
                                                        nil
-                                                       'current-acl2-world
-                                                       stobj-coupled-alist))))
+                                                       'acl2::current-acl2-world
+                                                       stobj-coupledp-alist))))
 
          (stobj$a-lookup-alist (stobj$a-lookup-alist world))
          (stobjs$a (loop$ :for stobj :in stobjs
                          :collect (getprop stobj 'stobj$a
-                                           nil 'current-acl2-world
+                                           nil 'acl2::current-acl2-world
                                            stobj$a-lookup-alist)))
          (stobj$a-property-alist (stobj$a-property-alist world))
          (stobj$a-properties (loop$ :for stobj$a :in stobjs$a
                                    :collect (getprop stobj$a 'stobj$a
-                                                     nil 'current-acl2-world
+                                                     nil 'acl2::current-acl2-world
                                                      stobj$a-property-alist)))
          (field-recognizers$a (loop$ :for stobj$a :in stobjs$a
                                     :as recognizer :in field-recognizers
@@ -1095,21 +1408,21 @@
                                :collect (if stobj$a
                                             (third (second property$a))
                                             fixer)))
-         (stobj$a-aggressive (symbolicate stobj stobj$a '-aggressive))
-         (%stobj$a (symbolicate stobj '% stobj$a))
+         (stobj$a-aggressive (symbolicate stobj stobj$a "-AGGRESSIVE"))
+         (%stobj$a (symbolicate stobj "%" stobj$a))
          (recognizer$a (stobj$a-recognizer stobj$a))
          (creator$a (stobj$a-creator stobj$a))
          (fixer$a (stobj$a-fixer stobj$a))
          (view$a (stobj$a-frame-view stobj$a))
          (accessors$a (stobj$a-frame-accessors stobj$a))
-         (stobj$a-equal (symbolicate stobj stobj$a '-equal))
+         (stobj$a-equal (symbolicate stobj stobj$a "-EQUAL"))
 
-         (coupled-when-not-recognizer$a (symbolicate stobj coupled '-when-not- recognizer$a))
-         (coupled-of-creator$a (symbolicate stobj coupled '-of- creator$a))
-         (coupled-of-fixer$a (symbolicate stobj coupled '-of- fixer$a))
-         (coupled-of-view$a (symbolicate stobj coupled '-of- view$a))
+         (coupledp-when-not-recognizer$a (symbolicate stobj coupled "-WHEN-NOT-" recognizer$a))
+         (coupledp-of-creator$a (symbolicate stobj coupled "-OF-" creator$a))
+         (coupledp-of-fixer$a (symbolicate stobj coupled "-OF-" fixer$a))
+         (coupledp-of-view$a (symbolicate stobj coupled "-OF-" view$a))
 
-         (recognizer$a-of-copier (symbolicate stobj recognizer$a '-of- copier)))
+         (recognizer$a-of-copier (symbolicate stobj recognizer$a "-OF-" copier)))
 
     `(encapsulate ()
        ,@(let ((field-recognizers$a (remove nil field-recognizers$a))
@@ -1139,24 +1452,19 @@
                          (cons 'and body)
                          (car body))))
 
-                (table stobj-copier
-                       'stobj-coupled-alist
-                       (putprop ',stobj
-                                'coupled
-                                ',coupled
-                                (stobj-coupled-alist world)))
+                (table coupled ',stobj ',coupled)
 
-                (defthm ,coupled-when-not-recognizer$a
+                (defthm ,coupledp-when-not-recognizer$a
                   (implies (not (,recognizer$a ,stobj))
                            (,coupled ,stobj))
                   :hints
                   (("Goal"
                     :in-theory (enable ,stobj$a-aggressive))))
 
-                (defthm ,coupled-of-creator$a
+                (defthm ,coupledp-of-creator$a
                   (,coupled (,creator$a)))
 
-                (defthm ,coupled-of-fixer$a
+                (defthm ,coupledp-of-fixer$a
                   (equal (,coupled (,fixer$a ,stobj))
                          (or (not (,recognizer$a ,stobj))
                              (,coupled ,stobj)))
@@ -1165,7 +1473,7 @@
                     :cases ((,recognizer$a ,stobj))
                     :in-theory (disable ,coupled))))
 
-                (defthm ,coupled-of-view$a
+                (defthm ,coupledp-of-view$a
                   (equal (,coupled (,view$a ,@fields ,stobj))
                          ,(let ((constraints (loop$ :for coupling :in field-couplings
                                                    :as field :in fields
@@ -1178,7 +1486,7 @@
                 ,@(loop$ :for accessor$a :in accessors$a
                         :as coupling :in field-couplings
                         :when coupling
-                        :collect `(defthm ,(symbolicate stobj coupling '-of- accessor$a)
+                        :collect `(defthm ,(symbolicate stobj coupling "-OF-" accessor$a)
                                     (implies (coupled ,stobj)
                                              (,coupling (,accessor$a ,stobj)))))
 
@@ -1189,12 +1497,7 @@
          (declare (xargs :stobjs (,%stobj ,stobj)))
          ,copier-body)
 
-       (table stobj-copier
-              'stobj-copier-alist
-              (putprop ',stobj
-                       'copier
-                       ',copier
-                       (stobj-copier-alist world)))
+       (table copy ',stobj ',copier)
 
        (defthm ,recognizer$a-of-copier
          (,recognizer$a (,copier ,%stobj ,stobj))
@@ -1205,7 +1508,7 @@
 
        ,@(loop$ :for accessor$a :in accessors$a
                :collect `(local
-                           (defthm ,(symbolicate stobj accessor$a '-of- copier)
+                           (defthm ,(symbolicate stobj accessor$a "-OF-" copier)
                              ,(if (remove nil field-couplings)
                                   `(implies (coupled ,stobj)
                                             (equal (,accessor$a (,copier ,%stobj ,stobj))
@@ -1228,133 +1531,8 @@
            :do-not-induct t
            :use ((:instance ,stobj$a-equal
                             (,%stobj$a (,copier ,%stobj ,stobj))
-                            (,stobj$a (,fixer ,stobj)))))))
+                            (,stobj$a (,fixer ,stobj))))))))))
 
-       (table stobj-copier
-              'stobj-copier-alist
-              (putprop ',stobj
-                       'copier{rewrite}
-                       ',copier{rewrite}
-                       (stobj-copier-alist world))))))
 
-(defun make-copier-events (%stobj stobj state)
-  (declare (xargs :stobjs state
-                  :guard (and (symbolp %stobj)
-                              (symbolp stobj))
-                  :verify-guards nil))
-  (let* ((stobj$a (stobj$a-lookup stobj))
-         (stobj$a-type (cond
-                         ((stobj$a-vector-p stobj$a)
-                          'vector)
-                         ((stobj$a-hash-table-p stobj$a)
-                          'hash-table)
-                         ((stobj$a-frame-p stobj$a)
-                          'frame))))
-    (case stobj$a-type
-      (vector
-       (make-vector-copy-events stobj$a %stobj stobj state))
-      (hash-table
-       (make-hash-table-copy-events stobj$a %stobj stobj state))
-      (frame
-       (make-frame-copy-events stobj$a %stobj stobj state)))))
-
-(defmacro define-stobj-copier (stobj &key (debug 'nil))
-  (declare (xargs :guard (and (symbolp stobj)
-                              (booleanp debug))))
-  `(with-output
-     ,@(and (not debug)
-            '#!acl2(:off (warning! observation prove event history proof-tree)
-                         :summary-off (rules)
-                         :gag-mode t))
-
-     (make-event
-       (let* ((stobj ',stobj)
-
-              (stobj$a (stobj$a-lookup stobj))
-              (stobj$a-definitions (symbolicate stobj stobj$a '-definitions))
-              (%stobj (symbolicate stobj '% stobj))
-              (foundation (stobj$abs-foundation stobj))
-              (recognizers (stobj$abs-recognizers stobj))
-              (recognizer (car recognizers))
-              (%recognizer (symbolicate stobj '% recognizer))
-              (creators (stobj$abs-creators stobj))
-              (creator (car creators))
-              (%creator (symbolicate stobj '% creator))
-              (exports (stobj$abs-exports stobj))
-              (interface (loop$ :for triple :in exports
-                               :collect (car triple)))
-              (%interface (loop$ :for sym :in interface
-                                :collect (symbolicate stobj '% sym)))
-              (interface-alist (loop$ :for sym :in interface
-                                     :as %sym :in %interface
-                                     :collect (cons sym %sym)))
-              (%updaters (loop$ :for triple :in exports
-                               :collect (let ((key (cdddr triple)))
-                                          (and key
-                                               (let ((pair (assoc key interface-alist)))
-                                                 (and (consp pair)
-                                                      (cdr pair)))))))
-              (%protect (loop$ :for triple :in exports
-                              :collect (let* ((fn$c (third triple))
-                                              (revname (reverse (symbol-name fn$c)))
-                                              (length (length revname)))
-                                         (and (or (and (<= 5 length)
-                                                       (equal (subseq revname 0 5) "TINI-"))
-                                                  (and (<= 6 length)
-                                                       (equal (subseq revname 0 6) "RAELC-")))
-                                              t))))
-
-              (%stobj{rewrite} (symbolicate stobj %stobj '{rewrite}))
-              (world (w state))
-              (formals (loop$ :with interface := interface
-                             :with formals := nil
-                             :do (if (consp interface)
-                                     (progn (setq formals (cons (getprop (car interface)
-                                                                         'formals
-                                                                         nil 'current-acl2-world
-                                                                         world)
-                                                                formals))
-                                            (setq interface (cdr interface)))
-                                     (return (reverse formals)))))
-
-              (copier-events (make-copier-events %stobj stobj state)))
-         `(encapsulate ()
-            (local
-              (in-theory
-                (disable ,stobj$a-definitions)))
-
-            (defabsstobj ,%stobj
-              :foundation ,foundation
-              :recognizer (,%recognizer :logic ,(second recognizers)
-                                        :exec ,(third recognizers))
-              :creator (,%creator :logic ,(second creators)
-                                  :exec ,(third creators))
-              :congruent-to ,stobj
-              :non-executable t
-              :exports ,(loop$ :for triple :in exports
-                              :as %sym :in %interface
-                              :as u :in %updaters
-                              :as p :in %protect
-                              :collect (append (list %sym
-                                                     :logic (second triple)
-                                                     :exec (third triple))
-                                               (and u (list :updater u))
-                                               (and p (list :protect t)))))
-
-            (defthm ,%stobj{rewrite}
-              (and (equal (,%recognizer ,stobj) (,recognizer ,stobj))
-                   (equal (,%creator) (,creator))
-                   ,@(loop$ :for %sym :in %interface
-                           :as %args :in formals
-                           :as sym :in interface
-                           :as args :in formals
-                           :collect (list 'equal
-                                          (cons %sym %args)
-                                          (cons sym args)))))
-
-            (in-theory
-              (disable ,%recognizer
-                       ,%creator
-                       ,@%interface))
-
-            ,copier-events)))))
+
+;;;; `DEFINE-COPY'

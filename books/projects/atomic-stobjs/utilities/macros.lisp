@@ -42,30 +42,30 @@
       "-P"
       "P"))
 
-;;; `COUPLED-FN'
+;;; `COUPLEDP-FN'
 (encapsulate ()
   (local
     (defthm guard-lemma
       (implies (character-listp x)
                (character-listp (remove-equal a x)))))
 
-  (defun coupled-fn (names acc)
+  (defun coupledp-fn (names acc)
     (declare (xargs :guard (and (symbol-listp names)
                                 (symbol-list-listp acc))))
     (if (atom names)
         (reverse acc)
-        (coupled-fn (cdr names)
-                    (cons (let ((name (car names)))
-                            (list (symbolicate name (coerce (remove #\% (coerce (symbol-name name)
-                                                                                'list))
-                                                            'string)
-                                               "-COUPLED")
-                                  name))
-                          acc)))))
+        (coupledp-fn (cdr names)
+                     (cons (let ((name (car names)))
+                             (list (symbolicate name (coerce (remove #\% (coerce (symbol-name name)
+                                                                                 'list))
+                                                             'string)
+                                                "-COUPLED-P")
+                                   name))
+                           acc)))))
 
-(defmacro coupled (&rest names)
+(defmacro coupledp (&rest names)
   (declare (xargs :guard (symbol-listp names)))
-  (let ((expressions (coupled-fn names ())))
+  (let ((expressions (coupledp-fn names ())))
     (list 'case-split (if (null (cdr expressions))
                           (car expressions)
                           (cons 'and expressions)))))

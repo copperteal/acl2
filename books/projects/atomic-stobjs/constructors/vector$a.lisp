@@ -107,11 +107,16 @@
                             (symbolicate element "%" element)))
               (world (w state))
               (stobj-property (getpropc element 'acl2::stobj))
+              (absstobj-info (and stobj-property
+                                  (getpropc element 'acl2::absstobj-info)))
               (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
               (element-recognizer (cond
                                     (',element-recognizer)
                                     (stobj$a-property
                                      (first (second stobj$a-property)))))
+              (guard-element-recognizer (if stobj-property
+                                            (caadr stobj-property)
+                                            element-recognizer))
               (element-creator (cond
                                  (stobj$a-property
                                   (second (second stobj$a-property)))))
@@ -166,10 +171,14 @@
               (element-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" element-fixer "{REWRITE}"))
 
               (recognizer-aux (symbolicate vector vector "-AUX-P"))
+              (true-listp-when-recognizer-aux (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-WHEN-" recognizer-aux))
+              (element-recognizer-of-nth-when-recognizer-aux (symbolicate "ATOMIC-STOBJS" element-recognizer "-OF-NTH-WHEN-" recognizer-aux))
               (recognizer-aux{type-prescription} (symbolicate vector recognizer-aux "{TYPE-PRESCRIPTION}"))
               (recognizer-aux{compound-recognizer} (symbolicate vector recognizer-aux "{COMPOUND-RECOGNIZER}"))
 
               (recognizer{type-prescription} (symbolicate vector recognizer "{TYPE-PRESCRIPTION}"))
+              (true-listp-when-recognizer (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-WHEN-" recognizer))
+              (element-recognizer-of-nth-when-recognizer (symbolicate "ATOMIC-STOBJS" element-recognizer "-OF-NTH-WHEN-" recognizer))
               (recognizer{compound-recognizer} (symbolicate vector recognizer "{COMPOUND-RECOGNIZER}"))
               (recognizer-of-creator (symbolicate vector recognizer "-OF-" creator))
               (recognizer-of-fixer (symbolicate vector recognizer "-OF-" fixer))
@@ -375,6 +384,11 @@
                                        (universal-theory :here)
                                        (universal-theory ',vector-begin)))))
 
+                  ,@(and absstobj-info
+                         `((local
+                             (in-theory
+                               (enable ,@(strip-cars (cdr absstobj-info)))))))
+
                   (local
                     (in-theory
                       (disable make-list-ac
@@ -389,7 +403,25 @@
                              (if (atom ,vector)
                                  (eq ,vector nil)
                                  (and (,element-recognizer (car ,vector))
-                                      (,recognizer-aux (cdr ,vector)))))))
+                                      (,recognizer-aux (cdr ,vector)))))
+
+                           (local
+                             (defthm ,true-listp-when-recognizer-aux
+                               (implies (,recognizer-aux ,vector)
+                                        (true-listp ,vector))
+                               :hints
+                               (("Goal"
+                                 :induct (len ,vector)))))
+
+                           (local
+                             (defthm ,element-recognizer-of-nth-when-recognizer-aux
+                               (implies (and (,recognizer-aux ,vector)
+                                             (natp ,index)
+                                             (< ,index (len ,vector)))
+                                        (,element-recognizer (nth ,index ,vector)))
+                               :hints
+                               (("Goal"
+                                 :induct (nth ,index ,vector)))))))
 
                   (defun ,recognizer (,vector)
                     (declare (xargs :guard t))
@@ -405,6 +437,28 @@
                                    (,recognizer-aux ,vector))
                              `(and (= (len ,vector) ,default-length-name)
                                    (true-listp ,vector)))))
+
+                  (local
+                    (defthm ,true-listp-when-recognizer
+                      (implies (,recognizer ,vector)
+                               (true-listp ,vector))
+                      ,@(and (not resizable)
+                             element-recognizer
+                             `(:hints
+                               (("Goal"
+                                 :in-theory (disable ,recognizer-aux)))))))
+
+                  ,@(and element-recognizer
+                         `((local
+                             (defthm ,element-recognizer-of-nth-when-recognizer
+                               (implies (and (,recognizer ,vector)
+                                             (natp ,index)
+                                             (< ,index (len ,vector)))
+                                        (,element-recognizer (nth ,index ,vector)))
+                               ,@(and (not resizable)
+                                      `(:hints
+                                        (("Goal"
+                                          :in-theory (disable ,recognizer-aux)))))))))
 
                   (defun ,creator ()
                     (declare (xargs :guard t))
@@ -458,8 +512,8 @@
 
                   (defun ,updater (,index ,element ,vector)
                     (declare (xargs :guard (and (natp ,index)
-                                                ,@(and element-recognizer
-                                                       `((,element-recognizer ,element)))
+                                                ,@(and guard-element-recognizer
+                                                       `((,guard-element-recognizer ,element)))
                                                 (,recognizer ,vector)
                                                 (< ,index ,(if resizable
                                                                `(,length ,vector)
