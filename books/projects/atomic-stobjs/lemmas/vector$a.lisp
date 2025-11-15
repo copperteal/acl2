@@ -1006,3 +1006,534 @@
      ("Subgoal 1"
       :use (:instance equal/fixed{forward-chaining}-lemma-1
                       (n acl2::n))))))
+
+
+(local
+  (in-theory
+    (disable contents-recognizer
+             recognizer/resizable
+             recognizer/fixed
+             creator
+             (:e creator)
+             fixer/resizable
+             fixer/fixed
+             length/resizable
+             length/fixed
+             resizer/resizable
+             resizer/fixed
+             accessor/resizable
+             accessor/fixed
+             updater/resizable
+             updater/fixed
+             equal/resizable
+             equal/fixed)))
+
+
+;;;; Element Export
+(encapsulate (((name) => *)
+              ((element-export-p *) => *)
+              ((element-export *) => *)
+              ((element-import * *) => *))
+  (local
+    (defun name ()
+      (declare (xargs :guard t))
+      nil))
+
+  (defthm name-constraint
+    (symbolp (name))
+    :rule-classes :type-prescription)
+
+  (local
+    (defun element-export-p (export)
+      (declare (xargs :guard t))
+      (element-recognizer export)))
+
+  (defthm element-export-p-constraint
+    (booleanp (element-export-p export))
+    :rule-classes :type-prescription)
+
+  (local
+    (defun element-export (value)
+      (declare (xargs :guard (element-recognizer value)))
+      (element-fixer value)))
+
+  (defthm element-export-p-of-element-export
+    (element-export-p (element-export value)))
+
+  (local
+    (defun element-import (export value)
+      (declare (xargs :guard (and (element-export-p export)
+                                  (element-recognizer value)))
+               (ignore value))
+      (element-fixer export)))
+
+  (defthm element-recognizer-of-element-import
+    (element-recognizer (element-import export value)))
+
+  (defthm element-import-when-not-element-export-p
+    (implies (not (element-export-p export))
+             (equal (element-import export value)
+                    (initial-element))))
+
+  (defthmd element-import-ignores-value
+    (equal (element-import export value)
+           (element-import export (initial-element))))
+
+  (defthm element-export-of-element-import
+    (implies (element-export-p export)
+             (equal (element-export (element-import export element))
+                    export)))
+
+  (defthm element-import-of-element-export
+    (equal (element-import (element-export %value) value)
+           (element-fixer %value))))
+
+
+;;;; `EXPORTP-REC'
+(defun exportp-rec (list)
+  (declare (xargs :guard t))
+  (if (atom list)
+      (null list)
+      (and (element-export-p (car list))
+           (exportp-rec (cdr list)))))
+
+(defthm exportp-rec{type-prescription}
+  (booleanp (exportp-rec list))
+  :rule-classes :type-prescription)
+
+(defthm exportp-rec{compound-recognizer}
+  (implies (exportp-rec list)
+           (true-listp list))
+  :rule-classes :compound-recognizer)
+
+(defthm element-export-p-of-nth-when-exportp-rec
+  (implies (and (exportp-rec list)
+                (natp n)
+                (< n (len list)))
+           (element-export-p (nth n list))))
+
+
+;;;; `EXPORTP/RESIZABLE'
+(defun exportp/resizable (export)
+  (declare (xargs :guard t))
+  (and (consp export)
+       (equal (car export) (name))
+       (exportp-rec (cdr export))))
+
+(defthm exportp/resizable{type-prescription}
+  (booleanp (exportp/resizable export))
+  :rule-classes :type-prescription)
+
+(defthm exportp/resizable{compound-recognizer}
+  (implies (exportp/resizable export)
+           (and (consp export)
+                (true-listp export)))
+  :rule-classes :compound-recognizer)
+
+(defthm car-when-exportp/resizable
+  (implies (exportp/resizable export)
+           (equal (car export)
+                  (name))))
+
+(defthm cdr-when-exportp/resizable
+  (implies (exportp/resizable export)
+           (exportp-rec (cdr export))))
+
+(defthm element-export-p-of-nth-when-exportp/resizable
+  (implies (and (exportp/resizable export)
+                (posp n)
+                (< n (len export)))
+           (element-export-p (nth n export))))
+
+
+;;;; `EXPORT-ACC/RESIZABLE'
+(defun export-acc/resizable (index acc vector)
+  (declare (xargs :guard (and (natp index)
+                              (exportp-rec acc)
+                              (recognizer/resizable vector)
+                              (<= index (length/resizable vector)))))
+  (if (zp index)
+      acc
+      (let* ((index (1- index))
+             (value (accessor/resizable index vector))
+             (export (element-export value)))
+        (export-acc/resizable index (cons export acc) vector))))
+
+(defthm export-acc/resizable{type-prescription}
+  (implies (true-listp acc)
+           (true-listp (export-acc/resizable index acc vector)))
+  :rule-classes :type-prescription)
+
+(defthm exportp-rec-of-export-acc/resizable
+  (equal (exportp-rec (export-acc/resizable index acc vector))
+         (exportp-rec acc)))
+
+(defthm len-of-export-acc/resizable
+  (equal (len (export-acc/resizable index acc vector))
+         (+ (nfix index) (len acc))))
+
+(defthm nth-of-export-acc/resizable
+  (equal (nth %index (export-acc/resizable index acc vector))
+         (if (< (nfix %index) (nfix index))
+             (element-export (accessor/resizable %index vector))
+             (nth (- (nfix %index) (nfix index)) acc))))
+
+
+;;;; `EXPORT/RESIZABLE'
+(defun export/resizable (vector)
+  (declare (xargs :guard (recognizer/resizable vector)))
+  (cons (name)
+        (export-acc/resizable (length/resizable vector) () vector)))
+
+(defthm export/resizable{type-prescription}
+  (and (consp (export/resizable vector))
+       (true-listp (export/resizable vector)))
+  :rule-classes :type-prescription)
+
+(defthm exportp/resizable-of-export/resizable
+  (exportp/resizable (export/resizable vector)))
+
+(defthm len-of-export/resizable
+  (equal (len (export/resizable vector))
+         (1+ (length/resizable vector))))
+
+(defthm nth-of-export/resizable
+  (equal (nth index (export/resizable vector))
+         (cond
+           ((zp index)
+            (name))
+           ((<= index (length/resizable vector))
+            (element-export (accessor/resizable (1- index) vector))))))
+
+
+;;;; `IMPORT-REC/RESIZABLE'
+(defun import-rec/resizable (list index vector)
+  (declare (xargs :guard (and (exportp-rec list)
+                              (natp index)
+                              (recognizer/resizable vector)
+                              (<= (+ (len list) index) (length/resizable vector)))))
+  (if (atom list)
+      (fixer/resizable vector)
+      (let* ((index (nfix index))
+             (value (element-import (car list) (initial-element)))
+             (vector (updater/resizable index value vector)))
+        (import-rec/resizable (cdr list) (1+ index) vector))))
+
+(defthm import-rec/resizable{type-prescription}
+  (true-listp (import-rec/resizable list index vector))
+  :rule-classes :type-prescription)
+
+(defthm recognizer/resizable-of-import-rec/resizable
+  (recognizer/resizable (import-rec/resizable list index vector)))
+
+(defthm length/resizable-of-import-rec/resizable
+  (equal (length/resizable (import-rec/resizable list index vector))
+         (length/resizable vector)))
+
+(defthm import-rec/resizable-of-updater/resizable
+  (equal (import-rec/resizable list %index (updater/resizable index value vector))
+         (if (or (atom list)
+                 (< (nfix index) (nfix %index))
+                 (<= (+ (len list) (nfix %index)) (nfix index)))
+             (updater/resizable index value (import-rec/resizable list %index vector))
+             (import-rec/resizable list %index vector))))
+
+(defthm accessor/resizable-of-import-rec/resizable
+  (equal (accessor/resizable %index (import-rec/resizable list index vector))
+         (cond
+           ((atom list)
+            (accessor/resizable %index vector))
+           ((<= (length/resizable vector) (nfix %index))
+            (initial-element))
+           ((or (< (nfix %index) (nfix index))
+                (<= (+ (len list) (nfix index)) (nfix %index)))
+            (accessor/resizable %index vector))
+           (t
+            (element-import (nth (- (nfix %index) (nfix index)) list)
+                            (initial-element))))))
+
+
+;;;; `IMPORT/RESIZABLE'
+(defun import/resizable (export vector)
+  (declare (xargs :guard (and (exportp/resizable export)
+                              (recognizer/resizable vector))))
+  (if (exportp/resizable export)
+      (let* ((list (cdr export))
+             (vector (resizer/resizable (len list) vector))
+             (vector (import-rec/resizable list 0 vector)))
+        vector)
+      (creator)))
+
+(defthm import/resizable{type-prescription}
+  (true-listp (import/resizable export vector))
+  :rule-classes :type-prescription)
+
+(defthm recognizer/resizable-of-import/resizable
+  (recognizer/resizable (import/resizable export vector)))
+
+(defthm import/resizable-when-not-exportp/resizable
+  (implies (not (exportp/resizable export))
+           (equal (import/resizable export vector)
+                  (creator))))
+
+(defthm length/resizable-of-import/resizable
+  (equal (length/resizable (import/resizable export vector))
+         (if (exportp/resizable export)
+             (1- (len export))
+             (default-length))))
+
+(defthm accessor/resizable-of-import/resizable
+  (equal (accessor/resizable index (import/resizable export vector))
+         (if (or (not (exportp/resizable export))
+                 (<= (nfix (len export)) (1+ (nfix index))))
+             (initial-element)
+             (element-import (nth (1+ (nfix index)) export)
+                             (initial-element)))))
+
+(defthmd import/resizable-ignores-vector
+  (equal (import/resizable export vector)
+         (import/resizable export (creator)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/resizable
+                     (%vector (import/resizable export vector))
+                     (vector (import/resizable export (creator))))))))
+
+
+;;;; `EXPORT/RESIZABLE' and `IMPORT/RESIZABLE' Composition Theorems
+(with-books (("std/lists/nth" :dir :system))
+  (defthm export/resizable-of-import/resizable
+    (implies (exportp/resizable export)
+             (equal (export/resizable (import/resizable export vector))
+                    export))
+    :hints
+    ((acl2::equal-by-nths-hint)
+     ("Subgoal 1"
+      :expand (:free (n a d)
+                     (nth n (cons a d)))))))
+
+(defthm import/resizable-of-export/resizable
+  (equal (import/resizable (export/resizable %vector) vector)
+         (fixer/resizable %vector))
+  :hints
+  (("Goal"
+    :in-theory (disable import/resizable
+                        export/resizable)
+    :use ((:instance equal/resizable
+                     (%vector (import/resizable (export/resizable %vector) vector))
+                     (vector (fixer/resizable %vector)))))))
+
+
+;;;; `EXPORTP/FIXED'
+(defun exportp/fixed (export)
+  (declare (xargs :guard t))
+  (and (consp export)
+       (equal (car export) (name))
+       (equal (len (cdr export)) (default-length))
+       (exportp-rec (cdr export))))
+
+(defthm exportp/fixed{type-prescription}
+  (booleanp (exportp/fixed export))
+  :rule-classes :type-prescription)
+
+(defthm exportp/fixed{compound-recognizer}
+  (implies (exportp/fixed export)
+           (and (consp export)
+                (true-listp export)))
+  :rule-classes :compound-recognizer)
+
+(defthm car-when-exportp/fixed
+  (implies (exportp/fixed export)
+           (equal (car export)
+                  (name))))
+
+(defthm cdr-when-exportp/fixed
+  (implies (exportp/fixed export)
+           (and (equal (len (cdr export)) (default-length))
+                (exportp-rec (cdr export)))))
+
+(defthm element-export-p-of-nth-when-exportp/fixed
+  (implies (and (exportp/fixed export)
+                (posp n)
+                (<= n (default-length)))
+           (element-export-p (nth n export))))
+
+
+;;;; `EXPORT-ACC/FIXED'
+(defun export-acc/fixed (index acc vector)
+  (declare (xargs :guard (and (natp index)
+                              (exportp-rec acc)
+                              (recognizer/fixed vector)
+                              (<= index (default-length)))))
+  (if (zp index)
+      acc
+      (let* ((index (1- index))
+             (value (accessor/fixed index vector))
+             (export (element-export value)))
+        (export-acc/fixed index (cons export acc) vector))))
+
+(defthm export-acc/fixed{type-prescription}
+  (implies (true-listp acc)
+           (true-listp (export-acc/fixed index acc vector)))
+  :rule-classes :type-prescription)
+
+(defthm exportp-rec-of-export-acc/fixed
+  (equal (exportp-rec (export-acc/fixed index acc vector))
+         (exportp-rec acc)))
+
+(defthm len-of-export-acc/fixed
+  (equal (len (export-acc/fixed index acc vector))
+         (+ (nfix index) (len acc))))
+
+(defthm nth-of-export-acc/fixed
+  (equal (nth %index (export-acc/fixed index acc vector))
+         (if (< (nfix %index) (nfix index))
+             (element-export (accessor/fixed %index vector))
+             (nth (- (nfix %index) (nfix index)) acc))))
+
+
+;;;; `EXPORT/FIXED'
+(defun export/fixed (vector)
+  (declare (xargs :guard (recognizer/fixed vector)))
+  (cons (name)
+        (export-acc/fixed (default-length) () vector)))
+
+(defthm export/fixed{type-prescription}
+  (and (consp (export/fixed vector))
+       (true-listp (export/fixed vector)))
+  :rule-classes :type-prescription)
+
+(defthm exportp/fixed-of-export/fixed
+  (exportp/fixed (export/fixed vector)))
+
+(defthm len-of-export/fixed
+  (equal (len (export/fixed vector))
+         (1+ (default-length))))
+
+(defthm nth-of-export/fixed
+  (equal (nth index (export/fixed vector))
+         (cond
+           ((zp index)
+            (name))
+           ((< (default-length) index)
+            nil)
+           (t
+            (element-export (accessor/fixed (1- index) vector))))))
+
+
+;;;; `IMPORT-REC/FIXED'
+(defun import-rec/fixed (list index vector)
+  (declare (xargs :guard (and (exportp-rec list)
+                              (natp index)
+                              (recognizer/fixed vector)
+                              (<= (+ (len list) index) (default-length)))))
+  (if (atom list)
+      (fixer/fixed vector)
+      (let* ((index (nfix index))
+             (value (element-import (car list) (initial-element)))
+             (vector (updater/fixed index value vector)))
+        (import-rec/fixed (cdr list) (1+ index) vector))))
+
+(defthm import-rec/fixed{type-prescription}
+  (true-listp (import-rec/fixed list index vector))
+  :rule-classes :type-prescription)
+
+(defthm recognizer/fixed-of-import-rec/fixed
+  (recognizer/fixed (import-rec/fixed list index vector)))
+
+(defthm length/fixed-of-import-rec/fixed
+  (equal (length/fixed (import-rec/fixed list index vector))
+         (default-length)))
+
+(defthm import-rec/fixed-of-updater/fixed
+  (equal (import-rec/fixed list %index (updater/fixed index value vector))
+         (if (or (atom list)
+                 (< (nfix index) (nfix %index))
+                 (<= (+ (len list) (nfix %index)) (nfix index)))
+             (updater/fixed index value (import-rec/fixed list %index vector))
+             (import-rec/fixed list %index vector))))
+
+(defthm accessor/fixed-of-import-rec/fixed
+  (equal (accessor/fixed %index (import-rec/fixed list index vector))
+         (cond
+           ((atom list)
+            (accessor/fixed %index vector))
+           ((<= (default-length) (nfix %index))
+            (initial-element))
+           ((or (< (nfix %index) (nfix index))
+                (<= (+ (len list) (nfix index)) (nfix %index)))
+            (accessor/fixed %index vector))
+           (t
+            (element-import (nth (- (nfix %index) (nfix index)) list)
+                            (initial-element))))))
+
+
+;;;; `IMPORT/FIXED'
+(defun import/fixed (export vector)
+  (declare (xargs :guard (and (exportp/fixed export)
+                              (recognizer/fixed vector))))
+  (if (exportp/fixed export)
+      (let* ((list (cdr export))
+             (vector (resizer/fixed (len list) vector))
+             (vector (import-rec/fixed list 0 vector)))
+        vector)
+      (creator)))
+
+(defthm import/fixed{type-prescription}
+  (true-listp (import/fixed export vector))
+  :rule-classes :type-prescription)
+
+(defthm recognizer/fixed-of-import/fixed
+  (recognizer/fixed (import/fixed export vector)))
+
+(defthm import/fixed-when-not-exportp/fixed
+  (implies (not (exportp/fixed export))
+           (equal (import/fixed export vector)
+                  (creator))))
+
+(defthm length/fixed-of-import/fixed
+  (equal (length/fixed (import/fixed export vector))
+         (if (exportp/fixed export)
+             (1- (len export))
+             (default-length))))
+
+(defthm accessor/fixed-of-import/fixed
+  (equal (accessor/fixed index (import/fixed export vector))
+         (if (or (not (exportp/fixed export))
+                 (<= (nfix (len export)) (1+ (nfix index))))
+             (initial-element)
+             (element-import (nth (1+ (nfix index)) export)
+                             (initial-element)))))
+
+(defthmd import/fixed-ignores-vector
+  (equal (import/fixed export vector)
+         (import/fixed export (creator)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/fixed
+                     (%vector (import/fixed export vector))
+                     (vector (import/fixed export (creator))))))))
+
+
+;;;; `EXPORT/FIXED' and `IMPORT/FIXED' Composition Theorems
+(with-books (("std/lists/nth" :dir :system))
+  (defthm export/fixed-of-import/fixed
+    (implies (exportp/fixed export)
+             (equal (export/fixed (import/fixed export vector))
+                    export))
+    :hints
+    ((acl2::equal-by-nths-hint)
+     ("Subgoal 1"
+      :expand (:free (n a d)
+                     (nth n (cons a d)))))))
+
+(defthm import/fixed-of-export/fixed
+  (equal (import/fixed (export/fixed %vector) vector)
+         (fixer/fixed %vector))
+  :hints
+  (("Goal"
+    :in-theory (disable import/fixed
+                        export/fixed)
+    :use ((:instance equal/fixed
+                     (%vector (import/fixed (export/fixed %vector) vector))
+                     (vector (fixer/fixed %vector)))))))
