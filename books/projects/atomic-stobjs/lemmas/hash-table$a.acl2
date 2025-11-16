@@ -39,4 +39,6 @@
                <<))
    '(key k
      val v
-     set s)))
+     set s
+     export
+     import)))
