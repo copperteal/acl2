@@ -935,8 +935,8 @@
                   :verify-guards nil))
   (forall index
     (implies (and (natp index)
-                  (< index (length/fixed %vector))
-                  (< index (length/fixed vector)))
+                  (< index (default-length))
+                  (< index (default-length)))
              (equal (accessor/fixed index %vector)
                     (accessor/fixed index vector))))
   :rewrite :direct)
@@ -954,15 +954,12 @@
     (defthmd equal/fixed{forward-chaining}-lemma-2
       (implies (and (recognizer/fixed %vector)
                     (recognizer/fixed vector))
-               (iff (equal (len %vector) (len vector))
-                    (equal (length/fixed %vector) (length/fixed vector))))))
+               (equal (len %vector) (len vector)))))
 
   (local
     (defthmd equal/fixed{forward-chaining}-lemma-1
       (implies (and (recognizer/fixed %vector)
                     (recognizer/fixed vector)
-                    (equal (length/fixed %vector)
-                           (length/fixed vector))
                     (contents-equal/fixed %vector vector)
                     (natp n)
                     (< n (len %vector)))
@@ -1029,11 +1026,437 @@
              equal/fixed)))
 
 
+;;;; Element Copy
+(encapsulate (((element-coupled-p *) => *))
+  (local
+    (defun element-coupled-p (value)
+      (declare (xargs :guard t)
+               (ignore value))
+      t))
+
+  (defthm element-coupled-p-constraint
+    (booleanp (element-coupled-p value))
+    :rule-classes :type-prescription)
+
+  (defthm element-coupled-p-of-initial-element
+    (element-coupled-p (initial-element)))
+
+  (defthm element-coupled-p-when-not-element-recognizer
+    (implies (not (element-recognizer value))
+             (element-coupled-p value))))
+
+(encapsulate (((element-copy * *) => *))
+  (local
+    (defun element-copy (%element element)
+      (declare (xargs :guard (and (element-recognizer %element)
+                                  (element-recognizer element)))
+               (ignore %element))
+      (element-fixer element)))
+
+  (defthm element-recognizer-of-element-copy
+    (element-recognizer (element-copy %element element)))
+
+  (defthm element-copy{rewrite}
+    (implies (element-coupled-p element)
+             (equal (element-copy %element element)
+                    (element-fixer element)))))
+
+
+;;;; `COUPLEDP/RESIZABLE'
+(defun-sk coupledp/resizable (vector)
+  (declare (xargs :guard (recognizer/resizable vector)
+                  :verify-guards nil))
+  (forall index
+    (element-coupled-p (accessor/resizable index vector)))
+  :rewrite :direct)
+
+(defthm coupledp/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (coupledp/resizable vector)))
+
+(defthm coupledp/resizable-of-creator
+  (coupledp/resizable (creator)))
+
+(defthm coupledp/resizable-of-fixer/resizable
+  (equal (coupledp/resizable (fixer/resizable vector))
+         (coupledp/resizable vector))
+  :hints
+  (("Goal"
+    :in-theory (enable fixer/resizable))))
+
+(defthm coupledp/resizable-of-resizer/resizable
+  (implies (coupledp/resizable vector)
+           (coupledp/resizable (resizer/resizable length vector)))
+  :hints
+  (("Goal"
+    :cases ((< (nfix (coupledp/resizable-witness vector)) (nfix length))))
+   ("Subgoal 2"
+    :use ((:instance accessor/resizable-when-large
+                     (index (coupledp/resizable-witness (resizer/resizable length vector)))
+                     (vector (resizer/resizable length vector)))))
+   ("Subgoal 1"
+    :cases ((< (nfix (coupledp/resizable-witness (resizer/resizable length vector))) (nfix length))))))
+
+(defthm element-coupled-p-of-accessor/resizable
+  (implies (coupledp/resizable vector)
+           (element-coupled-p (accessor/resizable index vector))))
+
+(defthm coupledp/resizable-of-updater/resizable
+  (implies (coupledp/resizable vector)
+           (equal (coupledp/resizable (updater/resizable index value vector))
+                  (if (<= (length/resizable vector) (nfix index))
+                      t
+                      (element-coupled-p value))))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (length/resizable vector)))
+    :in-theory (disable coupledp/resizable
+                        coupledp/resizable-necc))
+   ("Subgoal 1.3"
+    :use ((:instance coupledp/resizable-necc
+                     (index 0)
+                     (vector (updater/resizable 0 value vector)))))
+   ("Subgoal 1.3.3"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.3.2"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable 0 (initial-element)
+                                                                            vector)))
+                     (index 0)
+                     (value (initial-element))))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.3.1"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.2"
+    :use ((:instance coupledp/resizable-necc
+                     (vector (updater/resizable index value vector)))))
+   ("Subgoal 1.2.3"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable index value vector)))
+                     (index index)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.2.2"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable index (initial-element) vector)))
+                     (index index)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.2.1"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable index value vector)))
+                     (index index)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.1"
+    :use ((:instance coupledp/resizable-necc
+                     (vector (updater/resizable 0 value vector)))))
+   ("Subgoal 1.1.3"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.1.2"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable 0 (initial-element) vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))
+   ("Subgoal 1.1.1"
+    :use ((:instance accessor/resizable-of-updater/resizable
+                     (%index (coupledp/resizable-witness (updater/resizable 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/resizable (updater/resizable index value vector))))))
+
+(local
+  (in-theory
+    (disable coupledp/resizable)))
+
+
+;;;; `COPY/RESIZABLE-REC'
+(defun copy/resizable-rec (index %vector vector)
+  (declare (xargs :guard (and (natp index)
+                              (recognizer/resizable %vector)
+                              (recognizer/resizable vector)
+                              (= (length/resizable %vector)
+                                 (length/resizable vector))
+                              (<= index (length/resizable vector)))))
+  (if (zp index)
+      (fixer/resizable %vector)
+      (let* ((index (1- index))
+             (element (accessor/resizable index vector))
+             (%element (accessor/resizable index %vector))
+             (%element (element-copy %element element))
+             (%vector (updater/resizable index %element %vector))
+             (vector (updater/resizable index element vector)))
+        (copy/resizable-rec index %vector vector))))
+
+(defthm recognizer/resizable-of-copy/resizable-rec
+  (recognizer/resizable (copy/resizable-rec index %vector vector)))
+
+(defthm length/resizable-of-copy/resizable-rec
+  (equal (length/resizable (copy/resizable-rec index %vector vector))
+         (length/resizable %vector)))
+
+(defthm accessor/resizable-of-copy/resizable-rec
+  (implies (coupledp/resizable vector)
+           (equal (accessor/resizable %index (copy/resizable-rec index %vector vector))
+                  (cond
+                    ((<= (length/resizable %vector) (nfix %index))
+                     (initial-element))
+                    ((< (nfix %index) (nfix index))
+                     (accessor/resizable %index vector))
+                    (t
+                     (accessor/resizable %index %vector)))))
+  :hints
+  (("Goal"
+    :cases ((<= (length/resizable %vector) (nfix %index))
+            (< (nfix %index) (nfix index))))))
+
+(local
+  (in-theory
+    (disable copy/resizable-rec)))
+
+
+;;;; `COPY/RESIZABLE'
+(defun copy/resizable (%vector vector)
+  (declare (xargs :guard (and (recognizer/resizable %vector)
+                              (recognizer/resizable vector))))
+  (let* ((length (length/resizable vector))
+         (%vector (if (= (length/resizable %vector) length)
+                      %vector
+                      (resizer/resizable length %vector))))
+    (copy/resizable-rec length %vector vector)))
+
+(defthm recognizer/resizable-of-copy/resizable
+  (recognizer/resizable (copy/resizable %vector vector)))
+
+(defthm length/resizable-of-copy/resizable
+  (equal (length/resizable (copy/resizable %vector vector))
+         (length/resizable vector)))
+
+(defthm accessor/resizable-of-copy/resizable
+  (implies (coupledp/resizable vector)
+           (equal (accessor/resizable index (copy/resizable %vector vector))
+                  (accessor/resizable index vector)))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (length/resizable vector))))))
+
+(local
+  (in-theory
+    (disable copy/resizable)))
+
+(defthm copy/resizable{rewrite}
+  (implies (coupledp/resizable vector)
+           (equal (copy/resizable %vector vector)
+                  (fixer/resizable vector)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/resizable
+                     (%vector (copy/resizable %vector vector))
+                     (vector (fixer/resizable vector)))))))
+
+
+;;;; `COUPLEDP/FIXED'
+(defun-sk coupledp/fixed (vector)
+  (declare (xargs :guard (recognizer/fixed vector)
+                  :verify-guards nil))
+  (forall index
+    (element-coupled-p (accessor/fixed index vector)))
+  :rewrite :direct)
+
+(defthm coupledp/fixed-when-not-recognizer/fixed
+  (implies (not (recognizer/fixed vector))
+           (coupledp/fixed vector)))
+
+(defthm coupledp/fixed-of-creator
+  (coupledp/fixed (creator)))
+
+(defthm coupledp/fixed-of-fixer/fixed
+  (equal (coupledp/fixed (fixer/fixed vector))
+         (coupledp/fixed vector))
+  :hints
+  (("Goal"
+    :in-theory (enable fixer/fixed))))
+
+(defthm element-coupled-p-of-accessor/fixed
+  (implies (coupledp/fixed vector)
+           (element-coupled-p (accessor/fixed index vector))))
+
+(defthm coupledp/fixed-of-updater/fixed
+  (implies (coupledp/fixed vector)
+           (equal (coupledp/fixed (updater/fixed index value vector))
+                  (if (<= (default-length) (nfix index))
+                      t
+                      (element-coupled-p value))))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (default-length)))
+    :in-theory (disable coupledp/fixed
+                        coupledp/fixed-necc))
+   ("Subgoal 1.3"
+    :use ((:instance coupledp/fixed-necc
+                     (index 0)
+                     (vector (updater/fixed 0 value vector)))))
+   ("Subgoal 1.3.3"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.3.2"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed 0 (initial-element)
+                                                                    vector)))
+                     (index 0)
+                     (value (initial-element))))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.3.1"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.2"
+    :use ((:instance coupledp/fixed-necc
+                     (vector (updater/fixed index value vector)))))
+   ("Subgoal 1.2.3"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed index value vector)))
+                     (index index)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.2.2"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed index (initial-element) vector)))
+                     (index index)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.2.1"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed index value vector)))
+                     (index index)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.1"
+    :use ((:instance coupledp/fixed-necc
+                     (vector (updater/fixed 0 value vector)))))
+   ("Subgoal 1.1.3"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.1.2"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed 0 (initial-element) vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))
+   ("Subgoal 1.1.1"
+    :use ((:instance accessor/fixed-of-updater/fixed
+                     (%index (coupledp/fixed-witness (updater/fixed 0 value vector)))
+                     (index 0)))
+    :expand (:free (index value)
+                   (coupledp/fixed (updater/fixed index value vector))))))
+
+(local
+  (in-theory
+    (disable coupledp/fixed)))
+
+
+;;;; `COPY/FIXED-REC'
+(defun copy/fixed-rec (index %vector vector)
+  (declare (xargs :guard (and (natp index)
+                              (recognizer/fixed %vector)
+                              (recognizer/fixed vector)
+                              (<= index (default-length)))))
+  (if (zp index)
+      (fixer/fixed %vector)
+      (let* ((index (1- index))
+             (element (accessor/fixed index vector))
+             (%element (accessor/fixed index %vector))
+             (%element (element-copy %element element))
+             (%vector (updater/fixed index %element %vector))
+             (vector (updater/fixed index element vector)))
+        (copy/fixed-rec index %vector vector))))
+
+(defthm recognizer/fixed-of-copy/fixed-rec
+  (recognizer/fixed (copy/fixed-rec index %vector vector)))
+
+(defthm accessor/fixed-of-copy/fixed-rec
+  (implies (coupledp/fixed vector)
+           (equal (accessor/fixed %index (copy/fixed-rec index %vector vector))
+                  (cond
+                    ((<= (default-length) (nfix %index))
+                     (initial-element))
+                    ((< (nfix %index) (nfix index))
+                     (accessor/fixed %index vector))
+                    (t
+                     (accessor/fixed %index %vector)))))
+  :hints
+  (("Goal"
+    :cases ((<= (default-length) (nfix %index))
+            (< (nfix %index) (nfix index))))))
+
+(local
+  (in-theory
+    (disable copy/fixed-rec)))
+
+
+;;;; `COPY/FIXED'
+(defun copy/fixed (%vector vector)
+  (declare (xargs :guard (and (recognizer/fixed %vector)
+                              (recognizer/fixed vector))))
+  (copy/fixed-rec (default-length) %vector vector))
+
+(defthm recognizer/fixed-of-copy/fixed
+  (recognizer/fixed (copy/fixed %vector vector)))
+
+(defthm accessor/fixed-of-copy/fixed
+  (implies (coupledp/fixed vector)
+           (equal (accessor/fixed index (copy/fixed %vector vector))
+                  (accessor/fixed index vector)))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (default-length))))))
+
+(local
+  (in-theory
+    (disable copy/fixed)))
+
+(defthm copy/fixed{rewrite}
+  (implies (coupledp/fixed vector)
+           (equal (copy/fixed %vector vector)
+                  (fixer/fixed vector)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/fixed
+                     (%vector (copy/fixed %vector vector))
+                     (vector (fixer/fixed vector)))))))
+
+
 ;;;; Element Export
 (encapsulate (((name) => *)
               ((element-export-p *) => *)
               ((element-export *) => *)
               ((element-import * *) => *))
+  ;; TODO: Add element copy to export definitions and coupled hypotheses to
+  ;; export theorems.
+
   (local
     (defun name ()
       (declare (xargs :guard t))
@@ -1441,10 +1864,6 @@
 (defthm recognizer/fixed-of-import-rec/fixed
   (recognizer/fixed (import-rec/fixed list index vector)))
 
-(defthm length/fixed-of-import-rec/fixed
-  (equal (length/fixed (import-rec/fixed list index vector))
-         (default-length)))
-
 (defthm import-rec/fixed-of-updater/fixed
   (equal (import-rec/fixed list %index (updater/fixed index value vector))
          (if (or (atom list)
@@ -1474,7 +1893,6 @@
                               (recognizer/fixed vector))))
   (if (exportp/fixed export)
       (let* ((list (cdr export))
-             (vector (resizer/fixed (len list) vector))
              (vector (import-rec/fixed list 0 vector)))
         vector)
       (creator)))
@@ -1490,12 +1908,6 @@
   (implies (not (exportp/fixed export))
            (equal (import/fixed export vector)
                   (creator))))
-
-(defthm length/fixed-of-import/fixed
-  (equal (length/fixed (import/fixed export vector))
-         (if (exportp/fixed export)
-             (1- (len export))
-             (default-length))))
 
 (defthm accessor/fixed-of-import/fixed
   (equal (accessor/fixed index (import/fixed export vector))
