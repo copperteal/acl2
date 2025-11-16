@@ -402,3 +402,22 @@
     (("Goal"
       :induct (size map)
       :in-theory (enable size)))))
+
+(defsection auxiliary-mapp-theorems
+  :extension mapp
+
+  "<p>The following theorem is available in
+@('[books]/projects/atomic-stobjs/omaps').</p>"
+
+  (defthmd omap::mapp-as-alistp
+    (equal (omap::mapp map)
+           (and (alistp map)
+                (set::setp (strip-cars map))))
+    :hints
+    (("Goal"
+      :in-theory (enable omap::mapp
+                         set::setp
+                         set::head
+                         set::tail
+                         set::emptyp
+                         set::sfix)))))
