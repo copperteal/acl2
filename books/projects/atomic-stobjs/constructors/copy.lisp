@@ -45,7 +45,7 @@
 
   (defun coupledp-fn (names acc)
     (declare (xargs :guard (and (symbol-listp names)
-                                (symbol-list-listp acc))))
+                                (acl2::symbol-list-listp acc))))
     (if (atom names)
         (revappend acc ())
         (coupledp-fn (cdr names)
@@ -74,12 +74,8 @@
          (copy (symbolicate vector vector "-COPY"))
          (copy-rec (symbolicate vector copy "-REC"))
          (copy{rewrite} (symbolicate vector copy "{REWRITE}"))
-
          (index (symbolicate vector "I"))
-         (%index (symbolicate index "%" index))
-
          (coupledp (symbolicate vector vector "-COUPLED-P"))
-         (coupledp-witness (symbolicate vector coupledp "-WITNESS"))
 
          ;; `VECTOR'
          (stobj-property (getpropc vector 'acl2::stobj))
@@ -92,7 +88,7 @@
 
          ;; `VECTOR$A'
          (vector$a (symbolicate vector vector "$A"))
-         (%vector$a (symbolicate vector "%" vector$a))
+         (recognizer$a-aux (symbolicate vector vector$a "-AUX-P"))
          (vector$a-theorems (symbolicate vector vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector vector$a "-AGGRESSIVE"))
          (world (w state))
@@ -100,16 +96,18 @@
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
+         (resizable (first (second (third stobj$a-property))))
+         (default-length-name (second (second (third stobj$a-property))))
          (length$a (first (third (third stobj$a-property))))
          (resizer$a (second (third (third stobj$a-property))))
          (accessor$a (third (third (third stobj$a-property))))
          (updater$a (fourth (third (third stobj$a-property))))
-         (vector$a-equal (cdr (assoc vector$a (table-alist 'equality world))))
 
          (element (first (first (third stobj$a-property))))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
          (element-recognizer (second (first (third stobj$a-property))))
+         (initial-element-name (third (first (third stobj$a-property))))
          (element-creator (second (second element-stobj$a-property)))
          (initial-element (if element-stobj-property
                               `(,element-creator)
@@ -155,12 +153,71 @@
          (element-coupled-p-of-accessor$a (symbolicate vector element-coupled-p "-OF-" accessor$a))
          (coupledp-of-updater$a (symbolicate vector coupledp "-OF-" updater$a))
 
+         (copy-rec-of-fixer$a-2 (symbolicate vector copy-rec "-OF-" fixer$a "-2"))
          (recognizer$a-of-copy (symbolicate vector recognizer$a "-OF-" copy))
+         (copy-of-fixer$a-1 (symbolicate vector copy "-OF-" fixer$a "-1"))
+         (copy-of-fixer$a-2 (symbolicate vector copy "-OF-" fixer$a "-2"))
          (length$a-of-copy (symbolicate vector length$a "-OF-" copy))
-         (accessor$a-of-copy (symbolicate vector accessor$a "-OF-" copy))
-         (recognizer$a-of-copy-rec (symbolicate vector recognizer$a "-OF-" copy-rec))
-         (length$a-of-copy-rec (symbolicate vector length$a "-OF-" copy-rec))
-         (accessor$a-of-copy-rec (symbolicate vector accessor$a "-OF-" copy-rec)))
+
+         (fi-bindings
+          (list `(lem-vector$a::element-coupled-p ,(or element-coupled-p
+                                                       '(lambda (value)
+                                                         t)))
+                (if resizable
+                    `(lem-vector$a::coupledp/resizable ,(if element-coupled-p
+                                                            coupledp
+                                                            '(lambda (value)
+                                                              t)))
+                    `(lem-vector$a::coupledp/fixed ,(if element-coupled-p
+                                                        coupledp
+                                                        '(lambda (value)
+                                                          t))))
+                `(lem-vector$a::default-length (lambda ()
+                                                 ,default-length-name))
+                `(lem-vector$a::element-recognizer ,(or element-recognizer
+                                                        '(lambda (value)
+                                                          t)))
+                `(lem-vector$a::initial-element ,(or element-creator
+                                                     `(lambda ()
+                                                        ,initial-element-name)))
+                `(lem-vector$a::element-fixer ,(or element-fixer
+                                                   '(lambda (value)
+                                                     element)))
+                `(lem-vector$a::contents-recognizer ,(if element-recognizer
+                                                         (if resizable
+                                                             recognizer
+                                                             recognizer$a-aux)
+                                                         'true-listp))
+                (if resizable
+                    `(lem-vector$a::recognizer/resizable ,recognizer$a)
+                    `(lem-vector$a::recognizer/fixed ,recognizer$a))
+                `(lem-vector$a::creator ,creator$a)
+                (if resizable
+                    `(lem-vector$a::fixer/resizable ,fixer$a)
+                    `(lem-vector$a::fixer/fixed ,fixer$a))
+                (if resizable
+                    `(lem-vector$a::length/resizable ,length$a)
+                    `(lem-vector$a::length/fixed ,length$a))
+                (if resizable
+                    `(lem-vector$a::resizer/resizable ,resizer$a)
+                    `(lem-vector$a::resizer/fixed ,resizer$a))
+                (if resizable
+                    `(lem-vector$a::accessor/resizable ,accessor$a)
+                    `(lem-vector$a::accessor/fixed ,accessor$a))
+                (if resizable
+                    `(lem-vector$a::updater/resizable ,updater$a)
+                    `(lem-vector$a::updater/fixed ,updater$a))))
+         (fi-bindings-with-copy
+          (list* `(lem-vector$a::element-copy ,(or element-copy
+                                                   `(lambda (%value value)
+                                                      (,element-fixer value))))
+                 (if resizable
+                     `(lem-vector$a::copy/resizable-rec ,copy-rec)
+                     `(lem-vector$a::copy/fixed-rec ,copy-rec))
+                 (if resizable
+                     `(lem-vector$a::copy/resizable ,copy)
+                     `(lem-vector$a::copy/fixed ,copy))
+                 fi-bindings)))
 
     `(progn
        (deflabel ,coupledp-begin)
@@ -203,12 +260,19 @@
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
+         (local
+           (in-theory
+             (disable make-list-ac
+                      (:e make-list-ac))))
+
          ,@(and element-recognizer
                 element-fixer
                 `((local
                     (in-theory
-                      (disable ,element-recognizer
-                               ,element-fixer)))))
+                      (e/d ((:e ,element-recognizer)
+                            (:e ,element-fixer))
+                           (,element-recognizer
+                            ,element-fixer))))))
 
          ,@(and element-stobj$a-property
                 `((local
@@ -356,19 +420,54 @@
 
          (table copy ',vector ',copy)
 
+         (local
+           (defthm ,copy-rec-of-fixer$a-2
+             (equal (,copy-rec ,index ,%vector (,fixer$a ,vector))
+                    (,copy-rec ,index ,%vector ,vector))))
+
+         (local
+           (in-theory
+             (disable ,fixer$a
+                      nfix)))
+
          (defthm ,recognizer$a-of-copy
            (,recognizer$a (,copy ,%vector ,vector))
            :hints
            (("Goal"
+             :do-not-induct t
              :by (:functional-instance
                   ,(if resizable
                        'lem-vector$a::recognizer/resizable-of-copy/resizable
                        'lem-vector$a::recognizer/fixed-of-copy/fixed)
-                  ,@fi-bindings-with-copy))))
+                  ,@fi-bindings-with-copy))
+            ("Subgoal 9"
+             :in-theory (enable (:d ,resizer$a)))
+            ("Subgoal 7"
+             :in-theory (enable (:d ,accessor$a)
+                                (:d ,creator$a)))
+            ("Subgoal 6"
+             :in-theory (enable (:d ,accessor$a)))
+            ("Subgoal 5"
+             :in-theory (enable (:d ,creator$a)
+                                (:d ,recognizer$a)))
+            ("Subgoal 4"
+             :in-theory (enable (:d ,recognizer$a)
+                                ,@(and (not resizable)
+                                       `((:d ,recognizer$a-aux)))
+                                (:d ,creator$a)
+                                (:d ,length$a)))
+            ("Subgoal 3"
+             :in-theory (enable (:d ,recognizer$a)
+                                ,@(and (not resizable)
+                                       `((:d ,recognizer$a-aux)))))
+            ("Subgoal 2"
+             :in-theory (enable (:d ,accessor$a)))
+            ("Subgoal 1"
+             :in-theory (enable (:d ,updater$a)))))
 
          (defthm ,copy-of-fixer$a-1
-           (equal (copy (fixer$a %vector) vector)
-                  (copy %vector vector))
+           (equal (,copy (,fixer$a ,%vector) ,vector)
+                  (,copy ,%vector ,vector))
            :hints
            (("Goal"
              :by (:functional-instance
@@ -377,9 +476,9 @@
                        'lem-vector$a::copy/fixed-of-fixer/fixed-1)
                   ,@fi-bindings-with-copy))))
 
-         (defthm copy-of-fixer$a-2
-           (equal (copy %vector (fixer$a vector))
-                  (copy %vector vector))
+         (defthm ,copy-of-fixer$a-2
+           (equal (,copy ,%vector (,fixer$a ,vector))
+                  (,copy ,%vector ,vector))
            :hints
            (("Goal"
              :by (:functional-instance
