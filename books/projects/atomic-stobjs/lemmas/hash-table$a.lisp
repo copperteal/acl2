@@ -2271,6 +2271,7 @@
 (local
   (in-theory
     (disable keysp
+             keysp{definition}
              keys-fix
              recognizer/unique
              recognizer/copyable
@@ -2307,6 +2308,536 @@
              accessor/unique{induction}-fn
              equal/unique
              equal/copyable)))
+
+
+;;;; Val Copy
+(encapsulate (((val-coupled-p *) => *))
+  (local
+    (defun val-coupled-p (val)
+      (declare (xargs :guard t)
+               (ignore val))
+      t))
+
+  (defthm val-coupled-p-constraint
+    (booleanp (val-coupled-p val))
+    :rule-classes :type-prescription)
+
+  (defthm val-coupled-p-of-default-val
+    (val-coupled-p (default-val)))
+
+  (defthm val-coupled-p-when-not-val-recognizer
+    (implies (not (val-recognizer val))
+             (val-coupled-p val))))
+
+(encapsulate (((val-copy * *) => *))
+  (local
+    (defun val-copy (%val val)
+      (declare (xargs :guard (and (val-recognizer %val)
+                                  (val-recognizer val)))
+               (ignore %val))
+      (val-fixer val)))
+
+  (defthm val-recognizer-of-val-copy
+    (val-recognizer (val-copy %val val)))
+
+  (defthm val-copy{rewrite}
+    (implies (val-coupled-p val)
+             (equal (val-copy %val val)
+                    (val-fixer val)))))
+
+
+;;;; `COUPLED-KEYS-P'
+(defun-sk coupled-keys-p (hash-table)
+  (declare (xargs :guard (recognizer/copyable hash-table)
+                  :verify-guards nil))
+  (forall key
+    (equal (set::in key (keys hash-table))
+           (and (key-recognizer key)
+                (boundp/copyable key hash-table))))
+  :rewrite :direct)
+
+(defthm coupled-keys-p-when-not-recognizer/copyable
+  (implies (not (recognizer/copyable hash-table))
+           (coupled-keys-p hash-table)))
+
+(defthm coupled-keys-p-of-creator/copyable
+  (coupled-keys-p (creator/copyable)))
+
+(defthm coupled-keys-p-of-fixer/copyable
+  (equal (coupled-keys-p (fixer/copyable hash-table))
+         (coupled-keys-p hash-table))
+  :hints
+  (("Goal"
+    :in-theory (enable fixer/copyable))))
+
+(defthm coupled-keys-p-of-updater/copyable-when-boundp/copyable
+  (implies (and (boundp/copyable key hash-table)
+                (coupled-keys-p hash-table))
+           (coupled-keys-p (updater/copyable key val hash-table))))
+
+(defthm coupled-keys-p-of-updater/copyable-when-not-boundp/copyable
+  (implies (let* ((keys (keys hash-table))
+                  (trimmed (set::delete (key-fixer key) keys)))
+             (and (not (boundp/copyable key hash-table))
+                  (set::in (key-fixer key) keys)
+                  (coupled-keys-p (keys-set trimmed hash-table))))
+           (coupled-keys-p (updater/copyable key val hash-table)))
+  :hints
+  (("Goal"
+    :in-theory (disable coupled-keys-p)
+    :expand (:free (key)
+                   (coupled-keys-p (updater/copyable key val hash-table))))
+   ("Subgoal 3"
+    :use ((:instance coupled-keys-p-necc
+                     (key (coupled-keys-p-witness (updater/copyable key val hash-table)))
+                     (hash-table (keys-set (set::delete key (keys hash-table))
+                                           hash-table)))))
+   ("Subgoal 1"
+    :use ((:instance coupled-keys-p-necc
+                     (key (coupled-keys-p-witness (updater/copyable (default-key)
+                                                                    val hash-table)))
+                     (hash-table (keys-set (set::delete (default-key)
+                                                        (keys hash-table))
+                                           hash-table)))))))
+
+(defthm coupled-keys-p-of-remover/copyable-when-boundp/copyable
+  (implies (let* ((keys (keys hash-table))
+                  (inserted (set::insert (key-fixer key) keys)))
+             (and (boundp/copyable key hash-table)
+                  (not (set::in (key-fixer key) keys))
+                  (coupled-keys-p (keys-set inserted hash-table))))
+           (coupled-keys-p (remover/copyable key hash-table)))
+  :hints
+  (("Goal"
+    :in-theory (disable coupled-keys-p)
+    :expand (:free (key)
+                   (coupled-keys-p (remover/copyable key hash-table))))
+   ("Subgoal 3"
+    :use ((:instance coupled-keys-p-necc
+                     (key (coupled-keys-p-witness (remover/copyable key hash-table)))
+                     (hash-table (keys-set (set::insert key (keys hash-table))
+                                           hash-table)))))
+   ("Subgoal 1"
+    :use ((:instance coupled-keys-p-necc
+                     (key (coupled-keys-p-witness (remover/copyable (default-key)
+                                                                    hash-table)))
+                     (hash-table (keys-set (set::insert (default-key)
+                                                        (keys hash-table))
+                                           hash-table)))))))
+
+(defthm coupled-keys-p-of-remover/copyable-when-not-boundp/copyable
+  (implies (and (not (boundp/copyable key hash-table))
+                (coupled-keys-p hash-table))
+           (coupled-keys-p (remover/copyable key hash-table))))
+
+(local
+  (in-theory
+    (disable coupled-keys-p)))
+
+
+;;;; `COUPLED-VALS-P'
+(defun-sk coupled-vals-p (hash-table)
+  (declare (xargs :guard (recognizer/copyable hash-table)
+                  :verify-guards nil))
+  (forall key
+    (val-coupled-p (accessor/copyable key hash-table)))
+  :rewrite :direct)
+
+(defthm coupled-vals-p-when-not-recognizer
+  (implies (not (recognizer/copyable hash-table))
+           (coupled-vals-p hash-table)))
+
+(defthm coupled-vals-p-of-creator/copyable
+  (coupled-vals-p (creator/copyable)))
+
+(defthm coupled-vals-p-of-fixer/copyable
+  (equal (coupled-vals-p (fixer/copyable hash-table))
+         (coupled-vals-p hash-table))
+  :hints
+  (("Goal"
+    :in-theory (enable fixer/copyable))))
+
+(defthm coupled-vals-p-of-updater/copyable
+  (implies (coupled-vals-p hash-table)
+           (equal (coupled-vals-p (updater/copyable key val hash-table))
+                  (val-coupled-p val)))
+  :hints
+  (("Goal"
+    :cases ((coupled-vals-p (updater/copyable key val hash-table)))
+    :in-theory (disable coupled-vals-p))
+   ("Subgoal 2"
+    :expand (:free (key)
+                   (coupled-vals-p (updater/copyable key val hash-table))))
+   ("Subgoal 1"
+    :use ((:instance coupled-vals-p-necc
+                     (key key)
+                     (hash-table (updater/copyable key val hash-table)))))))
+
+(defthm coupled-vals-p-of-remover/copyable
+  (implies (coupled-vals-p hash-table)
+           (coupled-vals-p (remover/copyable key hash-table))))
+
+(defthm coupled-vals-p-of-keys-set
+  (equal (coupled-vals-p (keys-set keys hash-table))
+         (coupled-vals-p hash-table))
+  :hints
+  (("Goal"
+    :cases ((coupled-vals-p hash-table))
+    :in-theory (disable coupled-vals-p))
+   ("Subgoal 2"
+    :use ((:instance coupled-vals-p-necc
+                     (key (coupled-vals-p-witness hash-table))
+                     (hash-table (keys-set keys hash-table))))
+    :expand (coupled-vals-p hash-table))
+   ("Subgoal 1"
+    :expand (:free (keys)
+                   (coupled-vals-p (keys-set keys hash-table))))))
+
+(local
+  (in-theory
+    (disable coupled-vals-p)))
+
+
+;;;; `COUPLEDP'
+(defun-nx coupledp (hash-table)
+  (declare (xargs :guard (recognizer/copyable hash-table)
+                  :verify-guards nil))
+  (and (equal (set::cardinality (keys hash-table))
+              (count/copyable hash-table))
+       (coupled-keys-p hash-table)
+       (coupled-vals-p hash-table)))
+
+(defthm coupledp-when-not-recognizer/copyable
+  (implies (not (recognizer/copyable hash-table))
+           (coupledp hash-table)))
+
+(defthm coupledp-of-creator/copyable
+  (coupledp (creator/copyable)))
+
+(defthm coupledp-of-fixer/copyable
+  (equal (coupledp (fixer/copyable hash-table))
+         (coupledp hash-table)))
+
+(defthm val-coupled-p-of-accessor/copyable
+  (implies (coupledp hash-table)
+           (val-coupled-p (accessor/copyable key hash-table))))
+
+(defthm coupledp-of-updater/copyable-when-boundp/copyable
+  (implies (and (boundp/copyable key hash-table)
+                (coupledp hash-table))
+           (equal (coupledp (updater/copyable key val hash-table))
+                  (val-coupled-p val))))
+
+(defthm coupledp-of-updater/copyable-when-not-boundp/copyable
+  (implies (let* ((keys (keys hash-table))
+                  (trimmed (set::delete (key-fixer key) keys)))
+             (and (not (boundp/copyable key hash-table))
+                  (set::in (key-fixer key) keys)
+                  (coupledp (keys-set trimmed hash-table))))
+           (equal (coupledp (updater/copyable key val hash-table))
+                  (val-coupled-p val))))
+
+(defthm in-of-keys-when-coupledp
+  (implies (coupledp hash-table)
+           (equal (set::in key (keys hash-table))
+                  (and (key-recognizer key)
+                       (boundp/copyable key hash-table)))))
+
+(defthm coupledp-of-remover/copyable-when-boundp/copyable
+  (implies (let* ((keys (keys hash-table))
+                  (inserted (set::insert (key-fixer key) keys)))
+             (and (boundp/copyable key hash-table)
+                  (not (set::in (key-fixer key) keys))
+                  (coupledp (keys-set inserted hash-table))))
+           (coupledp (remover/copyable key hash-table))))
+
+(defthm coupledp-of-remover/copyable-when-not-boundp/copyable
+  (implies (and (not (boundp/copyable key hash-table))
+                (coupledp hash-table))
+           (coupledp (remover/copyable key hash-table))))
+
+(defthm cardinality-of-keys-when-coupledp
+  (implies (coupledp hash-table)
+           (equal (set::cardinality (keys hash-table))
+                  (count/copyable hash-table))))
+
+(encapsulate ()
+  (local
+    (defthm keysp-when-emptyp-alt
+      (implies (set::emptyp (keys hash-table))
+               (not (keys hash-table)))
+      :hints
+      (("Goal"
+        :in-theory (enable keysp{definition}
+                           set::emptyp)))))
+
+  (defthm emptyp-of-keys-when-coupledp
+    (implies (coupledp hash-table)
+             (equal (set::emptyp (keys hash-table))
+                    (or (not (recognizer/copyable hash-table))
+                        (equal hash-table (creator/copyable)))))
+    :hints
+    (("Goal"
+      :cases ((set::emptyp (keys hash-table)))
+      :in-theory (enable fixer/copyable))
+     ("Subgoal 1"
+      :use ((:instance equal/copyable
+                       (%hash-table (creator/copyable))))))))
+
+(local
+  (in-theory
+    (disable coupledp)))
+
+
+;;;; `COPY-REC'
+(defun copy-rec (set %hash-table hash-table)
+  (declare (xargs :guard (and (keysp set)
+                              (recognizer/copyable %hash-table)
+                              (recognizer/copyable hash-table)
+                              (set::subset set (keys hash-table)))))
+  (if (set::emptyp set)
+      (fixer/copyable %hash-table)
+      (let* ((key (key-fixer (set::head set)))
+             (val (accessor/copyable key hash-table))
+             (%val (accessor/copyable key %hash-table))
+             (%val (val-copy %val val))
+             (%hash-table (updater/copyable key %val %hash-table))
+             (hash-table (updater/copyable key val hash-table)))
+        (copy-rec (set::tail set) %hash-table hash-table))))
+
+(defthm recognizer/copyable-of-copy-rec
+  (recognizer/copyable (copy-rec set %hash-table hash-table)))
+
+(defthm copy-rec-of-fixer/copyable-1
+  (equal (copy-rec set (fixer/copyable %hash-table) hash-table)
+         (copy-rec set %hash-table hash-table)))
+
+(defthm copy-rec-of-fixer/copyable-2
+  (equal (copy-rec set %hash-table (fixer/copyable hash-table))
+         (copy-rec set %hash-table hash-table)))
+
+(defthm copy-rec-of-updater/copyable
+  (implies (and (coupledp hash-table)
+                (set::subset set (keys hash-table)))
+           (equal (copy-rec set (updater/copyable key val %hash-table) hash-table)
+                  (if (set::in (key-fixer key) set)
+                      (copy-rec set %hash-table hash-table)
+                      (updater/copyable key val (copy-rec set %hash-table hash-table)))))
+  :hints
+  (("Goal"
+    :induct (copy-rec set %hash-table hash-table)
+    :expand (set::subset set (keys hash-table)))
+   ("Subgoal *1/2.8"
+    :use ((:instance in-of-keys-when-coupledp
+                     (key (default-key))))
+    :expand ((set::in (default-key) set)
+             (:free (key val)
+                    (copy-rec set (updater/copyable key val %hash-table) hash-table))))
+   ("Subgoal *1/2.7"
+    :expand ((set::in (default-key) set)
+             (:free (key val)
+                    (copy-rec set (updater/copyable key val %hash-table) hash-table))))
+   ("Subgoal *1/2.5"
+    :expand ((set::in (default-key) set)
+             (:free (key val)
+                    (copy-rec set (updater/copyable key val %hash-table) hash-table))))
+   ("Subgoal *1/2.4"
+    :expand ((set::in (default-key) set)
+             (:free (key val)
+                    (copy-rec set (updater/copyable key val %hash-table) hash-table))))
+   ("Subgoal *1/2.3"
+    :expand ((set::in (default-key) set)
+             (:free (key val)
+                    (copy-rec set (updater/copyable key val %hash-table) hash-table))))
+   ("Subgoal *1/2.1"
+    :expand ((set::in (default-key) set)
+             (:free (key val)
+                    (copy-rec set (updater/copyable key val %hash-table) hash-table))))))
+
+(defthm accessor/copyable-of-copy-rec
+  (implies (and (coupledp hash-table)
+                (set::subset set (keys hash-table)))
+           (equal (accessor/copyable key (copy-rec set %hash-table hash-table))
+                  (if (set::in (key-fixer key) set)
+                      (accessor/copyable key hash-table)
+                      (accessor/copyable key %hash-table))))
+  :hints
+  (("Goal"
+    :induct (copy-rec set %hash-table hash-table)
+    :expand (set::subset set (keys hash-table)))
+   ("Subgoal *1/2.9"
+    :expand (set::in (default-key) set))))
+
+(defthm boundp/copyable-of-copy-rec
+  (implies (and (coupledp hash-table)
+                (set::subset set (keys hash-table)))
+           (equal (boundp/copyable key (copy-rec set %hash-table hash-table))
+                  (or (boundp/copyable key %hash-table)
+                      (set::in (key-fixer key) set))))
+  :hints
+  (("Goal"
+    :induct (copy-rec set %hash-table hash-table)
+    :expand (set::subset set (keys hash-table)))
+   ("Subgoal *1/2.11"
+    :expand (set::in (default-key) set))
+   ("Subgoal *1/2.9"
+    :expand (set::in key set))
+   ("Subgoal *1/2.1"
+    :expand (set::in (default-key) set))))
+
+(defthmd count/copyable-of-copy-rec
+  (implies (and (coupledp hash-table)
+                (set::subset set (keys hash-table)))
+           (equal (count/copyable (copy-rec set %hash-table hash-table))
+                  (cond
+                    ((or (set::emptyp set)
+                         (not (keysp set)))
+                     (count/copyable %hash-table))
+                    ((boundp/copyable (set::head set) %hash-table)
+                     (count/copyable (copy-rec (set::tail set) %hash-table hash-table)))
+                    (t
+                     (1+ (count/copyable (copy-rec (set::tail set) %hash-table hash-table)))))))
+  :hints
+  (("Goal"
+    :induct (copy-rec set %hash-table hash-table)
+    :expand ((keysp set)
+             (set::subset set (keys hash-table))))))
+
+(defthm keys-of-copy-rec
+  (equal (keys (copy-rec set %hash-table hash-table))
+         (keys %hash-table)))
+
+(local
+  (in-theory
+    (disable copy-rec)))
+
+
+;;;; `COPY'
+(defun copy (%hash-table hash-table)
+  (declare (xargs :guard (and (recognizer/copyable %hash-table)
+                              (recognizer/copyable hash-table))))
+  (let* ((keys (keys hash-table))
+         (count (count/copyable hash-table))
+         (%hash-table (init/copyable count nil nil %hash-table))
+         (%hash-table (keys-set keys %hash-table)))
+    (copy-rec keys %hash-table hash-table)))
+
+(defthm recognizer/copyable-of-copy
+  (recognizer/copyable (copy %hash-table hash-table)))
+
+(defthm copy-of-fixer/copyable-1
+  (equal (copy (fixer/copyable %hash-table) hash-table)
+         (copy %hash-table hash-table)))
+
+(defthm copy-of-fixer/copyable-2
+  (equal (copy %hash-table (fixer/copyable hash-table))
+         (copy %hash-table hash-table)))
+
+(defthm coupled-keys-p-of-copy
+  (implies (coupledp hash-table)
+           (coupled-keys-p (copy %hash-table hash-table)))
+  :hints
+  (("Goal"
+    :expand (coupled-keys-p (copy-rec (keys hash-table)
+                                      (keys-set (keys hash-table)
+                                                (creator/copyable))
+                                      hash-table)))))
+
+(defthm coupled-vals-p-of-copy
+  (implies (coupledp hash-table)
+           (coupled-vals-p (copy %hash-table hash-table)))
+  :hints
+  (("Goal"
+    :expand (coupled-vals-p (copy-rec (keys hash-table)
+                                      (keys-set (keys hash-table)
+                                                (creator/copyable))
+                                      hash-table)))))
+
+(encapsulate ()
+  (local
+    (defthm coupledp-of-copy-lemma-0
+      (implies (and (set::subset %set (keys hash-table))
+                    (keysp set)
+                    (coupledp hash-table))
+               (equal (count/copyable (copy-rec %set (keys-set set (creator/copyable)) hash-table))
+                      (count/copyable (copy-rec %set (creator/copyable) hash-table))))
+      :hints
+      (("Goal"
+        :induct (set::cardinality %set)
+        :in-theory (enable (:i set::cardinality)))
+       ("Subgoal *1/2"
+        :expand ((set::subset %set (keys hash-table))
+                 (:free (%hash-table)
+                        (copy-rec %set %hash-table hash-table))))
+       ("Subgoal *1/1"
+        :expand ((set::subset %set (keys hash-table))
+                 (:free (%hash-table)
+                        (copy-rec %set %hash-table hash-table)))))))
+
+  (local
+    (defthm coupledp-of-copy-lemma-1
+      (implies (and (set::subset set (keys hash-table))
+                    (coupledp hash-table))
+               (equal (count/copyable (copy-rec set (creator/copyable) hash-table))
+                      (set::cardinality set)))
+      :hints
+      (("Goal"
+        :induct (set::cardinality set)
+        :in-theory (enable set::cardinality))
+       ("Subgoal *1/2"
+        :expand ((set::subset set (keys hash-table))
+                 (copy-rec set (creator/copyable) hash-table)))
+       ("Subgoal *1/1"
+        :expand ((copy-rec set (creator/copyable) hash-table))))))
+
+  (defthm coupledp-of-copy
+    ;; TODO: This should be equality rather than implication.  That is,
+    ;; ```(equal (coupledp (copy %hash-table hash-table))
+    ;;           (coupledp hash-table))'''
+    ;; looks like a theorem.
+    (implies (coupledp hash-table)
+             (coupledp (copy %hash-table hash-table)))
+    :hints
+    (("Goal"
+      :in-theory (enable coupled-keys-p
+                         coupled-vals-p)
+      :expand (coupledp (copy-rec (keys hash-table)
+                                  (keys-set (keys hash-table)
+                                            (creator/copyable))
+                                  hash-table)))))
+
+  (defthm count/copyable-of-copy
+    (implies (coupledp hash-table)
+             (equal (count/copyable (copy %hash-table hash-table))
+                    (count/copyable hash-table)))))
+
+(defthm accessor/copyable-of-copy
+  (implies (coupledp hash-table)
+           (equal (accessor/copyable key (copy %hash-table hash-table))
+                  (accessor/copyable key hash-table))))
+
+(defthm boundp/copyable-of-copy
+  (implies (coupledp hash-table)
+           (equal (boundp/copyable key (copy %hash-table hash-table))
+                  (boundp/copyable key hash-table))))
+
+(defthm keys-of-copy
+  (equal (keys (copy %hash-table hash-table))
+         (keys hash-table)))
+
+(local
+  (in-theory
+    (disable copy)))
+
+(defthm copy{rewrite}
+  (implies (coupledp hash-table)
+           (equal (copy %hash-table hash-table)
+                  (fixer/copyable hash-table)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/copyable
+                     (%hash-table (copy %hash-table hash-table))
+                     (hash-table (fixer/copyable hash-table)))))))
 
 
 ;;;; Value Export

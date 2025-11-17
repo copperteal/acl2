@@ -1189,8 +1189,8 @@
   (declare (xargs :guard (and (natp index)
                               (recognizer/resizable %vector)
                               (recognizer/resizable vector)
-                              (= (length/resizable %vector)
-                                 (length/resizable vector))
+                              (equal (length/resizable %vector)
+                                     (length/resizable vector))
                               (<= index (length/resizable vector)))))
   (if (zp index)
       (fixer/resizable %vector)
@@ -1204,6 +1204,14 @@
 
 (defthm recognizer/resizable-of-copy/resizable-rec
   (recognizer/resizable (copy/resizable-rec index %vector vector)))
+
+(defthm copy/resizable-rec-of-fixer/resizable-1
+  (equal (copy/resizable-rec index (fixer/resizable %vector) vector)
+         (copy/resizable-rec index %vector vector)))
+
+(defthm copy/resizable-rec-of-fixer/resizable-2
+  (equal (copy/resizable-rec index %vector (fixer/resizable vector))
+         (copy/resizable-rec index %vector vector)))
 
 (defthm length/resizable-of-copy/resizable-rec
   (equal (length/resizable (copy/resizable-rec index %vector vector))
@@ -1234,13 +1242,37 @@
   (declare (xargs :guard (and (recognizer/resizable %vector)
                               (recognizer/resizable vector))))
   (let* ((length (length/resizable vector))
-         (%vector (if (= (length/resizable %vector) length)
+         (%vector (if (equal (length/resizable %vector) length)
                       %vector
                       (resizer/resizable length %vector))))
     (copy/resizable-rec length %vector vector)))
 
 (defthm recognizer/resizable-of-copy/resizable
   (recognizer/resizable (copy/resizable %vector vector)))
+
+(defthm copy/resizable-of-fixer/resizable-1
+  (equal (copy/resizable (fixer/resizable %vector) vector)
+         (copy/resizable %vector vector)))
+
+(defthm copy/resizable-of-fixer/resizable-2
+  (equal (copy/resizable %vector (fixer/resizable vector))
+         (copy/resizable %vector vector)))
+
+(defthm coupledp/resizable-of-copy/resizable
+  (implies (coupledp/resizable vector)
+           (coupledp/resizable (copy/resizable %vector vector)))
+  :hints
+  (("Goal"
+    :expand (coupledp/resizable (copy/resizable %vector vector)))
+   ("Subgoal 2"
+    :expand (coupledp/resizable (copy/resizable-rec (length/resizable %vector)
+                                                    %vector vector)))
+   ("Subgoal 1"
+    :expand (coupledp/resizable
+             (copy/resizable-rec (length/resizable vector)
+                                 (resizer/resizable (length/resizable vector)
+                                                    %vector)
+                                 vector)))))
 
 (defthm length/resizable-of-copy/resizable
   (equal (length/resizable (copy/resizable %vector vector))
@@ -1397,6 +1429,14 @@
 (defthm recognizer/fixed-of-copy/fixed-rec
   (recognizer/fixed (copy/fixed-rec index %vector vector)))
 
+(defthm copy/fixed-rec-of-fixer/fixed-1
+  (equal (copy/fixed-rec index (fixer/fixed %vector) vector)
+         (copy/fixed-rec index %vector vector)))
+
+(defthm copy/fixed-rec-of-fixer/fixed-2
+  (equal (copy/fixed-rec index %vector (fixer/fixed vector))
+         (copy/fixed-rec index %vector vector)))
+
 (defthm accessor/fixed-of-copy/fixed-rec
   (implies (coupledp/fixed vector)
            (equal (accessor/fixed %index (copy/fixed-rec index %vector vector))
@@ -1425,6 +1465,23 @@
 
 (defthm recognizer/fixed-of-copy/fixed
   (recognizer/fixed (copy/fixed %vector vector)))
+
+(defthm copy/fixed-of-fixer/fixed-1
+  (equal (copy/fixed (fixer/fixed %vector) vector)
+         (copy/fixed %vector vector)))
+
+(defthm copy/fixed-of-fixer/fixed-2
+  (equal (copy/fixed %vector (fixer/fixed vector))
+         (copy/fixed %vector vector)))
+
+(defthm coupledp/fixed-of-copy/fixed
+  (implies (coupledp/fixed vector)
+           (coupledp/fixed (copy/fixed %vector vector)))
+  :hints
+  (("Goal"
+    :expand ((coupledp/fixed (copy/fixed %vector vector))
+             (coupledp/fixed (copy/fixed-rec (default-length)
+                                             %vector vector))))))
 
 (defthm accessor/fixed-of-copy/fixed
   (implies (coupledp/fixed vector)
