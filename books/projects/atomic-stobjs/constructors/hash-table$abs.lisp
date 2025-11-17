@@ -30,9 +30,7 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-#||
 (include-book "std/osets/top" :dir :system)
-||#
 
 (include-book "../utilities/top")
 
@@ -390,7 +388,7 @@
               (keys-set$c-set (and keys-set$c
                                    (car (getpropc keys-set$c 'acl2::formals)))))
 
-         `(with-books (("std/osets/top" :dir :system))
+         `(encapsulate ()
 
             (local
               (progn

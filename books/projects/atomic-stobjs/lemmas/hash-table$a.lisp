@@ -30,8 +30,12 @@
 (in-package "LEM-HASH-TABLE$A")
 (set-verify-guards-eagerness 2)
 
-(local
-  (include-book "std/osets/top" :dir :system))
+#||
+(include-book "std/lists/top" :dir :system)
+(include-book "std/alists/top" :dir :system)
+||#
+
+(include-book "std/osets/top" :dir :system)
 (local
   (include-book "std/omaps/top" :dir :system))
 

@@ -34,6 +34,8 @@
 (include-book "../lemmas/hash-table$a")
 ||#
 
+(include-book "std/osets/top" :dir :system)
+
 (include-book "../utilities/top")
 
 

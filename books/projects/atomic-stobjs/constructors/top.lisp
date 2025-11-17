@@ -39,6 +39,7 @@
 (defconst *exports*
   '(define-congruent
 
+    coupledp
     define-copy
 
     define-vector$c
