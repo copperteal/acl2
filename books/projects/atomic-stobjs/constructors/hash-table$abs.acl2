@@ -28,4 +28,3 @@
 
 
 (ld "cert.acl2")
-(ld "../lemmas/osets.acl2")

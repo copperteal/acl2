@@ -30,8 +30,6 @@
 (in-package "ACL2")
 (set-verify-guards-eagerness 2)
 
-(include-book "symbolicate")
-
 (defun make-predicate-suffix (string-or-symbol)
   ;; TODO: Mention reference to CTL2 in XDOC
   (declare (xargs :guard (or (stringp string-or-symbol)
@@ -41,31 +39,3 @@
                         string-or-symbol))
       "-P"
       "P"))
-
-;;; `COUPLEDP-FN'
-(encapsulate ()
-  (local
-    (defthm guard-lemma
-      (implies (character-listp x)
-               (character-listp (remove-equal a x)))))
-
-  (defun coupledp-fn (names acc)
-    (declare (xargs :guard (and (symbol-listp names)
-                                (symbol-list-listp acc))))
-    (if (atom names)
-        (reverse acc)
-        (coupledp-fn (cdr names)
-                     (cons (let ((name (car names)))
-                             (list (symbolicate name (coerce (remove #\% (coerce (symbol-name name)
-                                                                                 'list))
-                                                             'string)
-                                                "-COUPLED-P")
-                                   name))
-                           acc)))))
-
-(defmacro coupledp (&rest names)
-  (declare (xargs :guard (symbol-listp names)))
-  (let ((expressions (coupledp-fn names ())))
-    (list 'case-split (if (null (cdr expressions))
-                          (car expressions)
-                          (cons 'and expressions)))))

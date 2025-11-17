@@ -29,7 +29,9 @@
 
 (in-package "ACL2")
 
-(ld "osets.acl2")
+(include-book "std/portcullis" :dir :system)
+(include-book "std/omaps/portcullis" :dir :system)
+(include-book "misc/total-order" :dir :system)
 
 (defpkg "LEM-HASH-TABLE$A"
   (set-difference-eq
