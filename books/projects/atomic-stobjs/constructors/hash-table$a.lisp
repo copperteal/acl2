@@ -628,6 +628,20 @@
                     (in-theory
                       (enable acl2::fast-<<-is-<<)))
 
+                  ,@(and key-recognizer
+                         key-fixer
+                         `((local
+                             (in-theory
+                               (enable (:e ,key-recognizer)
+                                       (:e ,key-fixer))))))
+
+                  ,@(and val-recognizer
+                         val-fixer
+                         `((local
+                             (in-theory
+                               (enable (:e ,val-recognizer)
+                                       (:e ,val-fixer))))))
+
                   ,@(and copyable
                          key-recognizer
                          `((defun ,keysp (,set)

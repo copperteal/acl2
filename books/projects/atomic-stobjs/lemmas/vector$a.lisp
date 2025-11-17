@@ -193,9 +193,9 @@
 
 (local
   (defthm contents-recognizer-of-make-list-ac
-    (equal (contents-recognizer (make-list-ac size element acc))
+    (equal (contents-recognizer (make-list-ac size value acc))
            (and (or (zp size)
-                    (element-recognizer element))
+                    (element-recognizer value))
                 (contents-recognizer acc)))))
 
 (local
@@ -1047,19 +1047,19 @@
 
 (encapsulate (((element-copy * *) => *))
   (local
-    (defun element-copy (%element element)
-      (declare (xargs :guard (and (element-recognizer %element)
-                                  (element-recognizer element)))
-               (ignore %element))
-      (element-fixer element)))
+    (defun element-copy (%value value)
+      (declare (xargs :guard (and (element-recognizer %value)
+                                  (element-recognizer value)))
+               (ignore %value))
+      (element-fixer value)))
 
   (defthm element-recognizer-of-element-copy
-    (element-recognizer (element-copy %element element)))
+    (element-recognizer (element-copy %value value)))
 
   (defthm element-copy{rewrite}
-    (implies (element-coupled-p element)
-             (equal (element-copy %element element)
-                    (element-fixer element)))))
+    (implies (element-coupled-p value)
+             (equal (element-copy %value value)
+                    (element-fixer value)))))
 
 
 ;;;; `COUPLEDP/RESIZABLE'
@@ -1195,11 +1195,11 @@
   (if (zp index)
       (fixer/resizable %vector)
       (let* ((index (1- index))
-             (element (accessor/resizable index vector))
-             (%element (accessor/resizable index %vector))
-             (%element (element-copy %element element))
-             (%vector (updater/resizable index %element %vector))
-             (vector (updater/resizable index element vector)))
+             (value (accessor/resizable index vector))
+             (%value (accessor/resizable index %vector))
+             (%value (element-copy %value value))
+             (%vector (updater/resizable index %value %vector))
+             (vector (updater/resizable index value vector)))
         (copy/resizable-rec index %vector vector))))
 
 (defthm recognizer/resizable-of-copy/resizable-rec
@@ -1419,11 +1419,11 @@
   (if (zp index)
       (fixer/fixed %vector)
       (let* ((index (1- index))
-             (element (accessor/fixed index vector))
-             (%element (accessor/fixed index %vector))
-             (%element (element-copy %element element))
-             (%vector (updater/fixed index %element %vector))
-             (vector (updater/fixed index element vector)))
+             (value (accessor/fixed index vector))
+             (%value (accessor/fixed index %vector))
+             (%value (element-copy %value value))
+             (%vector (updater/fixed index %value %vector))
+             (vector (updater/fixed index value vector)))
         (copy/fixed-rec index %vector vector))))
 
 (defthm recognizer/fixed-of-copy/fixed-rec
@@ -1561,7 +1561,7 @@
 
   (defthm element-export-of-element-import
     (implies (element-export-p export)
-             (equal (element-export (element-import export element))
+             (equal (element-export (element-import export value))
                     export)))
 
   (defthm element-import-of-element-export
