@@ -30,8 +30,6 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-(include-book "std/portcullis" :dir :system)
-
 (include-book "../utilities/top")
 (include-book "congruent")
 
@@ -172,6 +170,7 @@
                                                         coupledp
                                                         '(lambda (value)
                                                           t))))
+
                 `(lem-vector$a::default-length (lambda ()
                                                  ,default-length-name))
                 `(lem-vector$a::element-recognizer ,(or element-recognizer
@@ -185,7 +184,7 @@
                                                      element)))
                 `(lem-vector$a::contents-recognizer ,(if element-recognizer
                                                          (if resizable
-                                                             recognizer
+                                                             recognizer$a
                                                              recognizer$a-aux)
                                                          'true-listp))
                 (if resizable
@@ -535,11 +534,7 @@
 
          (coupledp (symbolicate hash-table hash-table "-COUPLED-P"))
          (coupled-keys-p (symbolicate hash-table hash-table "-COUPLED-KEYS-P"))
-         (coupled-keys-p-witness (symbolicate hash-table coupled-keys-p "-WITNESS"))
-         (coupled-keys-p-necc (symbolicate hash-table coupled-keys-p "-NECC"))
          (coupled-vals-p (symbolicate hash-table hash-table "-COUPLED-VALS-P"))
-         (coupled-vals-p-witness (symbolicate hash-table coupled-vals-p "-WITNESS"))
-         (coupled-vals-p-necc (symbolicate hash-table coupled-vals-p "-NECC"))
 
          ;; `HASH-TABLE'
          (stobj-property (getpropc hash-table 'acl2::stobj))
@@ -554,7 +549,6 @@
 
          ;; `HASH-TABLE$A'
          (hash-table$a (symbolicate hash-table hash-table "$A"))
-         (%hash-table$a (symbolicate hash-table "%" hash-table$a))
          (hash-table$a-theorems (symbolicate hash-table hash-table$a "-THEOREMS"))
          (hash-table$a-aggressive (symbolicate hash-table hash-table$a "-AGGRESSIVE"))
          (world (w state))
@@ -571,7 +565,6 @@
          (keys$a-fix (nth 9 (fourth (third stobj$a-property))))
          (keys$a (nth 10 (fourth (third stobj$a-property))))
          (keys-set$a (nth 11 (fourth (third stobj$a-property))))
-         (hash-table$a-equal (cdr (assoc hash-table$a (table-alist 'equality world))))
 
          (key (first (first (third stobj$a-property))))
          (key-recognizer (second (first (third stobj$a-property))))
@@ -618,22 +611,6 @@
          (val-recognizer-of-default-val (symbolicate "ATOMIC-STOBJS" val-recognizer "-OF-DEFAULT-VAL"))
          (val-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" val-fixer "{REWRITE}"))
 
-         (coupled-keys-p-when-not-recognizer$a (symbolicate hash-table coupled-keys-p "-WHEN-NOT-" recognizer$a))
-         (coupled-keys-p-of-creator$a (symbolicate hash-table coupled-keys-p "-OF-" creator$a))
-         (coupled-keys-p-of-fixer$a (symbolicate hash-table coupled-keys-p "-OF-" fixer$a))
-         (coupled-keys-p-of-updater$a-when-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" updater$a "-WHEN-" boundp$a))
-         (coupled-keys-p-of-updater$a-when-not-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" updater$a "-WHEN-NOT-" boundp$a))
-         (coupled-keys-p-of-remover$a-when-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" remover$a "-WHEN-" boundp$a))
-         (coupled-keys-p-of-remover$a-when-not-boundp$a (symbolicate hash-table coupled-keys-p "-OF-" remover$a "-WHEN-NOT-" boundp$a))
-
-         (coupled-vals-p-when-not-recognizer$a (symbolicate hash-table coupled-vals-p "-WHEN-NOT-" recognizer$a))
-         (coupled-vals-p-of-creator$a (symbolicate hash-table coupled-vals-p "-OF-" creator$a))
-         (coupled-vals-p-of-fixer$a (symbolicate hash-table coupled-vals-p "-OF-" fixer$a))
-         (coupled-vals-p-of-updater$a (symbolicate hash-table coupled-vals-p "-OF-" updater$a))
-         (coupled-vals-p-of-remover$a (symbolicate hash-table coupled-vals-p "-OF-" remover$a))
-         (coupled-vals-p-of-keys-set$a (symbolicate hash-table coupled-vals-p "-OF-" keys-set$a))
-         (coupled-vals-p-of-keys-set$a-lemma (symbolicate hash-table coupled-vals-p-of-keys-set$a "-LEMMA"))
-
          (coupledp-when-not-recognizer$a (symbolicate hash-table coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate hash-table coupledp "-OF-" creator$a))
          (coupledp-of-fixer$a (symbolicate hash-table coupledp "-OF-" fixer$a))
@@ -641,26 +618,19 @@
          (coupledp-of-updater$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
          (coupledp-of-remover$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-" boundp$a))
          (coupledp-of-remover$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-NOT-" boundp$a))
-         (cardinality-of-keys$a (symbolicate hash-table "CARDINALITY-OF-" keys$a))
-         (in-of-keys$a (symbolicate hash-table "IN-OF-" keys$a))
+         (cardinality-of-keys$a-when-coupledp (symbolicate hash-table "CARDINALITY-OF-" keys$a "-WHEN-" coupledp))
+         (in-of-keys$a-when-coupledp (symbolicate hash-table "IN-OF-" keys$a "-WHEN-" coupledp))
          (val-coupled-p-of-accessor$a (symbolicate hash-table val-coupled-p "-OF-" accessor$a))
-         (emptyp-of-keys$a (symbolicate hash-table "EMPTYP-OF-" keys$a))
+         (emptyp-of-keys$a-when-coupledp (symbolicate "EMPTYP-OF-" keys$a "-WHEN-" coupledp))
 
          (recognizer$a-of-copy (symbolicate hash-table recognizer$a "-OF-" copy))
-         (coupledp-of-copy (symbolicate hash-table coupledp "-OF-" copy))
-         (coupledp-of-copy/lemma-0 (symbolicate hash-table coupledp-of-copy "/LEMMA-0"))
-         (coupledp-of-copy/lemma-1 (symbolicate hash-table coupledp-of-copy "/LEMMA-1"))
-         (keys$a-of-copy (symbolicate hash-table keys$a "-OF-" copy))
-         (boundp$a-of-copy (symbolicate hash-table boundp$a "-OF-" copy))
-         (accessor$a-of-copy (symbolicate hash-table accessor$a "-OF-" copy))
+         (copy-of-fixer$a-1 (symbolicate hash-table copy "-OF-" fixer$a "-1"))
+         (copy-of-fixer$a-2 (symbolicate hash-table copy "-OF-" fixer$a "-2"))
          (count$a-of-copy (symbolicate hash-table count$a "-OF-" copy))
+         (accessor$a-of-copy (symbolicate hash-table accessor$a "-OF-" copy))
+         (boundp$a-of-copy (symbolicate hash-table boundp$a "-OF-" copy))
+         (keys$a-of-copy (symbolicate hash-table keys$a "-OF-" copy))
 
-         (recognizer$a-of-copy-rec (symbolicate hash-table recognizer$a "-OF-" copy-rec))
-         (keys$a-of-copy-rec (symbolicate hash-table keys$a "-OF-" copy-rec))
-         (copy-rec-of-updater$a (symbolicate hash-table copy-rec "-OF-" updater$a))
-         (boundp$a-of-copy-rec (symbolicate hash-table boundp$a "-OF-" copy-rec))
-         (accessor$a-of-copy-rec (symbolicate hash-table accessor$a "-OF-" copy-rec))
-         (count$a-of-copy-rec (symbolicate hash-table count$a "-OF-" copy-rec)))
 
     `(progn
        (deflabel ,coupledp-begin)
@@ -728,15 +698,19 @@
                 key-fixer
                 `((local
                     (in-theory
-                      (disable ,key-recognizer
-                               ,key-fixer)))))
+                      (e/d ((:e ,key-recognizer)
+                            (:e ,key-fixer))
+                           (,key-recognizer
+                            ,key-fixer))))))
 
          ,@(and val-recognizer
                 val-fixer
                 `((local
                     (in-theory
-                      (disable ,val-recognizer
-                               ,val-fixer)))))
+                      (e/d ((:e ,val-recognizer)
+                            (:e ,val-fixer))
+                           (,val-recognizer
+                            ,val-fixer))))))
 
          ,@(and val-stobj$a-property
                 `((local
@@ -963,13 +937,19 @@
 
          (table copy ',hash-table ',copy)
 
-         (defthm ,recognizer$a-of-copy
+         (local
+           (in-theory
+             (disable ,fixer$a)))
+
+         (defthm ,recognizer$a-of-copy ; HERE
            (,recognizer$a (,copy ,%hash-table ,hash-table))
+           :otf-flg t ; TODO: delete
            :hints
            (("Goal"
+             :do-not-induct t
              :by (:functional-instance
                   lem-hash-table$a::recognizer/copyable-of-copy
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-copy))))
 
          (defthm ,copy-of-fixer$a-1
            (equal (,copy (,fixer$a ,%hash-table) ,hash-table)
@@ -978,7 +958,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::copy-of-fixer/copyable-1
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-copy))))
 
          (defthm ,copy-of-fixer$a-2
            (equal (,copy ,%hash-table (,fixer$a ,hash-table))
@@ -987,37 +967,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::copy-of-fixer/copyable-2
-                  ,@fi-bindings))))
-
-         (defthm ,count$a-of-copy
-           (implies (,coupledp ,hash-table)
-                    (equal (,count$a (,copy ,%hash-table ,hash-table))
-                           (,count$a ,hash-table)))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::count/copyable-of-copy
-                  ,@fi-bindings))))
-
-         (defthm ,accessor$a-of-copy
-           (implies (,coupledp ,hash-table)
-                    (equal (,accessor$a ,key (,copy ,%hash-table ,hash-table))
-                           (,accessor$a ,key ,hash-table)))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::accessor/copyable-of-copy
-                  ,@fi-bindings))))
-
-         (defthm ,boundp$a-of-copy
-           (implies (,coupledp ,hash-table)
-                    (equal (,boundp$a ,key (,copy ,%hash-table ,hash-table))
-                           (,boundp$a ,key ,hash-table)))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::boundp/copyable-of-copy
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-copy))))
 
          (defthm ,keys$a-of-copy
            (equal (,keys$a (,copy ,%hash-table ,hash-table))
@@ -1026,7 +976,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::keys-of-copy
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-copy))))
 
          (in-theory
            (disable ,copy-rec
@@ -1040,7 +990,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::copy{rewrite}
-                  ,@fi-bindings)))))
+                  ,@fi-bindings-with-copy)))))
 
        (deflabel ,coupledp-end)
 
