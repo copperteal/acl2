@@ -1372,20 +1372,20 @@
                       :expand (:free (,%vector ,vector)
                                      (,contents-equal ,%vector ,vector)))))))
 
-              (stobj$a-property `(stobj$a-property (,recognizer
-                                                    ,creator
-                                                    ,fixer)
-                                                   ((,element
-                                                     ,element-recognizer
-                                                     ,(and (not stobj-property)
-                                                           initial-element-name)
-                                                     ,element-fixer)
-                                                    (,resizable
-                                                     ,default-length-name)
-                                                    (,length
-                                                     ,resizer
-                                                     ,accessor
-                                                     ,updater)))))
+              (stobj$a-property `(,vector (,recognizer
+                                           ,creator
+                                           ,fixer)
+                                          ((,element
+                                            ,element-recognizer
+                                            ,(and (not stobj-property)
+                                                  initial-element-name)
+                                            ,element-fixer)
+                                           (,resizable
+                                            ,default-length-name)
+                                           (,length
+                                            ,resizer
+                                            ,accessor
+                                            ,updater)))))
 
          `(progn
             ,@prologue
