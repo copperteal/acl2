@@ -687,17 +687,17 @@
                                    :cases ,(loop$ :for i :from 0 :to (1- (len fields))
                                                  :collect `(equal acl2::n ,i))))))))))
 
-                (stobj$a-property `(stobj$a-property (,recognizer
-                                                      ,creator
-                                                      ,fixer)
-                                                     (,fields
-                                                      ,recognizers
-                                                      ,initial-element-names
-                                                      ,fixers
-                                                      ,stobjs
-                                                      ,accessors
-                                                      ,updaters
-                                                      (,view)))))
+                (stobj$a-property `(,frame (,recognizer
+                                            ,creator
+                                            ,fixer)
+                                           (,fields
+                                            ,recognizers
+                                            ,initial-element-names
+                                            ,fixers
+                                            ,stobjs
+                                            ,accessors
+                                            ,updaters
+                                            (,view)))))
 
            `(progn
               ,@prologue

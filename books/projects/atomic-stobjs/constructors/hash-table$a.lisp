@@ -2610,37 +2610,37 @@
                       :expand (:free (,%hash-table ,hash-table)
                                      (,keys-equal ,%hash-table ,hash-table)))))))
 
-              (stobj$a-property `(stobj$a-property (,recognizer
-                                                    ,creator
-                                                    ,fixer)
-                                                   ((,key
-                                                     ,key-recognizer
-                                                     ,default-key-name
-                                                     ,key-fixer)
-                                                    (,val
-                                                     ,val-recognizer
-                                                     ,(and (not stobj-property)
-                                                           default-val-name)
-                                                     ,val-fixer)
-                                                    (,test
-                                                     ,copyable)
-                                                    (,accessor
-                                                     ,updater
-                                                     ,boundp
-                                                     ,getp
-                                                     ,remover
-                                                     ,count
-                                                     ,clear
-                                                     ,init
-                                                     ,@(and copyable
-                                                            (list (if key-recognizer
-                                                                      keysp
-                                                                      'set::setp)
-                                                                  (if key-recognizer
-                                                                      keys-fix
-                                                                      'set::sfix)
-                                                                  keys
-                                                                  keys-set)))))))
+              (stobj$a-property `(,hash-table (,recognizer
+                                               ,creator
+                                               ,fixer)
+                                              ((,key
+                                                ,key-recognizer
+                                                ,default-key-name
+                                                ,key-fixer)
+                                               (,val
+                                                ,val-recognizer
+                                                ,(and (not stobj-property)
+                                                      default-val-name)
+                                                ,val-fixer)
+                                               (,test
+                                                ,copyable)
+                                               (,accessor
+                                                ,updater
+                                                ,boundp
+                                                ,getp
+                                                ,remover
+                                                ,count
+                                                ,clear
+                                                ,init
+                                                ,@(and copyable
+                                                       (list (if key-recognizer
+                                                                 keysp
+                                                                 'set::setp)
+                                                             (if key-recognizer
+                                                                 keys-fix
+                                                                 'set::sfix)
+                                                             keys
+                                                             keys-set)))))))
 
          `(progn
             ,@prologue

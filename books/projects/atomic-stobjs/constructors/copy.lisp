@@ -73,6 +73,7 @@
          (copy-rec (symbolicate vector copy "-REC"))
          (copy{rewrite} (symbolicate vector copy "{REWRITE}"))
          (index (symbolicate vector "I"))
+
          (coupledp (symbolicate vector vector "-COUPLED-P"))
 
          ;; `VECTOR'
@@ -85,12 +86,12 @@
          (updater (fifth (third stobj-property)))
 
          ;; `VECTOR$A'
-         (vector$a (symbolicate vector vector "$A"))
+         (world (w state))
+         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
+         (vector$a (first stobj$a-property))
          (recognizer$a-aux (symbolicate vector vector$a "-AUX-P"))
          (vector$a-theorems (symbolicate vector vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector vector$a "-AGGRESSIVE"))
-         (world (w state))
-         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -550,11 +551,11 @@
          (keys-set (nth 10 (third stobj-property)))
 
          ;; `HASH-TABLE$A'
-         (hash-table$a (symbolicate hash-table hash-table "$A"))
-         (hash-table$a-theorems (symbolicate hash-table hash-table$a "-THEOREMS"))
-         (hash-table$a-aggressive (symbolicate hash-table hash-table$a "-AGGRESSIVE"))
          (world (w state))
          (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
+         (hash-table$a (first stobj$a-property))
+         (hash-table$a-theorems (symbolicate hash-table hash-table$a "-THEOREMS"))
+         (hash-table$a-aggressive (symbolicate hash-table hash-table$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
