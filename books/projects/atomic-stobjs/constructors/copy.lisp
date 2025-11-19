@@ -411,11 +411,13 @@
          ;; `COPY'
          (defun ,copy (,%vector ,vector)
            (declare (xargs :stobjs (,%vector ,vector)))
-           (let* ((length (,length ,vector))
-                  (,%vector (if (= (,length ,%vector) length)
-                                ,%vector
-                                (,resizer length ,%vector))))
-             (,copy-rec length ,%vector ,vector)))
+           ,(if resizable
+                `(let* ((length (,length ,vector))
+                        (,%vector (if (= (,length ,%vector) length)
+                                      ,%vector
+                                      (,resizer length ,%vector))))
+                   (,copy-rec length ,%vector ,vector))
+                `(,copy-rec ,default-length-name ,%vector ,vector)))
 
          (table copy ',vector ',copy)
 
