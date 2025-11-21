@@ -269,14 +269,18 @@
                `((deflabel ,vector-end)
 
                  (deftheory-static ,vector-definitions
-                   ',(list recognizer
-                           creator
-                           fixer
-                           length
-                           resizer
-                           accessor
-                           updater
-                           vector-equal))
+                   ',(append
+                      (and (not resizable)
+                           element-recognizer
+                           (list recognizer-aux))
+                      (list recognizer
+                            creator
+                            fixer
+                            length
+                            resizer
+                            accessor
+                            updater
+                            vector-equal)))
 
                  (deftheory-static ,vector-theorems
                    (set-difference-theories

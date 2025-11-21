@@ -90,6 +90,7 @@
          (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
          (vector$a (first stobj$a-property))
          (recognizer$a-aux (symbolicate vector vector$a "-AUX-P"))
+         (vector$a-definitions (symbolicate vector vector$a "-DEFINITIONS"))
          (vector$a-theorems (symbolicate vector vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector vector$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
@@ -113,6 +114,7 @@
                               (third (first (third stobj$a-property)))))
          (element-fixer (fourth (first (third stobj$a-property))))
 
+         ;; Adjust for nested stobj interface shuffle
          (fixer (if element-stobj-property
                     (third (third stobj-property))
                     fixer))
@@ -145,6 +147,9 @@
          (element-recognizer-of-default-element (symbolicate "ATOMIC-STOBJS" element-recognizer "-OF-DEFAULT-ELEMENT"))
          (element-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" element-fixer "{REWRITE}"))
 
+         (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
+         (copy-rec-constraint (symbolicate "ATOMIC-STOBJS" copy-rec "-CONSTRAINT"))
+
          (coupledp-when-not-recognizer$a (symbolicate vector coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate vector coupledp "-OF-" creator$a))
          (coupledp-of-fixer$a (symbolicate vector coupledp "-OF-" fixer$a))
@@ -152,7 +157,6 @@
          (element-coupled-p-of-accessor$a (symbolicate vector element-coupled-p "-OF-" accessor$a))
          (coupledp-of-updater$a (symbolicate vector coupledp "-OF-" updater$a))
 
-         (copy-rec-of-fixer$a-2 (symbolicate vector copy-rec "-OF-" fixer$a "-2"))
          (recognizer$a-of-copy (symbolicate vector recognizer$a "-OF-" copy))
          (copy-of-fixer$a-1 (symbolicate vector copy "-OF-" fixer$a "-1"))
          (copy-of-fixer$a-2 (symbolicate vector copy "-OF-" fixer$a "-2"))
@@ -207,6 +211,7 @@
                 (if resizable
                     `(lem-vector$a::updater/resizable ,updater$a)
                     `(lem-vector$a::updater/fixed ,updater$a))))
+
          (fi-bindings-with-copy
           (list* `(lem-vector$a::element-copy ,(or element-copy
                                                    `(lambda (%value value)
@@ -255,8 +260,7 @@
            (in-theory
              (union-theories
               (union-theories (theory 'acl2::ground-zero)
-                              (union-theories (theory ',vector$a-theorems)
-                                              (theory ',vector$a-aggressive)))
+                              (theory ',vector$a-definitions))
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
@@ -309,6 +313,9 @@
                     :rewrite :direct)
 
                   (table coupledp ',vector ',coupledp)
+
+                  (in-theory
+                    (disable ,coupledp))
 
                   (defthm ,coupledp-when-not-recognizer$a
                     (implies (not (,recognizer$a ,vector))
@@ -382,17 +389,19 @@
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-of-updater/resizable
                                 'lem-vector$a::coupledp/fixed-of-updater/fixed)
-                           ,@fi-bindings))))
-
-                  (in-theory
-                    (disable ,coupledp))))
+                           ,@fi-bindings))))))
 
          ;; `COPY-REC'
          (defun ,copy-rec (,index ,%vector ,vector)
            (declare (xargs :stobjs (,%vector ,vector)
                            :guard (and (= (,length ,%vector) (,length ,vector))
                                        (natp ,index)
-                                       (<= ,index (,length ,vector)))))
+                                       (<= ,index (,length ,vector)))
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (e/d (,vector$a-theorems
+                                              ,vector$a-aggressive)
+                                             (,vector$a-definitions))))))
            (if (zp ,index)
                (,fixer ,%vector)
                ,(if element-copy
@@ -409,9 +418,49 @@
                             (,%vector (,updater ,index ,element ,%vector)))
                        (,copy-rec ,index ,%vector ,vector)))))
 
+         (local
+           (defthm ,copy-rec-of-fixer$a-3
+             (equal (,copy-rec ,index ,%vector (,fixer$a ,vector))
+                    (,copy-rec ,index ,%vector ,vector))
+             :hints
+             (("Goal"
+               :in-theory (e/d (,vector$a-theorems
+                                ,vector$a-aggressive)
+                               (,vector$a-definitions))))))
+
+         (local
+           (defthm ,copy-rec-constraint
+             (equal (,copy-rec ,index ,%vector ,vector)
+                    (if (zp ,index)
+                        (,fixer$a ,%vector)
+                        (let* ((,index (1- ,index))
+                               (element (,accessor$a ,index ,vector))
+                               (%element (,accessor$a ,index ,%vector)))
+                          (declare (ignorable %element))
+                          (let* ((%element ,(if element-copy
+                                                `(,element-copy %element element)
+                                                `(,element-fixer element)))
+                                 (,%vector (,updater$a ,index %element ,%vector))
+                                 (,vector (,updater$a ,index element ,vector)))
+                            (,copy-rec ,index ,%vector ,vector)))))
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (e/d (,vector$a-theorems
+                                ,vector$a-aggressive)
+                               (,vector$a-definitions))))))
+
+         (in-theory
+           (disable ,copy-rec))
+
          ;; `COPY'
          (defun ,copy (,%vector ,vector)
-           (declare (xargs :stobjs (,%vector ,vector)))
+           (declare (xargs :stobjs (,%vector ,vector)
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (e/d (,vector$a-theorems
+                                              ,vector$a-aggressive)
+                                             (,vector$a-definitions))))))
            ,(if resizable
                 `(let* ((length (,length ,vector))
                         (,%vector (if (= (,length ,%vector) length)
@@ -422,16 +471,6 @@
 
          (table copy ',vector ',copy)
 
-         (local
-           (defthm ,copy-rec-of-fixer$a-2
-             (equal (,copy-rec ,index ,%vector (,fixer$a ,vector))
-                    (,copy-rec ,index ,%vector ,vector))))
-
-         (local
-           (in-theory
-             (disable ,fixer$a
-                      nfix)))
-
          (defthm ,recognizer$a-of-copy
            (,recognizer$a (,copy ,%vector ,vector))
            :hints
@@ -441,31 +480,7 @@
                   ,(if resizable
                        'lem-vector$a::recognizer/resizable-of-copy/resizable
                        'lem-vector$a::recognizer/fixed-of-copy/fixed)
-                  ,@fi-bindings-with-copy))
-            ("Subgoal 9"
-             :in-theory (enable (:d ,resizer$a)))
-            ("Subgoal 7"
-             :in-theory (enable (:d ,accessor$a)
-                                (:d ,creator$a)))
-            ("Subgoal 6"
-             :in-theory (enable (:d ,accessor$a)))
-            ("Subgoal 5"
-             :in-theory (enable (:d ,creator$a)
-                                (:d ,recognizer$a)))
-            ("Subgoal 4"
-             :in-theory (enable (:d ,recognizer$a)
-                                ,@(and (not resizable)
-                                       `((:d ,recognizer$a-aux)))
-                                (:d ,creator$a)
-                                (:d ,length$a)))
-            ("Subgoal 3"
-             :in-theory (enable (:d ,recognizer$a)
-                                ,@(and (not resizable)
-                                       `((:d ,recognizer$a-aux)))))
-            ("Subgoal 2"
-             :in-theory (enable (:d ,accessor$a)))
-            ("Subgoal 1"
-             :in-theory (enable (:d ,updater$a)))))
+                  ,@fi-bindings-with-copy))))
 
          (defthm ,copy-of-fixer$a-1
            (equal (,copy (,fixer$a ,%vector) ,vector)
@@ -500,8 +515,7 @@
                            ,@fi-bindings-with-copy))))))
 
          (in-theory
-           (disable ,copy-rec
-                    ,copy))
+           (disable ,copy))
 
          (defthm ,copy{rewrite}
            ,(if element-coupled-p
@@ -537,7 +551,9 @@
 
          (coupledp (symbolicate hash-table hash-table "-COUPLED-P"))
          (coupled-keys-p (symbolicate hash-table hash-table "-COUPLED-KEYS-P"))
+         (coupled-keys-p-witness (symbolicate hash-table coupled-keys-p "-WITNESS"))
          (coupled-vals-p (symbolicate hash-table hash-table "-COUPLED-VALS-P"))
+         (coupled-vals-p-witness (symbolicate hash-table coupled-vals-p "-WITNESS"))
 
          ;; `HASH-TABLE'
          (stobj-property (getpropc hash-table 'acl2::stobj))
@@ -554,6 +570,7 @@
          (world (w state))
          (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
          (hash-table$a (first stobj$a-property))
+         (hash-table$a-definitions (symbolicate hash-table hash-table$a "-DEFINITIONS"))
          (hash-table$a-theorems (symbolicate hash-table hash-table$a "-THEOREMS"))
          (hash-table$a-aggressive (symbolicate hash-table hash-table$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
@@ -562,28 +579,46 @@
          (accessor$a (first (fourth (third stobj$a-property))))
          (updater$a (second (fourth (third stobj$a-property))))
          (boundp$a (third (fourth (third stobj$a-property))))
+         (getp$a (fourth (fourth (third stobj$a-property))))
          (remover$a (fifth (fourth (third stobj$a-property))))
          (count$a (sixth (fourth (third stobj$a-property))))
+         (clear$a (seventh (fourth (third stobj$a-property))))
+         (init$a (eighth (fourth (third stobj$a-property))))
          (keysp$a (nth 8 (fourth (third stobj$a-property))))
          (keys$a-fix (nth 9 (fourth (third stobj$a-property))))
          (keys$a (nth 10 (fourth (third stobj$a-property))))
          (keys-set$a (nth 11 (fourth (third stobj$a-property))))
 
+         (contents$a (symbolicate hash-table hash-table$a "-CONTENTS"))
+         (contents-recognizer$a (symbolicate hash-table contents$a "-P"))
+         (contents-creator$a (symbolicate hash-table "CREATE-" contents$a))
+         (contents-fixer$a (symbolicate hash-table contents$a "-FIX"))
+         (contents-accessor$a (symbolicate hash-table contents$a "-GET"))
+         (contents-updater$a (symbolicate hash-table contents$a "-PUT"))
+         (contents-boundp$a (symbolicate hash-table contents$a "-BOUNDP"))
+         (contents-getp$a (symbolicate hash-table contents$a "-GETP"))
+         (contents-remover$a (symbolicate hash-table contents$a "-REM"))
+         (contents-count$a (symbolicate hash-table contents$a "-COUNT"))
+         (contents-clear$a (symbolicate hash-table contents$a "-CLEAR"))
+         (contents-init$a (symbolicate hash-table contents$a "-INIT"))
+
          (key (first (first (third stobj$a-property))))
          (key-recognizer (second (first (third stobj$a-property))))
-         (default-key (third (first (third stobj$a-property))))
+         (default-key-name (third (first (third stobj$a-property))))
          (key-fixer (fourth (first (third stobj$a-property))))
 
          (val (first (second (third stobj$a-property))))
          (val-stobj-property (getpropc val 'acl2::stobj))
          (val-stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
          (val-recognizer (second (second (third stobj$a-property))))
+         (default-val-name (third (second (third stobj$a-property))))
          (val-creator (second (second val-stobj$a-property)))
          (default-val (if val-stobj-property
                           `(,val-creator)
                           (third (second (third stobj$a-property)))))
          (val-fixer (fourth (second (third stobj$a-property))))
 
+         ;; Adjust for nested stobj interface shuffle
          (fixer (if val-stobj-property
                     (third (third stobj-property))
                     fixer))
@@ -614,26 +649,110 @@
          (val-recognizer-of-default-val (symbolicate "ATOMIC-STOBJS" val-recognizer "-OF-DEFAULT-VAL"))
          (val-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" val-fixer "{REWRITE}"))
 
+         (coupled-keys-p-constraint-1 (symbolicate "ATOMIC-STOBJS" coupled-keys-p "-CONSTRAINT-1"))
+         (coupled-keys-p-constraint-2 (symbolicate "ATOMIC-STOBJS" coupled-keys-p "-CONSTRAINT-2"))
+         (coupled-vals-p-constraint-1 (symbolicate "ATOMIC-STOBJS" coupled-vals-p "-CONSTRAINT-1"))
+         (coupled-vals-p-constraint-2 (symbolicate "ATOMIC-STOBJS" coupled-vals-p "-CONSTRAINT-2"))
+         (coupled-keys-p-constraint-1/expanded (symbolicate "ATOMIC-STOBJS" coupled-keys-p-constraint-1 "/EXPANDED"))
+         (coupled-keys-p-constraint-2/expanded (symbolicate "ATOMIC-STOBJS" coupled-keys-p-constraint-2 "/EXPANDED"))
+         (coupled-vals-p-constraint-1/expanded (symbolicate "ATOMIC-STOBJS" coupled-vals-p-constraint-1 "/EXPANDED"))
+         (coupled-vals-p-constraint-2/expanded (symbolicate "ATOMIC-STOBJS" coupled-vals-p-constraint-2 "/EXPANDED"))
+         (coupledp/expanded (symbolicate "ATOMIC-STOBJS" coupledp "/EXPANDED"))
+         (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
+         (copy-rec-constraint (symbolicate "ATOMIC-STOBJS" copy-rec "-CONSTRAINT"))
+
          (coupledp-when-not-recognizer$a (symbolicate hash-table coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate hash-table coupledp "-OF-" creator$a))
          (coupledp-of-fixer$a (symbolicate hash-table coupledp "-OF-" fixer$a))
          (coupledp-of-updater$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-" boundp$a))
+         (coupledp-of-updater$a-when-boundp$a-lemma (symbolicate hash-table coupledp-of-updater$a-when-boundp$a "-LEMMA"))
          (coupledp-of-updater$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
+         (coupledp-of-updater$a-when-not-boundp$a-lemma (symbolicate hash-table coupledp-of-updater$a-when-not-boundp$a "-LEMMA"))
          (coupledp-of-remover$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-" boundp$a))
          (coupledp-of-remover$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-NOT-" boundp$a))
          (cardinality-of-keys$a-when-coupledp (symbolicate hash-table "CARDINALITY-OF-" keys$a "-WHEN-" coupledp))
          (in-of-keys$a-when-coupledp (symbolicate hash-table "IN-OF-" keys$a "-WHEN-" coupledp))
          (val-coupled-p-of-accessor$a (symbolicate hash-table val-coupled-p "-OF-" accessor$a))
-         (emptyp-of-keys$a-when-coupledp (symbolicate "EMPTYP-OF-" keys$a "-WHEN-" coupledp))
+         (emptyp-of-keys$a-when-coupledp (symbolicate hash-table "EMPTYP-OF-" keys$a "-WHEN-" coupledp))
 
          (recognizer$a-of-copy (symbolicate hash-table recognizer$a "-OF-" copy))
          (copy-of-fixer$a-1 (symbolicate hash-table copy "-OF-" fixer$a "-1"))
          (copy-of-fixer$a-2 (symbolicate hash-table copy "-OF-" fixer$a "-2"))
-         (count$a-of-copy (symbolicate hash-table count$a "-OF-" copy))
-         (accessor$a-of-copy (symbolicate hash-table accessor$a "-OF-" copy))
-         (boundp$a-of-copy (symbolicate hash-table boundp$a "-OF-" copy))
          (keys$a-of-copy (symbolicate hash-table keys$a "-OF-" copy))
 
+         (fi-bindings
+          (list `(lem-hash-table$a::val-coupled-p ,(or val-coupled-p
+                                                       '(lambda (val)
+                                                         t)))
+                `(lem-hash-table$a::coupled-keys-p ,coupled-keys-p)
+                `(lem-hash-table$a::coupled-keys-p-witness ,coupled-keys-p-witness)
+                `(lem-hash-table$a::coupled-vals-p ,(if val-coupled-p
+                                                        coupled-vals-p
+                                                        '(lambda (hash-table)
+                                                          t)))
+                `(lem-hash-table$a::coupled-vals-p-witness ,(if val-coupled-p
+                                                                coupled-vals-p-witness
+                                                                `(lambda (hash-table)
+                                                                   ,default-key-name)))
+                `(lem-hash-table$a::coupledp ,coupledp)
+
+                `(lem-hash-table$a::keysp ,(if key-recognizer
+                                               keysp$a
+                                               'set::setp))
+                `(lem-hash-table$a::keys-fix ,(if key-recognizer
+                                                  keys$a-fix
+                                                  'set::sfix))
+                `(lem-hash-table$a::key-recognizer ,(or key-recognizer
+                                                        '(lambda (key)
+                                                          t)))
+                `(lem-hash-table$a::default-key (lambda ()
+                                                  ,default-key-name))
+                `(lem-hash-table$a::key-fixer ,(or key-fixer
+                                                   '(lambda (key)
+                                                     key)))
+                `(lem-hash-table$a::val-recognizer ,(or val-recognizer
+                                                        '(lambda (val)
+                                                          t)))
+                `(lem-hash-table$a::default-val ,(or val-creator
+                                                     `(lambda ()
+                                                        ,default-val-name)))
+                `(lem-hash-table$a::val-fixer ,(or val-fixer
+                                                   '(lambda (val)
+                                                     val)))
+
+                `(lem-hash-table$a::recognizer/unique ,contents-recognizer$a)
+                `(lem-hash-table$a::creator/unique ,contents-creator$a)
+                `(lem-hash-table$a::fixer/unique ,contents-fixer$a)
+                `(lem-hash-table$a::accessor/unique ,contents-accessor$a)
+                `(lem-hash-table$a::updater/unique ,contents-updater$a)
+                `(lem-hash-table$a::boundp/unique ,contents-boundp$a)
+                `(lem-hash-table$a::getp/unique ,contents-getp$a)
+                `(lem-hash-table$a::remover/unique ,contents-remover$a)
+                `(lem-hash-table$a::count/unique ,contents-count$a)
+                `(lem-hash-table$a::clear/unique ,contents-clear$a)
+                `(lem-hash-table$a::init/unique ,contents-init$a)
+
+                `(lem-hash-table$a::recognizer/copyable ,recognizer$a)
+                `(lem-hash-table$a::creator/copyable ,creator$a)
+                `(lem-hash-table$a::fixer/copyable ,fixer$a)
+                `(lem-hash-table$a::accessor/copyable ,accessor$a)
+                `(lem-hash-table$a::updater/copyable ,updater$a)
+                `(lem-hash-table$a::boundp/copyable ,boundp$a)
+                `(lem-hash-table$a::getp/copyable ,getp$a)
+                `(lem-hash-table$a::remover/copyable ,remover$a)
+                `(lem-hash-table$a::count/copyable ,count$a)
+                `(lem-hash-table$a::clear/copyable ,clear$a)
+                `(lem-hash-table$a::init/copyable ,init$a)
+                `(lem-hash-table$a::keys ,keys$a)
+                `(lem-hash-table$a::keys-set ,keys-set$a)))
+
+         (fi-bindings-with-copy
+          (list* `(lem-hash-table$a::val-copy ,(or val-copy
+                                                   `(lambda (%val val)
+                                                      (,val-fixer val))))
+                 `(lem-hash-table$a::copy-rec ,copy-rec)
+                 `(lem-hash-table$a::copy ,copy)
+                 fi-bindings)))
 
     `(progn
        (deflabel ,coupledp-begin)
@@ -654,7 +773,7 @@
 
                   (local
                     (defthm ,key-recognizer-of-default-key
-                      (,key-recognizer ,default-key)
+                      (,key-recognizer ,default-key-name)
                       :rule-classes nil))
 
                   (local
@@ -662,7 +781,7 @@
                       (equal (,key-fixer ,key)
                              (if (,key-recognizer ,key)
                                  ,key
-                                 ,default-key))))))
+                                 ,default-key-name))))))
 
          ,@(and val-recognizer
                 val-fixer
@@ -692,8 +811,7 @@
            (in-theory
              (union-theories
               (union-theories (theory 'acl2::ground-zero)
-                              (union-theories (theory ',hash-table$a-theorems)
-                                              (theory ',hash-table$a-aggressive)))
+                              (theory ',hash-table$a-definitions))
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
@@ -752,6 +870,33 @@
                          `(,boundp$a ,key ,hash-table))))
            :rewrite :direct)
 
+         (local
+           (defthmd ,coupled-keys-p-constraint-1
+             (implies (,coupled-keys-p ,hash-table)
+                      (equal (set::in ,key (,keys$a ,hash-table))
+                             ,(if key-recognizer
+                                  `(if (,key-recognizer ,key)
+                                       (,boundp$a ,key ,hash-table)
+                                       nil)
+                                  `(,boundp$a ,key ,hash-table))))
+             :hints
+             (("Goal"
+               :in-theory (disable ,coupled-keys-p
+                                   ,hash-table$a-definitions)))))
+
+         (local
+           (defthmd ,coupled-keys-p-constraint-2
+             (equal (,coupled-keys-p ,hash-table)
+                    ((lambda (,key ,hash-table)
+                       (equal (set::in ,key (,keys$a ,hash-table))
+                              ,(if key-recognizer
+                                   `(if (,key-recognizer ,key)
+                                        (,boundp$a ,key ,hash-table)
+                                        nil)
+                                   `(,boundp$a ,key ,hash-table))))
+                     (,coupled-keys-p-witness ,hash-table)
+                     ,hash-table))))
+
          (in-theory
            (disable ,coupled-keys-p))
 
@@ -763,6 +908,22 @@
                     (forall ,key
                       (,val-coupled-p (,accessor$a ,key ,hash-table)))
                     :rewrite :direct)
+
+                  (local
+                    (defthmd ,coupled-vals-p-constraint-1
+                      (implies (,coupled-vals-p ,hash-table)
+                               (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,coupled-vals-p
+                                            ,hash-table$a-definitions)))))
+
+                  (local
+                    (defthmd ,coupled-vals-p-constraint-2
+                      (equal (,coupled-vals-p ,hash-table)
+                             ((lambda (,key ,hash-table)
+                                (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                              (,coupled-vals-p-witness ,hash-table) ,hash-table))))
 
                   (in-theory
                     (disable ,coupled-vals-p))))
@@ -779,14 +940,135 @@
 
          (table coupledp ',hash-table ',coupledp)
 
+         (local
+           (defthmd ,coupled-keys-p-constraint-1/expanded
+             (implies (,coupled-keys-p ,hash-table)
+                      (equal (set::in ,key (car (,fixer$a ,hash-table)))
+                             ,(if key-recognizer
+                                  `(and (,key-recognizer ,key)
+                                        (,contents-boundp$a (,key-fixer ,key) (cdr (,fixer$a ,hash-table))))
+                                  `(,contents-boundp$a ,key (cdr (,fixer$a ,hash-table))))))
+             :hints
+             (("Goal"
+               :in-theory (disable ,hash-table$a-definitions)
+               :use ,coupled-keys-p-constraint-1
+               :expand ((:free (,key ,hash-table)
+                               (,boundp$a ,key ,hash-table))
+                        (:free (,hash-table)
+                               (,keys$a ,hash-table)))))))
+
+         (local
+           (defthmd ,coupled-keys-p-constraint-2/expanded
+             (equal (,coupled-keys-p ,hash-table)
+                    (let ((,key (,coupled-keys-p-witness ,hash-table)))
+                      (equal (set::in ,key (car (,fixer$a ,hash-table)))
+                             ,(if key-recognizer
+                                  `(and (,key-recognizer ,key)
+                                        (,contents-boundp$a (,key-fixer ,key) (cdr (,fixer$a ,hash-table))))
+                                  `(,contents-boundp$a ,key (cdr (,fixer$a ,hash-table)))))))
+             :hints
+             (("Goal"
+               :in-theory (disable ,hash-table$a-definitions)
+               :use ,coupled-keys-p-constraint-2
+               :expand ((:free (,key ,hash-table)
+                               (,boundp$a ,key ,hash-table))
+                        (:free (,hash-table)
+                               (,keys$a ,hash-table)))))))
+
+         ,@(and val-coupled-p
+                `((local
+                    (defthmd ,coupled-vals-p-constraint-1/expanded
+                      (implies (,coupled-vals-p ,hash-table)
+                               (,val-coupled-p (,contents-accessor$a ,(if key-fixer
+                                                                          `(,key-fixer ,key)
+                                                                          key)
+                                                                     (cdr (,fixer$a ,hash-table)))))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,hash-table$a-definitions)
+                        :use ,coupled-vals-p-constraint-1
+                        :expand ((:free (,key ,hash-table)
+                                        (,accessor$a ,key ,hash-table)))))))
+
+                  (local
+                    (defthmd ,coupled-vals-p-constraint-2/expanded
+                      (equal (,coupled-vals-p ,hash-table)
+                             (,val-coupled-p (,contents-accessor$a ,(if key-fixer
+                                                                        `(,key-fixer (,coupled-vals-p-witness ,hash-table))
+                                                                        `(,coupled-vals-p-witness ,hash-table))
+                                                                   (cdr (,fixer$a ,hash-table)))))
+                      :hints
+                      (("goal"
+                        :in-theory (disable ,hash-table$a-definitions)
+                        :use ,coupled-vals-p-constraint-2
+                        :expand ((:free (,key ,hash-table)
+                                        (,accessor$a ,key ,hash-table)))))))))
+
+         (local
+           (defthmd ,coupledp/expanded
+             (equal (,coupledp ,hash-table)
+                    (and (equal (set::cardinality (car (,fixer$a ,hash-table)))
+                                (,contents-count$a (cdr (,fixer$a ,hash-table))))
+                         (,coupled-keys-p ,hash-table)
+                         ,@(and val-coupled-p
+                                `((,coupled-vals-p ,hash-table)))))
+             :hints
+             (("goal"
+               :in-theory (disable ,hash-table$a-definitions)
+               :expand ((:free (,hash-table)
+                               (,keys$a ,hash-table))
+                        (:free (,hash-table)
+                               (,count$a ,hash-table)))))))
+
          (defthm ,coupledp-when-not-recognizer$a
            (implies (not (,recognizer$a ,hash-table))
                     (,coupledp ,hash-table))
            :hints
            (("Goal"
+             :do-not-induct t
+             :in-theory (enable set::in
+                                set::emptyp
+                                set::setp)
              :by (:functional-instance
                   lem-hash-table$a::coupledp-when-not-recognizer/copyable
-                  ,@fi-bindings))))
+                  ,@fi-bindings))
+            ,@(and val-coupled-p
+                   `(,@(if key-recognizer
+                           `(("Subgoal 14"
+                              :in-theory (theory 'acl2::minimal-theory)
+                              :use (:instance ,coupled-vals-p-constraint-1/expanded
+                                              (,key lem-hash-table$a::key)
+                                              (,hash-table acl2::hash-table)))
+                             ("Subgoal 13"
+                              :in-theory (theory 'acl2::minimal-theory)
+                              :use (:instance ,coupled-vals-p-constraint-2/expanded
+                                              (,hash-table acl2::hash-table))))
+                           `(("Subgoal 14"
+                              :in-theory (theory 'acl2::minimal-theory)
+                              :use (:instance ,coupledp/expanded
+                                              (,hash-table acl2::hash-table)))
+                             ("Subgoal 13"
+                              :in-theory (theory 'acl2::minimal-theory)
+                              :use (:instance ,coupled-vals-p-constraint-1/expanded
+                                              (,key lem-hash-table$a::key)
+                                              (,hash-table acl2::hash-table)))
+                             ("Subgoal 12"
+                              :in-theory (theory 'acl2::minimal-theory)
+                              :use (:instance ,coupled-vals-p-constraint-2/expanded
+                                              (,hash-table acl2::hash-table)))))))
+            ,@(and (not key-recognizer)
+                   `(("Subgoal 7"
+                      :in-theory (enable set::setp
+                                         acl2::fast-<<-is-<<))))
+            ("Subgoal 4"
+             :in-theory (theory 'acl2::minimal-theory)
+             :use (:instance ,coupled-keys-p-constraint-1/expanded
+                             (,key lem-hash-table$a::key)
+                             (,hash-table acl2::hash-table)))
+            ("Subgoal 3"
+             :in-theory (theory 'acl2::minimal-theory)
+             :use (:instance ,coupled-keys-p-constraint-2/expanded
+                             (,hash-table acl2::hash-table)))))
 
          (defthm ,coupledp-of-creator$a
            (,coupledp (,creator$a))
@@ -819,6 +1101,20 @@
                            lem-hash-table$a::val-coupled-p-of-accessor/copyable
                            ,@fi-bindings))))))
 
+         ,@(and (not val-coupled-p)
+                `((local
+                    (defthm ,coupledp-of-updater$a-when-boundp$a-lemma
+                      (implies (and (,boundp$a ,key ,hash-table)
+                                    (,coupledp ,hash-table))
+                               (equal (,coupledp (,updater$a ,key ,val ,hash-table))
+                                      t))
+                      :hints
+                      (("Goal"
+                        :do-not-induct t
+                        :by (:functional-instance
+                             lem-hash-table$a::coupledp-of-updater/copyable-when-boundp/copyable
+                             ,@fi-bindings)))))))
+
          (defthm ,coupledp-of-updater$a-when-boundp$a
            (implies (and (,boundp$a ,key ,hash-table)
                          (,coupledp ,hash-table))
@@ -828,9 +1124,28 @@
                          `(,coupledp (,updater$a ,key ,val ,hash-table))))
            :hints
            (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-updater/copyable-when-boundp/copyable
-                  ,@fi-bindings))))
+             :do-not-induct t
+             ,@(if val-coupled-p
+                   `(:by (:functional-instance
+                          lem-hash-table$a::coupledp-of-updater/copyable-when-boundp/copyable
+                          ,@fi-bindings))
+                   `(:use ,coupledp-of-updater$a-when-boundp$a-lemma)))))
+
+         ,@(and (not val-coupled-p)
+                `((defthm ,coupledp-of-updater$a-when-not-boundp$a-lemma
+                    (implies (let* ((,keys$a (,keys$a ,hash-table))
+                                    (trimmed (set::delete ,(if key-fixer `(,key-fixer ,key) key) ,keys$a)))
+                               (and (not (,boundp$a ,key ,hash-table))
+                                    (set::in ,(if key-fixer `(,key-fixer ,key) key) ,keys$a)
+                                    (,coupledp (,keys-set$a trimmed ,hash-table))))
+                             (equal (,coupledp (,updater$a ,key ,val ,hash-table))
+                                    t))
+                    :hints
+                    (("Goal"
+                      :do-not-induct t
+                      :by (:functional-instance
+                           lem-hash-table$a::coupledp-of-updater/copyable-when-not-boundp/copyable
+                           ,@fi-bindings))))))
 
          (defthm ,coupledp-of-updater$a-when-not-boundp$a
            (implies (let* ((,keys$a (,keys$a ,hash-table))
@@ -844,9 +1159,13 @@
                          `(,coupledp (,updater$a ,key ,val ,hash-table))))
            :hints
            (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-updater/copyable-when-not-boundp/copyable
-                  ,@fi-bindings))))
+             :do-not-induct t
+             :in-theory (enable set::sfix-set-identity)
+             ,@(if val-coupled-p
+                   `(:by (:functional-instance
+                          lem-hash-table$a::coupledp-of-updater/copyable-when-not-boundp/copyable
+                          ,@fi-bindings))
+                   `(:use ,coupledp-of-updater$a-when-not-boundp$a-lemma)))))
 
          (defthm ,in-of-keys$a-when-coupledp
            (implies (,coupledp ,hash-table)
@@ -870,6 +1189,7 @@
                     (,coupledp (,remover$a ,key ,hash-table)))
            :hints
            (("Goal"
+             :do-not-induct t
              :by (:functional-instance
                   lem-hash-table$a::coupledp-of-remover/copyable-when-boundp/copyable
                   ,@fi-bindings))))
@@ -912,11 +1232,25 @@
          (defun ,copy-rec (set ,%hash-table ,hash-table)
            (declare (xargs :stobjs (,%hash-table ,hash-table)
                            :guard (and (,keysp$a set)
-                                       (set::subset set (,keys ,hash-table)))))
-           (if (set::emptyp set)
+                                       (set::subset set (,keys ,hash-table)))
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (e/d (set::subset
+                                              set::emptyp
+                                              set::setp
+                                              ,hash-table$a-theorems
+                                              ,hash-table$a-aggressive)
+                                             (,hash-table$a-definitions))))
+                           :measure (set::cardinality set)
+                           :hints
+                           (("Goal"
+                             :in-theory (enable set::cardinality)))))
+           (if (mbe :logic (or (set::emptyp set)
+                               (not (,keysp$a set)))
+                    :exec (atom set))
                (,fixer ,%hash-table)
                ,(if val-copy
-                    `(let ((,key ,(if key-fixer `(,key-fixer (set::head set)) '(set::head set))))
+                    `(let ((,key (set::head set)))
                        (stobj-let ((,val (,accessor ,key ,hash-table) ,updater))
                                   (,%hash-table)
                                   (stobj-let ((,%val (,%accessor ,key ,%hash-table) ,%updater))
@@ -924,29 +1258,84 @@
                                              (,val-copy ,%val ,val)
                                     ,%hash-table)
                          (,copy-rec (set::tail set) ,%hash-table ,hash-table)))
-                    `(let* ((,key ,(if key-fixer `(,key-fixer (set::head set)) '(set::head set)))
+                    `(let* ((,key (set::head set))
                             (,val (,accessor ,key ,hash-table))
                             (,%hash-table (,updater ,key ,val ,%hash-table)))
                        (,copy-rec (set::tail set) ,%hash-table ,hash-table)))))
 
+         (local
+           (defthm ,copy-rec-of-fixer$a-3
+             (equal (,copy-rec set ,%hash-table (,fixer$a ,hash-table))
+                    (,copy-rec set ,%hash-table ,hash-table))
+             :hints
+             (("Goal"
+               :in-theory (e/d (,hash-table$a-theorems
+                                ,hash-table$a-aggressive)
+                               (,hash-table$a-definitions))))))
+
+         (local
+           (defthm copy-rec-of-updater$a-when-not-in
+             (implies (and (,keysp$a set)
+                           (not (set::in ,(if key-fixer
+                                              `(,key-fixer ,key)
+                                              key)
+                                         set)))
+                      (equal (,copy-rec set ,%hash-table (,updater$a ,key ,val ,hash-table))
+                             (,copy-rec set ,%hash-table ,hash-table)))
+             :hints
+             (("Goal"
+               :in-theory (e/d (,hash-table$a-theorems
+                                ,hash-table$a-aggressive
+                                set::in)
+                               (,hash-table$a-definitions))))))
+
+         (local
+           (defthm ,copy-rec-constraint
+             (equal (,copy-rec set ,%hash-table ,hash-table)
+                    (if (or (set::emptyp set)
+                            (not (,keysp$a set)))
+                        (,fixer$a ,%hash-table)
+                        (let* ((,key (set::head set))
+                               (val (,accessor$a ,key ,hash-table))
+                               (%val (,accessor$a ,key ,%hash-table)))
+                          (declare (ignorable %val))
+                          (let* ((%val ,(if val-copy
+                                            `(,val-copy %val val)
+                                            `(,val-fixer val)))
+                                 (,%hash-table (,updater$a ,key %val ,%hash-table))
+                                 (,hash-table (,updater$a ,key val ,hash-table)))
+                            (,copy-rec (set::tail set) ,%hash-table ,hash-table)))))
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (e/d (,hash-table$a-theorems
+                                ,hash-table$a-aggressive
+                                set::head-unique
+                                set::tail-produces-set)
+                               (,hash-table$a-definitions))))))
+
+         (in-theory
+           (disable ,copy-rec))
+
          ;; `COPY'
          (defun ,copy (,%hash-table ,hash-table)
-           (declare (xargs :stobjs (,%hash-table ,hash-table)))
+           (declare (xargs :stobjs (,%hash-table ,hash-table)
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (e/d (set::subset-reflexive
+                                              ,hash-table$a-theorems
+                                              ,hash-table$a-aggressive)
+                                             (,hash-table$a-definitions))))))
            (let* ((,keys (,keys ,hash-table))
                   (,count (,count ,hash-table))
                   (,%hash-table (,init ,count nil nil ,%hash-table))
                   (,%hash-table (,keys-set ,keys ,%hash-table)))
-             (,copy-rec keys ,%hash-table ,hash-table)))
+             (,copy-rec ,keys ,%hash-table ,hash-table)))
 
          (table copy ',hash-table ',copy)
 
-         (local
-           (in-theory
-             (disable ,fixer$a)))
-
-         (defthm ,recognizer$a-of-copy ; HERE
+         (defthm ,recognizer$a-of-copy
            (,recognizer$a (,copy ,%hash-table ,hash-table))
-           :otf-flg t ; TODO: delete
            :hints
            (("Goal"
              :do-not-induct t
@@ -982,8 +1371,7 @@
                   ,@fi-bindings-with-copy))))
 
          (in-theory
-           (disable ,copy-rec
-                    ,copy))
+           (disable ,copy))
 
          (defthm ,copy{rewrite}
            (implies (,coupledp ,hash-table)

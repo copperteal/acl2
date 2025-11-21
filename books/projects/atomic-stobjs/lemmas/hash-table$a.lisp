@@ -2599,9 +2599,10 @@
                               (recognizer/copyable %hash-table)
                               (recognizer/copyable hash-table)
                               (set::subset set (keys hash-table)))))
-  (if (set::emptyp set)
+  (if (or (set::emptyp set)
+          (not (keysp set)))
       (fixer/copyable %hash-table)
-      (let* ((key (key-fixer (set::head set)))
+      (let* ((key (set::head set))
              (val (accessor/copyable key hash-table))
              (%val (accessor/copyable key %hash-table))
              (%val (val-copy %val val))
@@ -2668,6 +2669,7 @@
   :hints
   (("Goal"
     :induct (copy-rec set %hash-table hash-table)
+    :in-theory (enable set::in)
     :expand (set::subset set (keys hash-table)))
    ("Subgoal *1/2.9"
     :expand (set::in (default-key) set))))
@@ -2681,6 +2683,7 @@
   :hints
   (("Goal"
     :induct (copy-rec set %hash-table hash-table)
+    :in-theory (enable set::in)
     :expand (set::subset set (keys hash-table)))
    ("Subgoal *1/2.11"
     :expand (set::in (default-key) set))
@@ -2787,7 +2790,8 @@
       :hints
       (("Goal"
         :induct (set::cardinality set)
-        :in-theory (enable set::cardinality))
+        :in-theory (enable set::cardinality
+                           keysp{definition}))
        ("Subgoal *1/2"
         :expand ((set::subset set (keys hash-table))
                  (copy-rec set (creator/copyable) hash-table)))
