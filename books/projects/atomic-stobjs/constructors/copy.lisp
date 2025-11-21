@@ -75,6 +75,7 @@
          (index (symbolicate vector "I"))
 
          (coupledp (symbolicate vector vector "-COUPLED-P"))
+         (coupledp-witness (symbolicate vector coupledp "-WITNESS"))
 
          ;; `VECTOR'
          (stobj-property (getpropc vector 'acl2::stobj))
@@ -147,6 +148,11 @@
          (element-recognizer-of-default-element (symbolicate "ATOMIC-STOBJS" element-recognizer "-OF-DEFAULT-ELEMENT"))
          (element-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" element-fixer "{REWRITE}"))
 
+         (coupledp-constraint-1 (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINT-1"))
+         (coupledp-constraint-2 (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINT-2"))
+         (coupledp-constraint-1/expanded (symbolicate "ATOMIC-STOBJS" coupledp-constraint-1 "/EXPANDED"))
+         (coupledp-constraint-2/expanded (symbolicate "ATOMIC-STOBJS" coupledp-constraint-2 "/EXPANDED"))
+
          (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
          (copy-rec-constraint (symbolicate "ATOMIC-STOBJS" copy-rec "-CONSTRAINT"))
 
@@ -163,59 +169,70 @@
          (length$a-of-copy (symbolicate vector length$a "-OF-" copy))
 
          (fi-bindings
-          (list `(lem-vector$a::element-coupled-p ,(or element-coupled-p
-                                                       '(lambda (value)
-                                                         t)))
-                (if resizable
-                    `(lem-vector$a::coupledp/resizable ,(if element-coupled-p
-                                                            coupledp
-                                                            '(lambda (value)
-                                                              t)))
-                    `(lem-vector$a::coupledp/fixed ,(if element-coupled-p
-                                                        coupledp
-                                                        '(lambda (value)
-                                                          t))))
+          (append
+           (and element-coupled-p
+                (list (if resizable
+                          `(lem-vector$a::coupledp/resizable-witness ,coupledp-witness)
+                          `(lem-vector$a::coupledp/fixed-witness ,coupledp-witness))))
 
-                `(lem-vector$a::default-length (lambda ()
-                                                 ,default-length-name))
-                `(lem-vector$a::element-recognizer ,(or element-recognizer
-                                                        '(lambda (value)
+           (list `(lem-vector$a::element-coupled-p ,(or element-coupled-p
+                                                        '(lambda (element)
                                                           t)))
-                `(lem-vector$a::initial-element ,(or element-creator
-                                                     `(lambda ()
-                                                        ,initial-element-name)))
-                `(lem-vector$a::element-fixer ,(or element-fixer
-                                                   '(lambda (value)
-                                                     element)))
-                `(lem-vector$a::contents-recognizer ,(if element-recognizer
-                                                         (if resizable
-                                                             recognizer$a
-                                                             recognizer$a-aux)
-                                                         'true-listp))
-                (if resizable
-                    `(lem-vector$a::recognizer/resizable ,recognizer$a)
-                    `(lem-vector$a::recognizer/fixed ,recognizer$a))
-                `(lem-vector$a::creator ,creator$a)
-                (if resizable
-                    `(lem-vector$a::fixer/resizable ,fixer$a)
-                    `(lem-vector$a::fixer/fixed ,fixer$a))
-                (if resizable
-                    `(lem-vector$a::length/resizable ,length$a)
-                    `(lem-vector$a::length/fixed ,length$a))
-                (if resizable
-                    `(lem-vector$a::resizer/resizable ,resizer$a)
-                    `(lem-vector$a::resizer/fixed ,resizer$a))
-                (if resizable
-                    `(lem-vector$a::accessor/resizable ,accessor$a)
-                    `(lem-vector$a::accessor/fixed ,accessor$a))
-                (if resizable
-                    `(lem-vector$a::updater/resizable ,updater$a)
-                    `(lem-vector$a::updater/fixed ,updater$a))))
+                 (if resizable
+                     `(lem-vector$a::coupledp/resizable ,(if element-coupled-p
+                                                             coupledp
+                                                             '(lambda (element)
+                                                               t)))
+                     `(lem-vector$a::coupledp/fixed ,(if element-coupled-p
+                                                         coupledp
+                                                         '(lambda (element)
+                                                           t))))
+
+                 `(lem-vector$a::default-length (lambda ()
+                                                  ,default-length-name))
+                 `(lem-vector$a::element-recognizer ,(or element-recognizer
+                                                         '(lambda (element)
+                                                           t)))
+                 `(lem-vector$a::initial-element ,(or element-creator
+                                                      `(lambda ()
+                                                         ,initial-element-name)))
+                 `(lem-vector$a::element-fixer ,(or element-fixer
+                                                    '(lambda (element)
+                                                      element)))
+                 `(lem-vector$a::contents-recognizer ,(if element-recognizer
+                                                          (if resizable
+                                                              recognizer$a
+                                                              recognizer$a-aux)
+                                                          'true-listp))
+                 (if resizable
+                     `(lem-vector$a::recognizer/resizable ,recognizer$a)
+                     `(lem-vector$a::recognizer/fixed ,recognizer$a))
+                 `(lem-vector$a::creator ,creator$a)
+                 (if resizable
+                     `(lem-vector$a::fixer/resizable ,fixer$a)
+                     `(lem-vector$a::fixer/fixed ,fixer$a))
+                 (if resizable
+                     `(lem-vector$a::length/resizable ,length$a)
+                     `(lem-vector$a::length/fixed ,length$a))
+                 (if resizable
+                     `(lem-vector$a::resizer/resizable ,resizer$a)
+                     `(lem-vector$a::resizer/fixed ,resizer$a))
+                 (if resizable
+                     `(lem-vector$a::accessor/resizable ,accessor$a)
+                     `(lem-vector$a::accessor/fixed ,accessor$a))
+                 (if resizable
+                     `(lem-vector$a::updater/resizable ,updater$a)
+                     `(lem-vector$a::updater/fixed ,updater$a)))))
 
          (fi-bindings-with-copy
-          (list* `(lem-vector$a::element-copy ,(or element-copy
-                                                   `(lambda (%value value)
-                                                      (,element-fixer value))))
+          (list* `(lem-vector$a::element-copy ,(cond
+                                                 (element-copy)
+                                                 (element-fixer
+                                                  `(lambda (%element element)
+                                                     (,element-fixer element)))
+                                                 (t
+                                                  `(lambda (%element element)
+                                                     element))))
                  (if resizable
                      `(lem-vector$a::copy/resizable-rec ,copy-rec)
                      `(lem-vector$a::copy/fixed-rec ,copy-rec))
@@ -314,19 +331,98 @@
 
                   (table coupledp ',vector ',coupledp)
 
+                  (local
+                    (defthmd ,coupledp-constraint-1
+                      (implies (,coupledp ,vector)
+                               (,element-coupled-p (,accessor$a ,index ,vector)))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,coupledp
+                                            ,vector$a-definitions)))))
+
+                  (local
+                    (defthmd ,coupledp-constraint-2
+                      (equal (,coupledp ,vector)
+                             ((lambda (,index ,vector)
+                                (,element-coupled-p (,accessor$a ,index ,vector)))
+                              (,coupledp-witness ,vector) ,vector))))
+
                   (in-theory
                     (disable ,coupledp))
+
+                  (local
+                    (defthmd ,coupledp-constraint-1/expanded
+                      (implies (,coupledp ,vector)
+                               (,element-coupled-p (let ((,index (nfix ,index))
+                                                         (,vector (,fixer$a ,vector)))
+                                                     (if (< ,index ,(if resizable
+                                                                        `(len (,fixer$a ,vector))
+                                                                        default-length-name))
+                                                         (,element-fixer (nth ,index ,vector))
+                                                         (,element-creator)))))
+                      :hints
+                      (("Goal"
+                        :in-theory (e/d (,vector$a-theorems)
+                                        (,vector$a-definitions
+                                         nfix))
+                        :use ,coupledp-constraint-1
+                        :expand ((:free (,index ,vector)
+                                        (,accessor$a ,index ,vector))
+                                 (:free (,vector)
+                                        (,length$a ,vector)))))))
+
+                  (local
+                    (defthmd ,coupledp-constraint-2/expanded
+                      (equal (,coupledp ,vector)
+                             (,element-coupled-p (let ((,index (nfix (,coupledp-witness ,vector)))
+                                                       (,vector (,fixer$a ,vector)))
+                                                   (if (< ,index ,(if resizable
+                                                                      `(len (,fixer$a ,vector))
+                                                                      default-length-name))
+                                                       (,element-fixer (nth ,index ,vector))
+                                                       (,element-creator)))))
+                      :hints
+                      (("Goal"
+                        :in-theory (e/d (,vector$a-theorems)
+                                        (,vector$a-definitions
+                                         nfix))
+                        :use ,coupledp-constraint-2
+                        :expand ((:free (,index ,vector)
+                                        (,accessor$a ,index ,vector))
+                                 (:free (,vector)
+                                        (,length$a ,vector)))))))
 
                   (defthm ,coupledp-when-not-recognizer$a
                     (implies (not (,recognizer$a ,vector))
                              (,coupledp ,vector))
                     :hints
                     (("Goal"
+                      :do-not-induct t
                       :by (:functional-instance
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-when-not-recognizer/resizable
                                 'lem-vector$a::coupledp/fixed-when-not-recognizer/fixed)
-                           ,@fi-bindings))))
+                           ,@fi-bindings))
+                     ,@(and element-coupled-p
+                            (if resizable
+                                `(("Subgoal 6"
+                                   :in-theory (theory 'acl2::minimal-theory)
+                                   :use (:instance ,coupledp-constraint-1/expanded
+                                                   (,index lem-vector$a::index)
+                                                   (,vector common-lisp::vector)))
+                                  ("Subgoal 5"
+                                   :in-theory (theory 'acl2::minimal-theory)
+                                   :use (:instance ,coupledp-constraint-2/expanded
+                                                   (,vector common-lisp::vector))))
+                                `(("Subgoal 7"
+                                   :in-theory (theory 'acl2::minimal-theory)
+                                   :use (:instance ,coupledp-constraint-1/expanded
+                                                   (,index lem-vector$a::index)
+                                                   (,vector common-lisp::vector)))
+                                  ("Subgoal 6"
+                                   :in-theory (theory 'acl2::minimal-theory)
+                                   :use (:instance ,coupledp-constraint-2/expanded
+                                                   (,vector common-lisp::vector))))))))
 
                   (defthm ,coupledp-of-creator$a
                     (,coupledp (,creator$a))
@@ -380,9 +476,9 @@
                                     (if (<= ,(if resizable
                                                  `(,length$a ,vector)
                                                  default-length-name)
-                                            (nfix index))
+                                            (nfix ,index))
                                         t
-                                        (element-coupled-p value))))
+                                        (,element-coupled-p ,element))))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -437,9 +533,13 @@
                                (element (,accessor$a ,index ,vector))
                                (%element (,accessor$a ,index ,%vector)))
                           (declare (ignorable %element))
-                          (let* ((%element ,(if element-copy
-                                                `(,element-copy %element element)
-                                                `(,element-fixer element)))
+                          (let* ((%element ,(cond
+                                              (element-copy
+                                               `(,element-copy %element element))
+                                              (element-fixer
+                                               `(,element-fixer element))
+                                              (t
+                                               'element)))
                                  (,%vector (,updater$a ,index %element ,%vector))
                                  (,vector (,updater$a ,index element ,vector)))
                             (,copy-rec ,index ,%vector ,vector)))))
@@ -521,7 +621,7 @@
            ,(if element-coupled-p
                 `(implies (,coupledp ,vector)
                           (equal (,copy ,%vector ,vector)
-                                 (,fixer ,vector)))
+                                 (,fixer$a ,vector)))
                 `(equal (,copy ,%vector ,vector)
                         (,fixer$a ,vector)))
            :hints
@@ -894,8 +994,7 @@
                                         (,boundp$a ,key ,hash-table)
                                         nil)
                                    `(,boundp$a ,key ,hash-table))))
-                     (,coupled-keys-p-witness ,hash-table)
-                     ,hash-table))))
+                     (,coupled-keys-p-witness ,hash-table) ,hash-table))))
 
          (in-theory
            (disable ,coupled-keys-p))
@@ -1143,6 +1242,7 @@
                     :hints
                     (("Goal"
                       :do-not-induct t
+                      :in-theory (enable set::sfix-set-identity)
                       :by (:functional-instance
                            lem-hash-table$a::coupledp-of-updater/copyable-when-not-boundp/copyable
                            ,@fi-bindings))))))
@@ -1391,7 +1491,7 @@
 
 
 ;;;; `MAKE-FRAME-COPY-EVENTS'
-(defun make-frame-copy-events (stobj$a %stobj stobj state)
+#|(defun make-frame-copy-events (stobj$a %stobj stobj state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp stobj$a)
                               (symbolp %stobj)
@@ -1617,7 +1717,25 @@
            :do-not-induct t
            :use ((:instance ,stobj$a-equal
                             (,%stobj$a (,copier ,%stobj ,stobj))
-                            (,stobj$a (,fixer ,stobj))))))))))
+                            (,stobj$a (,fixer ,stobj))))))))))|#
 
 
 ;;;; `DEFINE-COPY'
+(defmacro define-copy (stobj &key (debug 'nil))
+  ;; TODO: add witness kwarg
+  (declare (xargs :guard (and (symbolp stobj)
+                              (booleanp debug))))
+  `(with-output
+     ,@(and (not debug)
+            *constructor-output*)
+
+     (make-event
+       (let* ((stobj ',stobj)
+              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property (w state))))))
+         (cond
+           ((and (= (len stobj$a-property) 3)
+                 (= (len (third stobj$a-property)) 3))
+            (make-vector-copy-events stobj state))
+           ((and (= (len stobj$a-property) 3)
+                 (= (len (third stobj$a-property)) 4))
+            (make-hash-table-copy-events stobj state)))))))
