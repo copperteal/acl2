@@ -44,7 +44,7 @@
   (defun coupledp-fn (names acc)
     (declare (xargs :guard (and (symbol-listp names)
                                 (acl2::symbol-list-listp acc))))
-    (if (atom names)
+    (if (endp names)
         (revappend acc ())
         (coupledp-fn (cdr names)
                      (cons (let ((name (car names)))
@@ -58,7 +58,7 @@
 (defmacro coupledp (&rest names)
   (declare (xargs :guard (symbol-listp names)))
   (let ((expressions (coupledp-fn names ())))
-    (list 'case-split (if (null (cdr expressions))
+    (list 'case-split (if (endp (cdr expressions))
                           (car expressions)
                           (cons 'and expressions)))))
 
@@ -1347,7 +1347,7 @@
                              :in-theory (enable set::cardinality)))))
            (if (mbe :logic (or (set::emptyp set)
                                (not (,keysp$a set)))
-                    :exec (atom set))
+                    :exec (endp set))
                (,fixer ,%hash-table)
                ,(if val-copy
                     `(let ((,key (set::head set)))
@@ -1498,8 +1498,8 @@
                               (symbolp stobj))
                   :verify-guards nil))
   (let* ((world (w state))
-         (copier (symbolicate stobj stobj "-COPY"))
-         (copier{rewrite} (symbolicate stobj copier "{REWRITE}"))
+         (copy (symbolicate stobj stobj "-COPY"))
+         (copy{rewrite} (symbolicate stobj copy "{REWRITE}"))
 
          (coupled (symbolicate stobj stobj "-COUPLED"))
 
@@ -1519,25 +1519,25 @@
          (stobjs (stobj$a-frame-stobjs stobj$a))
          (field-recognizers (stobj$a-frame-recognizers stobj$a))
          (field-fixers (stobj$a-frame-fixers stobj$a))
-         (stobj-copier-alist (stobj-copier-alist world))
-         (field-copiers (loop$ :for stobj :in stobjs
-                              :collect (and stobj
-                                            (getprop stobj
-                                                     'copier
-                                                     nil
-                                                     'acl2::current-acl2-world
-                                                     stobj-copier-alist))))
-         (copier-body
+         (stobj-copy-alist (stobj-copy-alist world))
+         (field-copys (loop$ :for stobj :in stobjs
+                            :collect (and stobj
+                                          (getprop stobj
+                                                   'copy
+                                                   nil
+                                                   'acl2::current-acl2-world
+                                                   stobj-copy-alist))))
+         (copy-body
           (loop$ :with body := %stobj
                 :with fields := (reverse fields)
                 :with stobjs := (reverse stobjs)
                 :with accessors := (reverse accessors)
                 :with updaters := (reverse updaters)
-                :with field-copiers := (reverse field-copiers)
+                :with field-copys := (reverse field-copys)
                 :do
                 (progn
                   (cond
-                    ((atom stobjs)
+                    ((endp stobjs)
                      (return body))
                     ((car stobjs)
                      (setq body (let* ((element (car stobjs))
@@ -1546,12 +1546,12 @@
                                        (updater (car updaters))
                                        (%accessor (symbolicate stobj "%" accessor))
                                        (%updater (symbolicate stobj "%" updater))
-                                       (field-copier (car field-copiers)))
+                                       (field-copy (car field-copys)))
                                   `(stobj-let ((,element (,accessor ,stobj) ,updater))
                                               (,%stobj)
                                               (stobj-let ((,%element (,%accessor ,%stobj) ,%updater))
                                                          (,%element)
-                                                         (,field-copier ,%element ,element)
+                                                         (,field-copy ,%element ,element)
                                                 ,%stobj)
                                      ,body))))
                     (t
@@ -1562,7 +1562,7 @@
                   (setq stobjs (cdr stobjs))
                   (setq accessors (cdr accessors))
                   (setq updaters (cdr updaters))
-                  (setq field-copiers (cdr field-copiers)))))
+                  (setq field-copys (cdr field-copys)))))
          (stobj-coupledp-alist (stobj-coupledp-alist world))
          (field-couplings (loop$ :for stobj :in stobjs
                                 :collect (and stobj
@@ -1608,22 +1608,22 @@
          (coupledp-of-fixer$a (symbolicate stobj coupled "-OF-" fixer$a))
          (coupledp-of-view$a (symbolicate stobj coupled "-OF-" view$a))
 
-         (recognizer$a-of-copier (symbolicate stobj recognizer$a "-OF-" copier)))
+         (recognizer$a-of-copy (symbolicate stobj recognizer$a "-OF-" copy)))
 
     `(encapsulate ()
        ,@(let ((field-recognizers$a (remove nil field-recognizers$a))
                (field-fixers$a (remove nil field-fixers$a))
-               (field-copiers (remove nil field-copiers))
+               (field-copys (remove nil field-copys))
                (field-couplings (remove nil field-couplings)))
            (and (or field-recognizers$a
                     field-fixers$a
-                    field-copiers
+                    field-copys
                     field-couplings)
                 `((local
                     (in-theory
                       (disable ,@field-recognizers$a
                                ,@field-fixers$a
-                               ,@field-copiers
+                               ,@field-copys
                                ,@field-couplings))))))
 
        ,@(and (remove nil field-couplings)
@@ -1679,14 +1679,14 @@
                 (in-theory
                   (disable ,coupled))))
 
-       (defun ,copier (,%stobj ,stobj)
+       (defun ,copy (,%stobj ,stobj)
          (declare (xargs :stobjs (,%stobj ,stobj)))
-         ,copier-body)
+         ,copy-body)
 
-       (table copy ',stobj ',copier)
+       (table copy ',stobj ',copy)
 
-       (defthm ,recognizer$a-of-copier
-         (,recognizer$a (,copier ,%stobj ,stobj))
+       (defthm ,recognizer$a-of-copy
+         (,recognizer$a (,copy ,%stobj ,stobj))
          ,@(and (remove nil field-couplings)
                 `(:hints
                   (("Goal"
@@ -1694,29 +1694,29 @@
 
        ,@(loop$ :for accessor$a :in accessors$a
                :collect `(local
-                           (defthm ,(symbolicate stobj accessor$a "-OF-" copier)
+                           (defthm ,(symbolicate stobj accessor$a "-OF-" copy)
                              ,(if (remove nil field-couplings)
                                   `(implies (coupled ,stobj)
-                                            (equal (,accessor$a (,copier ,%stobj ,stobj))
+                                            (equal (,accessor$a (,copy ,%stobj ,stobj))
                                                    (,accessor$a ,stobj)))
-                                  `(equal (,accessor$a (,copier ,%stobj ,stobj))
+                                  `(equal (,accessor$a (,copy ,%stobj ,stobj))
                                           (,accessor$a ,stobj))))))
 
        (in-theory
-         (disable ,copier))
+         (disable ,copy))
 
-       (defthm ,copier{rewrite}
+       (defthm ,copy{rewrite}
          ,(if (remove nil field-couplings)
               `(implies (coupled ,stobj)
-                        (equal (,copier ,%stobj ,stobj)
+                        (equal (,copy ,%stobj ,stobj)
                                (,fixer ,stobj)))
-              `(equal (,copier ,%stobj ,stobj)
+              `(equal (,copy ,%stobj ,stobj)
                       (,fixer ,stobj)))
          :hints
          (("Goal"
            :do-not-induct t
            :use ((:instance ,stobj$a-equal
-                            (,%stobj$a (,copier ,%stobj ,stobj))
+                            (,%stobj$a (,copy ,%stobj ,stobj))
                             (,stobj$a (,fixer ,stobj))))))))))|#
 
 

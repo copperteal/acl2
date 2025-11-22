@@ -84,7 +84,7 @@
 (defun contents-recognizer (contents)
   (declare (xargs :guard t))
   (if (atom contents)
-      (equal contents nil)
+      (null contents)
       (and (element-recognizer (car contents))
            (contents-recognizer (cdr contents)))))
 
