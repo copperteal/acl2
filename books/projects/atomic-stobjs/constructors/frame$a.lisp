@@ -118,7 +118,7 @@
   (defun split-body$a (fds body)
     (declare (xargs :guard (and (frame$a-descriptor-list-p fds)
                                 (frame$a-body-p body))))
-    (if (or (atom body)
+    (if (or (endp body)
             (atom (car body)))
         (mv (reverse fds) body)
         (split-body$a (cons (car body) fds) (cdr body))))
@@ -150,7 +150,7 @@
                               (true-listp initial-elements)
                               (symbol-listp accessors)
                               (symbol-listp updaters))))
-  (if (atom fds)
+  (if (endp fds)
       (mv (reverse fields)
           (reverse recognizers)
           (reverse fixers)
@@ -478,10 +478,10 @@
 
                     (defthm ,recognizer{compound-recognizer}
                       (implies (,recognizer ,frame)
-                               ,(if (null fields)
-                                    `(null ,frame)
+                               ,(if (consp fields)
                                     `(and (consp ,frame)
-                                          (true-listp ,frame))))
+                                          (true-listp ,frame))
+                                    `(null ,frame)))
                       :rule-classes :compound-recognizer)
 
                     (defthm ,recognizer-of-creator
@@ -524,10 +524,10 @@
 
                     ;; `VIEW'
                     (defthm ,view{type-prescription}
-                      ,(if (null fields)
-                           `(null (,view ,frame))
+                      ,(if (consp fields)
                            `(and (consp (,view ,@fields ,frame))
-                                 (true-listp (,view ,@fields ,frame))))
+                                 (true-listp (,view ,@fields ,frame)))
+                           `(null (,view ,frame)))
                       :rule-classes :type-prescription)
 
                     (with-books (("std/lists/nth" :dir :system))

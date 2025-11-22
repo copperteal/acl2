@@ -413,7 +413,7 @@
                          `((defun ,recognizer-aux (,vector)
                              (declare (xargs :guard t))
                              (if (atom ,vector)
-                                 (eq ,vector nil)
+                                 (null ,vector)
                                  (and (,element-recognizer (car ,vector))
                                       (,recognizer-aux (cdr ,vector)))))
 
@@ -440,7 +440,7 @@
                     ,(if resizable
                          (if element-recognizer
                              `(if (atom ,vector)
-                                  (eq ,vector nil)
+                                  (null ,vector)
                                   (and (,element-recognizer (car ,vector))
                                        (,recognizer (cdr ,vector))))
                              `(true-listp ,vector))

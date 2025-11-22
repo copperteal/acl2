@@ -31,10 +31,11 @@
 (set-verify-guards-eagerness 2)
 
 #||
-(include-book "utilities/top")
-(include-book "lemmas/top")
 (include-book "symbolic-ordinals")
 (include-book "type-spec")
+(include-book "utilities/top")
+(include-book "lemmas/top")
+(include-book "constructors/top")
 (include-book "test/top")
 ||#
 

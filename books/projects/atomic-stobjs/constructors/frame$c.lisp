@@ -36,6 +36,7 @@
 
 (include-book "../type-spec")
 (include-book "../utilities/top")
+(include-book "copy")
 
 
 ;;;; Constants
@@ -122,7 +123,7 @@
   (defun split-body$c (fds body)
     (declare (xargs :guard (and (frame$c-descriptor-list-p fds)
                                 (frame$c-body-p body))))
-    (if (or (atom body)
+    (if (or (endp body)
             (atom (car body)))
         (mv (reverse fds) body)
         (split-body$c (cons (car body) fds) (cdr body))))
@@ -153,7 +154,7 @@
                               (symbol-listp recognizers)
                               (symbol-listp accessors)
                               (symbol-listp updaters))))
-  (if (atom fds)
+  (if (endp fds)
       (mv (reverse fields)
           (reverse element-types)
           (reverse initial-elements)
@@ -239,6 +240,13 @@
                                                                   nil
                                                                   'acl2::current-acl2-world
                                                                   world))))
+                (absstobj-info-list (loop$ :for element-type :in element-types
+                                          :collect (and (symbolp element-type)
+                                                        (getprop element-type
+                                                                 'acl2::absstobj-info
+                                                                 nil
+                                                                 'acl2::current-acl2-world
+                                                                 world))))
                 (stobj$a-property-alist (table-alist 'stobj$a-property world))
                 (stobj$a-property-list (loop$ :for element-type :in element-types
                                              :collect (and (symbolp element-type)
@@ -257,10 +265,14 @@
                                                   (second (second stobj$a-property)))
                                                  (stobj-property
                                                   (cdadr stobj-property)))))
-                (stobj-copier-alist (table-alist 'copier world))
-                (stobj-copier-list (loop$ :for element-type :in element-types
-                                         :collect (and (symbolp element-type)
-                                                       (cdr (assoc element-type stobj-copier-alist)))))
+                (stobj-coupledp-alist (table-alist 'coupledp world))
+                (stobj-coupledp-list (loop$ :for element-type :in element-types
+                                           :collect (and (symbolp element-type)
+                                                         (cdr (assoc element-type stobj-coupledp-alist)))))
+                (stobj-copy-alist (table-alist 'copy world))
+                (stobj-copy-list (loop$ :for element-type :in element-types
+                                       :collect (and (symbolp element-type)
+                                                     (cdr (assoc element-type stobj-copy-alist)))))
                 (initial-elements ',initial-elements)
                 (initial-element-names (loop$ :for field :in fields
                                              :collect (symbolicate frame "*" frame "-" field "-INITIAL-ELEMENT*")))
@@ -307,6 +319,24 @@
                                 :collect (or updater
                                              (symbolicate frame frame "-" field "-SET"))))
 
+                ;; Make Doublets
+                (doublets (append (and (not (eq recognizer recognizer-stobj-default))
+                                       `((,recognizer-stobj-default ,recognizer)))
+                                  (and (not (eq creator creator-stobj-default))
+                                       `((,creator-stobj-default ,creator)))
+                                  (loop$ :for recognizer :in recognizers
+                                        :as recognizer-stobj-default :in recognizer-stobj-defaults
+                                        :when (not (eq recognizer recognizer-stobj-default))
+                                        :collect `(,recognizer-stobj-default ,recognizer))
+                                  (loop$ :for accessor :in accessors
+                                        :as accessor-stobj-default :in accessor-stobj-defaults
+                                        :when (not (eq accessor accessor-stobj-default))
+                                        :collect `(,accessor-stobj-default ,accessor))
+                                  (loop$ :for updater :in updaters
+                                        :as updater-stobj-default :in updater-stobj-defaults
+                                        :when (not (eq updater updater-stobj-default))
+                                        :collect `(,updater-stobj-default ,updater))))
+
                 ;; Prologue
                 (frame-begin (symbolicate frame frame "-BEGIN"))
                 (frame-end (symbolicate frame frame "-END"))
@@ -324,22 +354,6 @@
                                                        :type ,element-type
                                                        ,@(and (not stobj-property)
                                                               `(:initially ,initial-element)))))
-                (doublets (append (and (not (eq recognizer recognizer-stobj-default))
-                                       `((,recognizer-stobj-default ,recognizer)))
-                                  (and (not (eq creator creator-stobj-default))
-                                       `((,creator-stobj-default ,creator)))
-                                  (loop$ :for recognizer :in recognizers
-                                        :as recognizer-stobj-default :in recognizer-stobj-defaults
-                                        :when (not (eq recognizer recognizer-stobj-default))
-                                        :collect `(,recognizer-stobj-default ,recognizer))
-                                  (loop$ :for accessor :in accessors
-                                        :as accessor-stobj-default :in accessor-stobj-defaults
-                                        :when (not (eq accessor accessor-stobj-default))
-                                        :collect `(,accessor-stobj-default ,accessor))
-                                  (loop$ :for updater :in updaters
-                                        :as updater-stobj-default :in updater-stobj-defaults
-                                        :when (not (eq updater updater-stobj-default))
-                                        :collect `(,updater-stobj-default ,updater))))
                 (prologue
                  `((deflabel ,frame-begin)
 
@@ -399,16 +413,32 @@
                         (equal (len (cons a d))
                                (1+ (len d)))))
 
-                    ,@(loop$ :for stobj-copier :in stobj-copier-list
-                            :as recognizer :in stobj-recognizers
+                    ,@(loop$ :for stobj-copy :in stobj-copy-list
+                            :as stobj-recognizer :in stobj-recognizers
                             :as field :in fields
                             :as %field :in %fields
-                            :when stobj-copier
+                            :as i :from 0 :to (1- (len fields))
+                            :when stobj-copy
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copier "{REWRITE}")
-                                          (implies (and (,recognizer ,%field)
-                                                        (,recognizer ,field))
-                                                   (equal (,stobj-copier ,%field ,field)
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-copy "-" i)
+                                          (implies (and (,stobj-recognizer ,%field)
+                                                        (,stobj-recognizer ,field))
+                                                   (,stobj-recognizer (,stobj-copy ,%field ,field))))))
+
+                    ,@(loop$ :for stobj-coupled-p :in stobj-coupledp-list
+                            :as stobj-copy :in stobj-copy-list
+                            :as stobj-recognizer :in stobj-recognizers
+                            :as field :in fields
+                            :as %field :in %fields
+                            :as i :from 0 :to (1- (len fields))
+                            :when stobj-copy
+                            :collect `(local
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copy "{REWRITE}-" i)
+                                          (implies (and (,stobj-recognizer ,%field)
+                                                        (,stobj-recognizer ,field)
+                                                        ,@(and stobj-coupled-p
+                                                               `((,stobj-coupled-p ,field))))
+                                                   (equal (,stobj-copy ,%field ,field)
                                                           ,field)))))
 
                     (local
@@ -417,6 +447,12 @@
                                         (set-difference-theories
                                          (universal-theory :here)
                                          (universal-theory ',frame-begin)))))
+
+                    ,@(loop$ :for absstobj-info :in absstobj-info-list
+                            :when absstobj-info
+                            :collect `(local
+                                        (in-theory
+                                          (enable ,@(strip-cars (cdr absstobj-info))))))
 
                     (local
                       (in-theory
@@ -444,10 +480,10 @@
 
                     (defthm ,recognizer{compound-recognizer}
                       (implies (,recognizer ,frame)
-                               ,(if (null fields)
-                                    `(null ,frame)
+                               ,(if (consp fields)
                                     `(and (consp ,frame)
-                                          (true-listp ,frame))))
+                                          (true-listp ,frame))
+                                    `(null ,frame)))
                       :rule-classes :compound-recognizer)
 
                     (defthm ,recognizer-of-creator
@@ -476,6 +512,7 @@
                                                     initial-element-name))))
 
 
+                    ;; TODO: use solely field names in view$a
                     (defun ,view ,(append (loop$ :for field :in fields
                                                 :as element-type :in element-types
                                                 :as stobj-property :in stobj-property-list
@@ -499,35 +536,35 @@
                                                           (car guard))))
                                           (and guard
                                                (list :guard guard)))))
-                      ,(let ((conditional (if (null fields)
-                                              `(,recognizer ,frame)
+                      ,(let ((conditional (if (consp fields)
                                               `(and ,@(loop$ :for field :in fields
                                                             :as element-type :in element-types
                                                             :as stobj-recognizer :in stobj-recognizers
                                                             :collect (if stobj-recognizer
                                                                          `(,stobj-recognizer ,element-type)
                                                                          (typep$transform field element-type)))
-                                                    (,recognizer ,frame))))
+                                                    (,recognizer ,frame))
+                                              `(,recognizer ,frame)))
                              (body (loop$ :with body := frame
                                          :with fields := fields
                                          :with element-types := element-types
                                          :with stobj-property-list := stobj-property-list
-                                         :with stobj-copier-list := stobj-copier-list
+                                         :with stobj-copy-list := stobj-copy-list
                                          :with accessors := accessors
                                          :with updaters := updaters
                                          :do
                                          (progn
                                            (cond
-                                             ((atom fields)
+                                             ((endp fields)
                                               (return body))
                                              ((car stobj-property-list)
                                               (let* ((st (car element-types))
                                                      ;; TODO: STOBJ Get from formals?
                                                      (%st (symbolicate st "%" st))
-                                                     (stobj-copier (car stobj-copier-list)))
+                                                     (stobj-copy (car stobj-copy-list)))
                                                 (setq body `(stobj-let ((,%st (,(car accessors) ,frame) ,(car updaters)))
                                                                        (,%st)
-                                                                       (,stobj-copier ,%st ,st)
+                                                                       (,stobj-copy ,%st ,st)
                                                               ,body))))
                                              (t
                                               (setq body `(let ((,frame (,(car updaters) ,(car fields) ,frame)))
@@ -535,7 +572,7 @@
                                            (setq fields (cdr fields))
                                            (setq element-types (cdr element-types))
                                            (setq stobj-property-list (cdr stobj-property-list))
-                                           (setq stobj-copier-list (cdr stobj-copier-list))
+                                           (setq stobj-copy-list (cdr stobj-copy-list))
                                            (setq accessors (cdr accessors))
                                            (setq updaters (cdr updaters))))))
                          `(mbe :logic (if ,conditional
@@ -546,10 +583,10 @@
                     (table view ',frame ',view)
 
                     (defthm ,view{type-prescription}
-                      ,(if (null fields)
-                           `(null (,view ,@fields ,frame))
+                      ,(if (consp fields)
                            `(and (consp (,view ,@fields ,frame))
-                                 (true-listp (,view ,@fields ,frame))))
+                                 (true-listp (,view ,@fields ,frame)))
+                           `(null (,view ,@fields ,frame)))
                       :rule-classes :type-prescription)
 
                     (defthm ,recognizer-of-view
@@ -578,11 +615,18 @@
                                                            (typep$transform field element-type)))))
                         (loop$ :for field :in fields
                               :as accessor :in accessors
+                              :as stobj-coupled-p :in stobj-coupledp-list
                               :collect `(defthm ,(symbolicate frame accessor "-OF-" view)
-                                          (implies ,(if hypotheses
-                                                        `(and (,recognizer ,frame)
-                                                              ,@hypotheses)
-                                                        `(,recognizer ,frame))
+                                          (implies ,(cond
+                                                      (stobj-coupled-p
+                                                       `(and (,recognizer ,frame)
+                                                             ,@hypotheses
+                                                             (,stobj-coupled-p ,field)))
+                                                      (hypotheses
+                                                       `(and (,recognizer ,frame)
+                                                             ,@hypotheses))
+                                                      (t
+                                                       `(,recognizer ,frame)))
                                                    (equal (,accessor (,view ,@fields ,frame))
                                                           ,field)))))
 
