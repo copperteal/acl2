@@ -43,7 +43,7 @@
                               (alistp acc))
                   :verify-guards nil))
   (cond
-    ((atom exports)
+    ((endp exports)
      (reverse acc))
     ((acl2::unprotected-export-p foundation
                                  (cadr (assoc-keyword :exec

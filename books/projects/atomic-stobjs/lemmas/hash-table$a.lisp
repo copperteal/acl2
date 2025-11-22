@@ -176,7 +176,7 @@
   (let ((key (key-fixer key))
         (hash-table (fixer/unique hash-table)))
     (cond
-      ((or (atom hash-table)
+      ((or (endp hash-table)
            (<< key (caar hash-table)))
        (default-val))
       ((equal key (caar hash-table))
@@ -200,7 +200,7 @@
         (val (val-fixer val))
         (hash-table (fixer/unique hash-table)))
     (cond
-      ((atom hash-table)
+      ((endp hash-table)
        (list (cons key val)))
       ((<< key (caar hash-table))
        (cons (cons key val)
@@ -229,7 +229,7 @@
   (let ((key (key-fixer key))
         (hash-table (fixer/unique hash-table)))
     (cond
-      ((or (atom hash-table)
+      ((or (endp hash-table)
            (<< key (caar hash-table)))
        'nil)
       ((equal key (caar hash-table))
@@ -266,7 +266,7 @@
   (let ((key (key-fixer key))
         (hash-table (fixer/unique hash-table)))
     (cond
-      ((atom hash-table)
+      ((endp hash-table)
        '())
       ((<< key (caar hash-table))
        hash-table)
@@ -287,7 +287,7 @@
 (defun count/unique (hash-table)
   (declare (xargs :guard (recognizer/unique hash-table)))
   (let ((hash-table (fixer/unique hash-table)))
-    (if (atom hash-table)
+    (if (endp hash-table)
         0
         (1+ (count/unique (cdr hash-table))))))
 

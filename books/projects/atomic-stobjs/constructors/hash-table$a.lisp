@@ -726,7 +726,7 @@
                                  `((,key (,key-fixer ,key))))
                           (,contents (,contents-fixer ,contents)))
                       (cond
-                        ((or (atom ,contents)
+                        ((or (endp ,contents)
                              (<< ,key (caar ,contents)))
                          ,default-val)
                         ((equal ,key (caar ,contents))
@@ -769,7 +769,7 @@
                                  `((,val (,val-fixer ,val))))
                             (,contents (,contents-fixer ,contents)))
                       (cond
-                        ((atom ,contents)
+                        ((endp ,contents)
                          (list (cons ,key ,val)))
                         ((<< ,key (caar ,contents))
                          (cons (cons ,key ,val)
@@ -815,7 +815,7 @@
                                  `((,key (,key-fixer ,key))))
                           (,contents (,contents-fixer ,contents)))
                       (cond
-                        ((or (atom ,contents)
+                        ((or (endp ,contents)
                              (<< ,key (caar ,contents)))
                          'nil)
                         ((equal ,key (caar ,contents))
@@ -866,7 +866,7 @@
                                  `((,key (,key-fixer ,key))))
                           (,contents (,contents-fixer ,contents)))
                       (cond
-                        ((atom ,contents)
+                        ((endp ,contents)
                          (,contents-creator))
                         ((<< ,key (caar ,contents))
                          ,contents)
@@ -891,7 +891,7 @@
                   (defun ,contents-count (,contents)
                     (declare (xargs :guard (,contents-recognizer ,contents)))
                     (let ((,contents (,contents-fixer ,contents)))
-                      (if (atom ,contents)
+                      (if (endp ,contents)
                           0
                           (1+ (,contents-count (cdr ,contents))))))
 

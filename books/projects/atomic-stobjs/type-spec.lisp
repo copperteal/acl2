@@ -387,14 +387,14 @@
             ((and or)
              (cond
                ;; (name)
-               ((atom params)
+               ((endp params)
                 (case name
                   (or
                    'nil)
                   (and
                    't)))
                ;; (name . (type))
-               ((atom (cdr params))
+               ((endp (cdr params))
                 (typep$transform object (car params)))
                ;; (name . (type1 ... typek))
                (t
