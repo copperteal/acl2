@@ -1056,6 +1056,12 @@
   (defthm element-recognizer-of-element-copy
     (element-recognizer (element-copy %value value)))
 
+  (defthm element-copy-ignores-1
+    (implies (syntaxp (not (and (consp %value)
+                                (eq (car %value) 'initial-element))))
+             (equal (element-copy %value value)
+                    (element-copy (initial-element) value))))
+
   (defthm element-copy{rewrite}
     (implies (element-coupled-p value)
              (equal (element-copy %value value)
@@ -1218,15 +1224,15 @@
          (length/resizable %vector)))
 
 (defthm accessor/resizable-of-copy/resizable-rec
-  (implies (coupledp/resizable vector)
-           (equal (accessor/resizable %index (copy/resizable-rec index %vector vector))
-                  (cond
-                    ((<= (length/resizable %vector) (nfix %index))
-                     (initial-element))
-                    ((< (nfix %index) (nfix index))
-                     (accessor/resizable %index vector))
-                    (t
-                     (accessor/resizable %index %vector)))))
+  (equal (accessor/resizable %index (copy/resizable-rec index %vector vector))
+         (cond
+           ((<= (length/resizable %vector) (nfix %index))
+            (initial-element))
+           ((< (nfix %index) (nfix index))
+            (element-copy (accessor/resizable %index %vector)
+                          (accessor/resizable %index vector)))
+           (t
+            (accessor/resizable %index %vector))))
   :hints
   (("Goal"
     :cases ((<= (length/resizable %vector) (nfix %index))
@@ -1250,9 +1256,28 @@
 (defthm recognizer/resizable-of-copy/resizable
   (recognizer/resizable (copy/resizable %vector vector)))
 
-(defthm copy/resizable-of-fixer/resizable-1
-  (equal (copy/resizable (fixer/resizable %vector) vector)
-         (copy/resizable %vector vector)))
+(defthmd copy/resizable-ignores-1
+  (equal (copy/resizable %vector vector)
+         (copy/resizable (creator) vector))
+  :hints
+  (("Goal"
+    :use ((:instance equal/resizable
+                     (%vector (copy/resizable %vector vector))
+                     (vector (copy/resizable (creator) vector)))))))
+
+(local
+  (defthm copy/resizable-ignores-1-local
+    (equal (copy/resizable %vector vector)
+           (copy/resizable (creator) vector))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (syntaxp (not (and (consp %vector)
+                                           (eq (car %vector) 'creator))))
+                        (equal (copy/resizable %vector vector)
+                               (copy/resizable (creator) vector)))))
+    :hints
+    (("Goal"
+      :by (:functional-instance copy/resizable-ignores-1)))))
 
 (defthm copy/resizable-of-fixer/resizable-2
   (equal (copy/resizable %vector (fixer/resizable vector))
@@ -1262,17 +1287,14 @@
   (implies (coupledp/resizable vector)
            (coupledp/resizable (copy/resizable %vector vector)))
   :hints
-  (("Goal"
-    :expand (coupledp/resizable (copy/resizable %vector vector)))
-   ("Subgoal 2"
-    :expand (coupledp/resizable (copy/resizable-rec (length/resizable %vector)
-                                                    %vector vector)))
+  (("Subgoal 2"
+    :expand (coupledp/resizable (copy/resizable-rec (default-length)
+                                                    (creator) vector)))
    ("Subgoal 1"
-    :expand (coupledp/resizable
-             (copy/resizable-rec (length/resizable vector)
-                                 (resizer/resizable (length/resizable vector)
-                                                    %vector)
-                                 vector)))))
+    :expand (coupledp/resizable (copy/resizable-rec (length/resizable vector)
+                                                    (resizer/resizable (length/resizable vector)
+                                                                       (creator))
+                                                    vector)))))
 
 (defthm length/resizable-of-copy/resizable
   (equal (length/resizable (copy/resizable %vector vector))
@@ -1438,15 +1460,15 @@
          (copy/fixed-rec index %vector vector)))
 
 (defthm accessor/fixed-of-copy/fixed-rec
-  (implies (coupledp/fixed vector)
-           (equal (accessor/fixed %index (copy/fixed-rec index %vector vector))
-                  (cond
-                    ((<= (default-length) (nfix %index))
-                     (initial-element))
-                    ((< (nfix %index) (nfix index))
-                     (accessor/fixed %index vector))
-                    (t
-                     (accessor/fixed %index %vector)))))
+  (equal (accessor/fixed %index (copy/fixed-rec index %vector vector))
+         (cond
+           ((<= (default-length) (nfix %index))
+            (initial-element))
+           ((< (nfix %index) (nfix index))
+            (element-copy (accessor/fixed %index %vector)
+                          (accessor/fixed %index vector)))
+           (t
+            (accessor/fixed %index %vector))))
   :hints
   (("Goal"
     :cases ((<= (default-length) (nfix %index))
@@ -1466,9 +1488,28 @@
 (defthm recognizer/fixed-of-copy/fixed
   (recognizer/fixed (copy/fixed %vector vector)))
 
-(defthm copy/fixed-of-fixer/fixed-1
-  (equal (copy/fixed (fixer/fixed %vector) vector)
-         (copy/fixed %vector vector)))
+(defthmd copy/fixed-ignores-1
+  (equal (copy/fixed %vector vector)
+         (copy/fixed (creator) vector))
+  :hints
+  (("Goal"
+    :use ((:instance equal/fixed
+                     (%vector (copy/fixed %vector vector))
+                     (vector (copy/fixed (creator) vector)))))))
+
+(local
+  (defthm copy/fixed-ignores-1-local
+    (equal (copy/fixed %vector vector)
+           (copy/fixed (creator) vector))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (syntaxp (not (and (consp %vector)
+                                           (eq (car %vector) 'creator))))
+                        (equal (copy/fixed %vector vector)
+                               (copy/fixed (creator) vector)))))
+    :hints
+    (("Goal"
+      :by (:functional-instance copy/fixed-ignores-1)))))
 
 (defthm copy/fixed-of-fixer/fixed-2
   (equal (copy/fixed %vector (fixer/fixed vector))
