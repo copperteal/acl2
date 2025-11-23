@@ -42,11 +42,23 @@
                                     (exec 'nil)
                                     (copyable 't)
 
+                                    (package-witness 'nil package-witness-supplied-p)
+                                    (package-witness$a 'nil package-witness$a-supplied-p)
+                                    (package-witness$c 'nil package-witness$c-supplied-p)
                                     (debug 'nil))
   (declare (xargs :guard (and (symbolp hash-table)
                               (symbolp logic)
                               (symbolp exec)
                               (booleanp copyable)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
+                              (or (symbolp package-witness$a)
+                                  (and (stringp package-witness$a)
+                                       (not (equal package-witness$a ""))))
+                              (or (symbolp package-witness$c)
+                                  (and (stringp package-witness$c)
+                                       (not (equal package-witness$c ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -57,16 +69,25 @@
        (let* ((hash-table ',hash-table)
               (logic ',logic)
               (exec ',exec)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
+              (package-witness$a (if ',package-witness$a-supplied-p
+                                     ',package-witness$a
+                                     package-witness))
+              (package-witness$c (if ',package-witness$c-supplied-p
+                                     ',package-witness$c
+                                     package-witness))
 
               (copyable ',copyable)
-              (hash-table$corr (symbolicate hash-table hash-table "$CORR"))
-              (hash-table$corr-keys (symbolicate hash-table hash-table$corr "-KEYS"))
-              (hash-table$corr-vals (symbolicate hash-table hash-table$corr "-VALS"))
+              (hash-table$corr (symbolicate package-witness hash-table "$CORR"))
+              (hash-table$corr-keys (symbolicate package-witness hash-table$corr "-KEYS"))
+              (hash-table$corr-vals (symbolicate package-witness hash-table$corr "-VALS"))
 
               (hash-table$a (or logic
-                                (symbolicate hash-table hash-table "$A")))
+                                (symbolicate package-witness$a hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate hash-table hash-table "$C")))
+                                (symbolicate package-witness$c hash-table "$C")))
 
               (stobj-property (getpropc hash-table$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
@@ -161,6 +182,9 @@
 
        (executable 'nil)
 
+       (package-witness 'nil package-witness-supplied-p)
+       (package-witness$a 'nil package-witness$a-supplied-p)
+       (package-witness$c 'nil package-witness$c-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
@@ -184,6 +208,15 @@
                                   (and (not keys)
                                        (not keys-set)))
                               (booleanp executable)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
+                              (or (symbolp package-witness$a)
+                                  (and (stringp package-witness$a)
+                                       (not (equal package-witness$a ""))))
+                              (or (symbolp package-witness$c)
+                                  (and (stringp package-witness$c)
+                                       (not (equal package-witness$c ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -209,38 +242,47 @@
               (keys ',keys)
               (keys-set ',keys-set)
               (executable ',executable)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
+              (package-witness$a (if ',package-witness$a-supplied-p
+                                     ',package-witness$a
+                                     package-witness))
+              (package-witness$c (if ',package-witness$c-supplied-p
+                                     ',package-witness$c
+                                     package-witness))
 
               ;; Interface Symbols
               (hash-table$a (or logic
-                                (symbolicate hash-table hash-table "$A")))
+                                (symbolicate package-witness$a hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate hash-table hash-table "$C")))
+                                (symbolicate package-witness$c hash-table "$C")))
               (recognizer (or recognizer
-                              (symbolicate hash-table hash-table (make-predicate-suffix hash-table))))
+                              (symbolicate package-witness hash-table (make-predicate-suffix hash-table))))
               (creator (or creator
-                           (symbolicate hash-table "CREATE-" hash-table)))
+                           (symbolicate package-witness "CREATE-" hash-table)))
               (fixer (or fixer
-                         (symbolicate hash-table hash-table "-FIX")))
+                         (symbolicate package-witness hash-table "-FIX")))
               (accessor (or accessor
-                            (symbolicate hash-table hash-table "-GET")))
+                            (symbolicate package-witness hash-table "-GET")))
               (updater (or updater
-                           (symbolicate hash-table hash-table "-PUT")))
+                           (symbolicate package-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate hash-table hash-table "-BOUNDP")))
+                          (symbolicate package-witness hash-table "-BOUNDP")))
               (getp (or getp
-                        (symbolicate hash-table hash-table "-GETP")))
+                        (symbolicate package-witness hash-table "-GETP")))
               (remover (or remover
-                           (symbolicate hash-table hash-table "-REM")))
+                           (symbolicate package-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate hash-table hash-table "-COUNT")))
+                         (symbolicate package-witness hash-table "-COUNT")))
               (clear (or clear
-                         (symbolicate hash-table hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLEAR")))
               (init (or init
-                        (symbolicate hash-table hash-table "-INIT")))
+                        (symbolicate package-witness hash-table "-INIT")))
               (keys (or keys
-                        (symbolicate hash-table hash-table "-KEYS")))
+                        (symbolicate package-witness hash-table "-KEYS")))
               (keys-set (or keys-set
-                            (symbolicate hash-table hash-table "-KEYS-SET")))
+                            (symbolicate package-witness hash-table "-KEYS-SET")))
 
               (world (w state))
               (hash-table$corr-list (cdr (assoc hash-table (table-alist 'corr world))))
@@ -314,31 +356,31 @@
 
 
               ;; Theorem Names
-              (creator{correspondence} (symbolicate hash-table creator "{CORRESPONDENCE}"))
-              (creator{preserved} (symbolicate hash-table creator "{PRESERVED}"))
-              (fixer{correspondence} (symbolicate hash-table fixer "{CORRESPONDENCE}"))
-              (fixer{preserved} (symbolicate hash-table fixer "{PRESERVED}"))
-              (accessor{correspondence} (symbolicate hash-table accessor "{CORRESPONDENCE}"))
-              (accessor{guard-thm} (symbolicate hash-table accessor "{GUARD-THM}"))
-              (updater{correspondence} (symbolicate hash-table updater "{CORRESPONDENCE}"))
-              (updater{guard-thm} (symbolicate hash-table updater "{GUARD-THM}"))
-              (updater{preserved} (symbolicate hash-table updater "{PRESERVED}"))
-              (boundp{correspondence} (symbolicate hash-table boundp "{CORRESPONDENCE}"))
-              (boundp{guard-thm} (symbolicate hash-table boundp "{GUARD-THM}"))
-              (getp{correspondence} (symbolicate hash-table getp "{CORRESPONDENCE}"))
-              (getp{guard-thm} (symbolicate hash-table getp "{GUARD-THM}"))
-              (remover{correspondence} (symbolicate hash-table remover "{CORRESPONDENCE}"))
-              (remover{guard-thm} (symbolicate hash-table remover "{GUARD-THM}"))
-              (remover{preserved} (symbolicate hash-table remover "{PRESERVED}"))
-              (count{correspondence} (symbolicate hash-table count "{CORRESPONDENCE}"))
-              (clear{correspondence} (symbolicate hash-table clear "{CORRESPONDENCE}"))
-              (clear{preserved} (symbolicate hash-table clear "{PRESERVED}"))
-              (init{correspondence} (symbolicate hash-table init "{CORRESPONDENCE}"))
-              (init{guard-thm} (symbolicate hash-table init "{GUARD-THM}"))
-              (init{preserved} (symbolicate hash-table init "{PRESERVED}"))
-              (keys{correspondence} (symbolicate hash-table keys "{CORRESPONDENCE}"))
-              (keys-set{correspondence} (symbolicate hash-table keys-set "{CORRESPONDENCE}"))
-              (keys-set{preserved} (symbolicate hash-table keys-set "{PRESERVED}"))
+              (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
+              (creator{preserved} (symbolicate package-witness creator "{PRESERVED}"))
+              (fixer{correspondence} (symbolicate package-witness fixer "{CORRESPONDENCE}"))
+              (fixer{preserved} (symbolicate package-witness fixer "{PRESERVED}"))
+              (accessor{correspondence} (symbolicate package-witness accessor "{CORRESPONDENCE}"))
+              (accessor{guard-thm} (symbolicate package-witness accessor "{GUARD-THM}"))
+              (updater{correspondence} (symbolicate package-witness updater "{CORRESPONDENCE}"))
+              (updater{guard-thm} (symbolicate package-witness updater "{GUARD-THM}"))
+              (updater{preserved} (symbolicate package-witness updater "{PRESERVED}"))
+              (boundp{correspondence} (symbolicate package-witness boundp "{CORRESPONDENCE}"))
+              (boundp{guard-thm} (symbolicate package-witness boundp "{GUARD-THM}"))
+              (getp{correspondence} (symbolicate package-witness getp "{CORRESPONDENCE}"))
+              (getp{guard-thm} (symbolicate package-witness getp "{GUARD-THM}"))
+              (remover{correspondence} (symbolicate package-witness remover "{CORRESPONDENCE}"))
+              (remover{guard-thm} (symbolicate package-witness remover "{GUARD-THM}"))
+              (remover{preserved} (symbolicate package-witness remover "{PRESERVED}"))
+              (count{correspondence} (symbolicate package-witness count "{CORRESPONDENCE}"))
+              (clear{correspondence} (symbolicate package-witness clear "{CORRESPONDENCE}"))
+              (clear{preserved} (symbolicate package-witness clear "{PRESERVED}"))
+              (init{correspondence} (symbolicate package-witness init "{CORRESPONDENCE}"))
+              (init{guard-thm} (symbolicate package-witness init "{GUARD-THM}"))
+              (init{preserved} (symbolicate package-witness init "{PRESERVED}"))
+              (keys{correspondence} (symbolicate package-witness keys "{CORRESPONDENCE}"))
+              (keys-set{correspondence} (symbolicate package-witness keys-set "{CORRESPONDENCE}"))
+              (keys-set{preserved} (symbolicate package-witness keys-set "{PRESERVED}"))
 
               ;; Exports
               (exports `((,fixer :logic ,fixer$a
@@ -378,7 +420,7 @@
                                    (cddr updater$c-guard)
                                    (cdr updater$c-guard)))
 
-              (aggressive$a (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
+              (aggressive$a (symbolicate package-witness$a hash-table$a "-AGGRESSIVE"))
               (accessor$c-key (car (getpropc accessor$c 'acl2::formals)))
               (updater$c-key (car (getpropc updater$c 'acl2::formals)))
               (updater$c-val (cadr (getpropc updater$c 'acl2::formals)))
@@ -698,4 +740,6 @@
               :non-executable ,(not executable)
               :exports ,exports)
 
-            (table stobj$a-property ',hash-table ',stobj$a-property))))))
+            (table stobj$a-property ',hash-table ',stobj$a-property)
+
+            (table package-witness ',hash-table ',package-witness))))))

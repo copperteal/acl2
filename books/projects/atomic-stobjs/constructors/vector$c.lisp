@@ -894,6 +894,7 @@
                                 'lem-vector$c::fixer/resizable-when-not-recognizer/resizable
                                 'lem-vector$c::fixer/fixed-when-not-recognizer/fixed)
                            ,@fi-bindings-with-fixer)))))))
+
          `(progn
             ,@prologue
 

@@ -45,7 +45,8 @@
 
 (defconst *body-keywords$c*
   '(:inline :memoizable :executable
-    :recognizer :creator :fixer :view :debug))
+    :recognizer :creator :fixer :view
+    :package-witness :debug))
 
 
 ;;;; `DEFINE-FRAME$C' Predicates
@@ -93,6 +94,7 @@
                       (creator (cadr (assoc-keyword :creator body)))
                       (fixer (cadr (assoc-keyword :fixer body)))
                       (view (cadr (assoc-keyword :view body)))
+                      (package-witness (cadr (assoc-keyword :package-witness body)))
                       (debug (cadr (assoc-keyword :debug body))))
                   (and (booleanp inline)
                        (booleanp memoizable)
@@ -101,6 +103,9 @@
                        (symbolp creator)
                        (symbolp fixer)
                        (symbolp view)
+                       (or (symbolp package-witness)
+                           (and (stringp package-witness)
+                                (not (equal package-witness ""))))
                        (booleanp debug)))))))
 
 (defthm frame$c-body-p-when-frame$c-descriptor-list-p
@@ -190,9 +195,14 @@
          (creator (cadr (assoc-keyword :creator kvl)))
          (fixer (cadr (assoc-keyword :fixer kvl)))
          (view (cadr (assoc-keyword :view kvl)))
+         (package-witness-supplied-p (assoc-keyword :package-witness kvl))
+         (package-witness (cadr package-witness-supplied-p))
+         (package-witness-supplied-p (and package-witness-supplied-p
+                                          t))
          (debug (cadr (assoc-keyword :debug kvl))))
     (mv inline memoizable executable
-        recognizer creator fixer view debug)))
+        recognizer creator fixer view
+        package-witness package-witness-supplied-p debug)))
 
 (defun parse-form$c (form)
   (declare (xargs :guard (frame$c-form-p form)))
@@ -203,12 +213,14 @@
                       recognizers accessors updaters)
               (parse-fds$c fds () () () () () ())
         (mv-let (inline memoizable executable
-                        recognizer creator fixer view debug)
+                        recognizer creator fixer view
+                        package-witness package-witness-supplied-p debug)
                 (parse-kvl$c kvl)
           (mv fields element-types initial-elements
               recognizers accessors updaters
               inline memoizable executable
-              recognizer creator fixer view debug))))))
+              recognizer creator fixer view
+              package-witness package-witness-supplied-p debug))))))
 
 
 ;;;; `DEFINE-FRAME$C'
@@ -218,7 +230,8 @@
   (mv-let (fields element-types initial-elements
                   recognizers accessors updaters
                   inline memoizable executable
-                  recognizer creator fixer view debug)
+                  recognizer creator fixer view
+                  package-witness package-witness-supplied-p debug)
           (parse-form$c form)
 
     `(with-output
@@ -227,6 +240,9 @@
 
        (make-event
          (let* ((frame ',frame)
+                (package-witness (if ',package-witness-supplied-p
+                                     ',package-witness
+                                     (current-package state)))
                 (fields ',fields)
                 (%fields (loop$ :for field :in fields
                                :collect (symbolicate field "%" field)))
@@ -275,7 +291,7 @@
                                                      (cdr (assoc element-type stobj-copy-alist)))))
                 (initial-elements ',initial-elements)
                 (initial-element-names (loop$ :for field :in fields
-                                             :collect (symbolicate frame "*" frame "-" field "-INITIAL-ELEMENT*")))
+                                             :collect (symbolicate package-witness "*" frame "-" field "-INITIAL-ELEMENT*")))
 
                 (inline ',inline)
                 (memoizable ',memoizable)
@@ -290,34 +306,34 @@
                 (updaters ',updaters)
 
                 ;; Interface Symbols
-                (recognizer-stobj-default (symbolicate frame frame "P"))
+                (recognizer-stobj-default (symbolicate package-witness frame "P"))
                 (recognizer (or recognizer
-                                (symbolicate frame frame (make-predicate-suffix frame))))
-                (creator-stobj-default (symbolicate frame "CREATE-" frame))
+                                (symbolicate package-witness frame (make-predicate-suffix frame))))
+                (creator-stobj-default (symbolicate package-witness "CREATE-" frame))
                 (creator (or creator
-                             (symbolicate frame "CREATE-" frame)))
+                             (symbolicate package-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate frame frame "-FIX")))
+                           (symbolicate package-witness frame "-FIX")))
                 (view (or view
-                          (symbolicate frame frame "-VIEW")))
+                          (symbolicate package-witness frame "-VIEW")))
                 (recognizer-stobj-defaults (loop$ :for field :in fields
-                                                 :collect (symbolicate frame frame "-" field "P")))
+                                                 :collect (symbolicate package-witness frame "-" field "P")))
                 (recognizers (loop$ :for field :in fields
                                    :as recognizer :in recognizers
                                    :collect (or recognizer
-                                                (symbolicate frame frame "-" field "-P"))))
+                                                (symbolicate package-witness frame "-" field "-P"))))
                 (accessor-stobj-defaults (loop$ :for field :in fields
-                                               :collect (symbolicate frame frame "-" field)))
+                                               :collect (symbolicate package-witness frame "-" field)))
                 (accessors (loop$ :for field :in fields
                                  :as accessor :in accessors
                                  :collect (or accessor
-                                              (symbolicate frame frame "-" field))))
+                                              (symbolicate package-witness frame "-" field))))
                 (updater-stobj-defaults (loop$ :for field :in fields
-                                              :collect (symbolicate frame "UPDATE-" frame "-" field)))
+                                              :collect (symbolicate package-witness "UPDATE-" frame "-" field)))
                 (updaters (loop$ :for field :in fields
                                 :as updater :in updaters
                                 :collect (or updater
-                                             (symbolicate frame frame "-" field "-SET"))))
+                                             (symbolicate package-witness frame "-" field "-SET"))))
 
                 ;; Make Doublets
                 (doublets (append (and (not (eq recognizer recognizer-stobj-default))
@@ -338,8 +354,8 @@
                                         :collect `(,updater-stobj-default ,updater))))
 
                 ;; Prologue
-                (frame-begin (symbolicate frame frame "-BEGIN"))
-                (frame-end (symbolicate frame frame "-END"))
+                (frame-begin (symbolicate package-witness frame "-BEGIN"))
+                (frame-end (symbolicate package-witness frame "-END"))
                 (defconst-forms (loop$ :for initial-element-name :in initial-element-names
                                       :as initial-element :in initial-elements
                                       :as stobj-property :in stobj-property-list
@@ -350,7 +366,7 @@
                                             :as stobj-property :in stobj-property-list
                                             :as initial-element :in initial-elements
                                             :collect `(,accessor
-; TODO: STOBJ check this works with non-atomic array and hash-table
+; TODO: check this works with non-atomic array and hash-table types
                                                        :type ,element-type
                                                        ,@(and (not stobj-property)
                                                               `(:initially ,initial-element)))))
@@ -369,21 +385,21 @@
                 ;; Theorem Names
                 (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
 
-                (recognizer{type-prescription} (symbolicate frame recognizer "{TYPE-PRESCRIPTION}"))
-                (recognizer{compound-recognizer} (symbolicate frame recognizer "{COMPOUND-RECOGNIZER}"))
-                (recognizer-of-creator (symbolicate frame recognizer "-OF-" creator))
-                (view{type-prescription} (symbolicate frame view "{TYPE-PRESCRIPTION}"))
-                (recognizer-of-view (symbolicate frame recognizer "-OF-" view))
-                (view{rewrite} (symbolicate frame view "{REWRITE}"))
-                (fixer{rewrite} (symbolicate frame fixer "{REWRITE}"))
+                (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
+                (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+                (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
+                (view{type-prescription} (symbolicate package-witness view "{TYPE-PRESCRIPTION}"))
+                (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
+                (view{rewrite} (symbolicate package-witness view "{REWRITE}"))
+                (fixer{rewrite} (symbolicate package-witness fixer "{REWRITE}"))
 
                 ;; Epilogue
-                (frame-theorems (symbolicate frame frame "-THEOREMS"))
+                (frame-theorems (symbolicate package-witness frame "-THEOREMS"))
                 (epilogue
                  `((in-theory
                      (enable ,view{rewrite}
                              ,@(loop$ :for updater :in updaters
-                                     :collect (symbolicate frame updater "{REWRITE}"))))
+                                     :collect (symbolicate package-witness updater "{REWRITE}"))))
 
                    (deflabel ,frame-end)
 
@@ -484,7 +500,7 @@
                             :as recognizer :in recognizers
                             :as element-type :in element-types
                             :as stobj-recognizer :in stobj-recognizers
-                            :collect `(defthm ,(symbolicate frame recognizer "{REWRITE}")
+                            :collect `(defthm ,(symbolicate package-witness recognizer "{REWRITE}")
                                         (equal (,recognizer ,field)
                                                ,(if stobj-recognizer
                                                     `(,stobj-recognizer ,field)
@@ -509,7 +525,7 @@
                             :as stobj-recognizer :in stobj-recognizers
                             :as element-type :in element-types
                             :when (not (eq element-type t))
-                            :collect `(defthm ,(symbolicate frame (or stobj-recognizer "TYPEP$") "-OF-" accessor)
+                            :collect `(defthm ,(symbolicate package-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor)
                                         (implies (,recognizer ,frame)
                                                  ,(if stobj-recognizer
                                                       `(,stobj-recognizer (,accessor ,frame))
@@ -521,7 +537,7 @@
                     ,@(loop$ :for accessor :in accessors
                             :as initial-element-name :in initial-element-names
                             :as stobj-creator :in stobj-creators
-                            :collect `(defthm ,(symbolicate frame accessor "-OF-" creator)
+                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" creator)
                                         (equal (,accessor (,creator))
                                                ,(if stobj-creator
                                                     `(,stobj-creator)
@@ -531,7 +547,7 @@
                             :append (loop$ :for updater :in updaters
                                           :as %accessor :in accessors
                                           :as field :in fields
-                                          :collect `(defthm ,(symbolicate frame accessor "-OF-" updater)
+                                          :collect `(defthm ,(symbolicate package-witness accessor "-OF-" updater)
                                                       (equal (,accessor (,updater ,field ,frame))
                                                              ,(if (eq accessor %accessor)
                                                                   field
@@ -541,7 +557,7 @@
                             :as field :in fields
                             :as element-type :in element-types
                             :as stobj-recognizer :in stobj-recognizers
-                            :collect `(defthm ,(symbolicate frame recognizer "-OF-" updater)
+                            :collect `(defthm ,(symbolicate package-witness recognizer "-OF-" updater)
                                         (implies ,(cond
                                                     ((equal element-type t)
                                                      `(,recognizer ,frame))
@@ -599,7 +615,6 @@
                                               (return body))
                                              ((car stobj-property-list)
                                               (let* ((st (car element-types))
-                                                     ;; TODO: STOBJ Get from formals?
                                                      (%st (symbolicate st "%" st))
                                                      (stobj-copy (car stobj-copy-list)))
                                                 (setq body `(stobj-let ((,%st (,(car accessors) ,frame) ,(car updaters)))
@@ -656,7 +671,7 @@
                         (loop$ :for field :in fields
                               :as accessor :in accessors
                               :as stobj-coupled-p :in stobj-coupled-p-list
-                              :collect `(defthm ,(symbolicate frame accessor "-OF-" view)
+                              :collect `(defthm ,(symbolicate package-witness accessor "-OF-" view)
                                           (implies ,(cond
                                                       (stobj-coupled-p
                                                        `(and (,recognizer ,frame)
@@ -684,7 +699,7 @@
                                          :as stobj-coupled-p :in stobj-coupled-p-list
                                          :as field :in fields
                                          :as i :from 0 :to (1- (len fields))
-                                         :collect `(defthmd ,(symbolicate frame updater "{REWRITE}")
+                                         :collect `(defthmd ,(symbolicate package-witness updater "{REWRITE}")
                                                      (implies (and (syntaxp (not (and (consp ,frame)
                                                                                       (eq (car ,frame) ',view))))
                                                                    (,recognizer ,frame)
@@ -724,7 +739,7 @@
                                          :as stobj-coupled-p :in stobj-coupled-p-list
                                          :as %field :in %fields
                                          :as i :from 0 :to (1- (len fields))
-                                         :collect `(defthm ,(symbolicate frame updater "-OF-" view)
+                                         :collect `(defthm ,(symbolicate package-witness updater "-OF-" view)
                                                      (implies ,(if (or (not (eq element-type t))
                                                                        hypotheses
                                                                        stobj-coupled-p)
@@ -782,4 +797,6 @@
 
               ,body
 
-              ,@epilogue))))))
+              ,@epilogue
+
+              (table package-witness ',frame ',package-witness)))))))
