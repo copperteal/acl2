@@ -124,7 +124,6 @@
 
      (make-event
        (let* ((hash-table ',hash-table)
-              (%hash-table (symbolicate hash-table "%" hash-table))
               (test ',test)
 
               (key (or ',key
@@ -417,6 +416,7 @@
               (keys-set-of-keys-free (symbolicate hash-table keys-set-of-keys "-FREE"))
               (keys-set-of-keys-set (symbolicate hash-table keys-set "-OF-" keys-set))
 
+              (%hash-table (symbolicate hash-table "%" hash-table))
               (keys-equal (symbolicate hash-table hash-table "-KEYS-EQUAL"))
               (keys-equal-necc (symbolicate hash-table keys-equal "-NECC"))
               (keys-equal-witness (symbolicate hash-table keys-equal "-WITNESS"))
