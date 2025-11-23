@@ -32,11 +32,10 @@
 
 #||
 (include-book "symbolic-ordinals")
-(include-book "type-spec")
-(include-book "utilities/top")
 (include-book "lemmas/top")
-(include-book "constructors/top")
 (include-book "test/top")
 ||#
 
+(include-book "type-spec")
+(include-book "utilities/top")
 (include-book "constructors/top")

@@ -67,6 +67,7 @@
        (keys 'nil)
        (keys-set 'nil)
 
+       (package-witness 'nil package-witness-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
@@ -99,6 +100,9 @@
                               (or copyable
                                   (and (not keys)
                                        (not keys-set)))
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -107,6 +111,9 @@
 
      (make-event
        (let* ((hash-table ',hash-table)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
               (test ',test)
               (size ',size)
 
@@ -128,7 +135,7 @@
                                (stobj-property
                                 (cdadr stobj-property))))
               (default-value ',default-value)
-              (default-value-name (symbolicate hash-table "*" hash-table "-DEFAULT-VALUE*"))
+              (default-value-name (symbolicate package-witness "*" hash-table "-DEFAULT-VALUE*"))
               (copyable ',copyable)
 
               (inline ',inline)
@@ -153,53 +160,53 @@
 
               ;; Interface Symbols
               (contents (or contents
-                            (symbolicate hash-table hash-table "-CONTENTS")))
-              (contents-recognizer-stobj-default (symbolicate hash-table contents "P"))
+                            (symbolicate package-witness hash-table "-CONTENTS")))
+              (contents-recognizer-stobj-default (symbolicate package-witness contents "P"))
               (contents-recognizer (or contents-recognizer
-                                       (symbolicate hash-table contents (make-predicate-suffix contents))))
-              (recognizer-stobj-default (symbolicate hash-table hash-table "P"))
+                                       (symbolicate package-witness contents (make-predicate-suffix contents))))
+              (recognizer-stobj-default (symbolicate package-witness hash-table "P"))
               (recognizer (or recognizer
-                              (symbolicate hash-table hash-table (make-predicate-suffix hash-table))))
-              (creator-stobj-default (symbolicate hash-table "CREATE-" hash-table))
+                              (symbolicate package-witness hash-table (make-predicate-suffix hash-table))))
+              (creator-stobj-default (symbolicate package-witness "CREATE-" hash-table))
               (creator (or creator
-                           (symbolicate hash-table "CREATE-" hash-table)))
+                           (symbolicate package-witness "CREATE-" hash-table)))
               (fixer (or fixer
-                         (symbolicate hash-table hash-table "-FIX")))
-              (accessor-stobj-default (symbolicate hash-table contents "-GET"))
+                         (symbolicate package-witness hash-table "-FIX")))
+              (accessor-stobj-default (symbolicate package-witness contents "-GET"))
               (accessor (or accessor
-                            (symbolicate hash-table hash-table "-GET")))
-              (updater-stobj-default (symbolicate hash-table contents "-PUT"))
+                            (symbolicate package-witness hash-table "-GET")))
+              (updater-stobj-default (symbolicate package-witness contents "-PUT"))
               (updater (or updater
-                           (symbolicate hash-table hash-table "-PUT")))
-              (boundp-stobj-default (symbolicate hash-table contents "-BOUNDP"))
+                           (symbolicate package-witness hash-table "-PUT")))
+              (boundp-stobj-default (symbolicate package-witness contents "-BOUNDP"))
               (boundp (or boundp
-                          (symbolicate hash-table hash-table "-BOUNDP")))
-              (getp-stobj-default (symbolicate hash-table contents "-GET?"))
+                          (symbolicate package-witness hash-table "-BOUNDP")))
+              (getp-stobj-default (symbolicate package-witness contents "-GET?"))
               (getp (or getp
-                        (symbolicate hash-table hash-table "-GETP")))
-              (remover-stobj-default (symbolicate hash-table contents "-REM"))
+                        (symbolicate package-witness hash-table "-GETP")))
+              (remover-stobj-default (symbolicate package-witness contents "-REM"))
               (remover (or remover
-                           (symbolicate hash-table hash-table "-REM")))
-              (count-stobj-default (symbolicate hash-table contents "-COUNT"))
+                           (symbolicate package-witness hash-table "-REM")))
+              (count-stobj-default (symbolicate package-witness contents "-COUNT"))
               (count (or count
-                         (symbolicate hash-table hash-table "-COUNT")))
-              (clear-stobj-default (symbolicate hash-table contents "-CLEAR"))
+                         (symbolicate package-witness hash-table "-COUNT")))
+              (clear-stobj-default (symbolicate package-witness contents "-CLEAR"))
               (clear (or clear
-                         (symbolicate hash-table hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLEAR")))
               (%clear (if copyable
-                          (symbolicate hash-table hash-table "-%CLEAR")
+                          (symbolicate package-witness hash-table "-%CLEAR")
                           clear))
-              (init-stobj-default (symbolicate hash-table contents "-INIT"))
+              (init-stobj-default (symbolicate package-witness contents "-INIT"))
               (init (or init
-                        (symbolicate hash-table hash-table "-INIT")))
+                        (symbolicate package-witness hash-table "-INIT")))
               (%init (if copyable
-                         (symbolicate hash-table hash-table "-%INIT")
+                         (symbolicate package-witness hash-table "-%INIT")
                          init))
               (keys (or keys
-                        (symbolicate hash-table hash-table "-KEYS")))
-              (keys-set-stobj-default (symbolicate hash-table "UPDATE-" keys))
+                        (symbolicate package-witness hash-table "-KEYS")))
+              (keys-set-stobj-default (symbolicate package-witness "UPDATE-" keys))
               (keys-set (or keys-set
-                            (symbolicate hash-table keys "-SET")))
+                            (symbolicate package-witness keys "-SET")))
 
               ;; Make Doublets
               (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
@@ -229,8 +236,8 @@
                                      `((,keys-set-stobj-default ,keys-set)))))
 
               ;; Prologue
-              (hash-table-begin (symbolicate hash-table hash-table "-BEGIN"))
-              (hash-table-end (symbolicate hash-table hash-table "-END"))
+              (hash-table-begin (symbolicate package-witness hash-table "-BEGIN"))
+              (hash-table-end (symbolicate package-witness hash-table "-END"))
               (prologue
                `((deflabel ,hash-table-begin)
 
@@ -251,92 +258,92 @@
               ;; Theorem Names
               (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
 
-              (contents-recognizer{type-prescription} (symbolicate hash-table contents-recognizer "{TYPE-PRESCRIPTION}"))
+              (contents-recognizer{type-prescription} (symbolicate package-witness contents-recognizer "{TYPE-PRESCRIPTION}"))
 
-              (recognizer{type-prescription} (symbolicate hash-table recognizer "{TYPE-PRESCRIPTION}"))
-              (recognizer{compound-recognizer} (symbolicate hash-table recognizer "{COMPOUND-RECOGNIZER}"))
-              (recognizer-of-creator (symbolicate hash-table recognizer "-OF-" creator))
-              (recognizer-of-updater (symbolicate hash-table recognizer "-OF-" updater))
-              (recognizer-of-remover (symbolicate hash-table recognizer "-OF-" remover))
-              (recognizer-of-%clear (symbolicate hash-table recognizer "-OF-" %clear))
-              (recognizer-of-%init (symbolicate hash-table recognizer "-OF-" %init))
-              (recognizer-of-keys-set (symbolicate hash-table recognizer "-OF-" keys-set))
+              (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
+              (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+              (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
+              (recognizer-of-updater (symbolicate package-witness recognizer "-OF-" updater))
+              (recognizer-of-remover (symbolicate package-witness recognizer "-OF-" remover))
+              (recognizer-of-%clear (symbolicate package-witness recognizer "-OF-" %clear))
+              (recognizer-of-%init (symbolicate package-witness recognizer "-OF-" %init))
+              (recognizer-of-keys-set (symbolicate package-witness recognizer "-OF-" keys-set))
 
-              (typep$-of-accessor (symbolicate hash-table "TYPEP$-OF-" accessor))
-              (accessor-of-creator (symbolicate hash-table accessor "-OF-" creator))
-              (accessor-of-updater (symbolicate hash-table accessor "-OF-" updater))
-              (accessor-of-updater-same (symbolicate hash-table accessor-of-updater "-SAME"))
-              (accessor-of-updater-diff (symbolicate hash-table accessor-of-updater "-DIFF"))
-              (accessor-when-not-boundp (symbolicate hash-table accessor "-WHEN-NOT-" boundp))
-              (accessor-of-remover (symbolicate hash-table accessor "-OF-" remover))
-              (accessor-of-remover-same (symbolicate hash-table accessor-of-remover "-SAME"))
-              (accessor-of-remover-diff (symbolicate hash-table accessor-of-remover "-DIFF"))
-              (accessor-of-keys-set (symbolicate hash-table accessor "-OF-" keys-set))
+              (typep$-of-accessor (symbolicate package-witness "TYPEP$-OF-" accessor))
+              (accessor-of-creator (symbolicate package-witness accessor "-OF-" creator))
+              (accessor-of-updater (symbolicate package-witness accessor "-OF-" updater))
+              (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
+              (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
+              (accessor-when-not-boundp (symbolicate package-witness accessor "-WHEN-NOT-" boundp))
+              (accessor-of-remover (symbolicate package-witness accessor "-OF-" remover))
+              (accessor-of-remover-same (symbolicate package-witness accessor-of-remover "-SAME"))
+              (accessor-of-remover-diff (symbolicate package-witness accessor-of-remover "-DIFF"))
+              (accessor-of-keys-set (symbolicate package-witness accessor "-OF-" keys-set))
 
-              (updater{type-prescription} (symbolicate hash-table updater "{TYPE-PRESCRIPTION}"))
+              (updater{type-prescription} (symbolicate package-witness updater "{TYPE-PRESCRIPTION}"))
 
-              (boundp{type-prescription} (symbolicate hash-table boundp "{TYPE-PRESCRIPTION}"))
-              (boundp-of-creator (symbolicate hash-table boundp "-OF-" creator))
-              (boundp-of-updater (symbolicate hash-table boundp "-OF-" updater))
-              (boundp-of-updater-same (symbolicate hash-table boundp-of-updater "-SAME"))
-              (boundp-of-updater-diff (symbolicate hash-table boundp-of-updater "-DIFF"))
-              (boundp-of-remover (symbolicate hash-table boundp "-OF-" remover))
-              (boundp-of-remover-same (symbolicate hash-table boundp-of-remover "-SAME"))
-              (boundp-of-remover-diff (symbolicate hash-table boundp-of-remover "-DIFF"))
-              (boundp-of-keys-set (symbolicate hash-table boundp "-OF-" keys-set))
+              (boundp{type-prescription} (symbolicate package-witness boundp "{TYPE-PRESCRIPTION}"))
+              (boundp-of-creator (symbolicate package-witness boundp "-OF-" creator))
+              (boundp-of-updater (symbolicate package-witness boundp "-OF-" updater))
+              (boundp-of-updater-same (symbolicate package-witness boundp-of-updater "-SAME"))
+              (boundp-of-updater-diff (symbolicate package-witness boundp-of-updater "-DIFF"))
+              (boundp-of-remover (symbolicate package-witness boundp "-OF-" remover))
+              (boundp-of-remover-same (symbolicate package-witness boundp-of-remover "-SAME"))
+              (boundp-of-remover-diff (symbolicate package-witness boundp-of-remover "-DIFF"))
+              (boundp-of-keys-set (symbolicate package-witness boundp "-OF-" keys-set))
 
-              (getp{type-prescription} (symbolicate hash-table getp "{TYPE-PRESCRIPTION}"))
-              (getp{rewrite} (symbolicate hash-table getp "{REWRITE}"))
+              (getp{type-prescription} (symbolicate package-witness getp "{TYPE-PRESCRIPTION}"))
+              (getp{rewrite} (symbolicate package-witness getp "{REWRITE}"))
 
-              (remover{type-prescription} (symbolicate hash-table remover "{TYPE-PRESCRIPTION}"))
-              (remover-of-creator (symbolicate hash-table remover "-OF-" creator))
-              (remover-of-updater (symbolicate hash-table remover "-OF-" updater))
-              (remover-of-updater-same (symbolicate hash-table remover-of-updater "-SAME"))
-              (remover-of-updater-diff (symbolicate hash-table remover-of-updater "-DIFF"))
-              (remover-of-remover (symbolicate hash-table remover "-OF-" remover))
-              (remover-of-remover-same (symbolicate hash-table remover-of-remover "-SAME"))
-              (remover-of-remover-diff (symbolicate hash-table remover-of-remover "-DIFF"))
+              (remover{type-prescription} (symbolicate package-witness remover "{TYPE-PRESCRIPTION}"))
+              (remover-of-creator (symbolicate package-witness remover "-OF-" creator))
+              (remover-of-updater (symbolicate package-witness remover "-OF-" updater))
+              (remover-of-updater-same (symbolicate package-witness remover-of-updater "-SAME"))
+              (remover-of-updater-diff (symbolicate package-witness remover-of-updater "-DIFF"))
+              (remover-of-remover (symbolicate package-witness remover "-OF-" remover))
+              (remover-of-remover-same (symbolicate package-witness remover-of-remover "-SAME"))
+              (remover-of-remover-diff (symbolicate package-witness remover-of-remover "-DIFF"))
 
-              (count{type-prescription} (symbolicate hash-table count "{TYPE-PRESCRIPTION}"))
-              (count-of-creator (symbolicate hash-table count "-OF-" creator))
-              (count-of-updater (symbolicate hash-table count "-OF-" updater))
-              (count-of-updater-when-boundp (symbolicate hash-table count-of-updater "-WHEN-" boundp))
-              (count-of-updater-when-not-boundp (symbolicate hash-table count-of-updater "-WHEN-NOT-" boundp))
-              (count-when-boundp (symbolicate hash-table count "-WHEN-" boundp))
-              (count-of-remover (symbolicate hash-table count "-OF-" remover))
-              (count-of-remover-when-boundp (symbolicate hash-table count-of-remover "-WHEN-" boundp))
-              (count-of-remover-when-not-boundp (symbolicate hash-table count-of-remover "-WHEN-NOT-" boundp))
-              (count-of-keys-set (symbolicate hash-table count "-OF-" keys-set))
+              (count{type-prescription} (symbolicate package-witness count "{TYPE-PRESCRIPTION}"))
+              (count-of-creator (symbolicate package-witness count "-OF-" creator))
+              (count-of-updater (symbolicate package-witness count "-OF-" updater))
+              (count-of-updater-when-boundp (symbolicate package-witness count-of-updater "-WHEN-" boundp))
+              (count-of-updater-when-not-boundp (symbolicate package-witness count-of-updater "-WHEN-NOT-" boundp))
+              (count-when-boundp (symbolicate package-witness count "-WHEN-" boundp))
+              (count-of-remover (symbolicate package-witness count "-OF-" remover))
+              (count-of-remover-when-boundp (symbolicate package-witness count-of-remover "-WHEN-" boundp))
+              (count-of-remover-when-not-boundp (symbolicate package-witness count-of-remover "-WHEN-NOT-" boundp))
+              (count-of-keys-set (symbolicate package-witness count "-OF-" keys-set))
 
-              (%clear{type-prescription} (symbolicate hash-table %clear "{TYPE-PRESCRIPTION}"))
-              (%clear{rewrite} (symbolicate hash-table %clear "{REWRITE}"))
+              (%clear{type-prescription} (symbolicate package-witness %clear "{TYPE-PRESCRIPTION}"))
+              (%clear{rewrite} (symbolicate package-witness %clear "{REWRITE}"))
 
-              (%init{type-prescription} (symbolicate hash-table %init "{TYPE-PRESCRIPTION}"))
-              (%init{rewrite} (symbolicate hash-table %init "{REWRITE}"))
+              (%init{type-prescription} (symbolicate package-witness %init "{TYPE-PRESCRIPTION}"))
+              (%init{rewrite} (symbolicate package-witness %init "{REWRITE}"))
 
-              (keys-of-creator (symbolicate hash-table keys "-OF-" creator))
-              (keys-of-updater (symbolicate hash-table keys "-OF-" updater))
-              (keys-of-remover (symbolicate hash-table keys "-OF-" remover))
-              (keys-of-keys-set (symbolicate hash-table keys "-OF-" keys-set))
+              (keys-of-creator (symbolicate package-witness keys "-OF-" creator))
+              (keys-of-updater (symbolicate package-witness keys "-OF-" updater))
+              (keys-of-remover (symbolicate package-witness keys "-OF-" remover))
+              (keys-of-keys-set (symbolicate package-witness keys "-OF-" keys-set))
 
-              (keys-set{type-prescription} (symbolicate hash-table keys-set "{TYPE-PRESCRIPTION}"))
-              (keys-set-of-updater (symbolicate hash-table keys-set "-OF-" updater))
-              (keys-set-of-remover (symbolicate hash-table keys-set "-OF-" remover))
-              (keys-set-of-keys-set (symbolicate hash-table keys-set "-OF-" keys-set))
+              (keys-set{type-prescription} (symbolicate package-witness keys-set "{TYPE-PRESCRIPTION}"))
+              (keys-set-of-updater (symbolicate package-witness keys-set "-OF-" updater))
+              (keys-set-of-remover (symbolicate package-witness keys-set "-OF-" remover))
+              (keys-set-of-keys-set (symbolicate package-witness keys-set "-OF-" keys-set))
 
-              (fixer{type-prescription} (symbolicate hash-table fixer "{TYPE-PRESCRIPTION}"))
-              (recognizer-of-fixer (symbolicate hash-table recognizer "-OF-" fixer))
-              (fixer-when-recognizer (symbolicate hash-table fixer "-WHEN-" recognizer))
-              (fixer-when-not-recognizer (symbolicate hash-table fixer "-WHEN-NOT-" recognizer))
+              (fixer{type-prescription} (symbolicate package-witness fixer "{TYPE-PRESCRIPTION}"))
+              (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
+              (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
+              (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
-              (clear{type-prescription} (symbolicate hash-table clear "{TYPE-PRESCRIPTION}"))
-              (clear{rewrite} (symbolicate hash-table clear "{REWRITE}"))
+              (clear{type-prescription} (symbolicate package-witness clear "{TYPE-PRESCRIPTION}"))
+              (clear{rewrite} (symbolicate package-witness clear "{REWRITE}"))
 
-              (init{type-prescription} (symbolicate hash-table init "{TYPE-PRESCRIPTION}"))
-              (init{rewrite} (symbolicate hash-table init "{REWRITE}"))
+              (init{type-prescription} (symbolicate package-witness init "{TYPE-PRESCRIPTION}"))
+              (init{rewrite} (symbolicate package-witness init "{REWRITE}"))
 
               ;; Epilogue
-              (hash-table-theorems (symbolicate hash-table hash-table "-THEOREMS"))
+              (hash-table-theorems (symbolicate package-witness hash-table "-THEOREMS"))
               (epilogue
                `((deflabel ,hash-table-end)
 
@@ -1235,4 +1242,6 @@
 
             ,body
 
-            ,@epilogue)))))
+            ,@epilogue
+
+            (table package-witness ',hash-table ',package-witness))))))
