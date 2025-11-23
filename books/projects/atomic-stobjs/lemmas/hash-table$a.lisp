@@ -2344,6 +2344,12 @@
   (defthm val-recognizer-of-val-copy
     (val-recognizer (val-copy %val val)))
 
+  (defthm val-copy-ignores-1
+    (implies (syntaxp (not (and (consp %value)
+                                (eq (car %value) 'default-val))))
+             (equal (val-copy %value value)
+                    (val-copy (default-val) value))))
+
   (defthm val-copy{rewrite}
     (implies (val-coupled-p val)
              (equal (val-copy %val val)
@@ -2732,9 +2738,28 @@
 (defthm recognizer/copyable-of-copy
   (recognizer/copyable (copy %hash-table hash-table)))
 
-(defthm copy-of-fixer/copyable-1
-  (equal (copy (fixer/copyable %hash-table) hash-table)
-         (copy %hash-table hash-table)))
+(defthmd copy-ignores-1
+  (equal (copy %hash-table hash-table)
+         (copy (creator/copyable) hash-table))
+  :hints
+  (("Goal"
+    :use ((:instance equal/copyable
+                     (%hash-table (copy %hash-table hash-table))
+                     (hash-table (copy (creator/copyable) hash-table)))))))
+
+(local
+  (defthm copy-ignores-1-local
+    (equal (copy %hash-table hash-table)
+           (copy (creator/copyable) hash-table))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (syntaxp (not (and (consp %hash-table)
+                                           (eq (car %hash-table) 'creator/copyable))))
+                        (equal (copy %hash-table hash-table)
+                               (copy (creator/copyable) hash-table)))))
+    :hints
+    (("Goal"
+      :by (:functional-instance copy-ignores-1)))))
 
 (defthm copy-of-fixer/copyable-2
   (equal (copy %hash-table (fixer/copyable hash-table))

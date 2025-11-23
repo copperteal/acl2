@@ -216,13 +216,13 @@
   (declare (xargs :guard (and (frame$abs-body-p kvl)
                               (keyword-value-listp kvl))))
   (let* ((executable (cadr (assoc-keyword :executable kvl)))
-         (frame$a (cadr (assoc-keyword :logic kvl)))
-         (frame$c (cadr (assoc-keyword :exec kvl)))
+         (logic (cadr (assoc-keyword :logic kvl)))
+         (exec (cadr (assoc-keyword :exec kvl)))
          (recognizer (cadr (assoc-keyword :recognizer kvl)))
          (creator (cadr (assoc-keyword :creator kvl)))
          (fixer (cadr (assoc-keyword :fixer kvl)))
          (debug (cadr (assoc-keyword :debug kvl))))
-    (mv frame$a frame$c
+    (mv logic exec
         recognizer creator fixer
         executable debug)))
 
@@ -233,12 +233,12 @@
             (split-body$abs () body)
       (mv-let (fields accessors updaters stobjs)
               (parse-fds$abs fds () () () ())
-        (mv-let (frame$a frame$c
-                         recognizer creator fixer
-                         executable debug)
+        (mv-let (logic exec
+                       recognizer creator fixer
+                       executable debug)
                 (parse-kvl$abs kvl)
           (mv fields accessors updaters stobjs
-              frame$a frame$c
+              logic exec
               recognizer creator fixer
               executable debug))))))
 
@@ -274,7 +274,7 @@
   (declare (xargs :guard (frame$abs-form-p form))
            (ignore body))
   (mv-let (fields accessors updaters stobjs
-                  frame$a frame$c
+                  logic exec
                   recognizer creator fixer
                   executable debug)
           (parse-form$abs form)
@@ -285,8 +285,8 @@
 
        (make-event
          (let* ((frame ',frame)
-                (frame$a ',frame$a)
-                (frame$c ',frame$c)
+                (logic ',logic)
+                (exec ',exec)
                 (recognizer ',recognizer)
                 (creator ',creator)
                 (fixer ',fixer)
@@ -297,9 +297,9 @@
                 (executable ',executable)
 
                 ;; Interface Symbols
-                (frame$a (or frame$a
+                (frame$a (or logic
                              (symbolicate frame frame "$A")))
-                (frame$c (or frame$c
+                (frame$c (or exec
                              (symbolicate frame frame "$C")))
                 (recognizer (or recognizer
                                 (symbolicate frame frame (make-predicate-suffix frame))))
@@ -337,7 +337,19 @@
                 (recognizer$a (first (second stobj$a-property)))
                 (creator$a (second (second stobj$a-property)))
                 (fixer$a (third (second stobj$a-property)))
-                (recognizers$a (second (third stobj$a-property)))
+
+                (stobj-property-list (loop$ :for stobj :in stobjs
+                                           :collect (and stobj
+                                                         (getprop stobj
+                                                                  'acl2::stobj
+                                                                  nil
+                                                                  'acl2::current-acl2-world
+                                                                  world))))
+                (recognizers$a (loop$ :for stobj-property :in stobj-property-list
+                                     :as recognizer$a :in (second (third stobj$a-property))
+                                     :collect (if stobj-property
+                                                  (caadr stobj-property)
+                                                  recognizer$a)))
                 (accessors$a (sixth (third stobj$a-property)))
                 (updaters$a (seventh (third stobj$a-property)))
 
@@ -387,7 +399,10 @@
                                   (,recognizer$a ,frame))
                              (,frame$corr (,fixer$c ,frame$c)
                                           (,fixer$a ,frame)))
-                    :rule-classes nil)
+                    :rule-classes nil
+                    :hints
+                    (("Goal"
+                      :in-theory (enable ,fixer$c))))
 
                   (defthm ,fixer{preserved}
                     (implies (,recognizer$a ,frame)
@@ -407,14 +422,15 @@
                   ,@(loop$ :for updater :in updaters
                           :as updater$c :in updaters$c
                           :as updater$a :in updaters$a
+                          :as updater$c-field :in updater$c-fields
                           :as field-recognizer$a :in recognizers$a
                           :collect `(defthm ,(symbolicate frame updater "{CORRESPONDENCE}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     ,@(and field-recognizer$a
-                                                           `((,field-recognizer$a v)))
+                                                           `((,field-recognizer$a ,updater$c-field)))
                                                     (,recognizer$a ,frame))
-                                               (,frame$corr (,updater$c v ,frame$c)
-                                                            (,updater$a v ,frame)))
+                                               (,frame$corr (,updater$c ,updater$c-field ,frame$c)
+                                                            (,updater$a ,updater$c-field ,frame)))
                                       :rule-classes nil))
 
                   ,@(loop$ :for updater :in updaters
@@ -431,13 +447,14 @@
 
                   ,@(loop$ :for updater :in updaters
                           :as updater$a :in updaters$a
+                          :as updater$c-field :in updater$c-fields
                           :as field-recognizer$a :in recognizers$a
                           :collect `(defthm ,(symbolicate frame updater "{PRESERVED}")
                                       (implies ,(if field-recognizer$a
-                                                    `(and (,field-recognizer$a v)
+                                                    `(and (,field-recognizer$a ,updater$c-field)
                                                           (,recognizer$a ,frame))
                                                     `(,recognizer$a ,frame))
-                                               (,recognizer$a (,updater$a v ,frame)))
+                                               (,recognizer$a (,updater$a ,updater$c-field ,frame)))
                                       :rule-classes nil))))
 
               (defabsstobj ,frame

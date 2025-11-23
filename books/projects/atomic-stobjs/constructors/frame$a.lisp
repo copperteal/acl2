@@ -228,9 +228,9 @@
                                                              nil
                                                              'acl2::current-acl2-world
                                                              world)))
-                (absstobj-info-list (loop$ :for field :in fields
-                                          :collect (and (symbolp field)
-                                                        (getprop field
+                (absstobj-info-list (loop$ :for stobj :in stobjs
+                                          :collect (and (symbolp stobj)
+                                                        (getprop stobj
                                                                  'acl2::absstobj-info
                                                                  nil
                                                                  'acl2::current-acl2-world
