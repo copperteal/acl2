@@ -61,6 +61,7 @@
        (accessor 'nil)
        (updater 'nil)
 
+       (package-witness 'nil package-witness-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp vector)
@@ -85,6 +86,9 @@
                                                   resizer
                                                   accessor
                                                   updater))
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -93,12 +97,15 @@
 
      (make-event
        (let* ((vector ',vector)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
               (dimensions ',dimensions)
               (dimensions (if (consp dimensions)
                               dimensions
                               (list dimensions)))
               (default-length (car dimensions))
-              (default-length-name (symbolicate vector "*" vector "-DEFAULT-LENGTH*"))
+              (default-length-name (symbolicate package-witness "*" vector "-DEFAULT-LENGTH*"))
 
               (element-type ',element-type)
               (stobj-property (and (symbolp element-type)
@@ -119,7 +126,7 @@
                                 (cdadr stobj-property))))
               (specialize-element-type ',specialize-element-type)
               (initial-element ',initial-element)
-              (initial-element-name (symbolicate vector "*" vector "-INITIAL-ELEMENT*"))
+              (initial-element-name (symbolicate package-witness "*" vector "-INITIAL-ELEMENT*"))
               (resizable ',resizable)
 
               (inline ',inline)
@@ -138,30 +145,30 @@
 
               ;; Interface Symbols
               (contents (or contents
-                            (symbolicate vector vector "-CONTENTS")))
-              (contents-recognizer-stobj-default (symbolicate vector contents "P"))
+                            (symbolicate package-witness vector "-CONTENTS")))
+              (contents-recognizer-stobj-default (symbolicate package-witness contents "P"))
               (contents-recognizer (or contents-recognizer
-                                       (symbolicate vector contents (make-predicate-suffix contents))))
-              (recognizer-stobj-default (symbolicate vector vector "P"))
+                                       (symbolicate package-witness contents (make-predicate-suffix contents))))
+              (recognizer-stobj-default (symbolicate package-witness vector "P"))
               (recognizer (or recognizer
-                              (symbolicate vector vector (make-predicate-suffix vector))))
-              (creator-stobj-default (symbolicate vector "CREATE-" vector))
+                              (symbolicate package-witness vector (make-predicate-suffix vector))))
+              (creator-stobj-default (symbolicate package-witness "CREATE-" vector))
               (creator (or creator
-                           (symbolicate vector "CREATE-" vector)))
+                           (symbolicate package-witness "CREATE-" vector)))
               (fixer (or fixer
-                         (symbolicate vector vector "-FIX")))
-              (length-stobj-default (symbolicate vector contents "-LENGTH"))
+                         (symbolicate package-witness vector "-FIX")))
+              (length-stobj-default (symbolicate package-witness contents "-LENGTH"))
               (length (or length
-                          (symbolicate vector vector "-LENGTH")))
-              (resizer-stobj-default (symbolicate vector "RESIZE-" contents))
+                          (symbolicate package-witness vector "-LENGTH")))
+              (resizer-stobj-default (symbolicate package-witness "RESIZE-" contents))
               (resizer (or resizer
-                           (symbolicate vector vector "-RESIZE")))
-              (accessor-stobj-default (symbolicate vector contents "I"))
+                           (symbolicate package-witness vector "-RESIZE")))
+              (accessor-stobj-default (symbolicate package-witness contents "I"))
               (accessor (or accessor
-                            (symbolicate vector vector "-REF")))
-              (updater-stobj-default (symbolicate vector "UPDATE-" contents "I"))
+                            (symbolicate package-witness vector "-REF")))
+              (updater-stobj-default (symbolicate package-witness "UPDATE-" contents "I"))
               (updater (or updater
-                           (symbolicate vector vector "-SET")))
+                           (symbolicate package-witness vector "-SET")))
 
               ;; Make Doublets
               (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
@@ -180,8 +187,8 @@
                                      `((,updater-stobj-default ,updater)))))
 
               ;; Prologue
-              (vector-begin (symbolicate vector vector "-BEGIN"))
-              (vector-end (symbolicate vector vector "-END"))
+              (vector-begin (symbolicate package-witness vector "-BEGIN"))
+              (vector-end (symbolicate package-witness vector "-END"))
               (prologue
                `((deflabel ,vector-begin)
 
@@ -207,58 +214,58 @@
               ;; Theorem Names
               (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
 
-              (contents-recognizer{type-prescription} (symbolicate vector contents-recognizer "{TYPE-PRESCRIPTION}"))
-              (contents-recognizer{compound-recognizer} (symbolicate vector contents-recognizer "{COMPOUND-RECOGNIZER}"))
+              (contents-recognizer{type-prescription} (symbolicate package-witness contents-recognizer "{TYPE-PRESCRIPTION}"))
+              (contents-recognizer{compound-recognizer} (symbolicate package-witness contents-recognizer "{COMPOUND-RECOGNIZER}"))
 
-              (recognizer{type-prescription} (symbolicate vector recognizer "{TYPE-PRESCRIPTION}"))
-              (recognizer{compound-recognizer} (symbolicate vector recognizer "{COMPOUND-RECOGNIZER}"))
-              (recognizer-of-creator (symbolicate vector recognizer "-OF-" creator))
-              (recognizer-of-resizer (symbolicate vector recognizer "-OF-" resizer))
-              (recognizer-of-updater (symbolicate vector recognizer "-OF-" updater))
+              (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
+              (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+              (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
+              (recognizer-of-resizer (symbolicate package-witness recognizer "-OF-" resizer))
+              (recognizer-of-updater (symbolicate package-witness recognizer "-OF-" updater))
 
-              (length{type-prescription} (symbolicate vector length "{TYPE-PRESCRIPTION}"))
-              (length-of-creator (symbolicate vector length "-OF-" creator))
-              (length-of-resizer (symbolicate vector length "-OF-" resizer))
-              (length-of-updater (symbolicate vector length "-OF-" updater))
-              (length{rewrite} (symbolicate vector length "{REWRITE}"))
+              (length{type-prescription} (symbolicate package-witness length "{TYPE-PRESCRIPTION}"))
+              (length-of-creator (symbolicate package-witness length "-OF-" creator))
+              (length-of-resizer (symbolicate package-witness length "-OF-" resizer))
+              (length-of-updater (symbolicate package-witness length "-OF-" updater))
+              (length{rewrite} (symbolicate package-witness length "{REWRITE}"))
 
-              (resizer{type-prescription} (symbolicate vector resizer "{TYPE-PRESCRIPTION}"))
-              (resizer-of-creator (symbolicate vector resizer "-OF-" creator))
-              (resizer-of-length (symbolicate vector resizer "-OF-" length))
-              (resizer-of-length-free (symbolicate vector resizer-of-length "-FREE"))
-              (resizer-of-resizer (symbolicate vector resizer "-OF-" resizer))
-              (resizer-of-updater (symbolicate vector resizer "-OF-" updater))
-              (resizer-of-updater-keep (symbolicate vector resizer-of-updater "-KEEP"))
-              (resizer-of-updater-drop (symbolicate vector resizer-of-updater "-DROP"))
-              (resizer{rewrite} (symbolicate vector resizer "{REWRITE}"))
+              (resizer{type-prescription} (symbolicate package-witness resizer "{TYPE-PRESCRIPTION}"))
+              (resizer-of-creator (symbolicate package-witness resizer "-OF-" creator))
+              (resizer-of-length (symbolicate package-witness resizer "-OF-" length))
+              (resizer-of-length-free (symbolicate package-witness resizer-of-length "-FREE"))
+              (resizer-of-resizer (symbolicate package-witness resizer "-OF-" resizer))
+              (resizer-of-updater (symbolicate package-witness resizer "-OF-" updater))
+              (resizer-of-updater-keep (symbolicate package-witness resizer-of-updater "-KEEP"))
+              (resizer-of-updater-drop (symbolicate package-witness resizer-of-updater "-DROP"))
+              (resizer{rewrite} (symbolicate package-witness resizer "{REWRITE}"))
 
-              (typep$-of-accessor (symbolicate vector (or stobj-recognizer "TYPEP$") "-OF-" accessor))
-              (accessor-of-creator (symbolicate vector accessor "-OF-" creator))
-              (accessor-of-resizer (symbolicate vector accessor "-OF-" resizer))
-              (accessor-of-resizer-inner (symbolicate vector accessor-of-resizer "-INNER"))
-              (accessor-of-resizer-outer (symbolicate vector accessor-of-resizer "-OUTER"))
-              (accessor-of-updater (symbolicate vector accessor "-OF-" updater))
-              (accessor-of-updater-same (symbolicate vector accessor-of-updater "-SAME"))
-              (accessor-of-updater-diff (symbolicate vector accessor-of-updater "-DIFF"))
+              (typep$-of-accessor (symbolicate package-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
+              (accessor-of-creator (symbolicate package-witness accessor "-OF-" creator))
+              (accessor-of-resizer (symbolicate package-witness accessor "-OF-" resizer))
+              (accessor-of-resizer-inner (symbolicate package-witness accessor-of-resizer "-INNER"))
+              (accessor-of-resizer-outer (symbolicate package-witness accessor-of-resizer "-OUTER"))
+              (accessor-of-updater (symbolicate package-witness accessor "-OF-" updater))
+              (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
+              (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
 
-              (updater{type-prescription} (symbolicate vector updater "{TYPE-PRESCRIPTION}"))
-              (updater-of-creator (symbolicate vector updater "-OF-" creator))
-              (updater-of-resizer (symbolicate vector updater "-OF-" resizer))
-              (updater-of-resizer-inner (symbolicate vector updater-of-resizer "-INNER"))
-              (updater-of-resizer-outer (symbolicate vector updater-of-resizer "-OUTER"))
-              (updater-of-accessor (symbolicate vector updater "-OF-" accessor))
-              (updater-of-accessor-free (symbolicate vector updater-of-accessor "-FREE"))
-              (updater-of-updater (symbolicate vector updater "-OF-" updater))
-              (updater-of-updater-same (symbolicate vector updater-of-updater "-SAME"))
-              (updater-of-updater-diff (symbolicate vector updater-of-updater "-DIFF"))
+              (updater{type-prescription} (symbolicate package-witness updater "{TYPE-PRESCRIPTION}"))
+              (updater-of-creator (symbolicate package-witness updater "-OF-" creator))
+              (updater-of-resizer (symbolicate package-witness updater "-OF-" resizer))
+              (updater-of-resizer-inner (symbolicate package-witness updater-of-resizer "-INNER"))
+              (updater-of-resizer-outer (symbolicate package-witness updater-of-resizer "-OUTER"))
+              (updater-of-accessor (symbolicate package-witness updater "-OF-" accessor))
+              (updater-of-accessor-free (symbolicate package-witness updater-of-accessor "-FREE"))
+              (updater-of-updater (symbolicate package-witness updater "-OF-" updater))
+              (updater-of-updater-same (symbolicate package-witness updater-of-updater "-SAME"))
+              (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
 
-              (fixer{type-prescription} (symbolicate vector fixer "{TYPE-PRESCRIPTION}"))
-              (recognizer-of-fixer (symbolicate vector recognizer "-OF-" fixer))
-              (fixer-when-recognizer (symbolicate vector fixer "-WHEN-" recognizer))
-              (fixer-when-not-recognizer (symbolicate vector fixer "-WHEN-NOT-" recognizer))
+              (fixer{type-prescription} (symbolicate package-witness fixer "{TYPE-PRESCRIPTION}"))
+              (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
+              (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
+              (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
               ;; Epilogue
-              (vector-theorems (symbolicate vector vector "-THEOREMS"))
+              (vector-theorems (symbolicate package-witness vector "-THEOREMS"))
               (epilogue
                `((deflabel ,vector-end)
 
@@ -892,4 +899,6 @@
 
             ,body
 
-            ,@epilogue)))))
+            ,@epilogue
+
+            (table package-witness ',vector ',package-witness))))))

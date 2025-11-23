@@ -39,11 +39,23 @@
                                 (logic 'nil)
                                 (exec 'nil)
 
+                                (package-witness 'nil package-witness-supplied-p)
+                                (package-witness$a 'nil package-witness$a-supplied-p)
+                                (package-witness$c 'nil package-witness$c-supplied-p)
                                 (debug 'nil))
 
   (declare (xargs :guard (and (symbolp vector)
                               (symbolp logic)
                               (symbolp exec)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
+                              (or (symbolp package-witness$a)
+                                  (and (stringp package-witness$a)
+                                       (not (equal package-witness$a ""))))
+                              (or (symbolp package-witness$c)
+                                  (and (stringp package-witness$c)
+                                       (not (equal package-witness$c ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -54,14 +66,23 @@
        (let* ((vector ',vector)
               (logic ',logic)
               (exec ',exec)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
+              (package-witness$a (if ',package-witness$a-supplied-p
+                                     ',package-witness$a
+                                     package-witness))
+              (package-witness$c (if ',package-witness$c-supplied-p
+                                     ',package-witness$c
+                                     package-witness))
 
-              (vector$corr (symbolicate vector vector "$CORR"))
-              (vector$corr-contents (symbolicate vector vector$corr "-CONTENTS"))
+              (vector$corr (symbolicate package-witness vector "$CORR"))
+              (vector$corr-contents (symbolicate package-witness vector$corr "-CONTENTS"))
 
               (vector$a (or logic
-                            (symbolicate vector vector "$A")))
+                            (symbolicate package-witness$a vector "$A")))
               (vector$c (or exec
-                            (symbolicate vector vector "$C")))
+                            (symbolicate package-witness$c vector "$C")))
 
               (stobj-property (getpropc vector$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
@@ -117,6 +138,9 @@
 
        (executable 'nil)
 
+       (package-witness 'nil package-witness-supplied-p)
+       (package-witness$a 'nil package-witness$a-supplied-p)
+       (package-witness$c 'nil package-witness$c-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp vector)
@@ -130,6 +154,15 @@
                                                   accessor
                                                   updater))
                               (booleanp executable)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
+                              (or (symbolp package-witness$a)
+                                  (and (stringp package-witness$a)
+                                       (not (equal package-witness$a ""))))
+                              (or (symbolp package-witness$c)
+                                  (and (stringp package-witness$c)
+                                       (not (equal package-witness$c ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -148,26 +181,35 @@
               (accessor ',accessor)
               (updater ',updater)
               (executable ',executable)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
+              (package-witness$a (if ',package-witness$a-supplied-p
+                                     ',package-witness$a
+                                     package-witness))
+              (package-witness$c (if ',package-witness$c-supplied-p
+                                     ',package-witness$c
+                                     package-witness))
 
               ;; Interface Symbols
               (vector$a (or logic
-                            (symbolicate vector vector "$A")))
+                            (symbolicate package-witness$a vector "$A")))
               (vector$c (or exec
-                            (symbolicate vector vector "$C")))
+                            (symbolicate package-witness$c vector "$C")))
               (recognizer (or recognizer
-                              (symbolicate vector vector (make-predicate-suffix vector))))
+                              (symbolicate package-witness vector (make-predicate-suffix vector))))
               (creator (or creator
-                           (symbolicate vector "CREATE-" vector)))
+                           (symbolicate package-witness "CREATE-" vector)))
               (fixer (or fixer
-                         (symbolicate vector vector "-FIX")))
+                         (symbolicate package-witness vector "-FIX")))
               (length (or length
-                          (symbolicate vector vector "-LENGTH")))
+                          (symbolicate package-witness vector "-LENGTH")))
               (resizer (or resizer
-                           (symbolicate vector vector "-RESIZE")))
+                           (symbolicate package-witness vector "-RESIZE")))
               (accessor (or accessor
-                            (symbolicate vector vector "-REF")))
+                            (symbolicate package-witness vector "-REF")))
               (updater (or updater
-                           (symbolicate vector vector "-SET")))
+                           (symbolicate package-witness vector "-SET")))
 
               (world (w state))
               (vector$corr-list (cdr (assoc vector (table-alist 'corr world))))
@@ -205,18 +247,18 @@
               (default-length-name (second (second (third stobj$a-property))))
 
               ;; Theorem Names
-              (creator{correspondence} (symbolicate vector creator "{CORRESPONDENCE}"))
-              (creator{preserved} (symbolicate vector creator "{PRESERVED}"))
-              (fixer{correspondence} (symbolicate vector fixer "{CORRESPONDENCE}"))
-              (fixer{preserved} (symbolicate vector fixer "{PRESERVED}"))
-              (length{correspondence} (symbolicate vector length "{CORRESPONDENCE}"))
-              (resizer{correspondence} (symbolicate vector resizer "{CORRESPONDENCE}"))
-              (resizer{preserved} (symbolicate vector resizer "{PRESERVED}"))
-              (accessor{correspondence} (symbolicate vector accessor "{CORRESPONDENCE}"))
-              (accessor{guard-thm} (symbolicate vector accessor "{GUARD-THM}"))
-              (updater{correspondence} (symbolicate vector updater "{CORRESPONDENCE}"))
-              (updater{guard-thm} (symbolicate vector updater "{GUARD-THM}"))
-              (updater{preserved} (symbolicate vector updater "{PRESERVED}"))
+              (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
+              (creator{preserved} (symbolicate package-witness creator "{PRESERVED}"))
+              (fixer{correspondence} (symbolicate package-witness fixer "{CORRESPONDENCE}"))
+              (fixer{preserved} (symbolicate package-witness fixer "{PRESERVED}"))
+              (length{correspondence} (symbolicate package-witness length "{CORRESPONDENCE}"))
+              (resizer{correspondence} (symbolicate package-witness resizer "{CORRESPONDENCE}"))
+              (resizer{preserved} (symbolicate package-witness resizer "{PRESERVED}"))
+              (accessor{correspondence} (symbolicate package-witness accessor "{CORRESPONDENCE}"))
+              (accessor{guard-thm} (symbolicate package-witness accessor "{GUARD-THM}"))
+              (updater{correspondence} (symbolicate package-witness updater "{CORRESPONDENCE}"))
+              (updater{guard-thm} (symbolicate package-witness updater "{GUARD-THM}"))
+              (updater{preserved} (symbolicate package-witness updater "{PRESERVED}"))
 
               ;; Exports
               (exports `((,fixer :logic ,fixer$a
@@ -239,8 +281,8 @@
                                    (cddr updater$c-guard)
                                    (cdr updater$c-guard)))
 
-              (aggressive$a (symbolicate vector$a vector$a "-AGGRESSIVE"))
-              (accessor$c-of-resizer$c (symbolicate vector$c accessor$c "-OF-" resizer$c))
+              (aggressive$a (symbolicate package-witness$a vector$a "-AGGRESSIVE"))
+              (accessor$c-of-resizer$c (symbolicate package-witness$c accessor$c "-OF-" resizer$c))
 
               (resizer$c-index (car (getpropc resizer$c 'acl2::formals)))
               (accessor$c-index (car (getpropc accessor$c 'acl2::formals)))
@@ -379,4 +421,6 @@
               :non-executable ,(not executable)
               :exports ,exports)
 
-            (table stobj$a-property ',vector ',stobj$a-property))))))
+            (table stobj$a-property ',vector ',stobj$a-property)
+
+            (table package-witness ',vector ',package-witness))))))
