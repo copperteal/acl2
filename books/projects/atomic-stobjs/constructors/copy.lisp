@@ -64,18 +64,21 @@
 
 
 ;;;; `MAKE-VECTOR-COPY-EVENTS'
-(defun make-vector-copy-events (vector state)
+(defun make-vector-copy-events (vector package-witness state)
   (declare (xargs :stobjs state
-                  :guard (symbolp vector)
+                  :guard (and (symbolp vector)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness "")))))
                   :verify-guards nil))
-  (let* ((%vector (symbolicate vector "%" vector))
-         (copy (symbolicate vector vector "-COPY"))
-         (copy-rec (symbolicate vector copy "-REC"))
-         (copy{rewrite} (symbolicate vector copy "{REWRITE}"))
-         (index (symbolicate vector "I"))
+  (let* ((%vector (symbolicate package-witness "%" vector))
+         (copy (symbolicate package-witness vector "-COPY"))
+         (copy-rec (symbolicate package-witness copy "-REC"))
+         (copy{rewrite} (symbolicate package-witness copy "{REWRITE}"))
+         (index (symbolicate package-witness "I"))
 
-         (coupledp (symbolicate vector vector "-COUPLED-P"))
-         (coupledp-witness (symbolicate vector coupledp "-WITNESS"))
+         (coupledp (symbolicate package-witness vector "-COUPLED-P"))
+         (coupledp-witness (symbolicate package-witness coupledp "-WITNESS"))
 
          ;; `VECTOR'
          (stobj-property (getpropc vector 'acl2::stobj))
@@ -90,10 +93,10 @@
          (world (w state))
          (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
          (vector$a (first stobj$a-property))
-         (recognizer$a-aux (symbolicate vector vector$a "-AUX-P"))
-         (vector$a-definitions (symbolicate vector vector$a "-DEFINITIONS"))
-         (vector$a-theorems (symbolicate vector vector$a "-THEOREMS"))
-         (vector$a-aggressive (symbolicate vector vector$a "-AGGRESSIVE"))
+         (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
+         (vector$a-definitions (symbolicate vector$a vector$a "-DEFINITIONS"))
+         (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
+         (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -128,20 +131,20 @@
          (accessor (if element-stobj-property
                        (first (third stobj-property))
                        accessor))
-         (%accessor (symbolicate vector "%" accessor))
+         (%accessor (symbolicate package-witness "%" accessor))
          (updater (if element-stobj-property
                       (second (third stobj-property))
                       updater))
-         (%updater (symbolicate vector "%" updater))
+         (%updater (symbolicate package-witness "%" updater))
 
          (element-copy (cdr (assoc element (table-alist 'copy world))))
          (element-copy-theory (symbolicate element-copy element-copy "-THEORY"))
          (%element (car (getpropc element-copy 'acl2::formals)))
          (element-coupled-p (cdr (assoc element (table-alist 'coupledp world))))
 
-         (copy-begin (symbolicate vector copy "-BEGIN"))
-         (copy-end (symbolicate vector copy "-END"))
-         (copy-theory (symbolicate vector copy "-THEORY"))
+         (copy-begin (symbolicate package-witness copy "-BEGIN"))
+         (copy-end (symbolicate package-witness copy "-END"))
+         (copy-theory (symbolicate package-witness copy "-THEORY"))
 
          ;; Theorem Names
          (booleanp-of-element-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" element-recognizer))
@@ -156,17 +159,17 @@
          (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
          (copy-rec-constraint (symbolicate "ATOMIC-STOBJS" copy-rec "-CONSTRAINT"))
 
-         (coupledp-when-not-recognizer$a (symbolicate vector coupledp "-WHEN-NOT-" recognizer$a))
-         (coupledp-of-creator$a (symbolicate vector coupledp "-OF-" creator$a))
-         (coupledp-of-fixer$a (symbolicate vector coupledp "-OF-" fixer$a))
-         (coupledp-of-resizer$a (symbolicate vector coupledp "-OF-" resizer$a))
-         (element-coupled-p-of-accessor$a (symbolicate vector element-coupled-p "-OF-" accessor$a))
-         (coupledp-of-updater$a (symbolicate vector coupledp "-OF-" updater$a))
+         (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
+         (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
+         (coupledp-of-fixer$a (symbolicate package-witness coupledp "-OF-" fixer$a))
+         (coupledp-of-resizer$a (symbolicate package-witness coupledp "-OF-" resizer$a))
+         (element-coupled-p-of-accessor$a (symbolicate package-witness element-coupled-p "-OF-" accessor$a))
+         (coupledp-of-updater$a (symbolicate package-witness coupledp "-OF-" updater$a))
 
-         (recognizer$a-of-copy (symbolicate vector recognizer$a "-OF-" copy))
-         (copy-ignores-1 (symbolicate vector copy "-IGNORES-1"))
-         (copy-of-fixer$a-2 (symbolicate vector copy "-OF-" fixer$a "-2"))
-         (length$a-of-copy (symbolicate vector length$a "-OF-" copy))
+         (recognizer$a-of-copy (symbolicate package-witness recognizer$a "-OF-" copy))
+         (copy-ignores-1 (symbolicate package-witness copy "-IGNORES-1"))
+         (copy-of-fixer$a-2 (symbolicate package-witness copy "-OF-" fixer$a "-2"))
+         (length$a-of-copy (symbolicate package-witness length$a "-OF-" copy))
 
          (fi-bindings
           (append
@@ -314,7 +317,8 @@
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
 
-         (define-congruent ,vector)
+         (define-congruent ,vector
+           :package-witness ,package-witness)
 
          (local
            (in-theory
@@ -646,20 +650,23 @@
 
 
 ;;;; `MAKE-HASH-TABLE-COPY-EVENTS'
-(defun make-hash-table-copy-events (hash-table state)
+(defun make-hash-table-copy-events (hash-table package-witness state)
   (declare (xargs :stobjs state
-                  :guard (symbolp hash-table)
+                  :guard (and (symbolp hash-table)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness "")))))
                   :verify-guards nil))
-  (let* ((%hash-table (symbolicate hash-table "%" hash-table))
-         (copy (symbolicate hash-table hash-table "-COPY"))
-         (copy-rec (symbolicate hash-table copy "-REC"))
-         (copy{rewrite} (symbolicate hash-table copy "{REWRITE}"))
+  (let* ((%hash-table (symbolicate package-witness "%" hash-table))
+         (copy (symbolicate package-witness hash-table "-COPY"))
+         (copy-rec (symbolicate package-witness copy "-REC"))
+         (copy{rewrite} (symbolicate package-witness copy "{REWRITE}"))
 
-         (coupledp (symbolicate hash-table hash-table "-COUPLED-P"))
-         (coupled-keys-p (symbolicate hash-table hash-table "-COUPLED-KEYS-P"))
-         (coupled-keys-p-witness (symbolicate hash-table coupled-keys-p "-WITNESS"))
-         (coupled-vals-p (symbolicate hash-table hash-table "-COUPLED-VALS-P"))
-         (coupled-vals-p-witness (symbolicate hash-table coupled-vals-p "-WITNESS"))
+         (coupledp (symbolicate package-witness hash-table "-COUPLED-P"))
+         (coupled-keys-p (symbolicate package-witness hash-table "-COUPLED-KEYS-P"))
+         (coupled-keys-p-witness (symbolicate package-witness coupled-keys-p "-WITNESS"))
+         (coupled-vals-p (symbolicate package-witness hash-table "-COUPLED-VALS-P"))
+         (coupled-vals-p-witness (symbolicate package-witness coupled-vals-p "-WITNESS"))
 
          ;; `HASH-TABLE'
          (stobj-property (getpropc hash-table 'acl2::stobj))
@@ -676,9 +683,9 @@
          (world (w state))
          (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
          (hash-table$a (first stobj$a-property))
-         (hash-table$a-definitions (symbolicate hash-table hash-table$a "-DEFINITIONS"))
-         (hash-table$a-theorems (symbolicate hash-table hash-table$a "-THEOREMS"))
-         (hash-table$a-aggressive (symbolicate hash-table hash-table$a "-AGGRESSIVE"))
+         (hash-table$a-definitions (symbolicate hash-table$a hash-table$a "-DEFINITIONS"))
+         (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
+         (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -695,18 +702,18 @@
          (keys$a (nth 10 (fourth (third stobj$a-property))))
          (keys-set$a (nth 11 (fourth (third stobj$a-property))))
 
-         (contents$a (symbolicate hash-table hash-table$a "-CONTENTS"))
-         (contents-recognizer$a (symbolicate hash-table contents$a "-P"))
-         (contents-creator$a (symbolicate hash-table "CREATE-" contents$a))
-         (contents-fixer$a (symbolicate hash-table contents$a "-FIX"))
-         (contents-accessor$a (symbolicate hash-table contents$a "-GET"))
-         (contents-updater$a (symbolicate hash-table contents$a "-PUT"))
-         (contents-boundp$a (symbolicate hash-table contents$a "-BOUNDP"))
-         (contents-getp$a (symbolicate hash-table contents$a "-GETP"))
-         (contents-remover$a (symbolicate hash-table contents$a "-REM"))
-         (contents-count$a (symbolicate hash-table contents$a "-COUNT"))
-         (contents-clear$a (symbolicate hash-table contents$a "-CLEAR"))
-         (contents-init$a (symbolicate hash-table contents$a "-INIT"))
+         (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
+         (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
+         (contents-creator$a (symbolicate hash-table$a "CREATE-" contents$a))
+         (contents-fixer$a (symbolicate hash-table$a contents$a "-FIX"))
+         (contents-accessor$a (symbolicate hash-table$a contents$a "-GET"))
+         (contents-updater$a (symbolicate hash-table$a contents$a "-PUT"))
+         (contents-boundp$a (symbolicate hash-table$a contents$a "-BOUNDP"))
+         (contents-getp$a (symbolicate hash-table$a contents$a "-GETP"))
+         (contents-remover$a (symbolicate hash-table$a contents$a "-REM"))
+         (contents-count$a (symbolicate hash-table$a contents$a "-COUNT"))
+         (contents-clear$a (symbolicate hash-table$a contents$a "-CLEAR"))
+         (contents-init$a (symbolicate hash-table$a contents$a "-INIT"))
 
          (key (first (first (third stobj$a-property))))
          (key-recognizer (second (first (third stobj$a-property))))
@@ -731,20 +738,20 @@
          (accessor (if val-stobj-property
                        (first (third stobj-property))
                        accessor))
-         (%accessor (symbolicate hash-table "%" accessor))
+         (%accessor (symbolicate package-witness "%" accessor))
          (updater (if val-stobj-property
                       (second (third stobj-property))
                       updater))
-         (%updater (symbolicate hash-table "%" updater))
+         (%updater (symbolicate package-witness "%" updater))
 
          (val-copy (cdr (assoc val (table-alist 'copy world))))
          (val-copy-theory (symbolicate val-copy val-copy "-THEORY"))
          (%val (car (getpropc val-copy 'acl2::formals)))
          (val-coupled-p (cdr (assoc val (table-alist 'coupledp world))))
 
-         (copy-begin (symbolicate hash-table copy "-BEGIN"))
-         (copy-end (symbolicate hash-table copy "-END"))
-         (copy-theory (symbolicate hash-table copy "-THEORY"))
+         (copy-begin (symbolicate package-witness copy "-BEGIN"))
+         (copy-end (symbolicate package-witness copy "-END"))
+         (copy-theory (symbolicate package-witness copy "-THEORY"))
 
          ;; Theorem Names
          (booleanp-of-key-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" key-recognizer))
@@ -767,24 +774,24 @@
          (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
          (copy-rec-constraint (symbolicate "ATOMIC-STOBJS" copy-rec "-CONSTRAINT"))
 
-         (coupledp-when-not-recognizer$a (symbolicate hash-table coupledp "-WHEN-NOT-" recognizer$a))
-         (coupledp-of-creator$a (symbolicate hash-table coupledp "-OF-" creator$a))
-         (coupledp-of-fixer$a (symbolicate hash-table coupledp "-OF-" fixer$a))
-         (coupledp-of-updater$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-" boundp$a))
-         (coupledp-of-updater$a-when-boundp$a-lemma (symbolicate hash-table coupledp-of-updater$a-when-boundp$a "-LEMMA"))
-         (coupledp-of-updater$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
-         (coupledp-of-updater$a-when-not-boundp$a-lemma (symbolicate hash-table coupledp-of-updater$a-when-not-boundp$a "-LEMMA"))
-         (coupledp-of-remover$a-when-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-" boundp$a))
-         (coupledp-of-remover$a-when-not-boundp$a (symbolicate hash-table coupledp "-OF-" remover$a "-WHEN-NOT-" boundp$a))
-         (cardinality-of-keys$a-when-coupledp (symbolicate hash-table "CARDINALITY-OF-" keys$a "-WHEN-" coupledp))
-         (in-of-keys$a-when-coupledp (symbolicate hash-table "IN-OF-" keys$a "-WHEN-" coupledp))
-         (val-coupled-p-of-accessor$a (symbolicate hash-table val-coupled-p "-OF-" accessor$a))
-         (emptyp-of-keys$a-when-coupledp (symbolicate hash-table "EMPTYP-OF-" keys$a "-WHEN-" coupledp))
+         (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
+         (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
+         (coupledp-of-fixer$a (symbolicate package-witness coupledp "-OF-" fixer$a))
+         (coupledp-of-updater$a-when-boundp$a (symbolicate package-witness coupledp "-OF-" updater$a "-WHEN-" boundp$a))
+         (coupledp-of-updater$a-when-boundp$a-lemma (symbolicate package-witness coupledp-of-updater$a-when-boundp$a "-LEMMA"))
+         (coupledp-of-updater$a-when-not-boundp$a (symbolicate package-witness coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
+         (coupledp-of-updater$a-when-not-boundp$a-lemma (symbolicate package-witness coupledp-of-updater$a-when-not-boundp$a "-LEMMA"))
+         (coupledp-of-remover$a-when-boundp$a (symbolicate package-witness coupledp "-OF-" remover$a "-WHEN-" boundp$a))
+         (coupledp-of-remover$a-when-not-boundp$a (symbolicate package-witness coupledp "-OF-" remover$a "-WHEN-NOT-" boundp$a))
+         (cardinality-of-keys$a-when-coupledp (symbolicate package-witness "CARDINALITY-OF-" keys$a "-WHEN-" coupledp))
+         (in-of-keys$a-when-coupledp (symbolicate package-witness "IN-OF-" keys$a "-WHEN-" coupledp))
+         (val-coupled-p-of-accessor$a (symbolicate package-witness val-coupled-p "-OF-" accessor$a))
+         (emptyp-of-keys$a-when-coupledp (symbolicate package-witness "EMPTYP-OF-" keys$a "-WHEN-" coupledp))
 
-         (recognizer$a-of-copy (symbolicate hash-table recognizer$a "-OF-" copy))
-         (copy-ignores-1 (symbolicate hash-table copy "-IGNORES-1"))
-         (copy-of-fixer$a-2 (symbolicate hash-table copy "-OF-" fixer$a "-2"))
-         (keys$a-of-copy (symbolicate hash-table keys$a "-OF-" copy))
+         (recognizer$a-of-copy (symbolicate package-witness recognizer$a "-OF-" copy))
+         (copy-ignores-1 (symbolicate package-witness copy "-IGNORES-1"))
+         (copy-of-fixer$a-2 (symbolicate package-witness copy "-OF-" fixer$a "-2"))
+         (keys$a-of-copy (symbolicate package-witness keys$a "-OF-" copy))
 
          (fi-bindings
           (list `(lem-hash-table$a::val-coupled-p ,(or val-coupled-p
@@ -958,7 +965,8 @@
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
 
-         (define-congruent ,hash-table)
+         (define-congruent ,hash-table
+           :package-witness ,package-witness)
 
          (local
            (in-theory
@@ -1503,15 +1511,18 @@
 
 
 ;;;; `MAKE-FRAME-COPY-EVENTS'
-(defun make-frame-copy-events (frame state)
+(defun make-frame-copy-events (frame package-witness state)
   (declare (xargs :stobjs state
-                  :guard (symbolp frame)
+                  :guard (and (symbolp frame)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness "")))))
                   :verify-guards nil))
-  (let* ((%frame (symbolicate frame "%" frame))
-         (copy (symbolicate frame frame "-COPY"))
-         (copy{rewrite} (symbolicate frame copy "{REWRITE}"))
+  (let* ((%frame (symbolicate package-witness "%" frame))
+         (copy (symbolicate package-witness frame "-COPY"))
+         (copy{rewrite} (symbolicate package-witness copy "{REWRITE}"))
 
-         (coupledp (symbolicate frame frame "-COUPLED-P"))
+         (coupledp (symbolicate package-witness frame "-COUPLED-P"))
 
          ;; `FRAME'
          (stobj-property (getpropc frame 'acl2::stobj))
@@ -1523,8 +1534,8 @@
          (frame$a (first stobj$a-property))
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
-         (frame$a-theorems (symbolicate frame frame$a "-THEOREMS"))
-         (frame$a-aggressive (symbolicate frame frame$a "-AGGRESSIVE"))
+         (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
+         (frame$a-aggressive (symbolicate frame$a frame$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -1606,9 +1617,9 @@
                                 (setq non-stobj-accessors-and-updaters (cddr non-stobj-accessors-and-updaters)))))
                            (setq stobjs (cdr stobjs)))))
          (%accessors (loop$ :for accessor :in accessors
-                           :collect (symbolicate frame "%" accessor)))
+                           :collect (symbolicate package-witness "%" accessor)))
          (%updaters (loop$ :for updater :in updaters
-                          :collect (symbolicate frame "%" updater)))
+                          :collect (symbolicate package-witness "%" updater)))
 
          (stobj-copy-alist (table-alist 'copy world))
          (stobj-copy-list (loop$ :for stobj :in stobjs
@@ -1629,18 +1640,18 @@
                                      :collect (and stobj
                                                    (cdr (assoc stobj stobj-coupled-p-alist)))))
 
-         (copy-begin (symbolicate frame copy "-BEGIN"))
-         (copy-end (symbolicate frame copy "-END"))
-         (copy-theory (symbolicate frame copy "-THEORY"))
+         (copy-begin (symbolicate package-witness copy "-BEGIN"))
+         (copy-end (symbolicate package-witness copy "-END"))
+         (copy-theory (symbolicate package-witness copy "-THEORY"))
 
          ;; Theorem Names
-         (coupledp-when-not-recognizer$a (symbolicate frame coupledp "-WHEN-NOT-" recognizer$a))
-         (coupledp-of-creator$a (symbolicate frame coupledp "-OF-" creator$a))
-         (coupledp-of-fixer$a (symbolicate frame coupledp "-OF-" fixer$a))
-         (coupledp-of-view$a (symbolicate frame coupledp "-OF-" view$a))
+         (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
+         (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
+         (coupledp-of-fixer$a (symbolicate package-witness coupledp "-OF-" fixer$a))
+         (coupledp-of-view$a (symbolicate package-witness coupledp "-OF-" view$a))
 
-         (recognizer$a-of-copy (symbolicate frame recognizer$a "-OF-" copy))
-         (copy-ignores-1 (symbolicate frame copy "-IGNORES-1")))
+         (recognizer$a-of-copy (symbolicate package-witness recognizer$a "-OF-" copy))
+         (copy-ignores-1 (symbolicate package-witness copy "-IGNORES-1")))
 
     `(progn
        (deflabel ,copy-begin)
@@ -1724,7 +1735,8 @@
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc frame 'acl2::absstobj-info))))))
 
-         (define-congruent ,frame)
+         (define-congruent ,frame
+           :package-witness ,package-witness)
 
          (local
            (in-theory
@@ -1772,7 +1784,7 @@
                   ,@(loop$ :for accessor$a :in accessors$a
                           :as stobj-coupled-p :in stobj-coupled-p-list
                           :when stobj-coupled-p
-                          :collect `(defthm ,(symbolicate frame stobj-coupled-p "-OF-" accessor$a)
+                          :collect `(defthm ,(symbolicate package-witness stobj-coupled-p "-OF-" accessor$a)
                                       (implies (coupledp ,frame)
                                                (,stobj-coupled-p (,accessor$a ,frame)))))
 
@@ -1837,7 +1849,7 @@
 
          ,@(loop$ :for accessor$a :in accessors$a
                  :collect `(local
-                             (defthm ,(symbolicate frame accessor$a "-OF-" copy)
+                             (defthm ,(symbolicate package-witness accessor$a "-OF-" copy)
                                ,(if (remove nil stobj-coupled-p-list)
                                     `(implies (,coupledp ,frame)
                                               (equal (,accessor$a (,copy ,%frame ,frame))
@@ -1870,24 +1882,34 @@
 
 
 ;;;; `DEFINE-COPY'
-(defmacro define-copy (stobj &key (debug 'nil))
-  ;; TODO: add witness kwarg
+(defmacro define-copy (stobj &key (debug 'nil) (package-witness 'nil package-witness-supplied-p))
   (declare (xargs :guard (and (symbolp stobj)
-                              (booleanp debug))))
+                              (booleanp debug)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness "")))))))
   `(with-output
      ,@(and (not debug)
             *constructor-output*)
 
      (make-event
        (let* ((stobj ',stobj)
-              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property (w state))))))
+              (world (w state))
+              (package-witness-lookup (cdr (assoc stobj (table-alist 'package-witness world))))
+              (package-witness (cond
+                                 (',package-witness-supplied-p
+                                  ',package-witness)
+                                 (package-witness-lookup)
+                                 (t
+                                  (current-package state))))
+              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property world)))))
          (cond
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
-            (make-vector-copy-events stobj state))
+            (make-vector-copy-events stobj package-witness state))
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 4))
-            (make-hash-table-copy-events stobj state))
+            (make-hash-table-copy-events stobj package-witness state))
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 8))
-            (make-frame-copy-events stobj state)))))))
+            (make-frame-copy-events stobj package-witness state)))))))

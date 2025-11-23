@@ -45,7 +45,8 @@
 (defconst *body-keywords$abs*
   '(:logic :exec
     :recognizer :creator :fixer
-    :executable :debug))
+    :executable :package-witness :package-witness$a :package-witness$c
+    :debug))
 
 
 ;;;; `DEFINE-FRAME$CORR'
@@ -54,11 +55,23 @@
                                (logic 'nil)
                                (exec 'nil)
 
+                               (package-witness 'nil package-witness-supplied-p)
+                               (package-witness$a 'nil package-witness$a-supplied-p)
+                               (package-witness$c 'nil package-witness$c-supplied-p)
                                (debug 'nil))
 
   (declare (xargs :guard (and (symbolp frame)
                               (symbolp logic)
                               (symbolp exec)
+                              (or (symbolp package-witness)
+                                  (and (stringp package-witness)
+                                       (not (equal package-witness ""))))
+                              (or (symbolp package-witness$a)
+                                  (and (stringp package-witness$a)
+                                       (not (equal package-witness$a ""))))
+                              (or (symbolp package-witness$c)
+                                  (and (stringp package-witness$c)
+                                       (not (equal package-witness$c ""))))
                               (booleanp debug))))
 
   `(with-output
@@ -69,12 +82,22 @@
        (let* ((frame ',frame)
               (logic ',logic)
               (exec ',exec)
-              (frame$corr (symbolicate frame frame "$CORR"))
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
+              (package-witness$a (if ',package-witness$a-supplied-p
+                                     ',package-witness$a
+                                     package-witness))
+              (package-witness$c (if ',package-witness$c-supplied-p
+                                     ',package-witness$c
+                                     package-witness))
+
+              (frame$corr (symbolicate package-witness frame "$CORR"))
 
               (frame$a (or logic
-                           (symbolicate frame frame "$A")))
+                           (symbolicate package-witness$a frame "$A")))
               (frame$c (or exec
-                           (symbolicate frame frame "$C")))
+                           (symbolicate package-witness$c frame "$C")))
 
               (stobj-property (getpropc frame$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
@@ -138,6 +161,9 @@
                       (creator (cadr (assoc-keyword :creator body)))
                       (fixer (cadr (assoc-keyword :fixer body)))
                       (executable (cadr (assoc-keyword :executable body)))
+                      (package-witness (cadr (assoc-keyword :package-witness body)))
+                      (package-witness$a (cadr (assoc-keyword :package-witness$a body)))
+                      (package-witness$c (cadr (assoc-keyword :package-witness$c body)))
                       (debug (cadr (assoc-keyword :debug body))))
                   (and (symbolp frame$a)
                        (symbolp frame$c)
@@ -145,6 +171,15 @@
                        (symbolp creator)
                        (symbolp fixer)
                        (booleanp executable)
+                       (or (symbolp package-witness)
+                           (and (stringp package-witness)
+                                (not (equal package-witness ""))))
+                       (or (symbolp package-witness$a)
+                           (and (stringp package-witness$a)
+                                (not (equal package-witness$a ""))))
+                       (or (symbolp package-witness$c)
+                           (and (stringp package-witness$c)
+                                (not (equal package-witness$c ""))))
                        (booleanp debug)))))))
 
 (defthm frame$abs-body-p-when-frame$abs-descriptor-list-p
@@ -221,10 +256,26 @@
          (recognizer (cadr (assoc-keyword :recognizer kvl)))
          (creator (cadr (assoc-keyword :creator kvl)))
          (fixer (cadr (assoc-keyword :fixer kvl)))
+         (package-witness-supplied-p (assoc-keyword :package-witness kvl))
+         (package-witness (cadr package-witness-supplied-p))
+         (package-witness-supplied-p (and package-witness-supplied-p
+                                          t))
+         (package-witness$a-supplied-p (assoc-keyword :package-witness$a kvl))
+         (package-witness$a (cadr package-witness$a-supplied-p))
+         (package-witness$a-supplied-p (and package-witness$a-supplied-p
+                                            t))
+         (package-witness$c-supplied-p (assoc-keyword :package-witness$c kvl))
+         (package-witness$c (cadr package-witness$c-supplied-p))
+         (package-witness$c-supplied-p (and package-witness$c-supplied-p
+                                            t))
          (debug (cadr (assoc-keyword :debug kvl))))
     (mv logic exec
         recognizer creator fixer
-        executable debug)))
+        executable
+        package-witness package-witness-supplied-p
+        package-witness$a package-witness$a-supplied-p
+        package-witness$c package-witness$c-supplied-p
+        debug)))
 
 (defun parse-form$abs (form)
   (declare (xargs :guard (frame$abs-form-p form)))
@@ -235,12 +286,20 @@
               (parse-fds$abs fds () () () ())
         (mv-let (logic exec
                        recognizer creator fixer
-                       executable debug)
+                       executable
+                       package-witness package-witness-supplied-p
+                       package-witness$a package-witness$a-supplied-p
+                       package-witness$c package-witness$c-supplied-p
+                       debug)
                 (parse-kvl$abs kvl)
           (mv fields accessors updaters stobjs
               logic exec
               recognizer creator fixer
-              executable debug))))))
+              executable
+              package-witness package-witness-supplied-p
+              package-witness$a package-witness$a-supplied-p
+              package-witness$c package-witness$c-supplied-p
+              debug))))))
 
 
 ;;;; `DEFINE-FRAME$ABS'
@@ -276,7 +335,11 @@
   (mv-let (fields accessors updaters stobjs
                   logic exec
                   recognizer creator fixer
-                  executable debug)
+                  executable
+                  package-witness package-witness-supplied-p
+                  package-witness$a package-witness$a-supplied-p
+                  package-witness$c package-witness$c-supplied-p
+                  debug)
           (parse-form$abs form)
 
     `(with-output
@@ -295,26 +358,35 @@
                 (updaters ',updaters)
                 (stobjs ',stobjs)
                 (executable ',executable)
+                (package-witness (if ',package-witness-supplied-p
+                                     ',package-witness
+                                     (current-package state)))
+                (package-witness$a (if ',package-witness$a-supplied-p
+                                       ',package-witness$a
+                                       package-witness))
+                (package-witness$c (if ',package-witness$c-supplied-p
+                                       ',package-witness$c
+                                       package-witness))
 
                 ;; Interface Symbols
                 (frame$a (or logic
-                             (symbolicate frame frame "$A")))
+                             (symbolicate package-witness$a frame "$A")))
                 (frame$c (or exec
-                             (symbolicate frame frame "$C")))
+                             (symbolicate package-witness$c frame "$C")))
                 (recognizer (or recognizer
-                                (symbolicate frame frame (make-predicate-suffix frame))))
+                                (symbolicate package-witness frame (make-predicate-suffix frame))))
                 (creator (or creator
-                             (symbolicate frame "CREATE-" frame)))
+                             (symbolicate package-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate frame frame "-FIX")))
+                           (symbolicate package-witness frame "-FIX")))
                 (accessors (loop$ :for field :in fields
                                  :as accessor :in accessors
                                  :collect (or accessor
-                                              (symbolicate frame frame "-" field))))
+                                              (symbolicate package-witness frame "-" field))))
                 (updaters (loop$ :for field :in fields
                                 :as updater :in updaters
                                 :collect (or updater
-                                             (symbolicate frame frame "-" field "-SET"))))
+                                             (symbolicate package-witness frame "-" field "-SET"))))
 
                 (world (w state))
                 (frame$corr (cdr (assoc frame (table-alist 'corr world))))
@@ -354,10 +426,10 @@
                 (updaters$a (seventh (third stobj$a-property)))
 
                 ;; Theorem Names
-                (creator{correspondence} (symbolicate frame creator "{CORRESPONDENCE}"))
-                (creator{preserved} (symbolicate frame creator "{PRESERVED}"))
-                (fixer{correspondence} (symbolicate frame fixer "{CORRESPONDENCE}"))
-                (fixer{preserved} (symbolicate frame fixer "{PRESERVED}"))
+                (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
+                (creator{preserved} (symbolicate package-witness creator "{PRESERVED}"))
+                (fixer{correspondence} (symbolicate package-witness fixer "{CORRESPONDENCE}"))
+                (fixer{preserved} (symbolicate package-witness fixer "{PRESERVED}"))
 
                 ;; Exports
                 (exports `((,fixer :logic ,fixer$a
@@ -412,7 +484,7 @@
                   ,@(loop$ :for accessor :in accessors
                           :as accessor$c :in accessors$c
                           :as accessor$a :in accessors$a
-                          :collect `(defthm ,(symbolicate frame accessor "{CORRESPONDENCE}")
+                          :collect `(defthm ,(symbolicate package-witness accessor "{CORRESPONDENCE}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     (,recognizer$a ,frame))
                                                (equal (,accessor$c ,frame$c)
@@ -424,7 +496,7 @@
                           :as updater$a :in updaters$a
                           :as updater$c-field :in updater$c-fields
                           :as field-recognizer$a :in recognizers$a
-                          :collect `(defthm ,(symbolicate frame updater "{CORRESPONDENCE}")
+                          :collect `(defthm ,(symbolicate package-witness updater "{CORRESPONDENCE}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     ,@(and field-recognizer$a
                                                            `((,field-recognizer$a ,updater$c-field)))
@@ -437,7 +509,7 @@
                           :as updater$c-guard :in updater$c-guards
                           :as updater$c-field :in updater$c-fields
                           :as field-recognizer$a :in recognizers$a
-                          :collect `(defthm ,(symbolicate frame updater "{GUARD-THM}")
+                          :collect `(defthm ,(symbolicate package-witness updater "{GUARD-THM}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     ,@(and field-recognizer$a
                                                            `((,field-recognizer$a ,updater$c-field)))
@@ -449,7 +521,7 @@
                           :as updater$a :in updaters$a
                           :as updater$c-field :in updater$c-fields
                           :as field-recognizer$a :in recognizers$a
-                          :collect `(defthm ,(symbolicate frame updater "{PRESERVED}")
+                          :collect `(defthm ,(symbolicate package-witness updater "{PRESERVED}")
                                       (implies ,(if field-recognizer$a
                                                     `(and (,field-recognizer$a ,updater$c-field)
                                                           (,recognizer$a ,frame))
@@ -467,4 +539,6 @@
                 :non-executable ,(not executable)
                 :exports ,exports)
 
-              (table stobj$a-property ',frame ',stobj$a-property)))))))
+              (table stobj$a-property ',frame ',stobj$a-property)
+
+              (table package-witness ',frame ',package-witness)))))))

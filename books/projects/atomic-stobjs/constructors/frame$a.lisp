@@ -43,7 +43,8 @@
   '(:recognizer :fixer :stobj :initial-element :accessor :updater))
 
 (defconst *body-keywords$a*
-  '(:recognizer :creator :fixer :view :debug))
+  '(:recognizer :creator :fixer :view
+    :package-witness :debug))
 
 
 ;;;; `DEFINE-FRAME$A' Predicates
@@ -91,11 +92,15 @@
                       (creator (cadr (assoc-keyword :creator body)))
                       (fixer (cadr (assoc-keyword :fixer body)))
                       (view (cadr (assoc-keyword :view body)))
+                      (package-witness (cadr (assoc-keyword :package-witness body)))
                       (debug (cadr (assoc-keyword :debug body))))
                   (and (symbolp recognizer)
                        (symbolp creator)
                        (symbolp fixer)
                        (symbolp view)
+                       (or (symbolp package-witness)
+                           (and (stringp package-witness)
+                                (not (equal package-witness ""))))
                        (booleanp debug)))))))
 
 (defthm frame$a-body-p-when-frame$a-descriptor-list-p
@@ -183,8 +188,13 @@
          (creator (cadr (assoc-keyword :creator kvl)))
          (fixer (cadr (assoc-keyword :fixer kvl)))
          (view (cadr (assoc-keyword :view kvl)))
+         (package-witness-supplied-p (assoc-keyword :package-witness kvl))
+         (package-witness (cadr package-witness-supplied-p))
+         (package-witness-supplied-p (and package-witness-supplied-p
+                                          t))
          (debug (cadr (assoc-keyword :debug kvl))))
-    (mv recognizer creator fixer view debug)))
+    (mv recognizer creator fixer view
+        package-witness package-witness-supplied-p debug)))
 
 (defun parse-form$a (form)
   (declare (xargs :guard (frame$a-form-p form)))
@@ -194,11 +204,13 @@
       (mv-let (fields recognizers fixers stobjs
                       initial-elements accessors updaters)
               (parse-fds$a fds () () () () () () ())
-        (mv-let (recognizer creator fixer view debug)
+        (mv-let (recognizer creator fixer view
+                            package-witness package-witness-supplied-p debug)
                 (parse-kvl$a kvl)
           (mv fields recognizers fixers stobjs
               initial-elements accessors updaters
-              recognizer creator fixer view debug))))))
+              recognizer creator fixer view
+              package-witness package-witness-supplied-p debug))))))
 
 
 ;;;; `DEFINE-FRAME$A'
@@ -207,7 +219,8 @@
            (ignore body))
   (mv-let (fields recognizers fixers stobjs
                   initial-elements accessors updaters
-                  recognizer creator fixer view debug)
+                  recognizer creator fixer view
+                  package-witness package-witness-supplied-p debug)
           (parse-form$a form)
 
     `(with-output
@@ -216,6 +229,9 @@
 
        (make-event
          (let* ((frame ',frame)
+                (package-witness (if ',package-witness-supplied-p
+                                     ',package-witness
+                                     (current-package state)))
                 (fields ',fields)
                 (%fields (loop$ :for field :in fields
                                :collect (symbolicate field "%" field)))
@@ -266,7 +282,7 @@
                                          (t
                                           (cdr (assoc stobj fixer-alist))))))
                 (initial-element-names (loop$ :for field :in fields
-                                             :collect (symbolicate frame "*" frame "-" field "-INITIAL-ELEMENT*")))
+                                             :collect (symbolicate package-witness "*" frame "-" field "-INITIAL-ELEMENT*")))
                 (initial-elements (loop$ :for initial-element-name :in initial-element-names
                                         :as creator :in creators
                                         :collect (if creator
@@ -282,25 +298,25 @@
 
                 ;; Interface Symbols
                 (recognizer (or recognizer
-                                (symbolicate frame frame (make-predicate-suffix frame))))
+                                (symbolicate package-witness frame (make-predicate-suffix frame))))
                 (creator (or creator
-                             (symbolicate frame "CREATE-" frame)))
+                             (symbolicate package-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate frame frame "-FIX")))
+                           (symbolicate package-witness frame "-FIX")))
                 (view (or view
-                          (symbolicate frame frame "-VIEW")))
+                          (symbolicate package-witness frame "-VIEW")))
                 (accessors (loop$ :for field :in fields
                                  :as accessor :in accessors
                                  :collect (or accessor
-                                              (symbolicate frame frame "-" field))))
+                                              (symbolicate package-witness frame "-" field))))
                 (updaters (loop$ :for field :in fields
                                 :as updater :in updaters
                                 :collect (or updater
-                                             (symbolicate frame frame "-" field "-SET"))))
+                                             (symbolicate package-witness frame "-" field "-SET"))))
 
                 ;; Prologue
-                (frame-begin (symbolicate frame frame "-BEGIN"))
-                (frame-end (symbolicate frame frame "-END"))
+                (frame-begin (symbolicate package-witness frame "-BEGIN"))
+                (frame-end (symbolicate package-witness frame "-END"))
                 (defconst-forms (loop$ :for initial-element-name :in initial-element-names
                                       :as initial-element :in ',initial-elements
                                       :as stobj-property :in stobj-property-list
@@ -312,33 +328,33 @@
                    ,@defconst-forms))
 
                 ;; Theorem Names
-                (recognizer{type-prescription} (symbolicate frame recognizer "{TYPE-PRESCRIPTION}"))
-                (recognizer{compound-recognizer} (symbolicate frame recognizer "{COMPOUND-RECOGNIZER}"))
-                (recognizer-of-creator (symbolicate frame recognizer "-OF-" creator))
-                (recognizer-of-view (symbolicate frame recognizer "-OF-" view))
+                (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
+                (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+                (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
+                (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
 
-                (fixer{rewrite} (symbolicate frame fixer "{REWRITE}"))
-                (fixer-when-recognizer (symbolicate frame fixer "-WHEN-" recognizer))
-                (fixer-when-not-recognizer (symbolicate frame fixer "-WHEN-NOT-" recognizer))
+                (fixer{rewrite} (symbolicate package-witness fixer "{REWRITE}"))
+                (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
+                (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
-                (view{type-prescription} (symbolicate frame view "{TYPE-PRESCRIPTION}"))
-                (view-collapse (symbolicate frame view "-COLLAPSE"))
-                (view{rewrite} (symbolicate frame view "{REWRITE}"))
+                (view{type-prescription} (symbolicate package-witness view "{TYPE-PRESCRIPTION}"))
+                (view-collapse (symbolicate package-witness view "-COLLAPSE"))
+                (view{rewrite} (symbolicate package-witness view "{REWRITE}"))
 
-                (%frame (symbolicate frame "%" frame))
-                (frame-equal (symbolicate frame frame "-EQUAL"))
-                (frame-equal{forward-chaining} (symbolicate frame frame-equal "{FORWARD-CHAINING}"))
+                (%frame (symbolicate package-witness "%" frame))
+                (frame-equal (symbolicate package-witness frame "-EQUAL"))
+                (frame-equal{forward-chaining} (symbolicate package-witness frame-equal "{FORWARD-CHAINING}"))
 
                 ;; Epilogue
-                (frame-theorems (symbolicate frame frame "-THEOREMS"))
-                (frame-definitions (symbolicate frame frame "-DEFINITIONS"))
-                (frame-aggressive (symbolicate frame frame "-AGGRESSIVE"))
+                (frame-theorems (symbolicate package-witness frame "-THEOREMS"))
+                (frame-definitions (symbolicate package-witness frame "-DEFINITIONS"))
+                (frame-aggressive (symbolicate package-witness frame "-AGGRESSIVE"))
                 (epilogue
                  `((in-theory
                      (enable ,fixer{rewrite}
                              ,view{rewrite}
                              ,@(loop$ :for updater :in updaters
-                                     :collect (symbolicate frame updater "{REWRITE}"))))
+                                     :collect (symbolicate package-witness updater "{REWRITE}"))))
 
                    (deflabel ,frame-end)
 
@@ -366,9 +382,9 @@
                         (loop$ :for i :from 1 :to (len fields)
                               :as recognizer :in recognizers
                               :when recognizer
-                              :collect (symbolicate frame view "-WHEN-NOT-" recognizer "-" i))
+                              :collect (symbolicate package-witness view "-WHEN-NOT-" recognizer "-" i))
                         (loop$ :for accessor :in accessors
-                              :collect (symbolicate frame accessor "-WHEN-NOT-" recognizer))))
+                              :collect (symbolicate package-witness accessor "-WHEN-NOT-" recognizer))))
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
@@ -594,7 +610,7 @@
                             :as recognizer :in recognizers
                             :as initial-element :in initial-elements
                             :when recognizer
-                            :collect `(defthmd ,(symbolicate frame view "-WHEN-NOT-" recognizer "-" i)
+                            :collect `(defthmd ,(symbolicate package-witness view "-WHEN-NOT-" recognizer "-" i)
                                         (implies (not (,recognizer ,field))
                                                  (equal (,view ,@fields ,frame)
                                                         (,view ,@(update-nth j initial-element fields) ,frame)))))
@@ -604,7 +620,7 @@
                             :as field :in fields
                             :as fixer :in fixers
                             :when fixer
-                            :collect `(defthm ,(symbolicate frame view "-OF-" fixer "-" i)
+                            :collect `(defthm ,(symbolicate package-witness view "-OF-" fixer "-" i)
                                         (equal (,view ,@(update-nth j `(,fixer ,field) fields) ,frame)
                                                (,view ,@fields ,frame))))
 
@@ -612,7 +628,7 @@
                     ,@(loop$ :for recognizer :in recognizers
                             :as accessor :in accessors
                             :when recognizer
-                            :collect `(defthm ,(symbolicate frame recognizer "-OF-" accessor)
+                            :collect `(defthm ,(symbolicate package-witness recognizer "-OF-" accessor)
                                         (,recognizer (,accessor ,frame))
                                         :rule-classes
                                         (:rewrite
@@ -620,21 +636,21 @@
 
                     ,@(loop$ :for accessor :in accessors
                             :as initial-element :in initial-elements
-                            :collect `(defthmd ,(symbolicate frame accessor "-WHEN-NOT-" recognizer)
+                            :collect `(defthmd ,(symbolicate package-witness accessor "-WHEN-NOT-" recognizer)
                                         (implies (not (,recognizer ,frame))
                                                  (equal (,accessor ,frame)
                                                         ,initial-element))))
 
                     ,@(loop$ :for accessor :in accessors
                             :as initial-element :in initial-elements
-                            :collect `(defthm ,(symbolicate frame accessor "-OF-" creator)
+                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" creator)
                                         (equal (,accessor (,creator))
                                                ,initial-element)))
 
                     ,@(loop$ :for field :in fields
                             :as fixer :in fixers
                             :as accessor :in accessors
-                            :collect `(defthm ,(symbolicate frame accessor "-OF-" view)
+                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" view)
                                         (equal (,accessor (,view ,@fields ,frame))
                                                ,(if fixer
                                                     `(,fixer ,field)
@@ -660,7 +676,7 @@
                                    (loop$ :for i :from 0 :to (1- (len fields))
                                          :as field :in fields
                                          :as updater :in updaters
-                                         :collect `(defthmd ,(symbolicate frame updater "{REWRITE}")
+                                         :collect `(defthmd ,(symbolicate package-witness updater "{REWRITE}")
                                                      (implies (syntaxp (not (and (consp ,frame)
                                                                                  (eq (car ,frame) ',view))))
                                                               (equal (,updater ,field ,frame)
@@ -671,7 +687,7 @@
                     ,@(loop$ :for i :from 0 :to (1- (len fields))
                             :as %field :in %fields
                             :as updater :in updaters
-                            :collect `(defthm ,(symbolicate frame updater "-OF-" view)
+                            :collect `(defthm ,(symbolicate package-witness updater "-OF-" view)
                                         (equal (,updater ,%field (,view ,@fields ,frame))
                                                (,view ,@(update-nth i %field fields) ,frame))))
 
@@ -736,4 +752,6 @@
 
               ,@epilogue
 
-              (table stobj$a-property ',frame ',stobj$a-property)))))))
+              (table stobj$a-property ',frame ',stobj$a-property)
+
+              (table package-witness ',frame ',package-witness)))))))
