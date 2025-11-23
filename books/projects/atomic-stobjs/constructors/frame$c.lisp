@@ -265,10 +265,10 @@
                                                   (second (second stobj$a-property)))
                                                  (stobj-property
                                                   (cdadr stobj-property)))))
-                (stobj-coupledp-alist (table-alist 'coupledp world))
-                (stobj-coupledp-list (loop$ :for element-type :in element-types
-                                           :collect (and (symbolp element-type)
-                                                         (cdr (assoc element-type stobj-coupledp-alist)))))
+                (stobj-coupled-p-alist (table-alist 'coupledp world))
+                (stobj-coupled-p-list (loop$ :for element-type :in element-types
+                                            :collect (and (symbolp element-type)
+                                                          (cdr (assoc element-type stobj-coupled-p-alist)))))
                 (stobj-copy-alist (table-alist 'copy world))
                 (stobj-copy-list (loop$ :for element-type :in element-types
                                        :collect (and (symbolp element-type)
@@ -425,7 +425,23 @@
                                                         (,stobj-recognizer ,field))
                                                    (,stobj-recognizer (,stobj-copy ,%field ,field))))))
 
-                    ,@(loop$ :for stobj-coupled-p :in stobj-coupledp-list
+                    ,@(loop$ :for stobj-copy :in stobj-copy-list
+                            :as field :in fields
+                            :as %field :in %fields
+                            :as stobj-recognizer :in stobj-recognizers
+                            :as stobj-creator :in stobj-creators
+                            :as i :from 0 :to (1- (len fields))
+                            :when stobj-copy
+                            :collect `(local
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copy "-IGNORES-1-" i)
+                                          (implies (and (syntaxp (not (and (consp ,%field)
+                                                                           (eq (car ,%field) ',stobj-creator))))
+                                                        (,stobj-recognizer ,%field)
+                                                        (,stobj-recognizer ,field))
+                                                   (equal (,stobj-copy ,%field ,field)
+                                                          (,stobj-copy (,stobj-creator) ,field))))))
+
+                    ,@(loop$ :for stobj-coupled-p :in stobj-coupled-p-list
                             :as stobj-copy :in stobj-copy-list
                             :as stobj-recognizer :in stobj-recognizers
                             :as field :in fields
@@ -511,6 +527,32 @@
                                                     `(,stobj-creator)
                                                     initial-element-name))))
 
+                    ,@(loop$ :for accessor :in accessors
+                            :append (loop$ :for updater :in updaters
+                                          :as %accessor :in accessors
+                                          :as field :in fields
+                                          :collect `(defthm ,(symbolicate frame accessor "-OF-" updater)
+                                                      (equal (,accessor (,updater ,field ,frame))
+                                                             ,(if (eq accessor %accessor)
+                                                                  field
+                                                                  `(,accessor ,frame))))))
+
+                    ,@(loop$ :for updater :in updaters
+                            :as field :in fields
+                            :as element-type :in element-types
+                            :as stobj-recognizer :in stobj-recognizers
+                            :collect `(defthm ,(symbolicate frame recognizer "-OF-" updater)
+                                        (implies ,(cond
+                                                    ((equal element-type t)
+                                                     `(,recognizer ,frame))
+                                                    (stobj-recognizer
+                                                     `(and (,recognizer ,frame)
+                                                           (,stobj-recognizer ,field)))
+                                                    (t
+                                                     `(and (,recognizer ,frame)
+                                                           ,(typep$transform field element-type))))
+                                                 (,recognizer (,updater ,field ,frame)))))
+
                     (defun ,view ,(append (loop$ :for field :in fields
                                                 :as element-type :in element-types
                                                 :as stobj-property :in stobj-property-list
@@ -537,9 +579,9 @@
                       ,(let ((conditional (if (consp fields)
                                               `(and ,@(loop$ :for field :in fields
                                                             :as element-type :in element-types
-                                                            :as stobj-recognizer :in stobj-recognizers
-                                                            :collect (if stobj-recognizer
-                                                                         `(,stobj-recognizer ,element-type)
+                                                            :as stobj-property :in stobj-property-list
+                                                            :collect (if stobj-property
+                                                                         `(,(caadr stobj-property) ,element-type)
                                                                          (typep$transform field element-type)))
                                                     (,recognizer ,frame))
                                               `(,recognizer ,frame)))
@@ -613,7 +655,7 @@
                                                            (typep$transform field element-type)))))
                         (loop$ :for field :in fields
                               :as accessor :in accessors
-                              :as stobj-coupled-p :in stobj-coupledp-list
+                              :as stobj-coupled-p :in stobj-coupled-p-list
                               :collect `(defthm ,(symbolicate frame accessor "-OF-" view)
                                           (implies ,(cond
                                                       (stobj-coupled-p
@@ -639,6 +681,7 @@
                                    (loop$ :for updater :in updaters
                                          :as element-type :in element-types
                                          :as stobj-recognizer :in stobj-recognizers
+                                         :as stobj-coupled-p :in stobj-coupled-p-list
                                          :as field :in fields
                                          :as i :from 0 :to (1- (len fields))
                                          :collect `(defthmd ,(symbolicate frame updater "{REWRITE}")
@@ -648,7 +691,15 @@
                                                                    ,@(and (not (eq element-type t))
                                                                           `(,(if stobj-recognizer
                                                                                  `(,stobj-recognizer ,field)
-                                                                                 (typep$transform field element-type)))))
+                                                                                 (typep$transform field element-type))))
+                                                                   ,@(and stobj-coupled-p
+                                                                          `((,stobj-coupled-p ,field)))
+                                                                   ,@(loop$ :for arg :in arguments
+                                                                           :as stobj-coupled-p :in stobj-coupled-p-list
+                                                                           :as %field :in fields
+                                                                           :when (and stobj-coupled-p
+                                                                                      (not (eq field %field)))
+                                                                           :collect `(,stobj-coupled-p ,arg)))
                                                               (equal (,updater ,field ,frame)
                                                                      (,view ,@(update-nth i field arguments) ,frame)))
                                                      :hints
@@ -670,17 +721,21 @@
                                    (loop$ :for updater :in updaters
                                          :as element-type :in element-types
                                          :as stobj-recognizer :in stobj-recognizers
+                                         :as stobj-coupled-p :in stobj-coupled-p-list
                                          :as %field :in %fields
                                          :as i :from 0 :to (1- (len fields))
                                          :collect `(defthm ,(symbolicate frame updater "-OF-" view)
                                                      (implies ,(if (or (not (eq element-type t))
-                                                                       hypotheses)
+                                                                       hypotheses
+                                                                       stobj-coupled-p)
                                                                    `(and (,recognizer,frame)
                                                                          ,@(and (not (eq element-type t))
                                                                                 `(,(if stobj-recognizer
                                                                                        `(,stobj-recognizer ,%field)
                                                                                        (typep$transform %field element-type))))
-                                                                         ,@hypotheses)
+                                                                         ,@hypotheses
+                                                                         ,@(and stobj-coupled-p
+                                                                                `((,stobj-coupled-p ,%field))))
                                                                    `(,recognizer,frame))
                                                               (equal (,updater ,%field (,view ,@fields ,frame))
                                                                      (,view ,@(update-nth i %field fields) ,frame)))
@@ -702,10 +757,23 @@
                           (disable acl2::nth-when-zp)))
 
                       (defthm ,fixer{rewrite}
-                        (equal (,fixer ,frame)
-                               (,view ,@(loop$ :for accessor :in accessors
-                                              :collect `(,accessor ,frame))
-                                      ,frame))
+                        ,(let* ((hypotheses (loop$ :for accessor :in accessors
+                                                  :as stobj-coupled-p :in stobj-coupled-p-list
+                                                  :when stobj-coupled-p
+                                                  :collect `(,stobj-coupled-p (,accessor ,frame))))
+                                (hypotheses (if (consp (cdr hypotheses))
+                                                (cons 'and hypotheses)
+                                                (car hypotheses))))
+                           (if hypotheses
+                               `(implies ,hypotheses
+                                         (equal (,fixer ,frame)
+                                                (,view ,@(loop$ :for accessor :in accessors
+                                                               :collect `(,accessor ,frame))
+                                                       ,frame)))
+                               `(equal (,fixer ,frame)
+                                       (,view ,@(loop$ :for accessor :in accessors
+                                                      :collect `(,accessor ,frame))
+                                              ,frame))))
                         :hints
                         ((acl2::equal-by-nths-hint)))))))
 
