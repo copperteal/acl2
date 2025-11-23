@@ -216,7 +216,6 @@
 
        (make-event
          (let* ((frame ',frame)
-                (%frame (symbolicate frame "%" frame))
                 (fields ',fields)
                 (%fields (loop$ :for field :in fields
                                :collect (symbolicate field "%" field)))
@@ -229,6 +228,13 @@
                                                              nil
                                                              'acl2::current-acl2-world
                                                              world)))
+                (absstobj-info-list (loop$ :for field :in fields
+                                          :collect (and (symbolp field)
+                                                        (getprop field
+                                                                 'acl2::absstobj-info
+                                                                 nil
+                                                                 'acl2::current-acl2-world
+                                                                 world))))
                 (stobj$a-property-alist (table-alist 'stobj$a-property world))
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
                                              :collect (cdr (assoc stobj stobj$a-property-alist))))
@@ -239,6 +245,11 @@
                                               (recognizer)
                                               (stobj$a-property
                                                (first (second stobj$a-property))))))
+                (guard-recognizers (loop$ :for stobj-property :in stobj-property-list
+                                         :as recognizer :in recognizers
+                                         :collect (if stobj-property
+                                                      (caadr stobj-property)
+                                                      recognizer)))
                 (creators (loop$ :for stobj$a-property :in stobj$a-property-list
                                 :collect (cond
                                            (stobj$a-property
@@ -314,6 +325,7 @@
                 (view-collapse (symbolicate frame view "-COLLAPSE"))
                 (view{rewrite} (symbolicate frame view "{REWRITE}"))
 
+                (%frame (symbolicate frame "%" frame))
                 (frame-equal (symbolicate frame frame "-EQUAL"))
                 (frame-equal{forward-chaining} (symbolicate frame frame-equal "{FORWARD-CHAINING}"))
 
@@ -408,6 +420,24 @@
                                          (universal-theory :here)
                                          (universal-theory ',frame-begin)))))
 
+                    ,@(loop$ :for absstobj-info :in absstobj-info-list
+                            :when absstobj-info
+                            :collect `(local
+                                        (in-theory
+                                          (enable ,@(strip-cars (cdr absstobj-info))))))
+
+                    ,@(let ((exec-recognizers (loop$ :for recognizer :in recognizers
+                                                    :when recognizer
+                                                    :collect `(:e ,recognizer)))
+                            (exec-fixers (loop$ :for fixer :in fixers
+                                               :when fixer
+                                               :collect `(:e ,fixer))))
+                        (and (or exec-recognizers
+                                 exec-fixers)
+                             `((in-theory
+                                 (enable ,@exec-recognizers
+                                         ,@exec-fixers)))))
+
                     (defun ,recognizer (,frame)
                       (declare (xargs :guard t))
                       (and (true-listp ,frame)
@@ -458,12 +488,12 @@
 
                     ,@(loop$ :for i :from 0 :to (1- (len fields))
                             :as field :in fields
-                            :as field-recognizer :in recognizers
+                            :as guard-recognizer :in guard-recognizers
                             :as field-fixer :in fixers
                             :as updater :in updaters
                             :collect `(defun ,updater (,field ,frame)
-                                        (declare (xargs :guard ,(if field-recognizer
-                                                                    `(and (,field-recognizer ,field)
+                                        (declare (xargs :guard ,(if guard-recognizer
+                                                                    `(and (,guard-recognizer ,field)
                                                                           (,recognizer ,frame))
                                                                     `(,recognizer ,frame))))
                                         (let (,@(and field-fixer

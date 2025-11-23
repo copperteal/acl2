@@ -400,7 +400,6 @@
 
                   ,@(and element-recognizer
                          element-fixer
-                         ;; TODO: ensure you do this for frame
                          `((local
                              (in-theory
                                (enable (:e ,element-recognizer)

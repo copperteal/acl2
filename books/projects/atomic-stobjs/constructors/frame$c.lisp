@@ -511,8 +511,6 @@
                                                     `(,stobj-creator)
                                                     initial-element-name))))
 
-
-                    ;; TODO: use solely field names in view$a
                     (defun ,view ,(append (loop$ :for field :in fields
                                                 :as element-type :in element-types
                                                 :as stobj-property :in stobj-property-list
