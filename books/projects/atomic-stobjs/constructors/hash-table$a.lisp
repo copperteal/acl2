@@ -599,7 +599,7 @@
                 fi-bindings-with-contents-skolem))
 
               (body
-               `(with-books (("projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
+               `(encapsulate ()
 
                   ,@(and key-fixer
                          key-recognizer
@@ -620,10 +620,19 @@
                                           ,default-val))))))
 
                   (local
+                    (deflabel end-of-prologue))
+
+                  (local
+                    (include-book "projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
+
+                  (local
+                    (table acl2::theory-invariant-table nil nil :clear))
+
+                  (local
                     (in-theory
                       (union-theories (current-theory 'acl2::ground-zero)
                                       (set-difference-theories
-                                       (universal-theory :here)
+                                       (universal-theory 'end-of-prologue)
                                        (universal-theory ',hash-table-begin)))))
 
                   ,@(and absstobj-info
@@ -2276,9 +2285,10 @@
 
 
                            (defthm ,keysp-of-insert
-                             (implies (,keysp set)
-                                      (equal (,keysp (set::insert key set))
-                                             (,key-recognizer key)))
+                             (equal (,keysp (set::insert key set))
+                                    (and (,key-recognizer key)
+                                         (or (set::emptyp set)
+                                             (,keysp set))))
                              :hints
                              (("Goal"
                                :by (:functional-instance
