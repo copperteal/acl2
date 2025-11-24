@@ -1605,8 +1605,9 @@
                     export)))
 
   (defthm element-import-of-element-export
-    (equal (element-import (element-export %value) value)
-           (element-fixer %value))))
+    (implies (element-coupled-p %value)
+             (equal (element-import (element-export %value) value)
+                    (element-fixer %value)))))
 
 
 ;;;; `EXPORTP-REC'
@@ -1632,6 +1633,15 @@
                 (< n (len list)))
            (element-export-p (nth n list))))
 
+(defthm exportp-rec-of-cons
+  (equal (exportp-rec (cons value list))
+         (and (element-export-p value)
+              (exportp-rec list))))
+
+(local
+  (in-theory
+    (disable exportp-rec)))
+
 
 ;;;; `EXPORTP/RESIZABLE'
 (defun exportp/resizable (export)
@@ -1650,20 +1660,9 @@
                 (true-listp export)))
   :rule-classes :compound-recognizer)
 
-(defthm car-when-exportp/resizable
-  (implies (exportp/resizable export)
-           (equal (car export)
-                  (name))))
-
-(defthm cdr-when-exportp/resizable
-  (implies (exportp/resizable export)
-           (exportp-rec (cdr export))))
-
-(defthm element-export-p-of-nth-when-exportp/resizable
-  (implies (and (exportp/resizable export)
-                (posp n)
-                (< n (len export)))
-           (element-export-p (nth n export))))
+(local
+  (in-theory
+    (disable exportp/resizable)))
 
 
 ;;;; `EXPORT-ACC/RESIZABLE'
@@ -1698,6 +1697,10 @@
              (element-export (accessor/resizable %index vector))
              (nth (- (nfix %index) (nfix index)) acc))))
 
+(local
+  (in-theory
+    (disable export-acc/resizable)))
+
 
 ;;;; `EXPORT/RESIZABLE'
 (defun export/resizable (vector)
@@ -1711,7 +1714,10 @@
   :rule-classes :type-prescription)
 
 (defthm exportp/resizable-of-export/resizable
-  (exportp/resizable (export/resizable vector)))
+  (exportp/resizable (export/resizable vector))
+  :hints
+  (("Goal"
+    :in-theory (enable exportp/resizable))))
 
 (defthm len-of-export/resizable
   (equal (len (export/resizable vector))
@@ -1725,6 +1731,10 @@
            ((<= index (length/resizable vector))
             (element-export (accessor/resizable (1- index) vector))))))
 
+(local
+  (in-theory
+    (disable export/resizable)))
+
 
 ;;;; `IMPORT-REC/RESIZABLE'
 (defun import-rec/resizable (list index vector)
@@ -1732,10 +1742,11 @@
                               (natp index)
                               (recognizer/resizable vector)
                               (<= (+ (len list) index) (length/resizable vector)))))
-  (if (atom list)
+  (if (endp list)
       (fixer/resizable vector)
       (let* ((index (nfix index))
-             (value (element-import (car list) (initial-element)))
+             (value (accessor/resizable index vector))
+             (value (element-import (car list) value))
              (vector (updater/resizable index value vector)))
         (import-rec/resizable (cdr list) (1+ index) vector))))
 
@@ -1772,11 +1783,18 @@
             (element-import (nth (- (nfix %index) (nfix index)) list)
                             (initial-element))))))
 
+(local
+  (in-theory
+    (disable import-rec/resizable)))
+
 
 ;;;; `IMPORT/RESIZABLE'
 (defun import/resizable (export vector)
   (declare (xargs :guard (and (exportp/resizable export)
-                              (recognizer/resizable vector))))
+                              (recognizer/resizable vector))
+                  :guard-hints
+                  (("Goal"
+                    :in-theory (enable exportp/resizable)))))
   (if (exportp/resizable export)
       (let* ((list (cdr export))
              (vector (resizer/resizable (len list) vector))
@@ -1796,6 +1814,21 @@
            (equal (import/resizable export vector)
                   (creator))))
 
+(defthm import/resizable-ignores-vector
+  (equal (import/resizable export vector)
+         (import/resizable export (creator)))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (syntaxp (not (and (consp vector)
+                                         (eq (car vector) 'creator))))
+                      (equal (import/resizable export vector)
+                             (import/resizable export (creator))))))
+  :hints
+  (("Goal"
+    :use ((:instance equal/resizable
+                     (%vector (import/resizable export vector))
+                     (vector (import/resizable export (creator))))))))
+
 (defthm length/resizable-of-import/resizable
   (equal (length/resizable (import/resizable export vector))
          (if (exportp/resizable export)
@@ -1810,14 +1843,9 @@
              (element-import (nth (1+ (nfix index)) export)
                              (initial-element)))))
 
-(defthmd import/resizable-ignores-vector
-  (equal (import/resizable export vector)
-         (import/resizable export (creator)))
-  :hints
-  (("Goal"
-    :use ((:instance equal/resizable
-                     (%vector (import/resizable export vector))
-                     (vector (import/resizable export (creator))))))))
+(local
+  (in-theory
+    (disable import/resizable)))
 
 
 ;;;; `EXPORT/RESIZABLE' and `IMPORT/RESIZABLE' Composition Theorems
@@ -1828,17 +1856,17 @@
                     export))
     :hints
     ((acl2::equal-by-nths-hint)
-     ("Subgoal 1"
+     ("Goal"
+      :in-theory (enable exportp/resizable)
       :expand (:free (n a d)
                      (nth n (cons a d)))))))
 
 (defthm import/resizable-of-export/resizable
-  (equal (import/resizable (export/resizable %vector) vector)
-         (fixer/resizable %vector))
+  (implies (coupledp/resizable %vector)
+           (equal (import/resizable (export/resizable %vector) vector)
+                  (fixer/resizable %vector)))
   :hints
   (("Goal"
-    :in-theory (disable import/resizable
-                        export/resizable)
     :use ((:instance equal/resizable
                      (%vector (import/resizable (export/resizable %vector) vector))
                      (vector (fixer/resizable %vector)))))))
@@ -1849,8 +1877,8 @@
   (declare (xargs :guard t))
   (and (consp export)
        (equal (car export) (name))
-       (equal (len (cdr export)) (default-length))
-       (exportp-rec (cdr export))))
+       (exportp-rec (cdr export))
+       (equal (len export) (1+ (default-length)))))
 
 (defthm exportp/fixed{type-prescription}
   (booleanp (exportp/fixed export))
@@ -1862,21 +1890,9 @@
                 (true-listp export)))
   :rule-classes :compound-recognizer)
 
-(defthm car-when-exportp/fixed
-  (implies (exportp/fixed export)
-           (equal (car export)
-                  (name))))
-
-(defthm cdr-when-exportp/fixed
-  (implies (exportp/fixed export)
-           (and (equal (len (cdr export)) (default-length))
-                (exportp-rec (cdr export)))))
-
-(defthm element-export-p-of-nth-when-exportp/fixed
-  (implies (and (exportp/fixed export)
-                (posp n)
-                (<= n (default-length)))
-           (element-export-p (nth n export))))
+(local
+  (in-theory
+    (disable exportp/fixed)))
 
 
 ;;;; `EXPORT-ACC/FIXED'
@@ -1911,6 +1927,10 @@
              (element-export (accessor/fixed %index vector))
              (nth (- (nfix %index) (nfix index)) acc))))
 
+(local
+  (in-theory
+    (disable export-acc/fixed)))
+
 
 ;;;; `EXPORT/FIXED'
 (defun export/fixed (vector)
@@ -1924,7 +1944,10 @@
   :rule-classes :type-prescription)
 
 (defthm exportp/fixed-of-export/fixed
-  (exportp/fixed (export/fixed vector)))
+  (exportp/fixed (export/fixed vector))
+  :hints
+  (("Goal"
+    :in-theory (enable exportp/fixed))))
 
 (defthm len-of-export/fixed
   (equal (len (export/fixed vector))
@@ -1935,10 +1958,12 @@
          (cond
            ((zp index)
             (name))
-           ((< (default-length) index)
-            nil)
-           (t
+           ((<= index (default-length))
             (element-export (accessor/fixed (1- index) vector))))))
+
+(local
+  (in-theory
+    (disable export/fixed)))
 
 
 ;;;; `IMPORT-REC/FIXED'
@@ -1947,10 +1972,11 @@
                               (natp index)
                               (recognizer/fixed vector)
                               (<= (+ (len list) index) (default-length)))))
-  (if (atom list)
+  (if (endp list)
       (fixer/fixed vector)
       (let* ((index (nfix index))
-             (value (element-import (car list) (initial-element)))
+             (value (accessor/fixed index vector))
+             (value (element-import (car list) value))
              (vector (updater/fixed index value vector)))
         (import-rec/fixed (cdr list) (1+ index) vector))))
 
@@ -1960,6 +1986,10 @@
 
 (defthm recognizer/fixed-of-import-rec/fixed
   (recognizer/fixed (import-rec/fixed list index vector)))
+
+(defthm length/fixed-of-import-rec/fixed
+  (equal (length/fixed (import-rec/fixed list index vector))
+         (default-length)))
 
 (defthm import-rec/fixed-of-updater/fixed
   (equal (import-rec/fixed list %index (updater/fixed index value vector))
@@ -1983,11 +2013,18 @@
             (element-import (nth (- (nfix %index) (nfix index)) list)
                             (initial-element))))))
 
+(local
+  (in-theory
+    (disable import-rec/fixed)))
+
 
 ;;;; `IMPORT/FIXED'
 (defun import/fixed (export vector)
   (declare (xargs :guard (and (exportp/fixed export)
-                              (recognizer/fixed vector))))
+                              (recognizer/fixed vector))
+                  :guard-hints
+                  (("Goal"
+                    :in-theory (enable exportp/fixed)))))
   (if (exportp/fixed export)
       (let* ((list (cdr export))
              (vector (import-rec/fixed list 0 vector)))
@@ -2006,22 +2043,42 @@
            (equal (import/fixed export vector)
                   (creator))))
 
-(defthm accessor/fixed-of-import/fixed
-  (equal (accessor/fixed index (import/fixed export vector))
-         (if (or (not (exportp/fixed export))
-                 (<= (nfix (len export)) (1+ (nfix index))))
-             (initial-element)
-             (element-import (nth (1+ (nfix index)) export)
-                             (initial-element)))))
-
-(defthmd import/fixed-ignores-vector
-  (equal (import/fixed export vector)
-         (import/fixed export (creator)))
+(defthm import/fixed-ignores-vector
+  (implies (exportp/fixed export)
+           (equal (import/fixed export vector)
+                  (import/fixed export (creator))))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (and (syntaxp (not (and (consp vector)
+                                              (eq (car vector) 'creator))))
+                           (exportp/fixed export))
+                      (equal (import/fixed export vector)
+                             (import/fixed export (creator))))))
   :hints
   (("Goal"
+    :in-theory (enable exportp/fixed)
     :use ((:instance equal/fixed
                      (%vector (import/fixed export vector))
                      (vector (import/fixed export (creator))))))))
+
+(defthm length/fixed-of-import/fixed
+  (equal (length/fixed (import/fixed export vector))
+         (default-length)))
+
+(defthm accessor/fixed-of-import/fixed
+  (equal (accessor/fixed index (import/fixed export vector))
+         (if (or (not (exportp/fixed export))
+                 (<= (default-length) (nfix index)))
+             (initial-element)
+             (element-import (nth (1+ (nfix index)) export)
+                             (initial-element))))
+  :hints
+  (("Goal"
+    :in-theory (enable exportp/fixed))))
+
+(local
+  (in-theory
+    (disable import/fixed)))
 
 
 ;;;; `EXPORT/FIXED' and `IMPORT/FIXED' Composition Theorems
@@ -2032,17 +2089,15 @@
                     export))
     :hints
     ((acl2::equal-by-nths-hint)
-     ("Subgoal 1"
-      :expand (:free (n a d)
-                     (nth n (cons a d)))))))
+     ("Goal"
+      :in-theory (enable exportp/fixed)))))
 
 (defthm import/fixed-of-export/fixed
-  (equal (import/fixed (export/fixed %vector) vector)
-         (fixer/fixed %vector))
+  (implies (coupledp/fixed %vector)
+           (equal (import/fixed (export/fixed %vector) vector)
+                  (fixer/fixed %vector)))
   :hints
   (("Goal"
-    :in-theory (disable import/fixed
-                        export/fixed)
     :use ((:instance equal/fixed
                      (%vector (import/fixed (export/fixed %vector) vector))
                      (vector (fixer/fixed %vector)))))))
