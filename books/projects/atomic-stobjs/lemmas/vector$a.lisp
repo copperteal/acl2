@@ -1744,11 +1744,10 @@
                               (<= (+ (len list) index) (length/resizable vector)))))
   (if (endp list)
       (fixer/resizable vector)
-      (let* ((index (nfix index))
-             (value (accessor/resizable index vector))
+      (let* ((value (accessor/resizable index vector))
              (value (element-import (car list) value))
              (vector (updater/resizable index value vector)))
-        (import-rec/resizable (cdr list) (1+ index) vector))))
+        (import-rec/resizable (cdr list) (1+ (nfix index)) vector))))
 
 (defthm import-rec/resizable{type-prescription}
   (true-listp (import-rec/resizable list index vector))
@@ -1838,7 +1837,7 @@
 (defthm accessor/resizable-of-import/resizable
   (equal (accessor/resizable index (import/resizable export vector))
          (if (or (not (exportp/resizable export))
-                 (<= (nfix (len export)) (1+ (nfix index))))
+                 (<= (len export) (1+ (nfix index))))
              (initial-element)
              (element-import (nth (1+ (nfix index)) export)
                              (initial-element)))))
@@ -1878,7 +1877,7 @@
   (and (consp export)
        (equal (car export) (name))
        (exportp-rec (cdr export))
-       (equal (len export) (1+ (default-length)))))
+       (equal (len (cdr export)) (default-length))))
 
 (defthm exportp/fixed{type-prescription}
   (booleanp (exportp/fixed export))
