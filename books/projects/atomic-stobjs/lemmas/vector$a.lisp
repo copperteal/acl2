@@ -1552,9 +1552,6 @@
               ((element-export-p *) => *)
               ((element-export *) => *)
               ((element-import * *) => *))
-  ;; TODO: Add element copy to export definitions and coupled hypotheses to
-  ;; export theorems.
-
   (local
     (defun name ()
       (declare (xargs :guard t))
@@ -1596,9 +1593,11 @@
              (equal (element-import export value)
                     (initial-element))))
 
-  (defthmd element-import-ignores-value
-    (equal (element-import export value)
-           (element-import export (initial-element))))
+  (defthm element-import-ignores-value
+    (implies (syntaxp (not (and (consp value)
+                                (eq (car value) 'initial-element))))
+             (equal (element-import export value)
+                    (element-import export (initial-element)))))
 
   (defthm element-export-of-element-import
     (implies (element-export-p export)

@@ -317,7 +317,7 @@
                      fi-bindings))
 
               (body
-               `(with-books (("projects/atomic-stobjs/lemmas/vector$c" :dir :system))
+               `(encapsulate ()
 
                   ,@(and stobj-property
                          `((local
@@ -325,10 +325,19 @@
                                (,stobj-recognizer (,stobj-creator))))))
 
                   (local
+                    (deflabel end-of-prologue))
+
+                  (local
+                    (include-book "projects/atomic-stobjs/lemmas/vector$c" :dir :system))
+
+                  (local
+                    (table acl2::theory-invariant-table nil nil :clear))
+
+                  (local
                     (in-theory
                       (union-theories (current-theory 'acl2::ground-zero)
                                       (set-difference-theories
-                                       (universal-theory :here)
+                                       (universal-theory 'end-of-prologue)
                                        (universal-theory ',vector-begin)))))
 
                   ,@(and absstobj-info
