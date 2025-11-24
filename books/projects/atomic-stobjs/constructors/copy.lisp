@@ -30,6 +30,11 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
+#|
+(include-book "../lemmas/vector$a")
+(include-book "../lemmas/hash-table$a")
+|#
+
 (include-book "../utilities/top")
 (include-book "congruent")
 
