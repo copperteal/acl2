@@ -247,7 +247,7 @@
     `(progn
        (deflabel ,copy-begin)
 
-       (with-books (("../lemmas/vector$a"))
+       (encapsulate ()
 
          (local
            (deflabel prologue-begin))
@@ -275,6 +275,12 @@
 
          (local
            (deflabel prologue-end))
+
+         (local
+           (include-book "projects/atomic-stobjs/lemmas/vector$a" :dir :system))
+
+         (local
+           (table acl2::theory-invariant-table nil nil :clear))
 
          (local
            (in-theory
@@ -870,7 +876,7 @@
     `(progn
        (deflabel ,copy-begin)
 
-       (with-books (("../lemmas/hash-table$a"))
+       (encapsulate ()
 
          (local
            (deflabel prologue-begin))
@@ -919,6 +925,12 @@
 
          (local
            (deflabel prologue-end))
+
+         (local
+           (include-book "projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
+
+         (local
+           (table acl2::theory-invariant-table nil nil :clear))
 
          (local
            (in-theory
@@ -1111,7 +1123,7 @@
                                                                         `(,coupled-vals-p-witness ,hash-table))
                                                                    (cdr (,fixer$a ,hash-table)))))
                       :hints
-                      (("goal"
+                      (("Goal"
                         :in-theory (disable ,hash-table$a-definitions)
                         :use ,coupled-vals-p-constraint-2
                         :expand ((:free (,key ,hash-table)
@@ -1126,7 +1138,7 @@
                          ,@(and val-coupled-p
                                 `((,coupled-vals-p ,hash-table)))))
              :hints
-             (("goal"
+             (("Goal"
                :in-theory (disable ,hash-table$a-definitions)
                :expand ((:free (,hash-table)
                                (,keys$a ,hash-table))

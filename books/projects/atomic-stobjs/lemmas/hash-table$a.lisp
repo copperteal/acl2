@@ -36,8 +36,7 @@
 ||#
 
 (include-book "std/osets/top" :dir :system)
-(local
-  (include-book "std/omaps/top" :dir :system))
+(include-book "std/omaps/top" :dir :system)
 
 (include-book "../utilities/with-books")
 (local
@@ -665,9 +664,10 @@
     :in-theory (enable set::emptyp))))
 
 (defthm keysp-of-insert
-  (implies (keysp set)
-           (equal (keysp (set::insert key set))
-                  (key-recognizer key)))
+  (equal (keysp (set::insert key set))
+         (and (key-recognizer key)
+              (or (set::emptyp set)
+                  (keysp set))))
   :hints
   (("Goal"
     :induct (set::cardinality set)
@@ -2919,9 +2919,11 @@
              (equal (val-import export val)
                     (default-val))))
 
-  (defthmd val-import-ignores-val
-    (equal (val-import export val)
-           (val-import export (default-val))))
+  (defthm val-import-ignores-val
+    (implies (syntaxp (not (and (consp val)
+                                (eq (car val) 'default-val))))
+             (equal (val-import export val)
+                    (val-import export (default-val)))))
 
   (defthm val-export-of-val-import
     (implies (val-export-p export)
@@ -2929,67 +2931,246 @@
                     export)))
 
   (defthm val-import-of-val-export
-    (equal (val-import (val-export %val) val)
-           (val-fixer %val))))
+    (implies (val-coupled-p %val)
+             (equal (val-import (val-export %val) val)
+                    (val-fixer %val)))))
+
+
+;;;; `ALL-KEYS-RECOGNIZED-P'
+(defun-sk all-keys-recognized-p (omap)
+  (declare (xargs :guard (omap::mapp omap)
+                  :verify-guards nil))
+  (forall key
+    (implies (set::in key (omap::keys omap))
+             (key-recognizer key)))
+  :rewrite :direct)
+
+(local
+  (in-theory
+    (disable all-keys-recognized-p)))
+
+(defthm all-keys-recognized-p-of-tail
+  (implies (and (not (omap::emptyp omap))
+                (all-keys-recognized-p omap))
+           (all-keys-recognized-p (omap::tail omap)))
+  :hints
+  (("Goal"
+    :expand (all-keys-recognized-p (omap::tail omap)))))
+
+(defthm all-keys-recognized-p-of-update
+  (implies (and (key-recognizer key)
+                (all-keys-recognized-p omap))
+           (all-keys-recognized-p (omap::update key val omap)))
+  :hints
+  (("Goal"
+    :expand (all-keys-recognized-p (omap::update key val omap)))))
+
+
+;;;; `ALL-VALS-EXPORTS-P'
+(defun-sk all-vals-exports-p (omap)
+  (declare (xargs :guard (omap::mapp omap)
+                  :verify-guards nil))
+  (forall val
+    (implies (set::in val (omap::values omap))
+             (val-export-p val)))
+  :rewrite :direct)
+
+(local
+  (in-theory
+    (disable all-vals-exports-p)))
+
+(defthm all-vals-exports-p-of-tail
+  (implies (and (not (omap::emptyp omap))
+                (all-vals-exports-p omap))
+           (all-vals-exports-p (omap::tail omap)))
+  :hints
+  (("Goal"
+    :in-theory (disable all-vals-exports-p-necc)
+    :use ((:instance all-vals-exports-p-necc
+                     (val (all-vals-exports-p-witness (omap::tail omap)))))
+    :expand ((all-vals-exports-p (omap::tail omap))
+             (omap::values omap)))))
+
+(local
+  (defthm values-of-update
+    (implies (and (set::in %val (omap::values (omap::update key val omap)))
+                  (not (equal %val val)))
+             (set::in %val (omap::values omap)))
+    :hints
+    (("Goal"
+      :in-theory (enable omap::mapp
+                         omap::emptyp
+                         omap::mfix
+                         omap::head
+                         omap::tail
+                         omap::update
+                         omap::values)))))
+
+(defthm all-vals-exports-p-of-update
+  (implies (and (val-export-p val)
+                (all-vals-exports-p omap))
+           (all-vals-exports-p (omap::update key val omap)))
+  :hints
+  (("Goal"
+    :expand (all-vals-exports-p (omap::update key val omap)))
+   ("Subgoal *1/2"
+    :cases ((equal val (all-vals-exports-p-witness (omap::update key val omap))))
+    :in-theory (disable all-vals-exports-p-necc)
+    :use ((:instance all-vals-exports-p-necc
+                     (val (all-vals-exports-p-witness (omap::update key val omap))))))))
 
 
 ;;;; `EXPORTP-REC'
-(defun exportp-rec (alist)
+(defun exportp-rec (omap)
   (declare (xargs :guard t))
-  (if (atom alist)
-      (null alist)
-      (and (consp (car alist))
-           (key-recognizer (caar alist))
-           (val-export-p (cdar alist))
-           (exportp-rec (cdr alist)))))
+  (if (atom omap)
+      (null omap)
+      (and (consp (car omap))
+           (key-recognizer (caar omap))
+           (val-export-p (cdar omap))
+           (or (null (cdr omap))
+               (and (consp (cdr omap))
+                    (consp (cadr omap))
+                    (<< (caar omap) (caadr omap))
+                    (exportp-rec (cdr omap)))))))
 
 (defthm exportp-rec{type-prescription}
-  (booleanp (exportp-rec alist))
+  (booleanp (exportp-rec omap))
   :rule-classes :type-prescription)
 
 (defthm exportp-rec{compound-recognizer}
-  (implies (exportp-rec alist)
-           (true-listp alist))
+  (implies (exportp-rec omap)
+           (true-listp omap))
   :rule-classes :compound-recognizer)
 
-(defthm keysp-of-strip-cars-when-exportp-rec
-  (implies (exportp-rec alist)
-           (equal (keysp (strip-cars alist))
-                  (set::setp (strip-cars alist))))
+(encapsulate ()
+  (defthm mapp-when-exportp-rec
+    (implies (exportp-rec omap)
+             (omap::mapp omap))
+    :hints
+    (("Goal"
+      :in-theory (enable omap::mapp))))
+
+  (defthm all-keys-recognized-p-when-exportp-rec
+    (implies (exportp-rec omap)
+             (all-keys-recognized-p omap))
+    :hints
+    (("Subgoal *1/4"
+      :in-theory (enable omap::head
+                         omap::tail)
+      :expand ((all-keys-recognized-p omap)
+               (omap::keys omap)))
+     ("Subgoal *1/2"
+      :in-theory (enable omap::head
+                         omap::tail)
+      :expand ((all-keys-recognized-p omap)
+               (omap::keys omap)))
+     ("Subgoal *1/1"
+      :expand (all-keys-recognized-p nil))))
+
+  (defthm all-vals-recognized-p-when-exportp-rec
+    (implies (exportp-rec omap)
+             (all-vals-exports-p omap))
+    :hints
+    (("Subgoal *1/4"
+      :in-theory (enable omap::head
+                         omap::tail)
+      :expand ((all-vals-exports-p omap)
+               (omap::values omap)))
+     ("Subgoal *1/2"
+      :in-theory (enable omap::head
+                         omap::tail)
+      :expand ((all-vals-exports-p omap)
+               (omap::values omap)))
+     ("Subgoal *1/1"
+      :expand (all-vals-exports-p nil))))
+
+  (local
+    (defthm exportp-rec{definition}-lemma
+      (implies (and (omap::mapp omap)
+                    (all-keys-recognized-p omap)
+                    (all-vals-exports-p omap))
+               (exportp-rec omap))
+      :hints
+      (("Goal"
+        :induct (exportp-rec omap))
+       ("Subgoal *1/9"
+        :expand (omap::mapp omap))
+       ("Subgoal *1/8"
+        :in-theory (e/d (omap::head
+                         omap::tail
+                         omap::keys)
+                        (all-keys-recognized-p-necc))
+        :use ((:instance all-keys-recognized-p-necc
+                         (key (caar omap)))))
+       ("Subgoal *1/7"
+        :in-theory (e/d (omap::head
+                         omap::tail
+                         omap::values)
+                        (all-vals-exports-p-necc))
+        :use ((:instance all-vals-exports-p-necc
+                         (val (cdar omap)))))
+       ("Subgoal *1/6"
+        :in-theory (enable omap::mapp))
+       ("Subgoal *1/5"
+        :in-theory (enable omap::mapp))
+       ("Subgoal *1/4"
+        :in-theory (enable omap::mapp))
+       ("Subgoal *1/3.3"
+        :in-theory (enable omap::mapp))
+       ("Subgoal *1/3.2"
+        :in-theory (e/d (omap::values
+                         omap::head
+                         omap::tail)
+                        (all-vals-exports-p-necc))
+        :use ((:instance all-vals-exports-p-necc
+                         (val (all-vals-exports-p-witness (cdr omap)))))
+        :expand (all-vals-exports-p (cdr omap)))
+       ("Subgoal *1/3.1"
+        :in-theory (e/d (omap::keys
+                         omap::head
+                         omap::tail)
+                        (all-keys-recognized-p-necc))
+        :use ((:instance all-keys-recognized-p-necc
+                         (key (all-keys-recognized-p-witness (cdr omap)))))
+        :expand (all-keys-recognized-p (cdr omap)))
+       ("Subgoal *1/1"
+        :in-theory (enable omap::mapp)))))
+
+  (defthm exportp-rec{definition}
+    (equal (exportp-rec omap)
+           (and (omap::mapp omap)
+                (all-keys-recognized-p omap)
+                (all-vals-exports-p omap)))
+    :rule-classes :definition
+    :hints
+    (("Subgoal 2"
+      :cases ((all-vals-exports-p omap))))))
+
+(defthm keysp-of-keys-when-exportp-rec
+  (implies (exportp-rec omap)
+           (keysp (omap::keys omap)))
   :hints
   (("Goal"
-    :in-theory (e/d (keysp
-                     set::head
-                     set::tail
-                     set::emptyp
-                     set::setp)
-                    (keysp{definition})))))
+    :induct (omap::keys omap)
+    :in-theory (enable omap::keys))))
 
-(defthm key-recognizer-of-nth-when-exportp-rec
-  (implies (and (exportp-rec alist)
-                (natp n)
-                (< n (len alist)))
-           (key-recognizer (car (nth n alist)))))
+(defthm val-export-p-when-exportp-rec
+  (implies (and (exportp-rec omap)
+                (omap::assoc key omap))
+           (val-export-p (cdr (omap::assoc key omap))))
+  :hints
+  (("Goal"
+    :in-theory (enable omap::assoc))
+   ("Subgoal *1/2"
+    :in-theory (disable all-vals-exports-p-necc)
+    :use ((:instance all-vals-exports-p-necc
+                     (val (mv-nth 1 (omap::head omap)))))
+    :expand (omap::values omap))))
 
-(defthm val-export-p-of-nth-when-exportp-rec
-  (implies (and (exportp-rec alist)
-                (natp n)
-                (< n (len alist)))
-           (val-export-p (cdr (nth n alist)))))
-
-(defthm alistp-when-exportp-rec
-  (implies (exportp-rec alist)
-           (alistp alist)))
-
-(defthm exportp-rec-of-cdr
-  (implies (and (exportp-rec alist)
-                (consp alist))
-           (exportp-rec (cdr alist))))
-
-(defthm val-export-p-of-assoc-when-exportp-rec
-  (implies (and (exportp-rec alist)
-                (assoc key alist))
-           (val-export-p (cdr (assoc key alist)))))
+(local
+  (in-theory
+    (disable exportp-rec)))
 
 
 ;;;; `EXPORTP'
@@ -2997,8 +3178,7 @@
   (declare (xargs :guard t))
   (and (consp export)
        (equal (car export) (name))
-       (exportp-rec (cdr export))
-       (set::setp (strip-cars (cdr export)))))
+       (exportp-rec (cdr export))))
 
 (defthm exportp{type-prescription}
   (booleanp (exportp export))
@@ -3010,164 +3190,129 @@
                 (true-listp export)))
   :rule-classes :compound-recognizer)
 
-(defthm car-when-exportp
-  (implies (exportp export)
-           (equal (car export)
-                  (name))))
-
-(defthm cdr-when-exportp
-  (implies (exportp export)
-           (and (exportp-rec (cdr export))
-                (keysp (strip-cars (cdr export))))))
-
-(defthm keysp-of-strip-cars-when-exportp
-  (implies (exportp alist)
-           (equal (keysp (strip-cars (cdr alist)))
-                  (set::setp (strip-cars (cdr alist)))))
-  :hints
-  (("Goal"
-    :do-not-induct t)))
-
-(defthm key-recognizer-of-nth-when-exportp
-  (implies (and (exportp alist)
-                (posp n)
-                (< n (len alist)))
-           (key-recognizer (car (nth n alist)))))
-
-(defthm val-export-p-of-nth-when-exportp
-  (implies (and (exportp alist)
-                (posp n)
-                (< n (len alist)))
-           (val-export-p (cdr (nth n alist)))))
-
 
 ;;;; `EXPORT-ACC'
 (defun export-acc (set acc hash-table)
   (declare (xargs :guard (and (keysp set)
                               (exportp-rec acc)
                               (recognizer/copyable hash-table))))
-  (if (set::emptyp set)
-      (revappend acc ())
-      (let* ((key (key-fixer (set::head set)))
+  (if (or (set::emptyp set)
+          (not (keysp set)))
+      (omap::mfix acc)
+      (let* ((key (set::head set))
              (val (accessor/copyable key hash-table))
              (export (val-export val)))
-        (export-acc (set::tail set) (acons key export acc) hash-table))))
+        ;; TODO: I'd like this function to run in linear time by consing a list,
+        ;; reversing it, and then proving that the result is the desired omap.
+        ;; Time does not permit.
+        (export-acc (set::tail set) (omap::update key export acc) hash-table))))
 
 (defthm export-acc{type-prescription}
   (implies (true-listp acc)
            (true-listp (export-acc set acc hash-table)))
   :rule-classes :type-prescription)
 
-(defthm export-acc-of-append
-  (equal (export-acc set (append %acc acc) hash-table)
-         (revappend acc (export-acc set %acc hash-table))))
-
-(defthm export-acc-factor
-  (implies (syntaxp (not (and (quotep acc)
-                              (equal (cadr acc) 'nil))))
-           (equal (export-acc set acc hash-table)
-                  (revappend acc (export-acc set () hash-table))))
-  :hints
-  (("Goal"
-    :in-theory (disable export-acc-of-append)
-    :use ((:instance export-acc-of-append
-                     (%acc ()))))))
-
 (defthm exportp-rec-of-export-acc
-  (implies (true-listp acc)
-           (equal (exportp-rec (export-acc set acc hash-table))
-                  (exportp-rec acc))))
+  (implies (exportp-rec acc)
+           (exportp-rec (export-acc set acc hash-table))))
 
-(defthm len-of-export-acc
-  (equal (len (export-acc set acc hash-table))
-         (+ (set::cardinality set) (len acc)))
+(defthm keys-of-export-acc
+  (equal (omap::keys (export-acc set acc hash-table))
+         (if (keysp set)
+             (set::union set (omap::keys acc))
+             (omap::keys acc)))
   :hints
   (("Goal"
-    :in-theory (enable set::cardinality))))
+    :in-theory (enable set::union))))
 
-(with-books (("std/lists/append" :dir :system))
-  (defthm car-of-export-acc
-    (equal (car (export-acc set acc hash-table))
-           (cond
-             ((consp acc)
-              (nth (1- (len acc)) acc))
-             ((not (set::emptyp set))
-              (let ((key (key-fixer (set::head set))))
-                (cons key (val-export (accessor/copyable key hash-table)))))))
-    :hints
-    (("Goal"
-      :induct (len acc)
-      :in-theory (enable set::emptyp
-                         set::head
-                         set::tail)))))
+(defthm export-acc-of-keys-set
+  (equal (export-acc %set acc (keys-set set hash-table))
+         (export-acc %set acc hash-table)))
 
-(defthm cdr-of-export-acc-when-atom
-  (implies (atom acc)
-           (equal (cdr (export-acc set acc hash-table))
-                  (and (not (set::emptyp set))
-                       (export-acc (set::tail set) () hash-table))))
+(defthm export-acc-of-update-2
+  (equal (export-acc set (omap::update key val acc) hash-table)
+         (cond
+           ((or (set::emptyp set)
+                (not (keysp set)))
+            (omap::update key val acc))
+           ((set::in key set)
+            (export-acc set acc hash-table))
+           (t
+            (omap::update key val (export-acc set acc hash-table)))))
   :hints
   (("Goal"
-    :do-not-induct t)
-   ("Subgoal 1"
-    :expand (EXPORT-ACC SET NIL HASH-TABLE))))
+    :in-theory (enable set::in))))
 
-(defthm consp-of-export-acc
-  (equal (consp (export-acc set acc hash-table))
-         (or (not (set::emptyp set))
-             (consp acc))))
+(defthm export-acc-of-update-3
+  (implies (and (not (set::in (key-fixer key) set)))
+           (equal (export-acc set acc (updater/copyable key val hash-table))
+                  (export-acc set acc hash-table)))
+  :hints
+  (("Goal"
+    :in-theory (enable set::in))))
 
-(with-books (("std/lists/append" :dir :system)
-             ("std/lists/nth" :dir :system))
-  (local
-    (defthm nth-of-export-acc-lemma-0
-      (implies (atom acc)
-               (equal (nth n (export-acc set acc hash-table))
-                      (and (< (nfix n) (set::cardinality set))
-                           (cons (key-fixer (nth n set))
-                                 (val-export (accessor/copyable (nth n set) hash-table))))))
-      :hints
-      (("Goal"
-        :in-theory (enable set::head
-                           set::tail
-                           set::emptyp
-                           set::cardinality)))))
+(local
+  (defthm export-acc-of-insert-lemma
+    (implies (and (set::in key set)
+                  (key-recognizer key)
+                  (keysp set))
+             (equal (omap::update key
+                                  (val-export (accessor/copyable key hash-table))
+                                  (export-acc set acc hash-table))
+                    (export-acc set acc hash-table)))))
 
-  (defthm nth-of-export-acc
-    (equal (nth n (export-acc set acc hash-table))
-           (cond
-             ((< (nfix n) (len acc))
-              (nth (- (len acc) (1+ (nfix n))) acc))
-             ((< (nfix n) (+ (set::cardinality set) (len acc)))
-              (let ((key (key-fixer (nth (- (nfix n) (len acc)) set))))
-                (cons key (val-export (accessor/copyable key hash-table)))))))
-    :hints
-    (("Goal"
-      :do-not-induct t))))
+(defthm export-acc-of-insert
+  (implies (key-recognizer key)
+           (equal (export-acc (set::insert key set) acc hash-table)
+                  (cond
+                    ((set::emptyp set)
+                     (omap::update key
+                                   (val-export (accessor/copyable key hash-table))
+                                   acc))
+                    ((not (keysp set))
+                     (omap::mfix acc))
+                    (t
+                     (omap::update (key-fixer key)
+                                   (val-export (accessor/copyable key hash-table))
+                                   (export-acc set acc hash-table))))))
+  :hints
+  (("Subgoal 1"
+    :induct (set::weak-insert-induction key set))
+   ("Subgoal *1/5"
+    :expand ((export-acc (set::insert key set)
+                         acc hash-table)
+             (export-acc set acc hash-table)))
+   ("Subgoal *1/3"
+    :expand ((export-acc (set::insert key set)
+                         acc hash-table)
+             (export-acc set acc hash-table)))))
 
-(with-books (("std/alists/strip-cars" :dir :system))
-  (local
-    (defthm strip-cars-of-export-acc-when-atom
-      (implies (and (keysp set)
-                    (atom acc))
-               (equal (strip-cars (export-acc set acc hash-table))
-                      set))
-      :hints
-      (("Goal"
-        :in-theory (enable set::head
-                           set::tail
-                           set::setp
-                           set::emptyp
-                           keysp{definition})))))
+(defthm size-of-export-acc
+  (equal (omap::size (export-acc set acc hash-table))
+         (if (keysp set)
+             (set::cardinality (set::union set (omap::keys acc)))
+             (omap::size acc)))
+  :hints
+  (("Goal"
+    :in-theory (enable omap::size
+                       set::cardinality
+                       set::intersect
+                       omap::assoc-to-in-of-keys))
+   ("Subgoal 2"
+    :induct (set::cardinality set))
+   ("Subgoal *1/3"
+    :expand (export-acc set acc hash-table))))
 
-  (defthm strip-cars-of-export-acc
-    (implies (and (keysp set)
-                  (alistp acc))
-             (equal (strip-cars (export-acc set acc hash-table))
-                    (revappend (strip-cars acc) set)))
-    :hints
-    (("Goal"
-      :induct (strip-cars acc)))))
+(defthm assoc-of-export-acc
+  (equal (omap::assoc key (export-acc set acc hash-table))
+         (if (and (keysp set)
+                  (set::in key set))
+             (cons key (val-export (accessor/copyable key hash-table)))
+             (omap::assoc key acc))))
+
+(local
+  (in-theory
+    (disable export-acc)))
 
 
 ;;;; `EXPORT'
@@ -3184,204 +3329,87 @@
 (defthm exportp-of-export
   (exportp (export hash-table)))
 
-(defthm len-of-export
-  (equal (len (export hash-table))
-         (1+ (set::cardinality (keys hash-table)))))
-
-(defthm nth-of-export
-  (equal (nth n (export hash-table))
-         (cond
-           ((zp n)
-            (name))
-           ((<= n (set::cardinality (keys hash-table)))
-            (let ((key (key-fixer (nth (1- n) (keys hash-table)))))
-              (cons key (val-export (accessor/copyable key hash-table)))))))
-  :hints
-  (("Goal"
-    :do-not-induct t
-    :expand (:free (n a d) (nth n (cons a d))))))
-
-(defthm strip-cars-of-export
-  (equal (strip-cars (cdr (export hash-table)))
+(defthm keys-of-export
+  (equal (omap::keys (cdr (export hash-table)))
          (keys hash-table)))
+
+(defthm size-of-export
+  (implies (coupledp hash-table)
+           (equal (omap::size (cdr (export hash-table)))
+                  (count/copyable hash-table))))
+
+(defthm assoc-of-export
+  (implies (and (key-recognizer key)
+                (coupledp hash-table))
+           (equal (omap::assoc key (cdr (export hash-table)))
+                  (and (boundp/copyable key hash-table)
+                       (cons key (val-export (accessor/copyable key hash-table)))))))
 
 
 ;;;; `IMPORT-REC'
-(defun import-rec (alist hash-table)
-  (declare (xargs :guard (and (exportp-rec alist)
+(defun import-rec (omap hash-table)
+  (declare (xargs :guard (and (exportp-rec omap)
                               (recognizer/copyable hash-table))))
-  (if (atom alist)
+  (if (or (omap::emptyp omap)
+          (not (exportp-rec omap)))
       (fixer/copyable hash-table)
-      (let* ((key (key-fixer (caar alist)))
-             (val (val-import (cdar alist) (default-val)))
-             (hash-table (updater/copyable key val hash-table)))
-        (import-rec (cdr alist) hash-table))))
+      (mv-let (key val-export)
+              (omap::head omap)
+        (let* ((val (accessor/copyable key hash-table))
+               (val (val-import val-export val))
+               (hash-table (updater/copyable key val hash-table)))
+          (import-rec (omap::tail omap) hash-table)))))
 
 (defthm import-rec{type-prescription}
-  (and (consp (import-rec alist hash-table))
-       (true-listp (import-rec alist hash-table)))
+  (and (consp (import-rec omap hash-table))
+       (true-listp (import-rec omap hash-table)))
   :rule-classes :type-prescription)
 
 (defthm recognizer/copyable-of-import-rec
-  (recognizer/copyable (import-rec alist hash-table)))
+  (recognizer/copyable (import-rec omap hash-table)))
 
 (defthm keys-of-import-rec
-  (equal (keys (import-rec alist hash-table))
+  (equal (keys (import-rec omap hash-table))
          (keys hash-table)))
 
 (defthm import-rec-of-updater/copyable
-  (implies (exportp-rec alist)
-           (equal (import-rec alist (updater/copyable key val hash-table))
-                  (if (assoc (key-fixer key) alist)
-                      (import-rec alist hash-table)
-                      (updater/copyable key val (import-rec alist hash-table))))))
+  (implies (exportp-rec omap)
+           (equal (import-rec omap (updater/copyable key val hash-table))
+                  (if (omap::assoc (key-fixer key) omap)
+                      (import-rec omap hash-table)
+                      (updater/copyable key val (import-rec omap hash-table)))))
+  ;; BUG: This proof fails without the following flag.
+  :otf-flg t)
 
 (defthm boundp/copyable-of-import-rec
-  (implies (exportp-rec alist)
-           (equal (boundp/copyable key (import-rec alist hash-table))
+  (implies (exportp-rec omap)
+           (equal (boundp/copyable key (import-rec omap hash-table))
                   (and (or (boundp/copyable key hash-table)
-                           (assoc (key-fixer key) alist))
-                       t)))
-  :hints
-  (("Goal"
-    :induct (exportp-rec alist))))
-
-(local
-  (encapsulate ()
-    (local
-      (defthm assoc-when-minimal-lemma-0
-        (implies (omap::mapp map)
-                 (equal (omap::assoc key map)
-                        (assoc key map)))
-        :hints
-        (("Goal"
-          :in-theory (enable omap::assoc
-                             omap::head
-                             omap::emptyp
-                             omap::mapp
-                             omap::tail)))))
-
-    (local
-      (in-theory
-        (enable omap::mapp-as-alistp)))
-
-    (defthmd assoc-when-minimal
-      (implies (and (alistp alist)
-                    (set::setp (strip-cars alist))
-                    (assoc key alist))
-               (not (<< key (caar alist))))
-      :hints
-      (("Subgoal *1/3"
-        :in-theory (e/d (omap::head
-                         mv-nth)
-                        (omap::head-key-minimal))
-        :use ((:instance omap::head-key-minimal
-                         (key key)
-                         (map alist))))))
-    (local
-      (defthm emptyp-when-setp
-        (implies (set::setp set)
-                 (equal (set::emptyp set)
-                        (null set)))
-        :hints
-        (("Goal"
-          :in-theory (enable set::setp
-                             set::emptyp)))))
-
-    (local
-      (in-theory
-        (enable assoc-when-minimal)))
-
-    (local
-      (defthm head-of-strip-cars
-        (implies (set::setp (strip-cars alist))
-                 (equal (set::head (strip-cars alist))
-                        (caar alist)))
-        :hints
-        (("Goal"
-          :in-theory (enable set::head)))))
-
-    (defthmd <<-when-setp-strip-cars
-      (implies (and (alistp alist)
-                    (consp alist)
-                    (consp (cdr alist))
-                    (not (<< (car (car alist)) (car (car (cdr alist))))))
-               (not (set::setp (strip-cars alist)))))
-
-    (local
-      (in-theory
-        (enable <<-when-setp-strip-cars)))
-
-    (local
-      (defthm car-of-strip-cars
-        (equal (car (strip-cars alist))
-               (caar alist))))
-
-    (defthmd assoc-when-setp-strip-cars
-      (implies (and (alistp alist)
-                    (consp alist)
-                    (assoc (car (car alist)) (cdr alist)))
-               (not (set::setp (strip-cars alist))))
-      :hints
-      (("Goal"
-        :do-not-induct t
-        :cases ((consp (cdr alist))))))
-
-    (local
-      (in-theory
-        (enable assoc-when-setp-strip-cars)))
-
-    (defthmd accessor/copyable-of-import-rec-lemma-0
-      (implies (and (exportp-rec alist)
-                    (set::setp (strip-cars alist))
-                    (key-recognizer key)
-                    (assoc key alist))
-               (equal (accessor/copyable key (import-rec alist hash-table))
-                      (val-import (cdr (assoc key alist))
-                                  (default-val))))
-      :hints
-      (("Goal"
-        :expand ((import-rec alist hash-table)))))))
+                           (omap::assoc (key-fixer key) omap))
+                       t))))
 
 (defthm accessor/copyable-of-import-rec
-  (implies (and (exportp-rec alist)
-                (set::setp (strip-cars alist)))
-           (equal (accessor/copyable key (import-rec alist hash-table))
-                  (let ((pair (assoc (key-fixer key) alist)))
+  (implies (exportp-rec omap)
+           (equal (accessor/copyable key (import-rec omap hash-table))
+                  (let ((pair (omap::assoc (key-fixer key) omap)))
                     (if pair
                         (val-import (cdr pair) (default-val))
-                        (accessor/copyable key hash-table)))))
-  :hints
-  (("Goal"
-    :cases ((key-recognizer key)))
-   ("Subgoal 2.2"
-    :use ((:instance accessor/copyable-of-import-rec-lemma-0
-                     (key (default-key)))))
-   ("Subgoal 2.1"
-    :induct (import-rec alist hash-table))
-   ("Subgoal 1.2"
-    :use ((:instance accessor/copyable-of-import-rec-lemma-0)))
-   ("Subgoal 1.1"
-    :induct (import-rec alist hash-table))))
+                        (accessor/copyable key hash-table))))))
 
 (defthmd count/copyable-of-import-rec
-  (implies (and (exportp-rec alist)
-                (set::setp (strip-cars alist)))
-           (equal (count/copyable (import-rec alist hash-table))
+  (implies (exportp-rec omap)
+           (equal (count/copyable (import-rec omap hash-table))
                   (cond
-                    ((atom alist)
+                    ((omap::emptyp omap)
                      (count/copyable hash-table))
-                    ((boundp/copyable (caar alist) hash-table)
-                     (count/copyable (import-rec (cdr alist) hash-table)))
+                    ((boundp/copyable (omap::head-key omap) hash-table)
+                     (count/copyable (import-rec (omap::tail omap) hash-table)))
                     (t
-                     (1+ (count/copyable (import-rec (cdr alist) hash-table)))))))
-  :hints
-  (("Goal"
-    :do-not-induct t
-    :in-theory (disable strip-cars))
-   ("Subgoal 1"
-    :use ((:instance assoc-when-setp-strip-cars))
-    :expand (import-rec alist hash-table))))
+                     (1+ (count/copyable (import-rec (omap::tail omap) hash-table))))))))
+
+(local
+  (in-theory
+    (disable import-rec)))
 
 
 ;;;; `IMPORT'
@@ -3389,10 +3417,10 @@
   (declare (xargs :guard (and (exportp export)
                               (recognizer/copyable hash-table))))
   (if (exportp export)
-      (let* ((alist (cdr export))
+      (let* ((omap (cdr export))
              (hash-table (clear/copyable hash-table))
-             (hash-table (import-rec alist hash-table))
-             (hash-table (keys-set (strip-cars alist) hash-table)))
+             (hash-table (import-rec omap hash-table))
+             (hash-table (keys-set (omap::keys omap) hash-table)))
         hash-table)
       (creator/copyable)))
 
@@ -3409,182 +3437,101 @@
            (equal (import export hash-table)
                   (creator/copyable))))
 
-(defthmd import-ignores-hash-table
+(defthm import-ignores-hash-table
   (equal (import export hash-table)
-         (import export (creator/copyable))))
+         (import export (creator/copyable)))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (syntaxp (not (and (consp hash-table)
+                                         (eq (car hash-table) 'creator/copyable))))
+                      (equal (import export hash-table)
+                             (import export (creator/copyable)))))))
 
 (defthm keys-of-import
   (equal (keys (import export hash-table))
          (and (exportp export)
-              (strip-cars (cdr export)))))
+              (omap::keys (cdr export)))))
 
 (defthm boundp/copyable-of-import
   (equal (boundp/copyable key (import export hash-table))
-         (and (assoc (key-fixer key) (cdr export))
+         (and (omap::assoc (key-fixer key) (cdr export))
               (exportp export))))
 
 (defthm accessor/copyable-of-import
   (equal (accessor/copyable key (import export hash-table))
-         (if (and (exportp export)
-                  (assoc (key-fixer key) (cdr export)))
-             (val-import (cdr (assoc (key-fixer key) (cdr export))) (default-val))
-             (default-val))))
-
-(local
-  (defthm setp-of-strip-cars-of-cdr
-    (implies (and (set::setp (strip-cars alist))
-                  (alistp alist)
-                  (consp alist))
-             (set::setp (strip-cars (cdr alist))))))
+         (let ((pair (omap::assoc (key-fixer key) (cdr export))))
+           (if (and (exportp export)
+                    pair)
+               (val-import (cdr pair) (default-val))
+               (default-val)))))
 
 (encapsulate ()
   (local
-    (defthm count/copyable-of-import-lemma-0
-      (implies (and (exportp-rec alist)
-                    (set::setp (strip-cars alist)))
-               (equal (count/copyable (import-rec alist (creator/copyable)))
-                      (len alist)))
+    (defthm count/copyable-of-import-lemma
+      (implies (and (omap::mapp omap)
+                    (all-keys-recognized-p omap)
+                    (all-vals-exports-p omap))
+               (equal (count/copyable (import-rec omap (creator/copyable)))
+                      (omap::size omap)))
       :hints
       (("Goal"
-        :induct (len alist)
-        :expand (import-rec alist (creator/copyable)))
-       ("Subgoal *1/1.4"
-        :use ((:instance assoc-when-setp-strip-cars)))
-       ("Subgoal *1/1.2"
-        :use ((:instance assoc-when-setp-strip-cars))))))
-
-  (local
-    (defthmd count/copyable-of-import-lemma-1
-      (equal (count/copyable (import (cons (name) alist) hash-table))
-             (if (and (exportp-rec alist)
-                      (set::setp (strip-cars alist)))
-                 (len alist)
-                 0))
-      :hints
-      (("Goal"
-        :in-theory (disable exportp-rec
-                            strip-cars
-                            key-fixer-constraint)))))
+        :in-theory (enable omap::size))
+       ("Subgoal *1/5"
+        :use ((:instance count/copyable-of-import-rec
+                         (hash-table (creator/copyable)))))
+       ("Subgoal *1/1"
+        :use ((:instance count/copyable-of-import-rec
+                         (hash-table (creator/copyable))))))))
 
   (defthm count/copyable-of-import
     (equal (count/copyable (import export hash-table))
            (if (exportp export)
-               (1- (len export))
-               0))
-    :hints
-    (("Goal"
-      :do-not-induct t
-      :use ((:instance count/copyable-of-import-lemma-1
-                       (alist (cdr export))))))))
+               (omap::size (cdr export))
+               0))))
 
 
 ;;;; `EXPORT' and `IMPORT' Composition Theorems
-(with-books (("std/lists/nth" :dir :system)
-             ("std/alists/strip-cars" :dir :system))
-  (local
-    (defthm cardinality-is-len
-      (implies (set::setp set)
-               (equal (set::cardinality set)
-                      (len set)))
-      :hints
-      (("Goal"
-        :in-theory (enable set::cardinality
-                           set::tail
-                           set::emptyp)))))
-
-  (local
-    (defthm nth-of-strip-cars
-      (equal (nth n (strip-cars alist))
-             (car (nth n alist)))))
-
-  (local
-    (defthmd equal-cons
-      (implies (consp c)
-               (equal (equal (cons a d)
-                             c)
-                      (and (equal a (car c))
-                           (equal d (cdr c)))))))
-
-  (local
-    (defthm consp-of-nth-when-alistp
-      (implies (and (alistp alist)
-                    (natp n)
-                    (< n (len alist)))
-               (consp (nth n alist)))))
-
-  (local
-    (defthm assoc-of-nth-when-alistp
-      (implies (and (alistp alist)
-                    (natp n)
-                    (< n (len alist)))
-               (assoc (car (nth n alist)) alist))))
-
-  (local
-    (defthm assoc-of-nth-when-exportp-rec
-      (implies (and (exportp-rec alist)
-                    (set::setp (strip-cars alist))
-                    (natp n)
-                    (< n (len alist)))
-               (equal (assoc-equal (car (nth n alist)) alist)
-                      (nth n alist)))
-      :hints
-      (("Goal"
-        :induct (nth n alist))
-       ("Subgoal *1/3"
-        :in-theory (disable consp-of-nth-when-alistp)
-        :use ((:instance assoc-when-setp-strip-cars)
-              (:instance consp-of-nth-when-alistp
-                         (n (+ -1 n))
-                         (alist (cdr alist))))))))
-
-  (defthm export-of-import
-    (implies (exportp export)
-             (equal (export (import export hash-table))
-                    export))
+(local
+  (defthm export-of-import-lemma
+    (implies (and (omap::mapp omap)
+                  (all-keys-recognized-p omap)
+                  (all-vals-exports-p omap))
+             (equal (export-acc (omap::keys omap)
+                                nil
+                                (import-rec omap
+                                            (creator/copyable)))
+                    omap))
     :hints
-    ((acl2::equal-by-nths-hint)
-     ("Goal"
-      :in-theory (disable exportp-rec
-                          export-acc
-                          import-rec)
-      :expand (:free (n a d) (nth n (cons a d))))
-     ("Subgoal 1.2"
-      :use ((:instance consp-of-nth-when-alistp
-                       (n (+ -1 acl2::n))
-                       (alist (cdr export))))))))
+    (("Goal"
+      :induct (omap::keys omap)
+      :in-theory (enable omap::keys))
+     ("Subgoal *1/2.3"
+      :do-not-induct t
+      :expand (import-rec omap (creator/copyable)))
+     ("Subgoal *1/1"
+      :expand (export-acc nil nil
+                          (import-rec omap (creator/copyable)))))))
+
+(defthm export-of-import
+  (implies (exportp export)
+           (equal (export (import export hash-table))
+                  export))
+  :hints
+  (("Goal"
+    :do-not-induct t
+    :in-theory (disable cons-equal)
+    :use ((:instance cons-equal
+                     (x1 (name))
+                     (y1 (export-acc (omap::keys (cdr export))
+                                     nil
+                                     (keys-set (omap::keys (cdr export))
+                                               (import-rec (cdr export)
+                                                           (creator/copyable)))))
+                     (x2 (car export))
+                     (y2 (cdr export)))))))
 
 (defthm import-of-export
-  ;; We assume that `%HASH-TABLE' is coupled.
-  (implies (and (equal (set::cardinality (keys %hash-table))
-                       (count/copyable %hash-table))
-                (iff (assoc-equal
-                      (keys-equal/copyable-witness (import (export %hash-table) hash-table)
-                                                   (fixer/copyable %hash-table))
-                      (cdr (export %hash-table)))
-                     (boundp/copyable
-                      (keys-equal/copyable-witness (import (export %hash-table) hash-table)
-                                                   (fixer/copyable %hash-table))
-                      %hash-table))
-                (iff (assoc-equal
-                      (vals-equal/copyable-witness (import (export %hash-table) hash-table)
-                                                   (fixer/copyable %hash-table))
-                      (cdr (export %hash-table)))
-                     (boundp/copyable
-                      (vals-equal/copyable-witness (import (export %hash-table) hash-table)
-                                                   (fixer/copyable %hash-table))
-                      %hash-table))
-                (equal
-                 (val-import
-                  (cdr
-                   (assoc-equal
-                    (vals-equal/copyable-witness (import (export %hash-table) hash-table)
-                                                 (fixer/copyable %hash-table))
-                    (cdr (export %hash-table))))
-                  (default-val))
-                 (accessor/copyable
-                  (vals-equal/copyable-witness (import (export %hash-table) hash-table)
-                                               (fixer/copyable %hash-table))
-                  %hash-table)))
+  (implies (coupledp %hash-table)
            (equal (import (export %hash-table) hash-table)
                   (fixer/copyable %hash-table)))
   :hints
