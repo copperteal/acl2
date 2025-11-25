@@ -115,9 +115,7 @@
                        (symbolp fixer)
                        (symbolp logic)
                        (symbolp exec)
-                       (or (symbolp package-witness)
-                           (and (stringp package-witness)
-                                (not (equal package-witness ""))))
+                       (package-witness-p package-witness)
                        (booleanp debug)))))))
 
 (defthm frame-body-p-when-frame-descriptor-list-p

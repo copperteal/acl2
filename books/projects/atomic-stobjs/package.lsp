@@ -38,7 +38,7 @@
                symbolicate
                with-books
                make-predicate-suffix
-               coupled)
+               coupledp)
              '(<<))
    '(element-type
      default-value
@@ -93,6 +93,7 @@
      count
      clear
      init
+     keysp
      keys
      keys-set
      )))

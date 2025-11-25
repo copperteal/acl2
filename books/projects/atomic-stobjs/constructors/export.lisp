@@ -43,9 +43,7 @@
 (defun make-vector-export-events (vector package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp vector)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))
+                              (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ()
 
@@ -295,9 +293,7 @@
 (defun make-hash-table-export-events (hash-table package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))
+                              (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ()
 
@@ -544,13 +540,11 @@
                                  (current-theory ',export-begin))))))
 
 
-;;;; `
+;;;; `MAKE-FRAME-EXPORT-EVENTS'
 (defun make-frame-export-events (frame package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))
+                              (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ()
 
@@ -685,9 +679,7 @@
 (defmacro define-export (stobj &key (debug 'nil) (package-witness 'nil package-witness-supplied-p))
   (declare (xargs :guard (and (symbolp stobj)
                               (booleanp debug)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))))
+                              (package-witness-p package-witness))))
   `(with-output
      ,@(and (not debug)
             *constructor-output*)

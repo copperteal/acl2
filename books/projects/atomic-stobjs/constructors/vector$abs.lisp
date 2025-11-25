@@ -47,15 +47,9 @@
   (declare (xargs :guard (and (symbolp vector)
                               (symbolp logic)
                               (symbolp exec)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness ""))))
-                              (or (symbolp package-witness$a)
-                                  (and (stringp package-witness$a)
-                                       (not (equal package-witness$a ""))))
-                              (or (symbolp package-witness$c)
-                                  (and (stringp package-witness$c)
-                                       (not (equal package-witness$c ""))))
+                              (package-witness-p package-witness)
+                              (package-witness-p package-witness$a)
+                              (package-witness-p package-witness$c)
                               (booleanp debug))))
 
   `(with-output
@@ -154,15 +148,9 @@
                                                   accessor
                                                   updater))
                               (booleanp executable)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness ""))))
-                              (or (symbolp package-witness$a)
-                                  (and (stringp package-witness$a)
-                                       (not (equal package-witness$a ""))))
-                              (or (symbolp package-witness$c)
-                                  (and (stringp package-witness$c)
-                                       (not (equal package-witness$c ""))))
+                              (package-witness-p package-witness)
+                              (package-witness-p package-witness$a)
+                              (package-witness-p package-witness$c)
                               (booleanp debug))))
 
   `(with-output
