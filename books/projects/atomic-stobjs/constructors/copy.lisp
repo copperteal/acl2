@@ -72,9 +72,7 @@
 (defun make-vector-copy-events (vector package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp vector)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))
+                              (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ((%vector (symbolicate package-witness "%" vector))
          (copy (symbolicate package-witness vector "-COPY"))
@@ -664,9 +662,7 @@
 (defun make-hash-table-copy-events (hash-table package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))
+                              (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ((%hash-table (symbolicate package-witness "%" hash-table))
          (copy (symbolicate package-witness hash-table "-COPY"))
@@ -1531,9 +1527,7 @@
 (defun make-frame-copy-events (frame package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp frame)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))
+                              (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ((%frame (symbolicate package-witness "%" frame))
          (copy (symbolicate package-witness frame "-COPY"))
@@ -1902,9 +1896,7 @@
 (defmacro define-copy (stobj &key (debug 'nil) (package-witness 'nil package-witness-supplied-p))
   (declare (xargs :guard (and (symbolp stobj)
                               (booleanp debug)
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness "")))))))
+                              (package-witness-p package-witness))))
   `(with-output
      ,@(and (not debug)
             *constructor-output*)

@@ -117,9 +117,7 @@
                                        (not keys-fix)
                                        (not keys)
                                        (not keys-set)))
-                              (or (symbolp package-witness)
-                                  (and (stringp package-witness)
-                                       (not (equal package-witness ""))))
+                              (package-witness-p package-witness)
                               (booleanp debug))))
 
   `(with-output

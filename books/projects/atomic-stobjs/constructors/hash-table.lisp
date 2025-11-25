@@ -74,6 +74,7 @@
        (logic 'nil)
        (exec 'nil)
 
+       (package-witness 'nil package-witness-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
@@ -121,6 +122,7 @@
                                        (not keys-set)))
                               (symbolp logic)
                               (symbolp exec)
+                              (package-witness-p package-witness)
                               (booleanp debug))))
 
   `(with-output
@@ -131,6 +133,9 @@
        (let* ((hash-table ',hash-table)
               (logic ',logic)
               (exec ',exec)
+              (package-witness (if ',package-witness-supplied-p
+                                   ',package-witness
+                                   (current-package state)))
               (test ',test)
               (size ',size)
               (element-type ',element-type)
@@ -166,33 +171,33 @@
               (debug ',debug)
 
               (hash-table$a (or logic
-                                (symbolicate hash-table hash-table "$A")))
+                                (symbolicate package-witness hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate hash-table hash-table "$C")))
+                                (symbolicate package-witness hash-table "$C")))
               (recognizer (or recognizer
-                              (symbolicate hash-table hash-table (make-predicate-suffix hash-table))))
+                              (symbolicate package-witness hash-table (make-predicate-suffix hash-table))))
               (creator (or creator
-                           (symbolicate hash-table "CREATE-" hash-table)))
+                           (symbolicate package-witness "CREATE-" hash-table)))
               (accessor (or accessor
-                            (symbolicate hash-table hash-table "-GET")))
+                            (symbolicate package-witness hash-table "-GET")))
               (updater (or updater
-                           (symbolicate hash-table hash-table "-PUT")))
+                           (symbolicate package-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate hash-table hash-table "-BOUNDP")))
+                          (symbolicate package-witness hash-table "-BOUNDP")))
               (getp (or getp
-                        (symbolicate hash-table hash-table "-GETP")))
+                        (symbolicate package-witness hash-table "-GETP")))
               (remover (or remover
-                           (symbolicate hash-table hash-table "-REM")))
+                           (symbolicate package-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate hash-table hash-table "-COUNT")))
+                         (symbolicate package-witness hash-table "-COUNT")))
               (clear (or clear
-                         (symbolicate hash-table hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLEAR")))
               (init (or init
-                        (symbolicate hash-table hash-table "-INIT")))
+                        (symbolicate package-witness hash-table "-INIT")))
               (keys (or keys
-                        (symbolicate hash-table hash-table "-KEYS")))
+                        (symbolicate package-witness hash-table "-KEYS")))
               (keys-set (or keys-set
-                            (symbolicate hash-table hash-table "-KEYS-SET"))))
+                            (symbolicate package-witness hash-table "-KEYS-SET"))))
 
          `(progn
             (define-hash-table$c ,hash-table$c ,test
@@ -210,6 +215,8 @@
                      `(:memoizable ,memoizable))
               ,@(and ,executable-supplied-p
                      `(:executable ,executable))
+              ,@(and ,package-witness-supplied-p
+                     `(:package-witness ,package-witness))
               :debug ,debug)
 
             (define-hash-table$a ,hash-table$a ,test
@@ -234,6 +241,8 @@
                      `(:default-val ,default-val))
               ,@(and ,copyable-supplied-p
                      `(:copyable ,copyable))
+              ,@(and ,package-witness-supplied-p
+                     `(:package-witness ,package-witness))
               :debug ,debug)
 
             (define-hash-table$corr ,hash-table
@@ -241,6 +250,8 @@
               :exec ,hash-table$c
               ,@(and ,copyable-supplied-p
                      `(:copyable ,copyable))
+              ,@(and ,package-witness-supplied-p
+                     `(:package-witness ,package-witness))
               :debug ,debug)
 
             (define-hash-table$abs ,hash-table
@@ -262,4 +273,6 @@
                              :keys-set ,keys-set))
               ,@(and ,executable-supplied-p
                      `(:executable ,executable))
+              ,@(and ,package-witness-supplied-p
+                     `(:package-witness ,package-witness))
               :debug ,debug))))))
