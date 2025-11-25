@@ -103,9 +103,7 @@
                        (symbolp creator)
                        (symbolp fixer)
                        (symbolp view)
-                       (or (symbolp package-witness)
-                           (and (stringp package-witness)
-                                (not (equal package-witness ""))))
+                       (package-witness-p package-witness)
                        (booleanp debug)))))))
 
 (defthm frame$c-body-p-when-frame$c-descriptor-list-p
