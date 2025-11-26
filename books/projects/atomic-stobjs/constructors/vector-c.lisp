@@ -212,22 +212,22 @@
               ;; Theorem Names
               (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
 
-              (contents-recognizer{type-prescription} (symbolicate package-witness contents-recognizer "{TYPE-PRESCRIPTION}"))
-              (contents-recognizer{compound-recognizer} (symbolicate package-witness contents-recognizer "{COMPOUND-RECOGNIZER}"))
+              (contents-recognizer-tp (symbolicate package-witness contents-recognizer "-TP"))
+              (contents-recognizer-cr (symbolicate package-witness contents-recognizer "-CR"))
 
-              (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
-              (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+              (recognizer-tp (symbolicate package-witness recognizer "-TP"))
+              (recognizer-cr (symbolicate package-witness recognizer "-CR"))
               (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
               (recognizer-of-resizer (symbolicate package-witness recognizer "-OF-" resizer))
               (recognizer-of-updater (symbolicate package-witness recognizer "-OF-" updater))
 
-              (length{type-prescription} (symbolicate package-witness length "{TYPE-PRESCRIPTION}"))
+              (length-tp (symbolicate package-witness length "-TP"))
               (length-of-creator (symbolicate package-witness length "-OF-" creator))
               (length-of-resizer (symbolicate package-witness length "-OF-" resizer))
               (length-of-updater (symbolicate package-witness length "-OF-" updater))
-              (length{rewrite} (symbolicate package-witness length "{REWRITE}"))
+              (length-rw (symbolicate package-witness length "-RW"))
 
-              (resizer{type-prescription} (symbolicate package-witness resizer "{TYPE-PRESCRIPTION}"))
+              (resizer-tp (symbolicate package-witness resizer "-TP"))
               (resizer-of-creator (symbolicate package-witness resizer "-OF-" creator))
               (resizer-of-length (symbolicate package-witness resizer "-OF-" length))
               (resizer-of-length-free (symbolicate package-witness resizer-of-length "-FREE"))
@@ -235,7 +235,7 @@
               (resizer-of-updater (symbolicate package-witness resizer "-OF-" updater))
               (resizer-of-updater-keep (symbolicate package-witness resizer-of-updater "-KEEP"))
               (resizer-of-updater-drop (symbolicate package-witness resizer-of-updater "-DROP"))
-              (resizer{rewrite} (symbolicate package-witness resizer "{REWRITE}"))
+              (resizer-rw (symbolicate package-witness resizer "-RW"))
 
               (typep$-of-accessor (symbolicate package-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
               (accessor-of-creator (symbolicate package-witness accessor "-OF-" creator))
@@ -246,7 +246,7 @@
               (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
               (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
 
-              (updater{type-prescription} (symbolicate package-witness updater "{TYPE-PRESCRIPTION}"))
+              (updater-tp (symbolicate package-witness updater "-TP"))
               (updater-of-creator (symbolicate package-witness updater "-OF-" creator))
               (updater-of-resizer (symbolicate package-witness updater "-OF-" resizer))
               (updater-of-resizer-inner (symbolicate package-witness updater-of-resizer "-INNER"))
@@ -257,7 +257,7 @@
               (updater-of-updater-same (symbolicate package-witness updater-of-updater "-SAME"))
               (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
 
-              (fixer{type-prescription} (symbolicate package-witness fixer "{TYPE-PRESCRIPTION}"))
+              (fixer-tp (symbolicate package-witness fixer "-TP"))
               (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
               (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
               (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
@@ -353,38 +353,38 @@
                                (:e make-list-ac))))
 
                   ;; `CONTENTS-RECOGNIZER'
-                  (defthm ,contents-recognizer{type-prescription}
+                  (defthm ,contents-recognizer-tp
                     (booleanp (,contents-recognizer ,contents))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           lem-vector$c::contents-recognizer{type-prescription}
+                           lem-vector$c::contents-recognizer-tp
                            ,@fi-bindings))))
 
-                  (defthm ,contents-recognizer{compound-recognizer}
+                  (defthm ,contents-recognizer-cr
                     (implies (,contents-recognizer ,contents)
                              (true-listp ,contents))
                     :rule-classes :compound-recognizer
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           lem-vector$c::contents-recognizer{compound-recognizer}
+                           lem-vector$c::contents-recognizer-cr
                            ,@fi-bindings))))
 
                   ;; `RECOGNIZER'
-                  (defthm ,recognizer{type-prescription}
+                  (defthm ,recognizer-tp
                     (booleanp (,recognizer ,vector))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::recognizer/resizable{type-prescription}
-                                'lem-vector$c::recognizer/fixed{type-prescription})
+                                'lem-vector$c::recognizer/resizable-tp
+                                'lem-vector$c::recognizer/fixed-tp)
                            ,@fi-bindings))))
 
-                  (defthm ,recognizer{compound-recognizer}
+                  (defthm ,recognizer-cr
                     (implies (,recognizer ,vector)
                              (and (consp ,vector)
                                   (true-listp ,vector)))
@@ -393,8 +393,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::recognizer/resizable{compound-recognizer}
-                                'lem-vector$c::recognizer/fixed{compound-recognizer})
+                                'lem-vector$c::recognizer/resizable-cr
+                                'lem-vector$c::recognizer/fixed-cr)
                            ,@fi-bindings))))
 
                   (defthm ,recognizer-of-creator
@@ -437,15 +437,15 @@
                            ,@fi-bindings))))
 
                   ;; `LENGTH'
-                  (defthm ,length{type-prescription}
+                  (defthm ,length-tp
                     (natp (,length ,vector))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::length/resizable{type-prescription}
-                                'lem-vector$c::length/fixed{type-prescription})
+                                'lem-vector$c::length/resizable-tp
+                                'lem-vector$c::length/fixed-tp)
                            ,@fi-bindings))))
 
                   ,@(if resizable
@@ -479,17 +479,17 @@
                                    lem-vector$c::length/resizable-of-updater
                                    ,@fi-bindings)))))
 
-                        `((defthm ,length{rewrite}
+                        `((defthm ,length-rw
                             (equal (,length ,vector)
                                    ,default-length-name)
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::length/fixed{rewrite}
+                                   lem-vector$c::length/fixed-rw
                                    ,@fi-bindings))))))
 
                   ;; `RESIZER'
-                  (defthm ,resizer{type-prescription}
+                  (defthm ,resizer-tp
                     (implies (,recognizer ,vector)
                              (and (consp (,resizer length ,vector))
                                   (true-listp (,resizer length ,vector))))
@@ -498,8 +498,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::resizer/resizable{type-prescription}
-                                'lem-vector$c::resizer/fixed{type-prescription})
+                                'lem-vector$c::resizer/resizable-tp
+                                'lem-vector$c::resizer/fixed-tp)
                            ,@fi-bindings))))
 
                   ,@(if resizable
@@ -588,13 +588,13 @@
                                    lem-vector$c::resizer/resizable-of-updater-drop
                                    ,@fi-bindings)))))
 
-                        `((defthm ,resizer{rewrite}
+                        `((defthm ,resizer-rw
                             (equal (,resizer length ,vector)
                                    ,vector)
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/fixed{rewrite}
+                                   lem-vector$c::resizer/fixed-rw
                                    ,@fi-bindings))))))
 
                   ;; `ACCESSOR'
@@ -713,7 +713,7 @@
                            ,@fi-bindings))))
 
                   ;; `UPDATER'
-                  (defthm ,updater{type-prescription}
+                  (defthm ,updater-tp
                     (implies (,recognizer ,vector)
                              (and (consp (,updater index value ,vector))
                                   (true-listp (,updater index value ,vector))))
@@ -722,8 +722,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::updater{type-prescription}/resizable
-                                'lem-vector$c::updater{type-prescription}/fixed)
+                                'lem-vector$c::updater/resizable-tp
+                                'lem-vector$c::updater/fixed-tp)
                            ,@fi-bindings))))
 
                   (defthm ,updater-of-creator
@@ -857,7 +857,7 @@
 
                   (table fixer ',vector ',fixer)
 
-                  (defthm ,fixer{type-prescription}
+                  (defthm ,fixer-tp
                     (and (consp (,fixer ,vector))
                          (true-listp (,fixer ,vector)))
                     :rule-classes :type-prescription
@@ -865,8 +865,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::fixer/resizable{type-prescription}
-                                'lem-vector$c::fixer/fixed{type-prescription})
+                                'lem-vector$c::fixer/resizable-tp
+                                'lem-vector$c::fixer/fixed-tp)
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,recognizer-of-fixer

@@ -182,11 +182,11 @@
 
 
 ;;;; `CONTENTS-RECOGNIZER'
-(defthm contents-recognizer{type-prescription}
+(defthm contents-recognizer-tp
   (booleanp (contents-recognizer vector))
   :rule-classes :type-prescription)
 
-(defthm contents-recognizer{compound-recognizer}
+(defthm contents-recognizer-cr
   (implies (contents-recognizer vector)
            (true-listp vector))
   :rule-classes :compound-recognizer)
@@ -226,11 +226,11 @@
 
 
 ;;;; `RECOGNIZER/RESIZABLE'
-(defthm recognizer/resizable{type-prescription}
+(defthm recognizer/resizable-tp
   (booleanp (recognizer/resizable vector))
   :rule-classes :type-prescription)
 
-(defthm recognizer/resizable{compound-recognizer}
+(defthm recognizer/resizable-cr
   (implies (recognizer/resizable vector)
            (true-listp vector))
   :rule-classes :compound-recognizer)
@@ -253,11 +253,11 @@
 
 
 ;;;; `RECOGNIZER/FIXED'
-(defthm recognizer/fixed{type-prescription}
+(defthm recognizer/fixed-tp
   (booleanp (recognizer/fixed vector))
   :rule-classes :type-prescription)
 
-(defthm recognizer/fixed{compound-recognizer}
+(defthm recognizer/fixed-cr
   (implies (recognizer/fixed vector)
            (true-listp vector))
   :rule-classes :compound-recognizer)
@@ -277,7 +277,7 @@
 
 
 ;;;; `FIXER/RESIZABLE'
-(defthm fixer/resizable{type-prescription}
+(defthm fixer/resizable-tp
   (true-listp (fixer/resizable vector))
   :rule-classes :type-prescription)
 
@@ -293,7 +293,7 @@
 
 
 ;;;; `FIXER/FIXED'
-(defthm fixer/fixed{type-prescription}
+(defthm fixer/fixed-tp
   (true-listp (fixer/fixed vector))
   :rule-classes :type-prescription)
 
@@ -309,7 +309,7 @@
 
 
 ;;;; `LENGTH/RESIZABLE'
-(defthm length/resizable{type-prescription}
+(defthm length/resizable-tp
   (natp (length/resizable vector))
   :rule-classes :type-prescription)
 
@@ -341,17 +341,17 @@
 
 
 ;;;; `LENGTH/FIXED'
-(defthm length/fixed{type-prescription}
+(defthm length/fixed-tp
   (natp (length/fixed vector))
   :rule-classes :type-prescription)
 
-(defthm length/fixed{rewrite}
+(defthm length/fixed-rw
   (equal (length/fixed vector)
          (default-length)))
 
 
 ;;;; `RESIZER/RESIZABLE'
-(defthm resizer/resizable{type-prescription}
+(defthm resizer/resizable-tp
   (true-listp (resizer/resizable length vector))
   :rule-classes :type-prescription)
 
@@ -460,11 +460,11 @@
 
 
 ;;;; `RESIZER/FIXED'
-(defthm resizer/fixed{type-prescription}
+(defthm resizer/fixed-tp
   (true-listp (resizer/fixed length vector))
   :rule-classes :type-prescription)
 
-(defthm resizer/fixed{rewrite}
+(defthm resizer/fixed-rw
   (equal (resizer/fixed length vector)
          (fixer/fixed vector)))
 
@@ -660,7 +660,7 @@
 
 
 ;;;; `UPDATER/RESIZABLE'
-(defthm updater/resizable{type-prescription}
+(defthm updater/resizable-tp
   (true-listp (updater/resizable index value vector))
   :rule-classes :type-prescription)
 
@@ -799,7 +799,7 @@
 
 
 ;;;; `UPDATER/FIXED'
-(defthm updater/fixed{type-prescription}
+(defthm updater/fixed-tp
   (true-listp (updater/fixed index value vector))
   :rule-classes :type-prescription)
 
@@ -910,7 +910,7 @@
     :by updater/fixed-of-updater/fixed-same)))
 
 
-;;;; `EQUAL/RESIZABLE{FORWARD-CHAINING}'
+;;;; `EQUAL/RESIZABLE-FC'
 (defun-sk contents-equal/resizable (%vector vector)
   (declare (xargs :guard (and (recognizer/resizable %vector)
                               (recognizer/resizable vector))
@@ -935,14 +935,14 @@
 
 (with-books (("std/lists/nth" :dir :system))
   (local
-    (defthmd equal/resizable{forward-chaining}-lemma-2
+    (defthmd equal/resizable-fc-lemma-2
       (implies (and (recognizer/resizable %vector)
                     (recognizer/resizable vector))
                (iff (equal (len %vector) (len vector))
                     (equal (length/resizable %vector) (length/resizable vector))))))
 
   (local
-    (defthmd equal/resizable{forward-chaining}-lemma-1
+    (defthmd equal/resizable-fc-lemma-1
       (implies (and (recognizer/resizable %vector)
                     (recognizer/resizable vector)
                     (equal (length/resizable %vector)
@@ -971,7 +971,7 @@
                updater/resizable
                contents-equal/resizable)))
 
-  (defthm equal/resizable{forward-chaining}
+  (defthm equal/resizable-fc
     (implies (equal/resizable %vector vector)
              (equal %vector vector))
     :rule-classes
@@ -986,13 +986,13 @@
      ("Goal"
       :do-not-induct t)
      ("Subgoal 2"
-      :use equal/resizable{forward-chaining}-lemma-2)
+      :use equal/resizable-fc-lemma-2)
      ("Subgoal 1"
-      :use (:instance equal/resizable{forward-chaining}-lemma-1
+      :use (:instance equal/resizable-fc-lemma-1
                       (n acl2::n))))))
 
 
-;;;; `EQUAL/FIXED{FORWARD-CHAINING}'
+;;;; `EQUAL/FIXED-FC'
 (defun-sk contents-equal/fixed (%vector vector)
   (declare (xargs :guard (and (recognizer/fixed %vector)
                               (recognizer/fixed vector))
@@ -1015,13 +1015,13 @@
 
 (with-books (("std/lists/nth" :dir :system))
   (local
-    (defthmd equal/fixed{forward-chaining}-lemma-2
+    (defthmd equal/fixed-fc-lemma-2
       (implies (and (recognizer/fixed %vector)
                     (recognizer/fixed vector))
                (equal (len %vector) (len vector)))))
 
   (local
-    (defthmd equal/fixed{forward-chaining}-lemma-1
+    (defthmd equal/fixed-fc-lemma-1
       (implies (and (recognizer/fixed %vector)
                     (recognizer/fixed vector)
                     (contents-equal/fixed %vector vector)
@@ -1048,7 +1048,7 @@
                updater/fixed
                contents-equal/fixed)))
 
-  (defthm equal/fixed{forward-chaining}
+  (defthm equal/fixed-fc
     (implies (equal/fixed %vector vector)
              (equal %vector vector))
     :rule-classes
@@ -1063,9 +1063,9 @@
      ("Goal"
       :do-not-induct t)
      ("Subgoal 2"
-      :use equal/fixed{forward-chaining}-lemma-2)
+      :use equal/fixed-fc-lemma-2)
      ("Subgoal 1"
-      :use (:instance equal/fixed{forward-chaining}-lemma-1
+      :use (:instance equal/fixed-fc-lemma-1
                       (n acl2::n))))))
 
 
@@ -1126,7 +1126,7 @@
              (equal (element-copy %value value)
                     (element-copy (initial-element) value))))
 
-  (defthm element-copy{rewrite}
+  (defthm element-copy-rw
     (implies (element-coupled-p value)
              (equal (element-copy %value value)
                     (element-fixer value)))))
@@ -1376,7 +1376,7 @@
   (in-theory
     (disable copy/resizable)))
 
-(defthm copy/resizable{rewrite}
+(defthm copy/resizable-rw
   (implies (coupledp/resizable vector)
            (equal (copy/resizable %vector vector)
                   (fixer/resizable vector)))
@@ -1600,7 +1600,7 @@
   (in-theory
     (disable copy/fixed)))
 
-(defthm copy/fixed{rewrite}
+(defthm copy/fixed-rw
   (implies (coupledp/fixed vector)
            (equal (copy/fixed %vector vector)
                   (fixer/fixed vector)))
@@ -1682,11 +1682,11 @@
       (and (element-export-p (car list))
            (exportp-rec (cdr list)))))
 
-(defthm exportp-rec{type-prescription}
+(defthm exportp-rec-tp
   (booleanp (exportp-rec list))
   :rule-classes :type-prescription)
 
-(defthm exportp-rec{compound-recognizer}
+(defthm exportp-rec-cr
   (implies (exportp-rec list)
            (true-listp list))
   :rule-classes :compound-recognizer)
@@ -1714,11 +1714,11 @@
        (equal (car export) (name))
        (exportp-rec (cdr export))))
 
-(defthm exportp/resizable{type-prescription}
+(defthm exportp/resizable-tp
   (booleanp (exportp/resizable export))
   :rule-classes :type-prescription)
 
-(defthm exportp/resizable{compound-recognizer}
+(defthm exportp/resizable-cr
   (implies (exportp/resizable export)
            (and (consp export)
                 (true-listp export)))
@@ -1742,7 +1742,7 @@
              (export (element-export value)))
         (export-acc/resizable index (cons export acc) vector))))
 
-(defthm export-acc/resizable{type-prescription}
+(defthm export-acc/resizable-tp
   (implies (true-listp acc)
            (true-listp (export-acc/resizable index acc vector)))
   :rule-classes :type-prescription)
@@ -1772,7 +1772,7 @@
   (cons (name)
         (export-acc/resizable (length/resizable vector) () vector)))
 
-(defthm export/resizable{type-prescription}
+(defthm export/resizable-tp
   (and (consp (export/resizable vector))
        (true-listp (export/resizable vector)))
   :rule-classes :type-prescription)
@@ -1813,7 +1813,7 @@
              (vector (updater/resizable index value vector)))
         (import-rec/resizable (cdr list) (1+ (nfix index)) vector))))
 
-(defthm import-rec/resizable{type-prescription}
+(defthm import-rec/resizable-tp
   (true-listp (import-rec/resizable list index vector))
   :rule-classes :type-prescription)
 
@@ -1865,7 +1865,7 @@
         vector)
       (creator)))
 
-(defthm import/resizable{type-prescription}
+(defthm import/resizable-tp
   (true-listp (import/resizable export vector))
   :rule-classes :type-prescription)
 
@@ -1943,11 +1943,11 @@
        (exportp-rec (cdr export))
        (equal (len (cdr export)) (default-length))))
 
-(defthm exportp/fixed{type-prescription}
+(defthm exportp/fixed-tp
   (booleanp (exportp/fixed export))
   :rule-classes :type-prescription)
 
-(defthm exportp/fixed{compound-recognizer}
+(defthm exportp/fixed-cr
   (implies (exportp/fixed export)
            (and (consp export)
                 (true-listp export)))
@@ -1971,7 +1971,7 @@
              (export (element-export value)))
         (export-acc/fixed index (cons export acc) vector))))
 
-(defthm export-acc/fixed{type-prescription}
+(defthm export-acc/fixed-tp
   (implies (true-listp acc)
            (true-listp (export-acc/fixed index acc vector)))
   :rule-classes :type-prescription)
@@ -2001,7 +2001,7 @@
   (cons (name)
         (export-acc/fixed (default-length) () vector)))
 
-(defthm export/fixed{type-prescription}
+(defthm export/fixed-tp
   (and (consp (export/fixed vector))
        (true-listp (export/fixed vector)))
   :rule-classes :type-prescription)
@@ -2043,7 +2043,7 @@
              (vector (updater/fixed index value vector)))
         (import-rec/fixed (cdr list) (1+ index) vector))))
 
-(defthm import-rec/fixed{type-prescription}
+(defthm import-rec/fixed-tp
   (true-listp (import-rec/fixed list index vector))
   :rule-classes :type-prescription)
 
@@ -2094,7 +2094,7 @@
         vector)
       (creator)))
 
-(defthm import/fixed{type-prescription}
+(defthm import/fixed-tp
   (true-listp (import/fixed export vector))
   :rule-classes :type-prescription)
 

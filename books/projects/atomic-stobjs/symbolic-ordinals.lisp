@@ -49,7 +49,7 @@ contains every theorem in this book.</p>"
       (enable o<)))
 
   ;; `O-FIRST-EXPT'
-  (defthm o-first-expt{type-prescription}
+  (defthm o-first-expt-tp
     (and (implies (o-p ord)
                   (or (consp (o-first-expt ord))
                       (natp (o-first-expt ord))))
@@ -82,7 +82,7 @@ contains every theorem in this book.</p>"
              (equal (o-first-expt ord) 0)))
 
   ;; `O-FIRST-COEFF'
-  (defthm o-first-coeff{type-prescription}
+  (defthm o-first-coeff-tp
     (and (implies (o-p ord)
                   (natp (o-first-coeff ord)))
          (implies (and (o-p ord)
@@ -107,7 +107,7 @@ contains every theorem in this book.</p>"
              (equal (o-first-coeff ord) ord)))
 
   ;; `O-RST'
-  (defthm o-rst{type-prescription}
+  (defthm o-rst-tp
     (implies (and (force (o-p ord))
                   (o-infp ord))
              (or (consp (o-rst ord))
@@ -130,7 +130,7 @@ contains every theorem in this book.</p>"
                     (o-infp ord))))
 
   ;; `O-P'
-  (defthm o-p{compound-recognizer}
+  (defthm o-p-cr
     (implies (o-p ord)
              (or (consp ord)
                  (natp ord)))
@@ -147,7 +147,7 @@ contains every theorem in this book.</p>"
                     (natp ord))))
 
   ;; `MAKE-ORD'
-  (defthm make-ord{elim}
+  (defthm make-ord-elim
     (implies (and (force (o-p ord))
                   (o-infp ord))
              (equal (make-ord (o-first-expt ord)

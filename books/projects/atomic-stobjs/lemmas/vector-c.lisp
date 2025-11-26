@@ -133,14 +133,14 @@
 
 
 ;;;; `CONTENTS-RECOGNIZER'
-(defthm contents-recognizer{type-prescription}
+(defthm contents-recognizer-tp
   (booleanp (contents-recognizer contents))
   :rule-classes :type-prescription
   :hints
   (("Goal"
     :induct (len contents))))
 
-(defthm contents-recognizer{compound-recognizer}
+(defthm contents-recognizer-cr
   (implies (contents-recognizer contents)
            (true-listp contents))
   :rule-classes :compound-recognizer)
@@ -182,11 +182,11 @@
 
 
 ;;;; `RECOGNIZER/RESIZABLE'
-(defthm recognizer/resizable{type-prescription}
+(defthm recognizer/resizable-tp
   (booleanp (recognizer/resizable vector))
   :rule-classes :type-prescription)
 
-(defthm recognizer/resizable{compound-recognizer}
+(defthm recognizer/resizable-cr
   (implies (recognizer/resizable vector)
            (and (consp vector)
                 (true-listp vector)))
@@ -208,11 +208,11 @@
 
 
 ;;;; `RECOGNIZER/FIXED'
-(defthm recognizer/fixed{type-prescription}
+(defthm recognizer/fixed-tp
   (booleanp (recognizer/fixed vector))
   :rule-classes :type-prescription)
 
-(defthm recognizer/fixed{compound-recognizer}
+(defthm recognizer/fixed-cr
   (implies (recognizer/fixed vector)
            (and (consp vector)
                 (true-listp vector)))
@@ -230,7 +230,7 @@
 
 
 ;;;; `LENGTH/RESIZABLE'
-(defthm length/resizable{type-prescription}
+(defthm length/resizable-tp
   (natp (length/resizable vector))
   :rule-classes :type-prescription)
 
@@ -252,17 +252,17 @@
 
 
 ;;;; `LENGTH/FIXED'
-(defthm length/fixed{type-prescription}
+(defthm length/fixed-tp
   (natp (length/fixed vector))
   :rule-classes :type-prescription)
 
-(defthm length/fixed{rewrite}
+(defthm length/fixed-rw
   (equal (length/fixed vector)
          (default-length)))
 
 
 ;;;; `RESIZER/RESIZABLE'
-(defthm resizer/resizable{type-prescription}
+(defthm resizer/resizable-tp
   (implies (recognizer/resizable vector)
            (and (consp (resizer/resizable length vector))
                 (true-listp (resizer/resizable length vector))))
@@ -330,13 +330,13 @@
 
 
 ;;;; `RESIZER/FIXED'
-(defthm resizer/fixed{type-prescription}
+(defthm resizer/fixed-tp
   (implies (recognizer/fixed vector)
            (and (consp (resizer/fixed length vector))
                 (true-listp (resizer/fixed length vector))))
   :rule-classes :type-prescription)
 
-(defthm resizer/fixed{rewrite}
+(defthm resizer/fixed-rw
   (equal (resizer/fixed length vector)
          vector))
 
@@ -420,13 +420,13 @@
 
 
 ;;;; `UPDATER'
-(defthm updater{type-prescription}/resizable
+(defthm updater/resizable-tp
   (implies (recognizer/resizable vector)
            (and (consp (updater index value vector))
                 (true-listp (updater index value vector))))
   :rule-classes :type-prescription)
 
-(defthm updater{type-prescription}/fixed
+(defthm updater/fixed-tp
   (implies (recognizer/fixed vector)
            (and (consp (updater index value vector))
                 (true-listp (updater index value vector))))
@@ -540,7 +540,7 @@
       vector
       (creator)))
 
-(defthm fixer/resizable{type-prescription}
+(defthm fixer/resizable-tp
   (and (consp (fixer/resizable vector))
        (true-listp (fixer/resizable vector)))
   :rule-classes :type-prescription)
@@ -566,7 +566,7 @@
       vector
       (creator)))
 
-(defthm fixer/fixed{type-prescription}
+(defthm fixer/fixed-tp
   (and (consp (fixer/fixed vector))
        (true-listp (fixer/fixed vector)))
   :rule-classes :type-prescription)

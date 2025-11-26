@@ -273,18 +273,18 @@
                         `((defconst ,default-val-name ',',default-val)))))
 
               ;; Theorem Names
-              (key-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" key-fixer "{REWRITE}-1"))
-              (val-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" val-fixer "{REWRITE}-2"))
+              (key-fixer-rw (symbolicate "ATOMIC-STOBJS" key-fixer "-RW-1"))
+              (val-fixer-rw (symbolicate "ATOMIC-STOBJS" val-fixer "-RW-2"))
 
-              (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
-              (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+              (recognizer-tp (symbolicate package-witness recognizer "-TP"))
+              (recognizer-cr (symbolicate package-witness recognizer "-CR"))
               (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
               (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
               (recognizer-of-updater (symbolicate package-witness recognizer "-OF-" updater))
               (recognizer-of-remover (symbolicate package-witness recognizer "-OF-" remover))
               (recognizer-of-keys-set (symbolicate package-witness recognizer "-OF-" keys-set))
 
-              (fixer{type-prescription} (symbolicate package-witness fixer "{TYPE-PRESCRIPTION}"))
+              (fixer-tp (symbolicate package-witness fixer "-TP"))
               (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
               (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
@@ -303,7 +303,7 @@
               (accessor-of-remover-diff (symbolicate package-witness accessor-of-remover "-DIFF"))
               (accessor-of-keys-set (symbolicate package-witness accessor "-OF-" keys-set))
 
-              (updater{type-prescription} (symbolicate package-witness updater "{TYPE-PRESCRIPTION}"))
+              (updater-tp (symbolicate package-witness updater "-TP"))
               (updater-when-not-key-recognizer (symbolicate package-witness updater "-WHEN-NOT-" key-recognizer))
               (updater-when-not-val-recognizer (symbolicate package-witness updater "-WHEN-NOT-" val-recognizer))
               (updater-when-not-key-recognizer (if (eq updater-when-not-key-recognizer updater-when-not-val-recognizer)
@@ -331,7 +331,7 @@
               (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
               (updater-of-remover-same (symbolicate package-witness updater "-OF-" remover "-SAME"))
 
-              (boundp{type-prescription} (symbolicate package-witness boundp "{TYPE-PRESCRIPTION}"))
+              (boundp-tp (symbolicate package-witness boundp "-TP"))
               (boundp-when-not-key-recognizer (symbolicate package-witness boundp "-WHEN-NOT-" key-recognizer))
               (boundp-when-not-recognizer (symbolicate package-witness boundp "-WHEN-NOT-" recognizer))
               (boundp-of-creator (symbolicate package-witness boundp "-OF-" creator))
@@ -346,10 +346,10 @@
               (boundp-when-zp-count (symbolicate package-witness boundp "-WHEN-ZP-" count))
               (boundp-of-keys-set (symbolicate package-witness boundp "-OF-" keys-set))
 
-              (getp{type-prescription} (symbolicate package-witness getp "{TYPE-PRESCRIPTION}"))
-              (getp{rewrite} (symbolicate package-witness getp "{REWRITE}"))
+              (getp-tp (symbolicate package-witness getp "-TP"))
+              (getp-rw (symbolicate package-witness getp "-RW"))
 
-              (remover{type-prescription} (symbolicate package-witness remover "{TYPE-PRESCRIPTION}"))
+              (remover-tp (symbolicate package-witness remover "-TP"))
               (remover-when-not-key-recognizer (symbolicate package-witness remover "-WHEN-NOT-" key-recognizer))
               (remover-when-not-recognizer (symbolicate package-witness remover "-WHEN-NOT-" recognizer))
               (remover-of-creator (symbolicate package-witness remover "-OF-" creator))
@@ -363,7 +363,7 @@
               (remover-of-remover-same (symbolicate package-witness remover-of-remover "-SAME"))
               (remover-of-remover-diff (symbolicate package-witness remover-of-remover "-DIFF"))
 
-              (count{type-prescription} (symbolicate package-witness count "{TYPE-PRESCRIPTION}"))
+              (count-tp (symbolicate package-witness count "-TP"))
               (count-when-not-recognizer (symbolicate package-witness count "-WHEN-NOT-" recognizer))
               (count-of-creator (symbolicate package-witness count "-OF-" creator))
               (count-of-fixer (symbolicate package-witness count "-OF-" fixer))
@@ -376,31 +376,31 @@
               (count-of-remover-when-not-boundp (symbolicate package-witness count-of-remover "-WHEN-NOT-" boundp))
               (count-of-keys-set (symbolicate package-witness count "-OF-" keys-set))
 
-              (clear{type-prescription} (symbolicate package-witness clear "{TYPE-PRESCRIPTION}"))
-              (clear{rewrite} (symbolicate package-witness clear "{REWRITE}"))
+              (clear-tp (symbolicate package-witness clear "-TP"))
+              (clear-rw (symbolicate package-witness clear "-RW"))
 
-              (init{type-prescription} (symbolicate package-witness init "{TYPE-PRESCRIPTION}"))
-              (init{rewrite} (symbolicate package-witness init "{REWRITE}"))
+              (init-tp (symbolicate package-witness init "-TP"))
+              (init-rw (symbolicate package-witness init "-RW"))
 
-              (keysp{type-prescription} (symbolicate package-witness keysp "{TYPE-PRESCRIPTION}"))
-              (keysp{compound-recognizer} (symbolicate package-witness keysp "{COMPOUND-RECOGNIZER}"))
-              (keysp{definition} (symbolicate package-witness keysp "{DEFINITION}"))
+              (keysp-tp (symbolicate package-witness keysp "-TP"))
+              (keysp-cr (symbolicate package-witness keysp "-CR"))
+              (keysp-def (symbolicate package-witness keysp "-DEF"))
               (keysp-when-emptyp (symbolicate package-witness keysp "-WHEN-EMPTYP"))
               (keysp-of-keys-fix (symbolicate package-witness keysp "-OF-" keys-fix))
               (setp-when-keysp (symbolicate package-witness "SETP-WHEN-" keysp))
               (key-recognizer-of-head-when-keysp (symbolicate package-witness key-recognizer "-OF-HEAD-WHEN-" keysp))
               (keysp-of-tail-when-keysp (symbolicate package-witness keysp "-OF-TAIL-WHEN-" keysp))
               (in-when-keysp (symbolicate package-witness "IN-WHEN-" keysp))
-              (in-when-keysp{case-split} (symbolicate package-witness in-when-keysp "{CASE-SPLIT}"))
+              (in-when-keysp-split (symbolicate package-witness in-when-keysp "-SPLIT"))
               (keysp-when-subset (symbolicate package-witness keysp "-WHEN-SUBSET"))
               (keysp-of-insert (symbolicate package-witness keysp "-OF-INSERT"))
               (keysp-of-delete (symbolicate package-witness keysp "-OF-DELETE"))
 
-              (keys-fix{type-prescription} (symbolicate package-witness keys-fix "{TYPE-PRESCRIPTION}"))
+              (keys-fix-tp (symbolicate package-witness keys-fix "-TP"))
               (keys-fix-when-keysp (symbolicate package-witness keys-fix "-WHEN-" keysp))
               (keys-fix-when-not-keysp (symbolicate package-witness keys-fix "-WHEN-NOT-" keysp))
 
-              (keys{type-prescription} (symbolicate package-witness keys "{TYPE-PRESCRIPTION}"))
+              (keys-tp (symbolicate package-witness keys "-TP"))
               (keysp-of-keys (symbolicate package-witness (if key-recognizer keysp "SETP") "-OF-" keys))
               (keys-when-not-recognizer (symbolicate package-witness keys "-WHEN-NOT-" recognizer))
               (keys-of-creator (symbolicate package-witness keys "-OF-" creator))
@@ -409,7 +409,7 @@
               (keys-of-remover (symbolicate package-witness keys "-OF-" remover))
               (keys-of-keys-set (symbolicate package-witness keys "-OF-" keys-set))
 
-              (keys-set{type-prescription} (symbolicate package-witness keys-set "{TYPE-PRESCRIPTION}"))
+              (keys-set-tp (symbolicate package-witness keys-set "-TP"))
               (keys-set-when-not-keysp (symbolicate package-witness keys-set "-WHEN-NOT-" (if key-recognizer keysp "SETP")))
               (keys-set-when-not-recognizer (symbolicate package-witness keys-set "-WHEN-NOT-" recognizer))
               (keys-set-of-creator (symbolicate package-witness keys-set "-OF-" creator))
@@ -429,7 +429,7 @@
               (vals-equal-necc (symbolicate package-witness vals-equal "-NECC"))
               (vals-equal-witness (symbolicate package-witness vals-equal "-WITNESS"))
               (hash-table-equal (symbolicate package-witness hash-table "-EQUAL"))
-              (hash-table-equal{forward-chaining} (symbolicate package-witness hash-table-equal "{FORWARD-CHAINING}"))
+              (hash-table-equal-fc (symbolicate package-witness hash-table-equal "-FC"))
 
               ;; Epilogue
               (hash-table-theorems (symbolicate package-witness hash-table "-THEOREMS"))
@@ -495,7 +495,7 @@
                       (and copyable
                            key-recognizer
                            (list keys-fix
-                                 in-when-keysp{case-split}))
+                                 in-when-keysp-split))
                       (list accessor-when-not-recognizer
                             accessor-of-updater
                             accessor-when-not-boundp
@@ -601,7 +601,7 @@
                   ,@(and key-fixer
                          key-recognizer
                          `((local
-                             (defthm ,key-fixer{rewrite}
+                             (defthm ,key-fixer-rw
                                (equal (,key-fixer ,key)
                                       (if (,key-recognizer ,key)
                                           ,key
@@ -610,7 +610,7 @@
                   ,@(and val-fixer
                          val-recognizer
                          `((local
-                             (defthm ,val-fixer{rewrite}
+                             (defthm ,val-fixer-rw
                                (equal (,val-fixer ,val)
                                       (if (,val-recognizer ,val)
                                           ,val
@@ -973,7 +973,7 @@
                                (cons ,set (cdr ,hash-table))))))
 
                   ;; `RECOGNIZER'
-                  (defthm ,recognizer{type-prescription}
+                  (defthm ,recognizer-tp
                     (booleanp (,recognizer ,hash-table))
                     :rule-classes :type-prescription
                     :hints
@@ -984,11 +984,11 @@
                                                   set::emptyp)))
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::recognizer/copyable{type-prescription}
-                                'lem-hash-table$a::recognizer/unique{type-prescription})
+                                'lem-hash-table$a::recognizer/copyable-tp
+                                'lem-hash-table$a::recognizer/unique-tp)
                            ,@fi-bindings))))
 
-                  (defthm ,recognizer{compound-recognizer}
+                  (defthm ,recognizer-cr
                     (implies (,recognizer ,hash-table)
                              ,(if copyable
                                   `(and (consp ,hash-table)
@@ -999,8 +999,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::recognizer/copyable{compound-recognizer}
-                                'lem-hash-table$a::recognizer/unique{compound-recognizer})
+                                'lem-hash-table$a::recognizer/copyable-cr
+                                'lem-hash-table$a::recognizer/unique-cr)
                            ,@fi-bindings))))
 
                   (defthm ,recognizer-of-creator
@@ -1057,7 +1057,7 @@
                                     ,@fi-bindings))))))
 
                   ;; `FIXER'
-                  (defthm ,fixer{type-prescription}
+                  (defthm ,fixer-tp
                     ,(if copyable
                          `(and (consp (,fixer ,hash-table))
                                (true-listp (,fixer ,hash-table)))
@@ -1067,8 +1067,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::fixer/copyable{type-prescription}
-                                'lem-hash-table$a::fixer/unique{type-prescription})
+                                'lem-hash-table$a::fixer/copyable-tp
+                                'lem-hash-table$a::fixer/unique-tp)
                            ,@fi-bindings))))
 
                   (defthm ,fixer-when-recognizer
@@ -1302,7 +1302,7 @@
                                     ,@fi-bindings))))))
 
                   ;; `UPDATER'
-                  (defthm ,updater{type-prescription}
+                  (defthm ,updater-tp
                     ,(if copyable
                          `(and (consp (,updater ,key ,val ,hash-table))
                                (true-listp (,updater ,key ,val ,hash-table)))
@@ -1312,8 +1312,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::updater/copyable{type-prescription}
-                                'lem-hash-table$a::updater/unique{type-prescription})
+                                'lem-hash-table$a::updater/copyable-tp
+                                'lem-hash-table$a::updater/unique-tp)
                            ,@fi-bindings))))
 
                   ,@(and key-recognizer
@@ -1555,15 +1555,15 @@
                            ,@fi-bindings))))
 
                   ;; `BOUNDP'
-                  (defthm ,boundp{type-prescription}
+                  (defthm ,boundp-tp
                     (booleanp (,boundp ,key ,hash-table))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::boundp/copyable{type-prescription}
-                                'lem-hash-table$a::boundp/unique{type-prescription})
+                                'lem-hash-table$a::boundp/copyable-tp
+                                'lem-hash-table$a::boundp/unique-tp)
                            ,@fi-bindings))))
 
                   ,@(and key-recognizer
@@ -1748,7 +1748,7 @@
                                     ,@fi-bindings))))))
 
                   ;; `GETP'
-                  (defthm ,getp{type-prescription}
+                  (defthm ,getp-tp
                     (and (consp (,getp ,key ,hash-table))
                          (true-listp (,getp ,key ,hash-table)))
                     :rule-classes :type-prescription
@@ -1756,11 +1756,11 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::getp/copyable{type-prescription}
-                                'lem-hash-table$a::getp/unique{type-prescription})
+                                'lem-hash-table$a::getp/copyable-tp
+                                'lem-hash-table$a::getp/unique-tp)
                            ,@fi-bindings))))
 
-                  (defthm ,getp{rewrite}
+                  (defthm ,getp-rw
                     (mv-let (v0 v1)
                             (,getp ,key ,hash-table)
                       (and (equal v0 (,accessor ,key ,hash-table))
@@ -1769,12 +1769,12 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::getp/copyable{rewrite}
-                                'lem-hash-table$a::getp/unique{rewrite})
+                                'lem-hash-table$a::getp/copyable-rw
+                                'lem-hash-table$a::getp/unique-rw)
                            ,@fi-bindings))))
 
                   ;; `REMOVER'
-                  (defthm ,remover{type-prescription}
+                  (defthm ,remover-tp
                     ,(if copyable
                          `(and (consp (,remover ,key ,hash-table))
                                (true-listp (,remover ,key ,hash-table)))
@@ -1784,8 +1784,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::remover/copyable{type-prescription}
-                                'lem-hash-table$a::remover/unique{type-prescription})
+                                'lem-hash-table$a::remover/copyable-tp
+                                'lem-hash-table$a::remover/unique-tp)
                            ,@fi-bindings))))
 
                   ,@(and key-recognizer
@@ -1968,15 +1968,15 @@
                            ,@fi-bindings))))
 
                   ;; `COUNT'
-                  (defthm ,count{type-prescription}
+                  (defthm ,count-tp
                     (natp (,count ,hash-table))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::count/copyable{type-prescription}
-                                'lem-hash-table$a::count/unique{type-prescription})
+                                'lem-hash-table$a::count/copyable-tp
+                                'lem-hash-table$a::count/unique-tp)
                            ,@fi-bindings))))
 
                   (defthmd ,count-when-not-recognizer
@@ -2110,7 +2110,7 @@
                                     ,@fi-bindings))))))
 
                   ;; `CLEAR'
-                  (defthm ,clear{type-prescription}
+                  (defthm ,clear-tp
                     ,(if copyable
                          `(and (consp (,clear ,hash-table))
                                (true-listp (,clear ,hash-table)))
@@ -2120,23 +2120,23 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::clear/copyable{type-prescription}
-                                'lem-hash-table$a::clear/unique{type-prescription})
+                                'lem-hash-table$a::clear/copyable-tp
+                                'lem-hash-table$a::clear/unique-tp)
                            ,@fi-bindings))))
 
-                  (defthm ,clear{rewrite}
+                  (defthm ,clear-rw
                     (equal (,clear ,hash-table)
                            (,creator))
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::clear/copyable{rewrite}
-                                'lem-hash-table$a::clear/unique{rewrite})
+                                'lem-hash-table$a::clear/copyable-rw
+                                'lem-hash-table$a::clear/unique-rw)
                            ,@fi-bindings))))
 
                   ;; `INIT'
-                  (defthm ,init{type-prescription}
+                  (defthm ,init-tp
                     ,(if copyable
                          `(and (consp (,init ht-size rehash-size rehash-threshold ,hash-table))
                                (true-listp (,init ht-size rehash-size rehash-threshold ,hash-table)))
@@ -2146,44 +2146,44 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::init/copyable{type-prescription}
-                                'lem-hash-table$a::init/unique{type-prescription})
+                                'lem-hash-table$a::init/copyable-tp
+                                'lem-hash-table$a::init/unique-tp)
                            ,@fi-bindings))))
 
-                  (defthm ,init{rewrite}
+                  (defthm ,init-rw
                     (equal (,init ht-size rehash-size rehash-threshold ,hash-table)
                            (,creator))
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::init/copyable{rewrite}
-                                'lem-hash-table$a::init/unique{rewrite})
+                                'lem-hash-table$a::init/copyable-rw
+                                'lem-hash-table$a::init/unique-rw)
                            ,@fi-bindings))))
 
                   ;; `KEYSP'
                   ,@(and copyable
                          key-recognizer
-                         `((defthm ,keysp{type-prescription}
+                         `((defthm ,keysp-tp
                              (booleanp (,keysp ,set))
                              :rule-classes :type-prescription
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keysp{type-prescription}
+                                    lem-hash-table$a::keysp-tp
                                     ,@fi-bindings))))
 
-                           (defthm ,keysp{compound-recognizer}
+                           (defthm ,keysp-cr
                              (implies (,keysp ,set)
                                       (true-listp ,set))
                              :rule-classes :compound-recognizer
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keysp{compound-recognizer}
+                                    lem-hash-table$a::keysp-cr
                                     ,@fi-bindings))))
 
-                           (defthmd ,keysp{definition}
+                           (defthmd ,keysp-def
                              (equal (,keysp ,set)
                                     (and (set::setp ,set)
                                          (or (set::emptyp ,set)
@@ -2194,7 +2194,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keysp{definition}
+                                    lem-hash-table$a::keysp-def
                                     ,@fi-bindings))))
 
                            (defthm ,keysp-when-emptyp
@@ -2244,7 +2244,7 @@
                                     lem-hash-table$a::keysp-of-tail-when-keysp
                                     ,@fi-bindings))))
 
-                           (defthmd ,in-when-keysp{case-split}
+                           (defthmd ,in-when-keysp-split
                              (implies (and (,keysp ,set)
                                            (not (,key-recognizer ,key)))
                                       (not (set::in ,key ,set)))
@@ -2304,13 +2304,13 @@
                   ;; `KEYS-FIX'
                   ,@(and copyable
                          key-recognizer
-                         `((defthm ,keys-fix{type-prescription}
+                         `((defthm ,keys-fix-tp
                              (true-listp (,keys-fix ,set))
                              :rule-classes :type-prescription
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keys-fix{type-prescription}
+                                    lem-hash-table$a::keys-fix-tp
                                     ,@fi-bindings))))
 
                            (defthm ,keys-fix-when-keysp
@@ -2334,13 +2334,13 @@
 
                   ;; `KEYS'
                   ,@(and copyable
-                         `((defthm ,keys{type-prescription}
+                         `((defthm ,keys-tp
                              (true-listp (,keys ,hash-table))
                              :rule-classes :type-prescription
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keys{type-prescription}
+                                    lem-hash-table$a::keys-tp
                                     ,@fi-bindings))))
 
                            (defthm ,keysp-of-keys
@@ -2410,14 +2410,14 @@
 
                   ;; `KEYS-SET'
                   ,@(and copyable
-                         `((defthm ,keys-set{type-prescription}
+                         `((defthm ,keys-set-tp
                              (and (consp (,keys-set ,set ,hash-table))
                                   (true-listp (,keys-set ,set ,hash-table)))
                              :rule-classes :type-prescription
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-hash-table$a::keys-set{type-prescription}
+                                    lem-hash-table$a::keys-set-tp
                                     ,@fi-bindings))))
 
                            (defthmd ,keys-set-when-not-keysp
@@ -2572,7 +2572,7 @@
 
                   (table equality ',hash-table ',hash-table-equal)
 
-                  (defthm ,hash-table-equal{forward-chaining}
+                  (defthm ,hash-table-equal-fc
                     (implies (,hash-table-equal ,%hash-table ,hash-table)
                              (equal ,%hash-table ,hash-table))
                     :rule-classes
@@ -2604,8 +2604,8 @@
                                           ,vals-equal-necc)
                       :by (:functional-instance
                            ,(if copyable
-                                'lem-hash-table$a::equal/copyable{forward-chaining}
-                                'lem-hash-table$a::equal/unique{forward-chaining})
+                                'lem-hash-table$a::equal/copyable-fc
+                                'lem-hash-table$a::equal/unique-fc)
                            ,@fi-bindings-with-skolem))
                      ("Subgoal 4"
                       :use ((:instance ,vals-equal-necc

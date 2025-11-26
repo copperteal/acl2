@@ -100,11 +100,11 @@
                 ,@(and (not resizable)
                        `((= (len (cdr export)) ,default-length-name)))))
 
-         (defthm ,exportp{type-prescription}
+         (defthm ,exportp-tp
            (booleanp (,exportp export))
            :rule-classes :type-prescription)
 
-         (defthm ,exportp{compound-recognizer}
+         (defthm ,exportp-cr
            (implies (,exportp export)
                     (and (consp export)
                          (true-listp export)))
@@ -150,7 +150,7 @@
                               ()
                               ',vector)))
 
-         (defthm ,export{type-prescription}
+         (defthm ,export-tp
            (and (consp (,export ,vector))
                 (true-listp (,export ,vector)))
            :rule-classes :type-prescription)
@@ -219,7 +219,7 @@
                (let ((,vector (,creator)))
                  ,vector)))
 
-         (defthm ,import{type-prescription}
+         (defthm ,import-tp
            ;; TODO: for fixed positive length vectors add consp
            (true-listp (,import export ,vector))
            :rule-classes :type-prescription)
@@ -351,11 +351,11 @@
                 (equal (car export) ',hash-table)
                 (,exportp-rec (cdr export))))
 
-         (defthm ,exportp{type-prescription}
+         (defthm ,exportp-tp
            (booleanp (,exportp export))
            :rule-classes :type-prescription)
 
-         (defthm ,exportp{compound-recognizer}
+         (defthm ,exportp-cr
            (implies (,exportp export)
                     (and (consp export)
                          (true-listp export)))
@@ -397,7 +397,7 @@
            (cons ',hash-table
                  (,export-acc (,keys ,hash-table) () ',hash-table)))
 
-         (defthm ,export{type-prescription}
+         (defthm ,export-tp
            (and (consp (,export ,hash-table))
                 (true-listp (,export ,hash-table)))
            :rule-classes :type-prescription)
@@ -463,7 +463,7 @@
                (let ((,hash-table (,creator)))
                  ,hash-table)))
 
-         (defthm ,import{type-prescription}
+         (defthm ,import-tp
            (and (consp (,import export ,hash-table))
                 (true-listp (,import export ,hash-table)))
            :rule-classes :type-prescription)
@@ -578,11 +578,11 @@
                 ,@(loop$ #|check that all fields satisfy appropriate
                         recognizers.  the format of an export is a keyword value list|#)))
 
-         (defthm ,exportp{type-prescription}
+         (defthm ,exportp-tp
            (booleanp (,exportp export))
            :rule-classes :type-prescription)
 
-         (defthm ,exportp{compound-recognizer}
+         (defthm ,exportp-cr
            (implies (,exportp export)
                     (and (consp export)
                          (true-listp export)))
@@ -599,7 +599,7 @@
            (list ',frame
                  ,@(loop$ #|insert keyword value pairs in field order|#)))
 
-         (defthm ,export{type-prescription}
+         (defthm ,export-tp
            (and (consp (,export ,frame))
                 (true-listp (,export ,frame)))
            :rule-classes :type-prescription)
@@ -622,7 +622,7 @@
                (let ((,frame (,creator)))
                  ,frame)))
 
-         (defthm ,import{type-prescription}
+         (defthm ,import-tp
            ;; TODO: if zero fields, only true-listp
            (and (consp (,import export ,frame))
                 (true-listp (,import export ,frame)))

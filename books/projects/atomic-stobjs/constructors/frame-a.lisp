@@ -326,23 +326,23 @@
                    ,@defconst-forms))
 
                 ;; Theorem Names
-                (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
-                (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+                (recognizer-tp (symbolicate package-witness recognizer "-TP"))
+                (recognizer-cr (symbolicate package-witness recognizer "-CR"))
                 (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
                 (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
                 (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
 
-                (fixer{rewrite} (symbolicate package-witness fixer "{REWRITE}"))
+                (fixer-rw (symbolicate package-witness fixer "-RW"))
                 (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
                 (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
-                (view{type-prescription} (symbolicate package-witness view "{TYPE-PRESCRIPTION}"))
+                (view-tp (symbolicate package-witness view "-TP"))
                 (view-collapse (symbolicate package-witness view "-COLLAPSE"))
-                (view{rewrite} (symbolicate package-witness view "{REWRITE}"))
+                (view-rw (symbolicate package-witness view "-RW"))
 
                 (%frame (symbolicate package-witness "%" frame))
                 (frame-equal (symbolicate package-witness frame "-EQUAL"))
-                (frame-equal{forward-chaining} (symbolicate package-witness frame-equal "{FORWARD-CHAINING}"))
+                (frame-equal-fc (symbolicate package-witness frame-equal "-FC"))
 
                 ;; Epilogue
                 (frame-theorems (symbolicate package-witness frame "-THEOREMS"))
@@ -350,9 +350,9 @@
                 (frame-aggressive (symbolicate package-witness frame "-AGGRESSIVE"))
                 (epilogue
                  `((in-theory
-                     (enable ,view{rewrite}
+                     (enable ,view-rw
                              ,@(loop$ :for updater :in updaters
-                                     :collect (symbolicate package-witness updater "{REWRITE}"))))
+                                     :collect (symbolicate package-witness updater "-RW"))))
 
                    (deflabel ,frame-end)
 
@@ -375,7 +375,7 @@
 
                    (deftheory-static ,frame-aggressive
                      ',(append
-                        (list fixer{rewrite}
+                        (list fixer-rw
                               view-collapse)
                         (loop$ :for i :from 1 :to (len fields)
                               :as recognizer :in recognizers
@@ -421,7 +421,7 @@
                             :when (and recognizer
                                        fixer)
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "{REWRITE}" "-" i)
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-RW" "-" i)
                                           (equal (,fixer ,field)
                                                  (if (,recognizer ,field)
                                                      ,field
@@ -515,11 +515,11 @@
                                           (update-nth ,i ,field ,frame))))
 
                     ;; `RECOGNIZER'
-                    (defthm ,recognizer{type-prescription}
+                    (defthm ,recognizer-tp
                       (booleanp (,recognizer ,frame))
                       :rule-classes :type-prescription)
 
-                    (defthm ,recognizer{compound-recognizer}
+                    (defthm ,recognizer-cr
                       (implies (,recognizer ,frame)
                                ,(if (consp fields)
                                     `(and (consp ,frame)
@@ -550,7 +550,7 @@
                           (disable nth
                                    acl2::nth-when-zp)))
 
-                      (defthmd ,fixer{rewrite}
+                      (defthmd ,fixer-rw
                         (equal (,fixer ,frame)
                                (,view ,@(loop$ :for accessor :in accessors
                                               :collect `(,accessor ,frame))
@@ -569,7 +569,7 @@
                                       (,creator))))
 
                     ;; `VIEW'
-                    (defthm ,view{type-prescription}
+                    (defthm ,view-tp
                       ,(if (consp fields)
                            `(and (consp (,view ,@fields ,frame))
                                  (true-listp (,view ,@fields ,frame)))
@@ -598,7 +598,7 @@
                         :hints
                         ((acl2::equal-by-nths-hint))))
 
-                    (defthmd ,view{rewrite}
+                    (defthmd ,view-rw
                       (implies (syntaxp (not (and (consp ,frame)
                                                   (eq (car ,frame) ',creator))))
                                (equal (,view ,@fields ,frame)
@@ -681,7 +681,7 @@
                                    (loop$ :for i :from 0 :to (1- (len fields))
                                          :as field :in fields
                                          :as updater :in updaters
-                                         :collect `(defthmd ,(symbolicate package-witness updater "{REWRITE}")
+                                         :collect `(defthmd ,(symbolicate package-witness updater "-RW")
                                                      (implies (syntaxp (not (and (consp ,frame)
                                                                                  (eq (car ,frame) ',view))))
                                                               (equal (,updater ,field ,frame)
@@ -721,7 +721,7 @@
                           (disable nth
                                    acl2::nth-when-zp)))
 
-                      (defthm ,frame-equal{forward-chaining}
+                      (defthm ,frame-equal-fc
                         (implies (,frame-equal ,%frame ,frame)
                                  (equal ,%frame ,frame))
                         :rule-classes

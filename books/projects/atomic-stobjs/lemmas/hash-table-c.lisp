@@ -175,7 +175,7 @@
 
 
 ;;;; `CONTENTS-RECOGNIZER'
-(defthm contents-recognizer{type-prescription}
+(defthm contents-recognizer-tp
   (booleanp (contents-recognizer contents))
   :rule-classes :type-prescription)
 
@@ -192,11 +192,11 @@
 
 
 ;;;; `RECOGNIZER/UNIQUE'
-(defthm recognizer/unique{type-prescription}
+(defthm recognizer/unique-tp
   (booleanp (recognizer/unique hash-table))
   :rule-classes :type-prescription)
 
-(defthm recognizer/unique{compound-recognizer}
+(defthm recognizer/unique-cr
   (implies (recognizer/unique hash-table)
            (and (consp hash-table)
                 (true-listp hash-table)))
@@ -224,11 +224,11 @@
 
 
 ;;;; `RECOGNIZER/COPYABLE'
-(defthm recognizer/copyable{type-prescription}
+(defthm recognizer/copyable-tp
   (booleanp (recognizer/copyable hash-table))
   :rule-classes :type-prescription)
 
-(defthm recognizer/copyable{compound-recognizer}
+(defthm recognizer/copyable-cr
   (implies (recognizer/copyable hash-table)
            (and (consp hash-table)
                 (true-listp hash-table)))
@@ -334,13 +334,13 @@
 
 
 ;;;; `UPDATER'
-(defthm updater{type-prescription}/unique
+(defthm updater/unique-tp
   (implies (recognizer/unique hash-table)
            (and (consp (updater key value hash-table))
                 (true-listp (updater key value hash-table))))
   :rule-classes :type-prescription)
 
-(defthm updater{type-prescription}/copyable
+(defthm updater/copyable-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (updater key value hash-table))
                 (true-listp (updater key value hash-table))))
@@ -348,7 +348,7 @@
 
 
 ;;;; `BOUNDP'
-(defthm boundp{type-prescription}
+(defthm boundp-tp
   (booleanp (boundp key hash-table))
   :rule-classes :type-prescription)
 
@@ -409,12 +409,12 @@
 
 
 ;;;; `GETP'
-(defthm getp{type-prescription}
+(defthm getp-tp
   (and (consp (getp key hash-table))
        (true-listp (getp key hash-table)))
   :rule-classes :type-prescription)
 
-(defthm getp{rewrite}
+(defthm getp-rw
   (mv-let (v0 v1)
           (getp key hash-table)
     (and (equal v0 (accessor key hash-table))
@@ -422,13 +422,13 @@
 
 
 ;;;; `REMOVER'
-(defthm remover{type-prescription}/unique
+(defthm remover/unique-tp
   (implies (recognizer/unique hash-table)
            (and (consp (remover key hash-table))
                 (true-listp (remover key hash-table))))
   :rule-classes :type-prescription)
 
-(defthm remover{type-prescription}/copyable
+(defthm remover/copyable-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (remover key hash-table))
                 (true-listp (remover key hash-table))))
@@ -480,7 +480,7 @@
 
 
 ;;;; `COUNT'
-(defthm count{type-prescription}
+(defthm count-tp
   (natp (count hash-table))
   :rule-classes :type-prescription)
 
@@ -547,13 +547,13 @@
 
 
 ;;;; `%CLEAR'
-(defthm %clear{type-prescription}/unique
+(defthm %clear/unique-tp
   (implies (recognizer/unique hash-table)
            (and (consp (%clear hash-table))
                 (true-listp (%clear hash-table))))
   :rule-classes :type-prescription)
 
-(defthm %clear{type-prescription}/copyable
+(defthm %clear/copyable-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (%clear hash-table))
                 (true-listp (%clear hash-table))))
@@ -561,12 +561,12 @@
 
 (with-books (("std/lists/len" :dir :system)
              ("std/lists/nth" :dir :system))
-  (defthm %clear{rewrite}/unique
+  (defthm %clear/unique-rw
     (implies (recognizer/unique hash-table)
              (equal (%clear hash-table)
                     (creator/unique))))
 
-  (defthm %clear{rewrite}/copyable
+  (defthm %clear/copyable-rw
     (implies (recognizer/copyable hash-table)
              (equal (%clear hash-table)
                     (keys-set (keys hash-table) (creator/copyable))))
@@ -575,13 +575,13 @@
 
 
 ;;;; `%INIT'
-(defthm %init{type-prescription}/unique
+(defthm %init/unique-tp
   (implies (recognizer/unique hash-table)
            (and (consp (%init ht-size rehash-size rehash-threshold hash-table))
                 (true-listp (%init ht-size rehash-size rehash-threshold hash-table))))
   :rule-classes :type-prescription)
 
-(defthm %init{type-prescription}/copyable
+(defthm %init/copyable-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (%init ht-size rehash-size rehash-threshold hash-table))
                 (true-listp (%init ht-size rehash-size rehash-threshold hash-table))))
@@ -589,12 +589,12 @@
 
 (with-books (("std/lists/len" :dir :system)
              ("std/lists/nth" :dir :system))
-  (defthm %init{rewrite}/unique
+  (defthm %init/unique-rw
     (implies (recognizer/unique hash-table)
              (equal (%init ht-size rehash-size rehash-threshold hash-table)
                     (creator/unique))))
 
-  (defthm %init{rewrite}/copyable
+  (defthm %init/copyable-rw
     (implies (recognizer/copyable hash-table)
              (equal (%init ht-size rehash-size rehash-threshold hash-table)
                     (keys-set (keys hash-table) (creator/copyable))))
@@ -623,7 +623,7 @@
 
 
 ;;;; `KEYS-SET'
-(defthm keys-set{type-prescription}
+(defthm keys-set-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (keys-set set hash-table))
                 (true-listp (keys-set set hash-table))))
@@ -650,7 +650,7 @@
       hash-table
       (creator/unique)))
 
-(defthm fixer/unique{type-prescription}
+(defthm fixer/unique-tp
   (and (consp (fixer/unique hash-table))
        (true-listp (fixer/unique hash-table)))
   :rule-classes :type-prescription)
@@ -676,7 +676,7 @@
       hash-table
       (creator/copyable)))
 
-(defthm fixer/copyable{type-prescription}
+(defthm fixer/copyable-tp
   (and (consp (fixer/copyable hash-table))
        (true-listp (fixer/copyable hash-table)))
   :rule-classes :type-prescription)
@@ -702,7 +702,7 @@
          (hash-table (keys-set '() hash-table)))
     (%clear hash-table)))
 
-(defthm clear{type-prescription}
+(defthm clear-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (clear hash-table))
                 (true-listp (clear hash-table))))
@@ -710,7 +710,7 @@
 
 (with-books (("std/lists/len" :dir :system)
              ("std/lists/update-nth" :dir :system))
-  (defthm clear{rewrite}
+  (defthm clear-rw
     (implies (recognizer/copyable hash-table)
              (equal (clear hash-table)
                     (creator/copyable)))))
@@ -732,7 +732,7 @@
          (hash-table (keys-set '() hash-table)))
     (%init ht-size rehash-size rehash-threshold hash-table)))
 
-(defthm init{type-prescription}
+(defthm init-tp
   (implies (recognizer/copyable hash-table)
            (and (consp (init ht-size rehash-size rehash-threshold hash-table))
                 (true-listp (init ht-size rehash-size rehash-threshold hash-table))))
@@ -740,7 +740,7 @@
 
 (with-books (("std/lists/len" :dir :system)
              ("std/lists/update-nth" :dir :system))
-  (defthm init{rewrite}
+  (defthm init-rw
     (implies (recognizer/copyable hash-table)
              (equal (init ht-size rehash-size rehash-threshold hash-table)
                     (creator/copyable)))))

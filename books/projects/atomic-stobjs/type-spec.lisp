@@ -87,14 +87,14 @@
 
 (add-macro-fn memberp memberp-equal)
 
-(defthm memberp-eq{rewrite}
+(defthm memberp-eq-rw
   (equal (memberp-eq x list)
          (memberp x list)))
 
 (in-theory
   (disable memberp-eq))
 
-(defthm memberp-eql{rewrite}
+(defthm memberp-eql-rw
   (equal (memberp-eql x list)
          (memberp x list)))
 
@@ -191,7 +191,7 @@
       :in-theory '((:d booleanp)
                    (:t acl2-type-spec-p))))))
 
-(defthm acl2-type-spec-p{compound-recognizer}
+(defthm acl2-type-spec-p-cr
   (implies (acl2-type-spec-p type-spec)
            (or (symbolp type-spec)
                (and (consp type-spec)
@@ -448,7 +448,7 @@
 
 (defwarrant typep$transform)
 
-(defthm typep$transform{type-prescription}
+(defthm typep$transform-tp
   (or (booleanp (typep$transform object type-spec))
       (and (consp (typep$transform object type-spec))
            (true-listp (typep$transform object type-spec))))
@@ -765,14 +765,14 @@
     (:t memberp-eql$inline)
     (:e memberp-equal$inline)
     (:t memberp-equal$inline)
-    memberp-eq{rewrite}
-    memberp-eql{rewrite}
+    memberp-eq-rw
+    memberp-eql-rw
     memberp-iff-member
     (:e acl2-type-spec-p)
     (:t acl2-type-spec-p)
     apply$-warrant-acl2-type-spec-p-necc
     apply$-acl2-type-spec-p
-    acl2-type-spec-p{compound-recognizer}
+    acl2-type-spec-p-cr
     acl2-type-spec-p-when-atom
     (:e typep$runtime)
     (:t typep$runtime)
@@ -780,7 +780,7 @@
     (:t typep$transform)
     apply$-warrant-typep$transform-necc
     apply$-typep$transform
-    (:t typep$transform{type-prescription})
+    (:t typep$transform-tp)
     typep$-atom
     typep$-bit
     typep$-character
