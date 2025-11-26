@@ -35,14 +35,14 @@
 
 
 ;;;; Concrete Tests
-(atomic-stobjs::define-vector$a arr/0 0)
+(atomic-stobjs::define-vector$a vec/0 0)
 
-(atomic-stobjs::define-vector$a arr/1 #xbabe)
+(atomic-stobjs::define-vector$a vec/1 #xbabe)
 
-(atomic-stobjs::define-vector$a arr/2 0
+(atomic-stobjs::define-vector$a vec/2 0
   :resizable t)
 
-(atomic-stobjs::define-vector$a arr/3 #xbabe
+(atomic-stobjs::define-vector$a vec/3 #xbabe
   :resizable t)
 
 

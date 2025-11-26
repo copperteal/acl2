@@ -496,8 +496,7 @@
                            key-recognizer
                            (list keys-fix
                                  in-when-keysp{case-split}))
-                      (list fixer
-                            accessor-when-not-recognizer
+                      (list accessor-when-not-recognizer
                             accessor-of-updater
                             accessor-when-not-boundp
                             accessor-of-remover

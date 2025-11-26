@@ -211,7 +211,7 @@
               (resizer-of-length (symbolicate package-witness resizer "-OF-" length))
               (resizer-of-length-free (symbolicate package-witness resizer-of-length "-FREE"))
               (resizer-of-resizer (symbolicate package-witness resizer "-OF-" resizer))
-              (resizer-of-resizer{case-split} (symbolicate package-witness resizer-of-resizer "{CASE-SPLIT}"))
+              (resizer-of-resizer-split (symbolicate package-witness resizer-of-resizer "-SPLIT"))
               (resizer-of-updater (symbolicate package-witness resizer "-OF-" updater))
               (resizer-of-updater-keep (symbolicate package-witness resizer-of-updater "-KEEP"))
               (resizer-of-updater-drop (symbolicate package-witness resizer-of-updater "-DROP"))
@@ -225,7 +225,7 @@
               (accessor-of-nfix (symbolicate package-witness accessor "-OF-NFIX"))
               (accessor-of-fixer (symbolicate package-witness accessor "-OF-" fixer))
               (accessor-of-resizer (symbolicate package-witness accessor "-OF-" resizer))
-              (accessor-of-resizer{case-split} (symbolicate package-witness accessor-of-resizer "{CASE-SPLIT}"))
+              (accessor-of-resizer-split (symbolicate package-witness accessor-of-resizer "-SPLIT"))
               (accessor-of-updater (symbolicate package-witness accessor "-OF-" updater))
               (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
               (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
@@ -252,7 +252,6 @@
                                             updater-of-element-fixer))
               (updater-of-fixer (symbolicate package-witness updater "-OF-" fixer))
               (updater-of-resizer (symbolicate package-witness updater "-OF-" resizer))
-              (updater-of-resizer{case-split} (symbolicate package-witness updater-of-resizer "{CASE-SPLIT}"))
               (updater-of-accessor (symbolicate package-witness updater "-OF-" accessor))
               (updater-of-accessor-free (symbolicate package-witness updater-of-accessor "-FREE"))
               (updater-of-updater (symbolicate package-witness updater "-OF-" updater))
@@ -296,8 +295,7 @@
 
                  (deftheory-static ,vector-aggressive
                    ',(append
-                      (list fixer
-                            accessor-when-large
+                      (list accessor-when-large
                             accessor-when-not-natp
                             accessor-when-not-recognizer
                             accessor-of-updater
@@ -311,10 +309,9 @@
                                  resizer-when-not-natp
                                  resizer-when-not-recognizer
                                  resizer-of-length-free
-                                 resizer-of-resizer{case-split}
+                                 resizer-of-resizer-split
                                  resizer-of-updater
-                                 accessor-of-resizer{case-split}
-                                 updater-of-resizer{case-split}))
+                                 accessor-of-resizer-split))
                       (and element-recognizer
                            (list updater-when-not-element-recognizer))))
 
@@ -791,7 +788,7 @@
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-creator
-                            (implies (equal length ,default-length-name)
+                            (implies (equal (nfix length) ,default-length-name)
                                      (equal (,resizer length (,creator))
                                             (,creator)))
                             :hints
@@ -837,7 +834,7 @@
                                    lem-vector$a::resizer/resizable-of-length/resizable
                                    ,@fi-bindings))))
 
-                          (defthmd ,resizer-of-resizer{case-split}
+                          (defthmd ,resizer-of-resizer-split
                             (implies (or (<= (nfix %length) (nfix length))
                                          (<= (,length ,vector) (nfix length)))
                                      (equal (,resizer %length (,resizer length ,vector))
@@ -870,18 +867,11 @@
                                    ,@fi-bindings))))
 
                           (defthmd ,resizer-of-updater
-                            (implies (< (nfix ,index) (,length ,vector))
-                                     (equal (,resizer length (,updater ,index ,element ,vector))
-                                            (if (< (nfix ,index) (nfix length))
-                                                (,updater ,index ,element (,resizer length ,vector))
-                                                (,resizer length ,vector))))
-                            :rule-classes
-                            ((:rewrite :corollary
-                                       (implies (case-split (< (nfix ,index) (,length ,vector)))
-                                                (equal (,resizer length (,updater ,index ,element ,vector))
-                                                       (if (< (nfix ,index) (nfix length))
-                                                           (,updater ,index ,element (,resizer length ,vector))
-                                                           (,resizer length ,vector))))))
+                            (equal (,resizer length (,updater ,index ,element ,vector))
+                                   (if (and (< (nfix ,index) (,length ,vector))
+                                            (< (nfix ,index) (nfix length)))
+                                       (,updater ,index ,element (,resizer length ,vector))
+                                       (,resizer length ,vector)))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -900,8 +890,8 @@
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-updater-drop
-                            (implies (and (< (nfix ,index) (,length ,vector))
-                                          (<= (nfix length) (nfix ,index)))
+                            (implies (or (<= (,length ,vector) (nfix ,index))
+                                         (<= (nfix length) (nfix ,index)))
                                      (equal (,resizer length (,updater ,index ,element ,vector))
                                             (,resizer length ,vector)))
                             :hints
@@ -1007,21 +997,15 @@
                            ,@fi-bindings))))
 
                   ,@(and resizable
-                         `((defthmd ,accessor-of-resizer{case-split}
-                             (implies (< (nfix ,index) (nfix length))
-                                      (equal (,accessor ,index (,resizer length ,vector))
-                                             (,accessor ,index ,vector)))
-                             :rule-classes
-                             ((:rewrite :corollary
-                                        (implies (case-split (< (nfix ,index) (nfix length)))
-                                                 (equal (,accessor ,index (,resizer length ,vector))
-                                                        (,accessor ,index ,vector)))))
+                         `((defthmd ,accessor-of-resizer-split
+                             (equal (,accessor ,index (,resizer length ,vector))
+                                    (if (< (nfix ,index) (nfix length))
+                                        (,accessor ,index ,vector)
+                                        ,initial-element))
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    ,(if resizable
-                                         'lem-vector$a::accessor/resizable-of-resizer/resizable
-                                         'lem-vector$a::accessor/fixed-of-resizer/fixed)
+                                    lem-vector$a::accessor/resizable-of-resizer/resizable-split
                                     ,@fi-bindings))))
 
                            (defthm ,accessor-of-resizer
@@ -1037,28 +1021,19 @@
                                     ,@fi-bindings))))))
 
                   (defthmd ,accessor-of-updater
-                    (implies (< (nfix ,%index)
-                                ,(if resizable
-                                     `(,length ,vector)
-                                     default-length-name))
-                             (equal (,accessor ,%index (,updater ,index ,element ,vector))
-                                    (if (equal (nfix ,%index) (nfix ,index))
-                                        ,(if element-fixer
-                                             `(,element-fixer ,element)
-                                             element)
-                                        (,accessor ,%index ,vector))))
-                    :rule-classes
-                    ((:rewrite :corollary
-                               (implies (case-split (< (nfix ,%index)
-                                                       ,(if resizable
-                                                            `(,length ,vector)
-                                                            default-length-name)))
-                                        (equal (,accessor ,%index (,updater ,index ,element ,vector))
-                                               (if (equal (nfix ,%index) (nfix ,index))
-                                                   ,(if element-fixer
-                                                        `(,element-fixer ,element)
-                                                        element)
-                                                   (,accessor ,%index ,vector))))))
+                    (equal (,accessor ,%index (,updater ,index ,element ,vector))
+                           (cond
+                             ((<= ,(if resizable
+                                       `(,length ,vector)
+                                       default-length-name)
+                                  (nfix ,%index))
+                              ,initial-element)
+                             ((equal (nfix ,%index) (nfix ,index))
+                              ,(if element-fixer
+                                   `(,element-fixer ,element)
+                                   element))
+                             (t
+                              (,accessor ,%index ,vector))))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -1086,11 +1061,11 @@
                            ,@fi-bindings))))
 
                   (defthm ,accessor-of-updater-diff
-                    (implies (and (< (nfix ,%index)
-                                     ,(if resizable
+                    (implies (or (<= ,(if resizable
                                           `(,length ,vector)
-                                          default-length-name))
-                                  (not (equal (nfix ,%index) (nfix ,index))))
+                                          default-length-name)
+                                     (nfix ,%index))
+                                 (not (equal (nfix ,%index) (nfix ,index))))
                              (equal (,accessor ,%index (,updater ,index ,element ,vector))
                                     (,accessor ,%index ,vector)))
                     :hints
@@ -1215,39 +1190,11 @@
                            ,@fi-bindings))))
 
                   ,@(and resizable
-                         `((defthmd ,updater-of-resizer{case-split}
-                             (implies (and (< (nfix ,index)
-                                              (nfix length))
-                                           (equal ,(if element-fixer
-                                                       `(,element-fixer ,element)
-                                                       element)
-                                                  (,accessor ,index ,vector)))
-                                      (equal (,updater ,index ,element (,resizer length ,vector))
-                                             (,resizer length ,vector)))
-                             :rule-classes
-                             ((:rewrite :corollary
-                                        (implies (and (case-split (< (nfix ,index) (nfix length)))
-                                                      (equal ,(if element-fixer
-                                                                  `(,element-fixer ,element)
-                                                                  element)
-                                                             (,accessor ,index ,vector)))
-                                                 (equal (,updater ,index ,element (,resizer length ,vector))
-                                                        (,resizer length ,vector)))))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    ,(if resizable
-                                         'lem-vector$a::updater/resizable-of-resizer/resizable
-                                         'lem-vector$a::updater/fixed-of-resizer/fixed)
-                                    ,@fi-bindings))))
-
-                           (defthm ,updater-of-resizer
-                             (implies (and (< (nfix ,index)
-                                              (nfix length))
-                                           (equal ,(if element-fixer
-                                                       `(,element-fixer ,element)
-                                                       element)
-                                                  (,accessor ,index ,vector)))
+                         `((defthm ,updater-of-resizer
+                             (implies (equal ,(if element-fixer
+                                                  `(,element-fixer ,element)
+                                                  element)
+                                             (,accessor ,index ,vector))
                                       (equal (,updater ,index ,element (,resizer length ,vector))
                                              (,resizer length ,vector)))
                              :hints

@@ -329,6 +329,7 @@
                 (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
                 (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
                 (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
+                (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
                 (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
 
                 (fixer{rewrite} (symbolicate package-witness fixer "{REWRITE}"))
@@ -349,8 +350,7 @@
                 (frame-aggressive (symbolicate package-witness frame "-AGGRESSIVE"))
                 (epilogue
                  `((in-theory
-                     (enable ,fixer{rewrite}
-                             ,view{rewrite}
+                     (enable ,view{rewrite}
                              ,@(loop$ :for updater :in updaters
                                      :collect (symbolicate package-witness updater "{REWRITE}"))))
 
@@ -375,7 +375,7 @@
 
                    (deftheory-static ,frame-aggressive
                      ',(append
-                        (list fixer
+                        (list fixer{rewrite}
                               view-collapse)
                         (loop$ :for i :from 1 :to (len fields)
                               :as recognizer :in recognizers
@@ -531,6 +531,9 @@
                     (defthm ,recognizer-of-creator
                       (,recognizer (,creator)))
 
+                    (defthm ,recognizer-of-fixer
+                      (,recognizer (,fixer ,frame)))
+
                     (defthm ,recognizer-of-view
                       (,recognizer (,view ,@fields ,frame)))
 
@@ -644,6 +647,11 @@
                             :collect `(defthm ,(symbolicate package-witness accessor "-OF-" creator)
                                         (equal (,accessor (,creator))
                                                ,initial-element)))
+
+                    ,@(loop$ :for accessor :in accessors
+                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" fixer)
+                                        (equal (,accessor (,fixer ,frame))
+                                               (,accessor ,frame))))
 
                     ,@(loop$ :for field :in fields
                             :as fixer :in fixers

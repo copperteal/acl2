@@ -367,7 +367,7 @@
 
 (with-books (("std/lists/repeat" :dir :system))
   (defthm resizer/resizable-of-creator
-    (implies (equal length (default-length))
+    (implies (equal (nfix length) (default-length))
              (equal (resizer/resizable length (creator))
                     (creator)))))
 
@@ -438,24 +438,25 @@
                (acl2::repeat (default-length) (initial-element)))))))
 
 (defthm resizer/resizable-of-updater/resizable-drop
-  (implies (and (< (nfix index) (length/resizable vector))
-                (<= (nfix length) (nfix index)))
+  (implies (or (<= (length/resizable vector) (nfix index))
+               (<= (nfix length) (nfix index)))
            (equal (resizer/resizable length (updater/resizable index value vector))
                   (resizer/resizable length vector))))
 
 (defthm resizer/resizable-of-updater/resizable
-  (implies (< (nfix index) (length/resizable vector))
-           (equal (resizer/resizable length (updater/resizable index value vector))
-                  (if (< (nfix index) (nfix length))
-                      (updater/resizable index value (resizer/resizable length vector))
-                      (resizer/resizable length vector))))
+  (equal (resizer/resizable length (updater/resizable index value vector))
+         (if (and (< (nfix index) (length/resizable vector))
+                  (< (nfix index) (nfix length)))
+             (updater/resizable index value (resizer/resizable length vector))
+             (resizer/resizable length vector)))
   :hints
   (("Goal"
-    :cases ((< (nfix index) (nfix length))))
+    :cases ((and (< (nfix index) (length/resizable vector))
+                 (< (nfix index) (nfix length)))))
    ("Subgoal 2"
-    :by resizer/resizable-of-updater/resizable-drop)
+    :use resizer/resizable-of-updater/resizable-drop)
    ("Subgoal 1"
-    :by resizer/resizable-of-updater/resizable-keep)))
+    :use resizer/resizable-of-updater/resizable-keep)))
 
 
 ;;;; `RESIZER/FIXED'
@@ -504,7 +505,13 @@
   (defthm accessor/resizable-of-resizer/resizable
     (implies (< (nfix index) (nfix length))
              (equal (accessor/resizable index (resizer/resizable length vector))
-                    (accessor/resizable index vector)))))
+                    (accessor/resizable index vector))))
+
+  (defthm accessor/resizable-of-resizer/resizable-split
+    (equal (accessor/resizable index (resizer/resizable length vector))
+           (if (< (nfix index) (nfix length))
+               (accessor/resizable index vector)
+               (initial-element)))))
 
 (with-books (("std/lists/repeat" :dir :system))
   (defthm accessor/resizable-of-updater/resizable-same
@@ -517,27 +524,53 @@
       :expand (acl2::repeat (default-length) (initial-element))))))
 
 (defthm accessor/resizable-of-updater/resizable-diff
-  (implies (and (< (nfix %index) (length/resizable vector))
-                (not (equal (nfix %index) (nfix index))))
+  (implies (or (<= (length/resizable vector) (nfix %index))
+               (not (equal (nfix %index) (nfix index))))
            (equal (accessor/resizable %index (updater/resizable index value vector))
                   (accessor/resizable %index vector)))
   :hints
   (("Goal"
     :in-theory (disable update-nth))))
 
-(defthm accessor/resizable-of-updater/resizable
-  (implies (< (nfix %index) (length/resizable vector))
-           (equal (accessor/resizable %index (updater/resizable index value vector))
-                  (if (equal (nfix %index) (nfix index))
-                      (element-fixer value)
-                      (accessor/resizable %index vector))))
-  :hints
-  (("Goal"
-    :cases ((equal (nfix %index) (nfix index))))
-   ("Subgoal 2"
-    :by accessor/resizable-of-updater/resizable-diff)
-   ("Subgoal 1"
-    :by accessor/resizable-of-updater/resizable-same)))
+(with-books (("std/lists/repeat" :dir :system)
+             ("std/lists/nth" :dir :system)
+             ("std/lists/update-nth" :dir :system))
+  (local
+    (defthm nth-of-cons
+      (equal (nth n (cons a d))
+             (if (zp n)
+                 a
+                 (nth (1- n) d)))))
+
+  (local
+    (defthm cdr-of-repeat
+      (equal (cdr (acl2::repeat n x))
+             (if (zp n)
+                 nil
+                 (acl2::repeat (1- n) x)))
+      :hints
+      (("Goal"
+        :expand (acl2::repeat n x)))))
+
+  (defthm accessor/resizable-of-updater/resizable
+    (equal (accessor/resizable %index (updater/resizable index value vector))
+           (cond
+             ((<= (length/resizable vector) (nfix %index))
+              (initial-element))
+             ((equal (nfix %index) (nfix index))
+              (element-fixer value))
+             (t
+              (accessor/resizable %index vector))))
+    :hints
+    (("Goal"
+      :cases ((<= (length/resizable vector) (nfix %index))
+              (equal (nfix %index) (nfix index)))
+      :in-theory (enable acl2::repeat))
+     ("Subgoal 3"
+      :use ((:instance accessor/resizable-when-large
+                       (index %index)
+                       (vector (updater/resizable index value vector))))
+      :expand ((nth %index vector))))))
 
 
 ;;;; `ACCESSOR/FIXED'
@@ -583,27 +616,47 @@
       :expand (acl2::repeat (default-length) (initial-element))))))
 
 (defthm accessor/fixed-of-updater/fixed-diff
-  (implies (and (< (nfix %index) (default-length))
-                (not (equal (nfix %index) (nfix index))))
+  (implies (or (<= (default-length) (nfix %index))
+               (not (equal (nfix %index) (nfix index))))
            (equal (accessor/fixed %index (updater/fixed index value vector))
                   (accessor/fixed %index vector)))
   :hints
   (("Goal"
     :in-theory (disable update-nth))))
 
-(defthm accessor/fixed-of-updater/fixed
-  (implies (< (nfix %index) (default-length))
-           (equal (accessor/fixed %index (updater/fixed index value vector))
-                  (if (equal (nfix %index) (nfix index))
-                      (element-fixer value)
-                      (accessor/fixed %index vector))))
-  :hints
-  (("Goal"
-    :cases ((equal (nfix %index) (nfix index))))
-   ("Subgoal 2"
-    :by accessor/fixed-of-updater/fixed-diff)
-   ("Subgoal 1"
-    :by accessor/fixed-of-updater/fixed-same)))
+(with-books (("std/lists/repeat" :dir :system)
+             ("std/lists/nth" :dir :system)
+             ("std/lists/update-nth" :dir :system))
+  (local
+    (defthm nth-of-cons
+      (equal (nth n (cons a d))
+             (if (zp n)
+                 a
+                 (nth (1- n) d)))))
+
+  (local
+    (defthm cdr-of-repeat
+      (equal (cdr (acl2::repeat n x))
+             (if (zp n)
+                 nil
+                 (acl2::repeat (1- n) x)))
+      :hints
+      (("Goal"
+        :in-theory (enable acl2::repeat)))))
+
+  (defthm accessor/fixed-of-updater/fixed
+    (equal (accessor/fixed %index (updater/fixed index value vector))
+           (cond
+             ((<= (default-length) (nfix %index))
+              (initial-element))
+             ((equal (nfix %index) (nfix index))
+              (element-fixer value))
+             (t
+              (accessor/fixed %index vector))))
+    :hints
+    (("Goal"
+      :cases ((<= (default-length) (nfix %index))
+              (equal (nfix %index) (nfix index)))))))
 
 
 ;;;; `UPDATER/RESIZABLE'
@@ -653,16 +706,27 @@
              ("std/lists/resize-list" :dir :system)
              ("std/lists/len" :dir :system)
              ("std/lists/nth" :dir :system))
+  (local
+    (defthm updater/resizable-of-resizer/resizable-lemma
+      (implies (and (< (nfix index) (nfix length))
+                    (equal (element-fixer value) (accessor/resizable index vector)))
+               (equal (updater/resizable index value (resizer/resizable length vector))
+                      (resizer/resizable length vector)))
+      :hints
+      (("Goal"
+        :expand ((resize-list vector length (initial-element))
+                 (acl2::repeat length (initial-element))
+                 (acl2::repeat (default-length) (initial-element)))))))
+
   (defthm updater/resizable-of-resizer/resizable
-    (implies (and (< (nfix index) (nfix length))
-                  (equal (element-fixer value) (accessor/resizable index vector)))
+    (implies (equal (element-fixer value) (accessor/resizable index vector))
              (equal (updater/resizable index value (resizer/resizable length vector))
                     (resizer/resizable length vector)))
     :hints
     (("Goal"
-      :expand ((resize-list vector length (initial-element))
-               (acl2::repeat length (initial-element))
-               (acl2::repeat (default-length) (initial-element)))))))
+      :cases ((< (nfix index) (nfix length))))
+     ("Subgoal 1"
+      :by updater/resizable-of-resizer/resizable-lemma))))
 
 (with-books (("std/lists/update-nth" :dir :system)
              ("std/lists/repeat" :dir :system))
