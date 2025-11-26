@@ -383,21 +383,21 @@
                 ;; Theorem Names
                 (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
 
-                (recognizer{type-prescription} (symbolicate package-witness recognizer "{TYPE-PRESCRIPTION}"))
-                (recognizer{compound-recognizer} (symbolicate package-witness recognizer "{COMPOUND-RECOGNIZER}"))
+                (recognizer-tp (symbolicate package-witness recognizer "-TP"))
+                (recognizer-cr (symbolicate package-witness recognizer "-CR"))
                 (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
-                (view{type-prescription} (symbolicate package-witness view "{TYPE-PRESCRIPTION}"))
+                (view-tp (symbolicate package-witness view "-TP"))
                 (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
-                (view{rewrite} (symbolicate package-witness view "{REWRITE}"))
-                (fixer{rewrite} (symbolicate package-witness fixer "{REWRITE}"))
+                (view-rw (symbolicate package-witness view "-RW"))
+                (fixer-rw (symbolicate package-witness fixer "-RW"))
 
                 ;; Epilogue
                 (frame-theorems (symbolicate package-witness frame "-THEOREMS"))
                 (epilogue
                  `((in-theory
-                     (enable ,view{rewrite}
+                     (enable ,view-rw
                              ,@(loop$ :for updater :in updaters
-                                     :collect (symbolicate package-witness updater "{REWRITE}"))))
+                                     :collect (symbolicate package-witness updater "-RW"))))
 
                    (deflabel ,frame-end)
 
@@ -463,7 +463,7 @@
                             :as i :from 0 :to (1- (len fields))
                             :when stobj-copy
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copy "{REWRITE}-" i)
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copy "-RW-" i)
                                           (implies (and (,stobj-recognizer ,%field)
                                                         (,stobj-recognizer ,field)
                                                         ,@(and stobj-coupled-p
@@ -498,17 +498,17 @@
                             :as recognizer :in recognizers
                             :as element-type :in element-types
                             :as stobj-recognizer :in stobj-recognizers
-                            :collect `(defthm ,(symbolicate package-witness recognizer "{REWRITE}")
+                            :collect `(defthm ,(symbolicate package-witness recognizer "-RW")
                                         (equal (,recognizer ,field)
                                                ,(if stobj-recognizer
                                                     `(,stobj-recognizer ,field)
                                                     (typep$transform field element-type)))))
 
-                    (defthm ,recognizer{type-prescription}
+                    (defthm ,recognizer-tp
                       (booleanp (,recognizer ,frame))
                       :rule-classes :type-prescription)
 
-                    (defthm ,recognizer{compound-recognizer}
+                    (defthm ,recognizer-cr
                       (implies (,recognizer ,frame)
                                ,(if (consp fields)
                                     `(and (consp ,frame)
@@ -635,7 +635,7 @@
 
                     (table view ',frame ',view)
 
-                    (defthm ,view{type-prescription}
+                    (defthm ,view-tp
                       ,(if (consp fields)
                            `(and (consp (,view ,@fields ,frame))
                                  (true-listp (,view ,@fields ,frame)))
@@ -650,7 +650,7 @@
                         (in-theory
                           (disable acl2::nth-when-zp)))
 
-                      (defthmd ,view{rewrite}
+                      (defthmd ,view-rw
                         (implies (and (syntaxp (not (and (consp ,frame)
                                                          (eq (car ,frame) ',creator))))
                                       (,recognizer ,frame))
@@ -697,7 +697,7 @@
                                          :as stobj-coupled-p :in stobj-coupled-p-list
                                          :as field :in fields
                                          :as i :from 0 :to (1- (len fields))
-                                         :collect `(defthmd ,(symbolicate package-witness updater "{REWRITE}")
+                                         :collect `(defthmd ,(symbolicate package-witness updater "-RW")
                                                      (implies (and (syntaxp (not (and (consp ,frame)
                                                                                       (eq (car ,frame) ',view))))
                                                                    (,recognizer ,frame)
@@ -769,7 +769,7 @@
                         (in-theory
                           (disable acl2::nth-when-zp)))
 
-                      (defthm ,fixer{rewrite}
+                      (defthm ,fixer-rw
                         ,(let* ((hypotheses (loop$ :for accessor :in accessors
                                                   :as stobj-coupled-p :in stobj-coupled-p-list
                                                   :when stobj-coupled-p

@@ -347,7 +347,7 @@
 
 
 ;;;; `OMAPS'
-(defthm keysp{definition}
+(defthm keysp-def
   (equal (keysp set)
          (and (set::setp set)
               (or (set::emptyp set)
@@ -368,7 +368,7 @@
     (disable keysp)))
 
 (local
-  (defthm recognizer/unique{definition}
+  (defthm recognizer/unique-def
     (equal (recognizer/unique hash-table)
            (and (omap::mapp hash-table)
                 (or (omap::emptyp hash-table)
@@ -407,7 +407,7 @@
     (disable recognizer/unique)))
 
 (local
-  (defthm accessor/unique{definition}
+  (defthm accessor/unique-def
     (equal (accessor/unique key hash-table)
            (let ((key (key-fixer key))
                  (hash-table (fixer/unique hash-table)))
@@ -433,7 +433,7 @@
     (disable accessor/unique)))
 
 (local
-  (defthm updater/unique{definition}
+  (defthm updater/unique-def
     (equal (updater/unique key val hash-table)
            (let ((key (key-fixer key))
                  (val (val-fixer val))
@@ -453,7 +453,7 @@
     (disable updater/unique)))
 
 (local
-  (defthm boundp/unique{definition}
+  (defthm boundp/unique-def
     (equal (boundp/unique key hash-table)
            (let ((key (key-fixer key))
                  (hash-table (fixer/unique hash-table)))
@@ -475,7 +475,7 @@
 (local
   (encapsulate ()
     (local
-      (defthmd remover/unique{definition}-lemma-0
+      (defthmd remover/unique-def-lemma-0
         (implies (and (consp pair)
                       (not (omap::emptyp hash-table))
                       (<< (car pair)
@@ -496,7 +496,7 @@
                              omap::delete)))))
 
     (local
-      (defthm remover/unique{definition}-lemma-1
+      (defthm remover/unique-def-lemma-1
         (implies (and (recognizer/unique hash-table)
                       (key-recognizer key))
                  (equal (remover/unique key hash-table)
@@ -511,12 +511,12 @@
                              omap::tail
                              omap::update))
          ("Subgoal *1/4.1"
-          :use (:instance remover/unique{definition}-lemma-0
+          :use (:instance remover/unique-def-lemma-0
                           (pair (car hash-table))
                           (hash-table (cdr hash-table)))))))
 
     (local
-      (defthm remover/unique{definition}-lemma-2
+      (defthm remover/unique-def-lemma-2
         (implies (and (recognizer/unique hash-table)
                       (not (key-recognizer key)))
                  (equal (remover/unique key hash-table)
@@ -532,17 +532,17 @@
                              omap::tail
                              omap::update))
          ("Subgoal *1/6"
-          :use (:instance remover/unique{definition}-lemma-0
+          :use (:instance remover/unique-def-lemma-0
                           (pair (car hash-table))
                           (hash-table (cdr hash-table))
                           (key (default-key))))
          ("Subgoal *1/5"
-          :use (:instance remover/unique{definition}-lemma-0
+          :use (:instance remover/unique-def-lemma-0
                           (pair (car hash-table))
                           (hash-table (cdr hash-table))
                           (key (default-key)))))))
 
-    (defthm remover/unique{definition}
+    (defthm remover/unique-def
       (equal (remover/unique key hash-table)
              (let ((key (key-fixer key))
                    (hash-table (fixer/unique hash-table)))
@@ -563,7 +563,7 @@
     (disable remover/unique)))
 
 (local
-  (defthm count/unique{definition}
+  (defthm count/unique-def
     (equal (count/unique hash-table)
            (let ((hash-table (fixer/unique hash-table)))
              (omap::size hash-table)))
@@ -581,41 +581,41 @@
     (disable count/unique)))
 
 (local
-  (defun recognizer/unique{induction}-fn (hash-table)
+  (defun recognizer/unique-ind-fn (hash-table)
     (declare (xargs :guard (omap::mapp hash-table)))
     (or (omap::emptyp hash-table)
-        (recognizer/unique{induction}-fn (omap::tail hash-table)))))
+        (recognizer/unique-ind-fn (omap::tail hash-table)))))
 
 (local
-  (defthm recognizer/unique{induction}
+  (defthm recognizer/unique-ind
     t
     :rule-classes
     ((:induction :pattern (recognizer/unique hash-table)
-                 :scheme (recognizer/unique{induction}-fn hash-table)))))
+                 :scheme (recognizer/unique-ind-fn hash-table)))))
 
 (local
-  (defun accessor/unique{induction}-fn (key hash-table)
+  (defun accessor/unique-ind-fn (key hash-table)
     (declare (xargs :guard (omap::mapp hash-table)
                     :measure (omap::size hash-table)))
     (let ((key (key-fixer key)))
       (or (omap::emptyp hash-table)
           (equal key (omap::head-key hash-table))
-          (accessor/unique{induction}-fn key (omap::tail hash-table))))))
+          (accessor/unique-ind-fn key (omap::tail hash-table))))))
 
 (local
-  (defthm accessor/unique{induction}
+  (defthm accessor/unique-ind
     t
     :rule-classes
     ((:induction :pattern (accessor/unique key hash-table)
-                 :scheme (accessor/unique{induction}-fn key hash-table)))))
+                 :scheme (accessor/unique-ind-fn key hash-table)))))
 
 
 ;;;; `KEYSP'
-(defthm keysp{type-prescription}
+(defthm keysp-tp
   (booleanp (keysp set))
   :rule-classes :type-prescription)
 
-(defthm keysp{compound-recognizer}
+(defthm keysp-cr
   (implies (keysp set)
            (true-listp set))
   :rule-classes :compound-recognizer)
@@ -683,7 +683,7 @@
 
 
 ;;;; `KEYS-FIX'
-(defthm keys-fix{type-prescription}
+(defthm keys-fix-tp
   (true-listp (keys-fix set))
   :rule-classes :type-prescription)
 
@@ -698,11 +698,11 @@
 
 
 ;;;; `RECOGNIZER/UNIQUE'
-(defthm recognizer/unique{type-prescription}
+(defthm recognizer/unique-tp
   (booleanp (recognizer/unique hash-table))
   :rule-classes :type-prescription)
 
-(defthm recognizer/unique{compound-recognizer}
+(defthm recognizer/unique-cr
   (implies (recognizer/unique hash-table)
            (true-listp hash-table))
   :rule-classes :compound-recognizer)
@@ -750,18 +750,18 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               accessor/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition})))
+      (disable recognizer/unique-def
+               accessor/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def)))
 
-  (defthm recognizer/copyable{type-prescription}
+  (defthm recognizer/copyable-tp
     (booleanp (recognizer/copyable hash-table))
     :rule-classes :type-prescription)
 
-  (defthm recognizer/copyable{compound-recognizer}
+  (defthm recognizer/copyable-cr
     (implies (recognizer/copyable hash-table)
              (and (consp hash-table)
                   (true-listp hash-table)))
@@ -784,7 +784,7 @@
 
 
 ;;;; `FIXER/UNIQUE'
-(defthm fixer/unique{type-prescription}
+(defthm fixer/unique-tp
   (true-listp (fixer/unique hash-table))
   :rule-classes :type-prescription)
 
@@ -803,14 +803,14 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               accessor/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition})))
+      (disable recognizer/unique-def
+               accessor/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def)))
 
-  (defthm fixer/copyable{type-prescription}
+  (defthm fixer/copyable-tp
     (and (consp (fixer/copyable hash-table))
          (true-listp (fixer/copyable hash-table)))
     :rule-classes :type-prescription)
@@ -940,11 +940,11 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition})))
+      (disable recognizer/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def)))
 
   (defthm val-recognizer-of-accessor/copyable
     (val-recognizer (accessor/copyable key hash-table)))
@@ -1014,7 +1014,7 @@
 
 
 ;;;; `UPDATER/UNIQUE'
-(defthm updater/unique{type-prescription}
+(defthm updater/unique-tp
   (true-listp (updater/unique key val hash-table))
   :rule-classes :type-prescription)
 
@@ -1120,14 +1120,14 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               accessor/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition})))
+      (disable recognizer/unique-def
+               accessor/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def)))
 
-  (defthm updater/copyable{type-prescription}
+  (defthm updater/copyable-tp
     (and (consp (updater/copyable key val hash-table))
          (true-listp (updater/copyable key val hash-table)))
     :rule-classes :type-prescription)
@@ -1231,7 +1231,7 @@
 
 
 ;;;; `BOUNDP/UNIQUE'
-(defthm boundp/unique{type-prescription}
+(defthm boundp/unique-tp
   (booleanp (boundp/unique key hash-table))
   :rule-classes :type-prescription)
 
@@ -1313,14 +1313,14 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               accessor/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition})))
+      (disable recognizer/unique-def
+               accessor/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def)))
 
-  (defthm boundp/copyable{type-prescription}
+  (defthm boundp/copyable-tp
     (booleanp (boundp/copyable key hash-table))
     :rule-classes :type-prescription)
 
@@ -1400,12 +1400,12 @@
 
 
 ;;;; `GETP/UNIQUE'
-(defthm getp/unique{type-prescription}
+(defthm getp/unique-tp
   (and (consp (getp/unique key hash-table))
        (true-listp (getp/unique key hash-table)))
   :rule-classes :type-prescription)
 
-(defthm getp/unique{rewrite}
+(defthm getp/unique-rw
   (mv-let (v0 v1)
           (getp/unique key hash-table)
     (and (equal v0 (accessor/unique key hash-table))
@@ -1413,12 +1413,12 @@
 
 
 ;;;; `GETP/COPYABLE'
-(defthm getp/copyable{type-prescription}
+(defthm getp/copyable-tp
   (and (consp (getp/copyable key hash-table))
        (true-listp (getp/copyable key hash-table)))
   :rule-classes :type-prescription)
 
-(defthm getp/copyable{rewrite}
+(defthm getp/copyable-rw
   (mv-let (v0 v1)
           (getp/copyable key hash-table)
     (and (equal v0 (accessor/copyable key hash-table))
@@ -1426,7 +1426,7 @@
 
 
 ;;;; `REMOVER/UNIQUE'
-(defthm remover/unique{type-prescription}
+(defthm remover/unique-tp
   (true-listp (remover/unique key hash-table))
   :rule-classes :type-prescription)
 
@@ -1512,10 +1512,10 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable accessor/unique{definition}
-               count/unique{definition})))
+      (disable accessor/unique-def
+               count/unique-def)))
 
-  (defthm remover/copyable{type-prescription}
+  (defthm remover/copyable-tp
     (and (consp (remover/copyable key hash-table))
          (true-listp (remover/copyable key hash-table)))
     :rule-classes :type-prescription)
@@ -1599,7 +1599,7 @@
 
 
 ;;;; `COUNT/UNIQUE'
-(defthm count/unique{type-prescription}
+(defthm count/unique-tp
   (natp (count/unique hash-table))
   :rule-classes :type-prescription)
 
@@ -1668,14 +1668,14 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               accessor/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition})))
+      (disable recognizer/unique-def
+               accessor/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def)))
 
-  (defthm count/copyable{type-prescription}
+  (defthm count/copyable-tp
     (natp (count/copyable hash-table))
     :rule-classes :type-prescription)
 
@@ -1742,49 +1742,49 @@
 
 
 ;;;; `CLEAR/UNIQUE'
-(defthm clear/unique{type-prescription}
+(defthm clear/unique-tp
   (true-listp (clear/unique hash-table))
   :rule-classes :type-prescription)
 
-(defthm clear/unique{rewrite}
+(defthm clear/unique-rw
   (equal (clear/unique hash-table)
          (creator/unique)))
 
 
 ;;;; `CLEAR/COPYABLE'
-(defthm clear/copyable{type-prescription}
+(defthm clear/copyable-tp
   (and (consp (clear/copyable hash-table))
        (true-listp (clear/copyable hash-table)))
   :rule-classes :type-prescription)
 
-(defthm clear/copyable{rewrite}
+(defthm clear/copyable-rw
   (equal (clear/copyable hash-table)
          (creator/copyable)))
 
 
 ;;;; `INIT/UNIQUE'
-(defthm init/unique{type-prescription}
+(defthm init/unique-tp
   (true-listp (init/unique ht-size rehash-size rehash-threshold hash-table))
   :rule-classes :type-prescription)
 
-(defthm init/unique{rewrite}
+(defthm init/unique-rw
   (equal (init/unique ht-size rehash-size rehash-threshold hash-table)
          (creator/unique)))
 
 
 ;;;; `INIT/COPYABLE'
-(defthm init/copyable{type-prescription}
+(defthm init/copyable-tp
   (and (consp (init/copyable ht-size rehash-size rehash-threshold hash-table))
        (true-listp (init/copyable ht-size rehash-size rehash-threshold hash-table)))
   :rule-classes :type-prescription)
 
-(defthm init/copyable{rewrite}
+(defthm init/copyable-rw
   (equal (init/copyable ht-size rehash-size rehash-threshold hash-table)
          (creator/copyable)))
 
 
 ;;;; `KEYS'
-(defthm keys{type-prescription}
+(defthm keys-tp
   (true-listp (keys hash-table))
   :rule-classes :type-prescription)
 
@@ -1816,7 +1816,7 @@
 
 
 ;;;; `KEYS-SET'
-(defthm keys-set{type-prescription}
+(defthm keys-set-tp
   (and (consp (keys-set set hash-table))
        (true-listp (keys-set set hash-table)))
   :rule-classes :type-prescription)
@@ -1874,7 +1874,7 @@
          (keys-set %set hash-table)))
 
 
-;;;; `EQUAL/UNIQUE{FORWARD-CHAINING}'
+;;;; `EQUAL/UNIQUE-FC'
 (defun-sk keys-equal/unique (%hash-table hash-table)
   (declare (xargs :guard (and (recognizer/unique %hash-table)
                               (recognizer/unique hash-table))
@@ -2091,7 +2091,7 @@
                (equal (count/unique (omap::tail hash-table))
                       (1- (count/unique hash-table))))))
 
-  (defthm equal/unique{forward-chaining}
+  (defthm equal/unique-fc
     (implies (equal/unique %hash-table hash-table)
              (equal %hash-table hash-table))
     :rule-classes
@@ -2124,7 +2124,7 @@
                        (map hash-table)))))))
 
 
-;;;; `EQUAL/COPYABLE{FORWARD-CHAINING}'
+;;;; `EQUAL/COPYABLE-FC'
 (defun-sk keys-equal/copyable (%hash-table hash-table)
   (declare (xargs :guard (and (recognizer/copyable %hash-table)
                               (recognizer/copyable hash-table))
@@ -2160,12 +2160,12 @@
 (encapsulate ()
   (local
     (in-theory
-      (disable recognizer/unique{definition}
-               accessor/unique{definition}
-               updater/unique{definition}
-               boundp/unique{definition}
-               remover/unique{definition}
-               count/unique{definition}
+      (disable recognizer/unique-def
+               accessor/unique-def
+               updater/unique-def
+               boundp/unique-def
+               remover/unique-def
+               count/unique-def
                keys-equal/unique
                vals-equal/unique
                equal/unique)))
@@ -2255,7 +2255,7 @@
       (disable keys-equal/copyable
                vals-equal/copyable)))
 
-  (defthm equal/copyable{forward-chaining}
+  (defthm equal/copyable-fc
     (implies (equal/copyable %hash-table hash-table)
              (equal %hash-table hash-table))
     :rule-classes
@@ -2275,7 +2275,7 @@
 (local
   (in-theory
     (disable keysp
-             keysp{definition}
+             keysp-def
              keys-fix
              recognizer/unique
              recognizer/copyable
@@ -2303,13 +2303,13 @@
              init/copyable
              keys
              keys-set
-             accessor/unique{definition}
-             updater/unique{definition}
-             boundp/unique{definition}
-             remover/unique{definition}
-             count/unique{definition}
-             recognizer/unique{induction}-fn
-             accessor/unique{induction}-fn
+             accessor/unique-def
+             updater/unique-def
+             boundp/unique-def
+             remover/unique-def
+             count/unique-def
+             recognizer/unique-ind-fn
+             accessor/unique-ind-fn
              equal/unique
              equal/copyable)))
 
@@ -2350,7 +2350,7 @@
              (equal (val-copy %value value)
                     (val-copy (default-val) value))))
 
-  (defthm val-copy{rewrite}
+  (defthm val-copy-rw
     (implies (val-coupled-p val)
              (equal (val-copy %val val)
                     (val-fixer val)))))
@@ -2578,7 +2578,7 @@
                (not (keys hash-table)))
       :hints
       (("Goal"
-        :in-theory (enable keysp{definition}
+        :in-theory (enable keysp-def
                            set::emptyp)))))
 
   (defthm emptyp-of-keys-when-coupledp
@@ -2816,7 +2816,7 @@
       (("Goal"
         :induct (set::cardinality set)
         :in-theory (enable set::cardinality
-                           keysp{definition}))
+                           keysp-def))
        ("Subgoal *1/2"
         :expand ((set::subset set (keys hash-table))
                  (copy-rec set (creator/copyable) hash-table)))
@@ -2862,7 +2862,7 @@
   (in-theory
     (disable copy)))
 
-(defthm copy{rewrite}
+(defthm copy-rw
   (implies (coupledp hash-table)
            (equal (copy %hash-table hash-table)
                   (fixer/copyable hash-table)))
@@ -3034,11 +3034,11 @@
                     (<< (caar omap) (caadr omap))
                     (exportp-rec (cdr omap)))))))
 
-(defthm exportp-rec{type-prescription}
+(defthm exportp-rec-tp
   (booleanp (exportp-rec omap))
   :rule-classes :type-prescription)
 
-(defthm exportp-rec{compound-recognizer}
+(defthm exportp-rec-cr
   (implies (exportp-rec omap)
            (true-listp omap))
   :rule-classes :compound-recognizer)
@@ -3086,7 +3086,7 @@
       :expand (all-vals-exports-p nil))))
 
   (local
-    (defthm exportp-rec{definition}-lemma
+    (defthm exportp-rec-def-lemma
       (implies (and (omap::mapp omap)
                     (all-keys-recognized-p omap)
                     (all-vals-exports-p omap))
@@ -3137,7 +3137,7 @@
        ("Subgoal *1/1"
         :in-theory (enable omap::mapp)))))
 
-  (defthm exportp-rec{definition}
+  (defthm exportp-rec-def
     (equal (exportp-rec omap)
            (and (omap::mapp omap)
                 (all-keys-recognized-p omap)
@@ -3180,11 +3180,11 @@
        (equal (car export) (name))
        (exportp-rec (cdr export))))
 
-(defthm exportp{type-prescription}
+(defthm exportp-tp
   (booleanp (exportp export))
   :rule-classes :type-prescription)
 
-(defthm exportp{compound-recognizer}
+(defthm exportp-cr
   (implies (exportp export)
            (and (consp export)
                 (true-listp export)))
@@ -3207,7 +3207,7 @@
         ;; Time does not permit.
         (export-acc (set::tail set) (omap::update key export acc) hash-table))))
 
-(defthm export-acc{type-prescription}
+(defthm export-acc-tp
   (implies (true-listp acc)
            (true-listp (export-acc set acc hash-table)))
   :rule-classes :type-prescription)
@@ -3321,7 +3321,7 @@
   (cons (name)
         (export-acc (keys hash-table) () hash-table)))
 
-(defthm export{type-prescription}
+(defthm export-tp
   (and (consp (export hash-table))
        (true-listp (export hash-table)))
   :rule-classes :type-prescription)
@@ -3360,7 +3360,7 @@
                (hash-table (updater/copyable key val hash-table)))
           (import-rec (omap::tail omap) hash-table)))))
 
-(defthm import-rec{type-prescription}
+(defthm import-rec-tp
   (and (consp (import-rec omap hash-table))
        (true-listp (import-rec omap hash-table)))
   :rule-classes :type-prescription)
@@ -3425,7 +3425,7 @@
         hash-table)
       (creator/copyable)))
 
-(defthm import{type-prescription}
+(defthm import-tp
   (and (consp (import export hash-table))
        (true-listp (import export hash-table)))
   :rule-classes :type-prescription)

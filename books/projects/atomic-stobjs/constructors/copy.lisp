@@ -77,7 +77,7 @@
   (let* ((%vector (symbolicate package-witness "%" vector))
          (copy (symbolicate package-witness vector "-COPY"))
          (copy-rec (symbolicate package-witness copy "-REC"))
-         (copy{rewrite} (symbolicate package-witness copy "{REWRITE}"))
+         (copy-rw (symbolicate package-witness copy "-RW"))
          (index (symbolicate package-witness "I"))
 
          (coupledp (symbolicate package-witness vector "-COUPLED-P"))
@@ -152,7 +152,7 @@
          ;; Theorem Names
          (booleanp-of-element-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" element-recognizer))
          (element-recognizer-of-initial-element (symbolicate "ATOMIC-STOBJS" element-recognizer "-OF-INITIAL-ELEMENT"))
-         (element-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" element-fixer "{REWRITE}"))
+         (element-fixer-rw (symbolicate "ATOMIC-STOBJS" element-fixer "-RW"))
 
          (coupledp-constraint-1 (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINT-1"))
          (coupledp-constraint-2 (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINT-2"))
@@ -270,7 +270,7 @@
                       :rule-classes nil))
 
                   (local
-                    (defthm ,element-fixer{rewrite}
+                    (defthm ,element-fixer-rw
                       (equal (,element-fixer ,element)
                              (if (,element-recognizer ,element)
                                  ,element
@@ -636,7 +636,7 @@
          (in-theory
            (disable ,copy))
 
-         (defthm ,copy{rewrite}
+         (defthm ,copy-rw
            ,(if element-coupled-p
                 `(implies (,coupledp ,vector)
                           (equal (,copy ,%vector ,vector)
@@ -647,8 +647,8 @@
            (("Goal"
              :by (:functional-instance
                   ,(if resizable
-                       'lem-vector$a::copy/resizable{rewrite}
-                       'lem-vector$a::copy/fixed{rewrite})
+                       'lem-vector$a::copy/resizable-rw
+                       'lem-vector$a::copy/fixed-rw)
                   ,@fi-bindings-with-copy)))))
 
        (deflabel ,copy-end)
@@ -667,7 +667,7 @@
   (let* ((%hash-table (symbolicate package-witness "%" hash-table))
          (copy (symbolicate package-witness hash-table "-COPY"))
          (copy-rec (symbolicate package-witness copy "-REC"))
-         (copy{rewrite} (symbolicate package-witness copy "{REWRITE}"))
+         (copy-rw (symbolicate package-witness copy "-RW"))
 
          (coupledp (symbolicate package-witness hash-table "-COUPLED-P"))
          (coupled-keys-p (symbolicate package-witness hash-table "-COUPLED-KEYS-P"))
@@ -763,11 +763,11 @@
          ;; Theorem Names
          (booleanp-of-key-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" key-recognizer))
          (key-recognizer-of-default-key (symbolicate "ATOMIC-STOBJS" key-recognizer "-OF-DEFAULT-KEY"))
-         (key-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" key-fixer "{REWRITE}"))
+         (key-fixer-rw (symbolicate "ATOMIC-STOBJS" key-fixer "-RW"))
 
          (booleanp-of-val-recognizer (symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" val-recognizer))
          (val-recognizer-of-default-val (symbolicate "ATOMIC-STOBJS" val-recognizer "-OF-DEFAULT-VAL"))
-         (val-fixer{rewrite} (symbolicate "ATOMIC-STOBJS" val-fixer "{REWRITE}"))
+         (val-fixer-rw (symbolicate "ATOMIC-STOBJS" val-fixer "-RW"))
 
          (coupled-keys-p-constraint-1 (symbolicate "ATOMIC-STOBJS" coupled-keys-p "-CONSTRAINT-1"))
          (coupled-keys-p-constraint-2 (symbolicate "ATOMIC-STOBJS" coupled-keys-p "-CONSTRAINT-2"))
@@ -897,7 +897,7 @@
                       :rule-classes nil))
 
                   (local
-                    (defthm ,key-fixer{rewrite}
+                    (defthm ,key-fixer-rw
                       (equal (,key-fixer ,key)
                              (if (,key-recognizer ,key)
                                  ,key
@@ -918,7 +918,7 @@
                       :rule-classes nil))
 
                   (local
-                    (defthm ,val-fixer{rewrite}
+                    (defthm ,val-fixer-rw
                       (equal (,val-fixer ,val)
                              (if (,val-recognizer ,val)
                                  ,val
@@ -1506,14 +1506,14 @@
          (in-theory
            (disable ,copy))
 
-         (defthm ,copy{rewrite}
+         (defthm ,copy-rw
            (implies (,coupledp ,hash-table)
                     (equal (,copy ,%hash-table ,hash-table)
                            (,fixer$a ,hash-table)))
            :hints
            (("Goal"
              :by (:functional-instance
-                  lem-hash-table$a::copy{rewrite}
+                  lem-hash-table$a::copy-rw
                   ,@fi-bindings-with-copy)))))
 
        (deflabel ,copy-end)
@@ -1531,7 +1531,7 @@
                   :verify-guards nil))
   (let* ((%frame (symbolicate package-witness "%" frame))
          (copy (symbolicate package-witness frame "-COPY"))
-         (copy{rewrite} (symbolicate package-witness copy "{REWRITE}"))
+         (copy-rw (symbolicate package-witness copy "-RW"))
 
          (coupledp (symbolicate package-witness frame "-COUPLED-P"))
 
@@ -1693,7 +1693,7 @@
                                :rule-classes nil))
 
                           `(local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "{REWRITE}-" i)
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "-RW-" i)
                                (equal (,fixer$a ,field)
                                       (if (,recognizer$a ,field)
                                           ,field
@@ -1871,7 +1871,7 @@
          (in-theory
            (disable ,copy))
 
-         (defthm ,copy{rewrite}
+         (defthm ,copy-rw
            ,(if (remove nil stobj-coupled-p-list)
                 `(implies (,coupledp ,frame)
                           (equal (,copy ,%frame ,frame)
