@@ -31,8 +31,8 @@
 (set-verify-guards-eagerness 2)
 
 #|
-(include-book "../lemmas/vector$a")
-(include-book "../lemmas/hash-table$a")
+(include-book "../lemmas/vector-a")
+(include-book "../lemmas/hash-table-a")
 |#
 
 (include-book "../utilities/top")
@@ -280,7 +280,7 @@
            (deflabel prologue-end))
 
          (local
-           (include-book "projects/atomic-stobjs/lemmas/vector$a" :dir :system))
+           (include-book "projects/atomic-stobjs/lemmas/vector-a" :dir :system))
 
          (local
            (table acl2::theory-invariant-table nil nil :clear))
@@ -928,7 +928,7 @@
            (deflabel prologue-end))
 
          (local
-           (include-book "projects/atomic-stobjs/lemmas/hash-table$a" :dir :system))
+           (include-book "projects/atomic-stobjs/lemmas/hash-table-a" :dir :system))
 
          (local
            (table acl2::theory-invariant-table nil nil :clear))

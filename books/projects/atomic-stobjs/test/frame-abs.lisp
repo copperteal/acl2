@@ -29,88 +29,49 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/frame$c")
+(include-book "../constructors/frame-c")
+(include-book "../constructors/frame-a")
+(include-book "../constructors/frame-abs")
+
+(defun symbol-fix (x)
+  (declare (xargs :guard t))
+  (and (symbolp x)
+       x))
+
+(defthm symbol-fix-when-symbolp
+  (implies (symbolp key)
+           (equal (symbol-fix key) key)))
+
+(defthm symbol-fix-when-not-symbolp
+  (implies (not (symbolp key))
+           (not (symbol-fix key))))
+
+(defthm nfix-when-natp
+  (implies (natp key)
+           (equal (nfix key) key)))
+
+(defthm nfix-when-not-natp
+  (implies (not (natp key))
+           (equal (nfix key) 0)))
+
+(defun string-fix (x)
+  (declare (xargs :guard t))
+  (if (stringp x)
+      x
+      ""))
+
+(defthm stringp-of-string-fix
+  (stringp (string-fix x)))
+
+(defthm string-fix-when-stringp
+  (implies (stringp val)
+           (equal (string-fix val) val)))
+
+(defthm string-fix-when-not-stringp
+  (implies (not (stringp val))
+           (equal (string-fix val) "")))
 
 
-;;;; Stobj Values
-(defstobj st/0
-  a/0
-  :non-memoizable t
-  :non-executable t)
-
-(defstobj %st/0
-  %a/0
-  :congruent-to st/0
-  :non-memoizable t
-  :non-executable t)
-
-(defun st/0-copy (%st/0 st/0)
-  (declare (xargs :stobjs (%st/0 st/0)))
-  (update-a/0 (a/0 st/0) %st/0))
-
-(table atomic-stobjs::copy 'st/0 'st/0-copy)
-
-(defstobj st/1
-  a/1
-  :non-memoizable t
-  :non-executable t)
-
-(defstobj %st/1
-  %a/1
-  :congruent-to st/1
-  :non-memoizable t
-  :non-executable t)
-
-(defun st/1-copy (%st/1 st/1)
-  (declare (xargs :stobjs (%st/1 st/1)))
-  (update-a/1 (a/1 st/1) %st/1))
-
-(table atomic-stobjs::copy 'st/1 'st/1-copy)
-
-(defstobj st/2
-  a/2
-  :non-memoizable t
-  :non-executable t)
-
-(defstobj %st/2
-  %a/2
-  :congruent-to st/2
-  :non-memoizable t
-  :non-executable t)
-
-(defun st/2-copy (%st/2 st/2)
-  (declare (xargs :stobjs (%st/2 st/2)))
-  (update-a/2 (a/2 st/2) %st/2))
-
-(table atomic-stobjs::copy 'st/2 'st/2-copy)
-
-(with-books (("std/lists/len" :dir :system))
-  (defthm stobj-element-constraints
-    (and (st/0p (create-st/0))
-         (st/1p (create-st/1))
-         (st/2p (create-st/2))
-         (implies (and (st/0p %st/0)
-                       (st/0p st/0))
-                  (equal (st/0-copy %st/0 st/0)
-                         st/0))
-         (implies (and (st/1p %st/1)
-                       (st/1p st/1))
-                  (equal (st/1-copy %st/1 st/1)
-                         st/1))
-         (implies (and (st/2p %st/2)
-                       (st/2p st/2))
-                  (equal (st/2-copy %st/2 st/2)
-                         st/2)))))
-
-
-(atomic-stobjs::define-frame$c fr$c/st
-  (f0 :element-type st/0)
-  (f1 :element-type st/1)
-  (f2 :element-type st/2))
-
-
-(atomic-stobjs::define-frame$c fr$c/empty)
-
 (atomic-stobjs::define-frame$c fr$c
   (f0 :element-type unsigned-byte
       :initial-element 0)
@@ -118,7 +79,48 @@
   (f2 :element-type string
       :initial-element ""))
 
-(atomic-stobjs::define-frame$c fr$c/big
+(atomic-stobjs::define-frame$a fr$a
+  (f0 :recognizer natp
+      :fixer nfix
+      :initial-element 0)
+  (f1 :recognizer symbolp
+      :fixer symbol-fix
+      :initial-element nil)
+  (f2 :recognizer stringp
+      :fixer string-fix
+      :initial-element ""))
+
+(atomic-stobjs::define-frame$corr fr)
+
+(atomic-stobjs::define-frame$abs fr
+  (f0)
+  (f1)
+  (f2))
+
+
+(atomic-stobjs::define-frame$c fr/big$c
+  (f0) (f1) (f2) (f3)
+  (f4) (f5) (f6) (f7)
+  (f8) (f9) (f10) (f11)
+  (f12) (f13) (f14) (f15)
+  (f16) (f17) (f18) (f19)
+  (f20) (f21) (f22) (f23)
+  (f24) (f25) (f26) (f27)
+  (f28) (f29) (f30) (f31))
+
+(atomic-stobjs::define-frame$a fr/big$a
+  (f0) (f1) (f2) (f3)
+  (f4) (f5) (f6) (f7)
+  (f8) (f9) (f10) (f11)
+  (f12) (f13) (f14) (f15)
+  (f16) (f17) (f18) (f19)
+  (f20) (f21) (f22) (f23)
+  (f24) (f25) (f26) (f27)
+  (f28) (f29) (f30) (f31))
+
+(atomic-stobjs::define-frame$corr fr/big)
+
+(atomic-stobjs::define-frame$abs fr/big
   (f0) (f1) (f2) (f3)
   (f4) (f5) (f6) (f7)
   (f8) (f9) (f10) (f11)

@@ -33,9 +33,9 @@
 
 (include-book "../type-spec")
 (include-book "../utilities/top")
-(include-book "vector$c")
-(include-book "vector$a")
-(include-book "vector$abs")
+(include-book "vector-c")
+(include-book "vector-a")
+(include-book "vector-abs")
 
 
 ;;;; `DEFINE-VECTOR'
