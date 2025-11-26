@@ -36,7 +36,7 @@
 ||#
 
 (include-book "std/osets/top" :dir :system)
-(include-book "std/omaps/top" :dir :system)
+(include-book "std/omaps/core" :dir :system)
 
 (include-book "../utilities/with-books")
 (local
