@@ -28,4 +28,4 @@
 
 
 (ld "cert.acl2")
-(ld "../lemmas/vector$a.acl2")
+(ld "../lemmas/vector-c.acl2")

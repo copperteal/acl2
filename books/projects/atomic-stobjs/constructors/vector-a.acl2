@@ -27,69 +27,5 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
-
-(include-book "../constructors/frame$a")
-
-(defun symbol-fix (x)
-  (declare (xargs :guard t))
-  (and (symbolp x)
-       x))
-
-(defthm symbol-fix-when-symbolp
-  (implies (symbolp key)
-           (equal (symbol-fix key) key)))
-
-(defthm symbol-fix-when-not-symbolp
-  (implies (not (symbolp key))
-           (not (symbol-fix key))))
-
-(defthm nfix-when-natp
-  (implies (natp key)
-           (equal (nfix key) key)))
-
-(defthm nfix-when-not-natp
-  (implies (not (natp key))
-           (equal (nfix key) 0)))
-
-(defun string-fix (x)
-  (declare (xargs :guard t))
-  (if (stringp x)
-      x
-      ""))
-
-(defthm stringp-of-string-fix
-  (stringp (string-fix x)))
-
-(defthm string-fix-when-stringp
-  (implies (stringp val)
-           (equal (string-fix val) val)))
-
-(defthm string-fix-when-not-stringp
-  (implies (not (stringp val))
-           (equal (string-fix val) "")))
-
-
-;;;; Concrete Tests
-(atomic-stobjs::define-frame$a fr$a/empty)
-
-(atomic-stobjs::define-frame$a fr$a
-  (f0 :recognizer natp
-      :fixer nfix
-      :initial-element 0)
-  (f1 :recognizer symbolp
-      :fixer symbol-fix
-      :initial-element nil)
-  (f2 :recognizer stringp
-      :fixer string-fix
-      :initial-element ""))
-
-(atomic-stobjs::define-frame$a fr$a/big
-  (f0) (f1) (f2) (f3)
-  (f4) (f5) (f6) (f7)
-  (f8) (f9) (f10) (f11)
-  (f12) (f13) (f14) (f15)
-  (f16) (f17) (f18) (f19)
-  (f20) (f21) (f22) (f23)
-  (f24) (f25) (f26) (f27)
-  (f28) (f29) (f30) (f31))
+(ld "cert.acl2")
+(ld "../lemmas/vector-a.acl2")
