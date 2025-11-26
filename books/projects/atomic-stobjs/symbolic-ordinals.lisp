@@ -32,11 +32,6 @@
 
 (include-book "xdoc/top" :dir :system)
 
-;;; `O<' is re-enabled near the end of this file to ensure it is in the
-;;; `SYMBOLIC-ORDINALS' theory.
-(in-theory
-  (disable o<))
-
 (deflabel symbolic-ordinals-begin-label)
 
 (defsection symbolic-ordinals
@@ -53,8 +48,7 @@ contains every theorem in this book.</p>"
     (in-theory
       (enable o<)))
 
-
-;;;; `O-FIRST-EXPT'
+  ;; `O-FIRST-EXPT'
   (defthm o-first-expt{type-prescription}
     (and (implies (o-p ord)
                   (or (consp (o-first-expt ord))
@@ -87,8 +81,7 @@ contains every theorem in this book.</p>"
                   (o-finp ord))
              (equal (o-first-expt ord) 0)))
 
-
-;;;; `O-FIRST-COEFF'
+  ;; `O-FIRST-COEFF'
   (defthm o-first-coeff{type-prescription}
     (and (implies (o-p ord)
                   (natp (o-first-coeff ord)))
@@ -112,8 +105,8 @@ contains every theorem in this book.</p>"
     (implies (and (force (o-p ord))
                   (o-finp ord))
              (equal (o-first-coeff ord) ord)))
-
-;;;; `O-RST'
+
+  ;; `O-RST'
   (defthm o-rst{type-prescription}
     (implies (and (force (o-p ord))
                   (o-infp ord))
@@ -136,8 +129,7 @@ contains every theorem in this book.</p>"
                         (o-first-expt ord))
                     (o-infp ord))))
 
-
-;;;; `O-P'
+  ;; `O-P'
   (defthm o-p{compound-recognizer}
     (implies (o-p ord)
              (or (consp ord)
@@ -148,15 +140,13 @@ contains every theorem in this book.</p>"
     (implies (natp ord)
              (o-p ord)))
 
-
-;;;; `O-FINP'
+  ;; `O-FINP'
   (defthm o-finp-equals-natp
     (implies (o-p ord)
              (equal (o-finp ord)
                     (natp ord))))
 
-
-;;;; `MAKE-ORD'
+  ;; `MAKE-ORD'
   (defthm make-ord{elim}
     (implies (and (force (o-p ord))
                   (o-infp ord))
@@ -178,19 +168,25 @@ contains every theorem in this book.</p>"
 
 
 ;;;; `SYMBOLIC-ORDINALS'
-(in-theory
-  (enable o<))
-
-(in-theory
-  (disable o-first-expt
-           o-first-coeff
-           o-rst
-           o-p
-           o-finp
-           make-ord))
-
 (deflabel symbolic-ordinals-end-label)
 
 (deftheory symbolic-ordinals
-  (set-difference-theories (current-theory 'symbolic-ordinals-end-label)
-                           (current-theory 'symbolic-ordinals-begin-label)))
+  (union-theories
+   (set-difference-theories (current-theory 'symbolic-ordinals-end-label)
+                            (current-theory 'symbolic-ordinals-begin-label))
+   (set-difference-theories '(o<)
+                            '(o-first-expt
+                              o-first-coeff
+                              o-rst
+                              o-p
+                              o-finp
+                              make-ord))))
+
+(in-theory
+  (e/d (o<)
+       (o-first-expt
+        o-first-coeff
+        o-rst
+        o-p
+        o-finp
+        make-ord)))
