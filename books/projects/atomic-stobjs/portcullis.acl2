@@ -27,19 +27,5 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
-
-(include-book "std/portcullis" :dir :system)
-(include-book "std/omaps/portcullis" :dir :system)
-
-(defpkg "LEM-HASH-TABLE$A"
-  (set-difference-eq
-   (union-eq *common-lisp-symbols-from-main-lisp-package*
-             *acl2-exports*
-             '(with-books
-               <<))
-   '(key k
-     val v
-     set s
-     export
-     import)))
+(ld "type-spec.acl2")
+(ld "package.lsp")

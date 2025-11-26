@@ -27,6 +27,6 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
+(ld "cert.acl2")
 (ld "../lemmas/vector-a.acl2")
 (ld "../lemmas/hash-table-a.acl2")
-(ld "cert.acl2")

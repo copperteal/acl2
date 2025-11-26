@@ -27,5 +27,4 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(ld "../type-spec.acl2")
-(ld "../package.lsp")
+(include-book "../portcullis")

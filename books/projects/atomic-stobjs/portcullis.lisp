@@ -27,4 +27,4 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(ld "cert.acl2")
+(in-package "ATOMIC-STOBJS")
