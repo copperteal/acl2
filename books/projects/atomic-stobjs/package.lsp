@@ -40,14 +40,13 @@
                make-predicate-suffix
                coupledp)
              '(<<))
-   '(element-type
-     default-value
-
+   '(
      inline
      memoizable
      executable
      debug
 
+     ;; VECTOR Construction Variables
      vector
      dimensions
      default-length
@@ -60,7 +59,10 @@
      element-fixer
      element
      %element
+     element-type
+     default-value
 
+     ;; HASH-TABLE Construction Variables
      hash-table
      test
      size
@@ -96,4 +98,13 @@
      keysp
      keys
      keys-set
+
+     ;; Table Names
+     copy
+     corr
+     equality
+     fixer
+     package-witness
+     stobj$a-property
+     view
      )))
