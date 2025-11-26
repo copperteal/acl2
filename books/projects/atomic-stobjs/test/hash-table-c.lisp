@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/hash-table$c")
+(include-book "../constructors/hash-table-c")
 
 (atomic-stobjs::define-hash-table$c ht$c/nargs-eq eq)
 (atomic-stobjs::define-hash-table$c ht$c/nargs-eq-nil eq

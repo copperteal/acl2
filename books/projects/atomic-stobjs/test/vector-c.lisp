@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/vector$c")
+(include-book "../constructors/vector-c")
 
 (atomic-stobjs::define-vector$c vec$c/nargs 31)
 

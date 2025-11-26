@@ -31,7 +31,7 @@
 
 (include-book "centaur/fty/basetypes" :dir :system)
 
-(include-book "../constructors/vector$a")
+(include-book "../constructors/vector-a")
 
 
 ;;;; Concrete Tests

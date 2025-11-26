@@ -31,9 +31,9 @@
 
 (include-book "std/basic/nfix" :dir :system)
 
-(include-book "../constructors/vector$c")
-(include-book "../constructors/vector$a")
-(include-book "../constructors/vector$abs")
+(include-book "../constructors/vector-c")
+(include-book "../constructors/vector-a")
+(include-book "../constructors/vector-abs")
 
 (defun not-null (x)
   (declare (xargs :guard t))

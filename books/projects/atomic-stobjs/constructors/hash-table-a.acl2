@@ -28,4 +28,4 @@
 
 
 (ld "cert.acl2")
-(ld "../lemmas/hash-table$c.acl2")
+(ld "../lemmas/hash-table-a.acl2")

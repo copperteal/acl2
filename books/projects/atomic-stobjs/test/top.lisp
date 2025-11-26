@@ -30,19 +30,19 @@
 (in-package "ACL2")
 
 #||
-(include-book "vector$c")
-(include-book "vector$a")
-(include-book "vector$abs")
+(include-book "vector-c")
+(include-book "vector-a")
+(include-book "vector-abs")
 (include-book "vector")
 
-(include-book "hash-table$c")
-(include-book "hash-table$a")
-(include-book "hash-table$abs")
+(include-book "hash-table-c")
+(include-book "hash-table-a")
+(include-book "hash-table-abs")
 (include-book "hash-table")
 
-(include-book "frame$c")
-(include-book "frame$a")
-(include-book "frame$abs")
+(include-book "frame-c")
+(include-book "frame-a")
+(include-book "frame-abs")
 (include-book "frame")
 
 (include-book "copy")

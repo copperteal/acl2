@@ -31,7 +31,7 @@
 (set-verify-guards-eagerness 2)
 
 #||
-(include-book "../lemmas/vector$c")
+(include-book "../lemmas/vector-c")
 ||#
 
 (include-book "../type-spec")
@@ -326,7 +326,7 @@
                     (deflabel end-of-prologue))
 
                   (local
-                    (include-book "projects/atomic-stobjs/lemmas/vector$c" :dir :system))
+                    (include-book "projects/atomic-stobjs/lemmas/vector-c" :dir :system))
 
                   (local
                     (table acl2::theory-invariant-table nil nil :clear))

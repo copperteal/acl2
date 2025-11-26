@@ -36,8 +36,8 @@
 (include-book "omaps")
 (include-book "std")
 
-(include-book "vector$c")
-(include-book "vector$a")
-(include-book "hash-table$c")
-(include-book "hash-table$a")
+(include-book "vector-c")
+(include-book "vector-a")
+(include-book "hash-table-c")
+(include-book "hash-table-a")
 ||#

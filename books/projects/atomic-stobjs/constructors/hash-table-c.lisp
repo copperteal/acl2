@@ -31,7 +31,7 @@
 (set-verify-guards-eagerness 2)
 
 #||
-(include-book "../lemmas/hash-table$c")
+(include-book "../lemmas/hash-table-c")
 ||#
 
 (include-book "../type-spec")
@@ -432,7 +432,7 @@
                     (deflabel end-of-prologue))
 
                   (local
-                    (include-book "projects/atomic-stobjs/lemmas/hash-table$c" :dir :system))
+                    (include-book "projects/atomic-stobjs/lemmas/hash-table-c" :dir :system))
 
                   (local
                     (table acl2::theory-invariant-table nil nil :clear))

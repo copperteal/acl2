@@ -33,9 +33,9 @@
 
 (include-book "../type-spec")
 (include-book "../utilities/top")
-(include-book "hash-table$c")
-(include-book "hash-table$a")
-(include-book "hash-table$abs")
+(include-book "hash-table-c")
+(include-book "hash-table-a")
+(include-book "hash-table-abs")
 
 
 ;;;; `DEFINE-HASH-TABLE'
