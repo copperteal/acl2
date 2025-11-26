@@ -475,15 +475,14 @@
                           ,frame
                           (,creator)))
 
-                    (defun ,view (,@fields ,frame)
+                    (defun-nx ,view (,@fields ,frame)
                       (declare (xargs :guard ,(if fields
                                                   `(and ,@(loop$ :for field :in fields
                                                                 :as recognizer :in recognizers
                                                                 :when recognizer
                                                                 :collect `(,recognizer ,field))
                                                         (,recognizer ,frame))
-                                                  `(,recognizer ,frame)))
-                               (ignore ,frame))
+                                                  `(,recognizer ,frame))))
                       (let (,@(loop$ :for field :in fields
                                     :as fixer :in fixers
                                     :when fixer
