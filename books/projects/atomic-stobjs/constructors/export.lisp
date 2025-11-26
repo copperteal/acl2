@@ -110,9 +110,11 @@
                          (true-listp export)))
            :rule-classes :compound-recognizer)
 
-         ;; nth when exportp
+         ;; nth when exportp, satisfies element-recognizer
 
          ;; len when exportp (for non-resizable)
+
+         ;; when not recognizer needs to export as if creator were the argument.
 
          (in-theory
            (disable ,exportp))
@@ -575,8 +577,9 @@
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',frame)
-                ,@(loop$ #|check that all fields satisfy appropriate
-                        recognizers.  the format of an export is a keyword value list|#)))
+                ,@(loop$ #|check that all fields
+                satisfy appropriate recognizers.  the format of an export is the
+                symbol naming the stobj consed onto a keyword-value list|#)))
 
          (defthm ,exportp-tp
            (booleanp (,exportp export))
