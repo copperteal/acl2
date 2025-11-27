@@ -64,11 +64,16 @@
 
 ;;;; `DEFINE-CONGRUENT'
 (defmacro define-congruent (stobj &key
+                                    (name 'nil name-supplied-p)
                                     (executable 'nil)
                                     (debug 'nil)
                                     (package-witness 'nil package-witness-supplied-p))
   (declare (xargs :guard (and (symbolp stobj)
                               stobj
+                              (or (not name-supplied-p)
+                                  (and (symbolp name)
+                                       name)
+                                  (stringp name))
                               (booleanp executable)
                               (booleanp debug)
                               (package-witness-p package-witness))))
@@ -83,7 +88,13 @@
               (package-witness (if ',package-witness-supplied-p
                                    ',package-witness
                                    (current-package state)))
-              (%stobj (symbolicate package-witness "%" stobj))
+              (%stobj (symbolicate package-witness "%" ,(cond
+                                                          ((not name-supplied-p)
+                                                           (symbol-name stobj))
+                                                          ((symbolp name)
+                                                           (symbol-name name))
+                                                          (t
+                                                           name))))
               (stobj-property (getpropc stobj 'acl2::stobj))
               (absstobj-info (getpropc stobj 'acl2::absstobj-info))
               (recognizer-export (assoc (caadr stobj-property) (cdr absstobj-info)))
