@@ -230,7 +230,6 @@
               (resizer-tp (symbolicate package-witness resizer "-TP"))
               (resizer-of-creator (symbolicate package-witness resizer "-OF-" creator))
               (resizer-of-length (symbolicate package-witness resizer "-OF-" length))
-              (resizer-of-length-free (symbolicate package-witness resizer-of-length "-FREE"))
               (resizer-of-resizer (symbolicate package-witness resizer "-OF-" resizer))
               (resizer-of-updater (symbolicate package-witness resizer "-OF-" updater))
               (resizer-of-updater-keep (symbolicate package-witness resizer-of-updater "-KEEP"))
@@ -252,7 +251,6 @@
               (updater-of-resizer-inner (symbolicate package-witness updater-of-resizer "-INNER"))
               (updater-of-resizer-outer (symbolicate package-witness updater-of-resizer "-OUTER"))
               (updater-of-accessor (symbolicate package-witness updater "-OF-" accessor))
-              (updater-of-accessor-free (symbolicate package-witness updater-of-accessor "-FREE"))
               (updater-of-updater (symbolicate package-witness updater "-OF-" updater))
               (updater-of-updater-same (symbolicate package-witness updater-of-updater "-SAME"))
               (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
@@ -513,17 +511,6 @@
                                    lem-vector$c::resizer/resizable-of-creator
                                    ,@fi-bindings))))
 
-                          (defthmd ,resizer-of-length-free
-                            (implies (and (equal length (,length ,vector))
-                                          (,recognizer ,vector))
-                                     (equal (,resizer length ,vector)
-                                            ,vector))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-length/resizable-free
-                                   ,@fi-bindings))))
-
                           (defthm ,resizer-of-length
                             (implies (,recognizer ,vector)
                                      (equal (,resizer (,length ,vector) ,vector)
@@ -546,20 +533,6 @@
                             (("Goal"
                               :by (:functional-instance
                                    lem-vector$c::resizer/resizable-of-resizer/resizable
-                                   ,@fi-bindings))))
-
-                          (defthmd ,resizer-of-updater
-                            (implies (and (natp index)
-                                          (natp length)
-                                          (< index (,length ,vector)))
-                                     (equal (,resizer length (,updater index value ,vector))
-                                            (if (< index length)
-                                                (,updater index value (,resizer length ,vector))
-                                                (,resizer length ,vector))))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-updater
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-updater-keep
@@ -633,23 +606,7 @@
                            ,@fi-bindings))))
 
                   ,@(and resizable
-                         `((defthmd ,accessor-of-resizer
-                             (implies (and (natp index)
-                                           (natp length)
-                                           (< index length))
-                                      (equal (,accessor index (,resizer length ,vector))
-                                             (if (< index (,length ,vector))
-                                                 (,accessor index ,vector)
-                                                 ,(if stobj-creator
-                                                      `(,stobj-creator)
-                                                      initial-element-name))))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::accessor-of-resizer/resizable
-                                    ,@fi-bindings))))
-
-                           (defthm ,accessor-of-resizer-inner
+                         `((defthm ,accessor-of-resizer-inner
                              (implies (and (natp index)
                                            (natp length)
                                            (< index length)
@@ -676,19 +633,6 @@
                                :by (:functional-instance
                                     lem-vector$c::accessor-of-resizer/resizable-outer
                                     ,@fi-bindings))))))
-
-                  (defthmd ,accessor-of-updater
-                    (implies (and (natp %index)
-                                  (natp index))
-                             (equal (,accessor %index (,updater index value ,vector))
-                                    (if (equal %index index)
-                                        value
-                                        (,accessor %index ,vector))))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::accessor-of-updater
-                           ,@fi-bindings))))
 
                   (defthm ,accessor-of-updater-same
                     (implies (equal %index index)
@@ -722,8 +666,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$c::updater/resizable-tp
-                                'lem-vector$c::updater/fixed-tp)
+                                'lem-vector$c::updater-tp/resizable
+                                'lem-vector$c::updater-tp/fixed)
                            ,@fi-bindings))))
 
                   (defthm ,updater-of-creator
@@ -741,24 +685,7 @@
                            ,@fi-bindings))))
 
                   ,@(and resizable
-                         `((defthmd ,updater-of-resizer
-                             (implies (and (natp index)
-                                           (natp length)
-                                           (< index length)
-                                           (equal value (if (< index (,length ,vector))
-                                                            (,accessor index ,vector)
-                                                            ,(if stobj-creator
-                                                                 `(,stobj-creator)
-                                                                 initial-element-name))))
-                                      (equal (,updater index value (,resizer length ,vector))
-                                             (,resizer length ,vector)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::updater-of-resizer/resizable
-                                    ,@fi-bindings))))
-
-                           (defthm ,updater-of-resizer-inner
+                         `((defthm ,updater-of-resizer-inner
                              (implies (and (equal value (,accessor index ,vector))
                                            (natp index)
                                            (natp length)
@@ -788,23 +715,6 @@
                                     lem-vector$c::updater-of-resizer/resizable-outer
                                     ,@fi-bindings))))))
 
-                  (defthmd ,updater-of-accessor-free
-                    (implies (and (equal value (,accessor index ,vector))
-                                  (natp index)
-                                  (< index ,(if resizable
-                                                `(,length ,vector)
-                                                default-length-name))
-                                  (,recognizer ,vector))
-                             (equal (,updater index value ,vector)
-                                    ,vector))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::updater-of-accessor-free/resizable
-                                'lem-vector$c::updater-of-accessor-free/fixed)
-                           ,@fi-bindings))))
-
                   (defthm ,updater-of-accessor
                     (implies (and (equal %index index)
                                   (natp %index)
@@ -816,7 +726,6 @@
                                     ,vector))
                     :hints
                     (("Goal"
-                      :in-theory (disable ,updater-of-accessor-free)
                       :by (:functional-instance
                            ,(if resizable
                                 'lem-vector$c::updater-of-accessor/resizable

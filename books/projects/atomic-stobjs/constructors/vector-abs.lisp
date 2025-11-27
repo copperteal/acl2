@@ -202,6 +202,7 @@
               (world (w state))
               (vector$corr-list (cdr (assoc vector (table-alist 'corr world))))
               (vector$corr-contents (first vector$corr-list))
+              (vector$corr-contents-witness (symbolicate vector$corr-contents vector$corr-contents "-WITNESS"))
               (vector$corr (second vector$corr-list))
 
               ;; `VECTOR$C'
@@ -270,7 +271,6 @@
                                    (cdr updater$c-guard)))
 
               (aggressive$a (symbolicate package-witness$a vector$a "-AGGRESSIVE"))
-              (accessor$c-of-resizer$c (symbolicate package-witness$c accessor$c "-OF-" resizer$c))
 
               (resizer$c-index (car (getpropc resizer$c 'acl2::formals)))
               (accessor$c-index (car (getpropc accessor$c 'acl2::formals)))
@@ -314,15 +314,38 @@
                                 (,recognizer$a ,vector))
                            (,vector$corr (,resizer$c ,resizer$c-index ,vector$c)
                                          (,resizer$a ,resizer$c-index ,vector)))
-                  :rule-classes nil
+                  :rule-classes nil ; TODO: Something's fishy here.
                   :hints
                   (("Goal"
-                    :in-theory (e/d (,aggressive$a
-                                     ,@(and resizable
-                                            `(,accessor$c-of-resizer$c)))
+                    ,@(and resizable
+                           `(:cases ((< (,vector$corr-contents-witness
+                                         (,resizer$c ,resizer$c-index ,vector$c)
+                                         (,resizer$a ,resizer$c-index ,vector))
+                                        (,length$a ,vector$a)))))
+                    :in-theory (e/d (,aggressive$a)
                                     (,vector$corr-contents))
                     :expand (,vector$corr-contents (,resizer$c ,resizer$c-index ,vector$c)
-                                                   (,resizer$a ,resizer$c-index ,vector)))))
+                                                   (,resizer$a ,resizer$c-index ,vector)))
+                   ,@(and resizable
+                          (let ((accessor-of-resizer-inner (symbolicate vector$c accessor$c "-OF-" resizer$c "-INNER"))
+                                (accessor-of-resizer-outer (symbolicate vector$c accessor$c "-OF-" resizer$c "-OUTER"))
+                                (index `(,vector$corr-contents-witness
+                                         (,resizer$c ,resizer$c-index ,vector$c)
+                                         (,resizer$a ,resizer$c-index ,vector))))
+                            `(("Subgoal 2"
+                               :in-theory (e/d (,aggressive$a)
+                                               (,vector$corr-contents
+                                                ,accessor-of-resizer-outer))
+                               :use ((:instance ,accessor-of-resizer-outer
+                                                (length ,resizer$c-index)
+                                                (index ,index))))
+                              ("Subgoal 1"
+                               :in-theory (e/d (,aggressive$a)
+                                               (,vector$corr-contents
+                                                ,accessor-of-resizer-inner))
+                               :use ((:instance ,accessor-of-resizer-inner
+                                                (length ,resizer$c-index)
+                                                (index ,index)))))))))
 
                 (defthm ,resizer{preserved}
                   (implies (and (natp ,resizer$c-index)
