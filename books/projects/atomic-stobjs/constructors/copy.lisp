@@ -69,10 +69,11 @@
 
 
 ;;;; `MAKE-VECTOR-COPY-EVENTS'
-(defun make-vector-copy-events (vector package-witness state)
+(defun make-vector-copy-events (vector package-witness debug state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp vector)
-                              (package-witness-p package-witness))
+                              (package-witness-p package-witness)
+                              (booleanp debug))
                   :verify-guards nil))
   (let* ((%vector (symbolicate package-witness "%" vector))
          (copy (symbolicate package-witness vector "-COPY"))
@@ -327,7 +328,8 @@
              (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
 
          (define-congruent ,vector
-           :package-witness ,package-witness)
+           :package-witness ,package-witness
+           :debug ,debug)
 
          (local
            (in-theory
@@ -659,10 +661,11 @@
 
 
 ;;;; `MAKE-HASH-TABLE-COPY-EVENTS'
-(defun make-hash-table-copy-events (hash-table package-witness state)
+(defun make-hash-table-copy-events (hash-table package-witness debug state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
-                              (package-witness-p package-witness))
+                              (package-witness-p package-witness)
+                              (booleanp debug))
                   :verify-guards nil))
   (let* ((%hash-table (symbolicate package-witness "%" hash-table))
          (copy (symbolicate package-witness hash-table "-COPY"))
@@ -979,7 +982,8 @@
              (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
 
          (define-congruent ,hash-table
-           :package-witness ,package-witness)
+           :package-witness ,package-witness
+           :debug ,debug)
 
          (local
            (in-theory
@@ -1524,10 +1528,11 @@
 
 
 ;;;; `MAKE-FRAME-COPY-EVENTS'
-(defun make-frame-copy-events (frame package-witness state)
+(defun make-frame-copy-events (frame package-witness debug state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp frame)
-                              (package-witness-p package-witness))
+                              (package-witness-p package-witness)
+                              (booleanp debug))
                   :verify-guards nil))
   (let* ((%frame (symbolicate package-witness "%" frame))
          (copy (symbolicate package-witness frame "-COPY"))
@@ -1747,7 +1752,8 @@
              (enable ,@(strip-cars (cdr (getpropc frame 'acl2::absstobj-info))))))
 
          (define-congruent ,frame
-           :package-witness ,package-witness)
+           :package-witness ,package-witness
+           :debug ,debug)
 
          (local
            (in-theory
@@ -1893,10 +1899,12 @@
 
 
 ;;;; `DEFINE-COPY'
-(defmacro define-copy (stobj &key (debug 'nil) (package-witness 'nil package-witness-supplied-p))
+(defmacro define-copy (stobj &key
+                               (package-witness 'nil package-witness-supplied-p)
+                               (debug 'nil))
   (declare (xargs :guard (and (symbolp stobj)
-                              (booleanp debug)
-                              (package-witness-p package-witness))))
+                              (package-witness-p package-witness)
+                              (booleanp debug))))
   `(with-output
      ,@(and (not debug)
             *constructor-output*)
@@ -1911,14 +1919,15 @@
                                  (package-witness-lookup)
                                  (t
                                   (current-package state))))
+              (debug ',debug)
               (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property world)))))
          (cond
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
-            (make-vector-copy-events stobj package-witness state))
+            (make-vector-copy-events stobj package-witness debug state))
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 4))
-            (make-hash-table-copy-events stobj package-witness state))
+            (make-hash-table-copy-events stobj package-witness debug state))
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 8))
-            (make-frame-copy-events stobj package-witness state)))))))
+            (make-frame-copy-events stobj package-witness debug state)))))))
