@@ -3378,7 +3378,6 @@
                   (if (omap::assoc (key-fixer key) omap)
                       (import-rec omap hash-table)
                       (updater/copyable key val (import-rec omap hash-table)))))
-  ;; BUG: This proof fails without the following flag.
   :otf-flg t)
 
 (defthm boundp/copyable-of-import-rec
