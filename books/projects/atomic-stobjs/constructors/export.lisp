@@ -114,8 +114,6 @@
 
          ;; len when exportp (for non-resizable)
 
-         ;; when not recognizer needs to export as if creator were the argument.
-
          (in-theory
            (disable ,exportp))
 
