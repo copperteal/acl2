@@ -30,9 +30,14 @@
 (in-package "ACL2")
 
 (defpkg "LEM-VECTOR$A"
-  (set-difference-eq
-   (union-eq *common-lisp-symbols-from-main-lisp-package*
-             *acl2-exports*
-             '(with-books))
-   '(index i
-     element v)))
+  (union-eq *common-lisp-symbols-from-main-lisp-package*
+            *acl2-exports*
+            '(with-books
+              nat-equiv
+              list-equiv
+
+              %value value
+              %vector vector
+              %length length
+              %index index
+              n)))
