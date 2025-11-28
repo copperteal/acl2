@@ -1,0 +1,342 @@
+# -*- mode: org -*-
+# Copyright 2025 J. David Taylor
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from this
+#    software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# 
+#+TITLE: Design Notes
+#+AUTHOR: J. David Taylor
+
+* Notation
+When multiple copies of a variable are needed, we prefix the additional copies
+with "%".  In Common Lisp, it is common to use this prefix character to indicate
+an implementation detail.  In function parameter lists, we prefer to list
+prefix-duplicate variables in alphabetical order.  Similarly, in theorem
+statements, we list them in alphabetical order in their occurrence in the LHS of
+a rewrite rule.
+
+* Coupling and Copying
+# TODO:
+
+* Exports and Imports
+# TODO:
+
+* lemmas/vector-c
+This book exists to make ~DEFINE-VECTOR$C~ and ~DEFINE-VECTOR$ABS~ execute
+robustly, regardless of argument variations.  There are two variants of vectors,
+~/RESIZABLE~ and ~/FIXED~.  We omit these suffixes from the symbols below.
+
+** Constraints
+We assume
+- a non-negative ~DEFAULT-LENGTH~
+- the predicate ~ELEMENT-RECOGNIZER~
+- an ~INITIAL-ELEMENT~ which is recognized
+
+** Definitions
+All definitions are written to match the default logical interface of concrete
+array stobjs.  Resizable and constant-length arrays have their own definitions
+and theorems where the two differ.
+
+*** Fixer
+We provide a fixer function for each variant.  It is a logical fixer of the
+form:
+#+BEGIN_SRC lisp
+  (defun fixer (vector)
+    (declare (xargs :guard (recognizer vector)))
+    (if (recognizer vector)
+        vector
+        (creator)))
+#+END_SRC
+In ~DEFINE-VECTOR$C~, the fixer is inlined and its body is wrapped in ~MBE~ so
+that it is the identity in execution.
+
+*** Fixed-Length Adjustments
+For fixed-length vectors, both the ~LENGTH~ and ~RESIZER~ functions are
+respectively rewritten to the ~DEFAULT-LENGTH~ and ~IDENTITY~.
+
+** Theorems
+The theorems in this book are intended to be strong enough for the construction
+of abstract stobjs.  The are not intended to be comprehensive.
+
+*** Fixer
+We disable the fixer by default.  To allow fixer elimination without case
+splits, we provide the following theorems:
+#+BEGIN_SRC lisp
+  (defthm recognizer-of-fixer
+    (recognizer (fixer vector)))
+
+  (defthm fixer-when-recognizer
+    (implies (recognizer vector)
+             (equal (fixer vector)
+                    vector)))
+
+  (defthm fixer-when-not-recognizer
+    (implies (not (recognizer vector))
+             (equal (fixer vector)
+                    (creator))))
+#+END_SRC
+
+*** Resizer of Resizer Theorem
+The theorem ~RESIZER-OF-RESIZER~,
+#+BEGIN_SRC lisp
+  (implies (and (natp %length)
+                (natp length)
+                (or (<= %length length)
+                    (<= (length vector) length))
+                (recognizer vector))
+           (equal (resizer %length (resizer length vector))
+                  (resizer %length vector)))
+#+END_SRC
+says that if you resize a vector twice, the result is the same as only resizing
+it once, provided that the the second resizing is a contraction of the first, or
+that the first was an extension of the vector.  This theorem fails specifically
+when the vector is contracted and then expanded.
+
+*** Fixed-Length Adjustments
+Calls of vector length are systematically replaced by the default length.
+
+* lemmas/vector-a
+This book contains the logical interface for an abstract vector.  This interface
+is designed to /fully/ characterize a vector.  There are two variants of
+vectors, ~/RESIZABLE~ and ~/FIXED~.  We omit these suffixes from the symbols
+below.
+
+** Constraints
+We assume
+- a non-negative ~DEFAULT-LENGTH~
+- the predicate ~ELEMENT-RECOGNIZER~
+- an ~INITIAL-ELEMENT~ which is recognized
+- the predicate ~ELEMENT-COUPLED-P~ which
+  + holds when the element is not recognized
+  + holds for the initial element
+- a binary function ~ELEMENT-COPY~ which
+  + is recognized
+  + ignores its first argument
+  + is congruent to its second argument, if that argument is coupled
+- a symbol ~NAME~
+- the predicate ~ELEMENT-EXPORT-P~
+- the unary ~ELEMENT-EXPORT~ function which
+  + returns a valid export
+  + is constant on equivalence classes
+- the binary ~ELEMENT-IMPORT~ function which
+  + is recognzed
+  + maps invalid exports to the initial element
+  + ignores its second argument
+  + is a right inverse to ~ELEMENT-EXPORT~ for valid exports
+  + is a left inverse to ~ELEMENT-EXPORT~ for coupled values
+
+We construct
+- an ~ELEMENT-FIXER~ function that
+  + satisfies the recognizer
+  + is the identity function on values satisfying the recognizer
+  + collapses non-satisfying elements to the initial element
+- an equivalence ~ELEMENT-EQUIV~ induced by that fixer
+
+These assumptions and constructions on elements were chosen so that nested
+stobjs with these properties may be iteratively constructed.
+
+** Definitions
+The underlying logical representation of a vector is a true list of its
+elements.  Because vector interface is (intended to be) comprehensive, we
+disable all definitions after establishing the appropriate theorems.  Resizable
+and constant-length vectors have their own definitions and theorems where the
+two differ.
+
+Each vector has
+- a ~RECOGNIZER~ predicate
+- a unary ~FIXER~ function
+- an equivalence ~EQUIV~ induced by that fixer
+- a ~LENGTH~ function
+- a ~RESIZER~ function
+- an ~ACCESSOR~ function
+- an ~UPDATER~ function
+- an equality function ~EQUAL~
+- a ~COUPLEDP~ predicate
+- a ~COPY~ function
+- an ~EXPORTP~ predicate
+- a unary ~EXPORT~ function
+- a binary ~IMPORT~ function
+
+*** Out of Bounds Access
+The accessor returns the initial element for out of bounds indices.
+
+The updater acts as the identity for out of bounds indices.
+
+Guards prevent either sort of access in executable code.
+
+*** Fixed-Length Adjustments
+For fixed-length vectors, both the ~LENGTH~ and ~RESIZER~ functions are
+respectively rewritten to the ~DEFAULT-LENGTH~ and ~IDENTITY~.
+
+*** Skolems
+We use direct rewrite rules for skolems so that there are no free variables in
+the hypotheses.
+
+We experimented with adding sensible hypotheses to the skolem bodies.  For
+example, compare:
+#+BEGIN_SRC lisp
+  (defun-sk contents-equal-wh (%vector vector)
+    (declare (xargs :guard (and (recognizer %vector)
+                                (recognizer vector))
+                    :verify-guards nil))
+    (forall index
+      (implies (and (natp index)
+                    (< index (length %vector))
+                    (< index (length vector)))
+               (equal (accessor index %vector)
+                      (accessor index vector))))
+    :rewrite :direct)
+
+  (defun-sk contents-equal (%vector vector)
+    (declare (xargs :guard (and (recognizer %vector)
+                                (recognizer vector))
+                    :verify-guards nil))
+    (forall index
+      (equal (accessor index %vector)
+             (accessor index vector))
+#+END_SRC
+Intuitively, ~CONTENTS-EQUAL-WH~ is an easier to establish hypothesis than
+~CONTENTS-EQUAL~.  However, the accessor always returns the initial element for
+out of bounds accesses.  While ~CONTENTS-EQUAL~ is a stronger condition when
+~%VECTOR~ and ~VECTOR~ have different lengths, the two conditions are equivalent
+when the lengths match.  In this circumstance, the hypotheses in
+~CONTENTS-EQUAL-WH~ merely provide the theorem prover with a hypothetical
+failing witness.
+
+** Theorems
+The theorems in this book are intended to comprehensively characterize a vector.
+
+*** Type Reasoning
+While we do not intend to reason about vectors as lists, we provide
+~TYPE-PRESCRIPTION~ and ~COMPOUND-RECOGNIZER~ as experience has demonstrated
+that the theorem prover sometimes makes productive use of this information.
+
+*** Fixer
+We leave the fixer disabled and characterize it with non-splitting theorems.
+
+*** Normalization
+All functions have congruences with respect to ~NAT-EQUIV~, ~LIST-EQUIV~, the
+element equivalence, or the vector equivalence as appropriate.
+
+The primary utility of vector equivalence is "fixer absorption".  For example,
+~(ACCESSOR INDEX (FIXER VECTOR))~ is rewritten to ~(ACCESSOR INDEX VECTOR)~.
+
+Each interface function has a rewrite rule for each argument that will replace
+that argument with its default value if its associated predicate fails.
+
+Each interface function has a rewrite rule for when it is applied to the
+creator.
+
+Each pairwise composition of interface functions has an associated rewrite rule.
+
+The normal form between a composition of the updater and resizer is that the
+resizer is /heavier/ than the updater (in the sense of
+/introduction-to-rewrite-rules-part-2/).  This order was chosen with the
+expectation is that updates are more common than resizings.
+
+*** Free Theorems
+The "free" variant of a theorem has a LHS that freely matches an appropriate
+target and a hypothesis that checks for appropriate application.
+
+For example, compare ~RESIZER-OF-LENGTH-FREE~ and ~RESIZER-OF-LENGTH~:
+#+BEGIN_SRC lisp
+  (defthm resizer-of-length-free
+    (implies (nat-equiv length (length vector))
+             (equal (resizer length vector)
+                    (fixer vector))))
+
+  (defthm resizer-of-length
+    (equal (resizer (length vector) vector)
+           (fixer vector)))
+#+END_SRC
+The term ~(RESIZER 1000 VECTOR)~ matches the LHS of ~RESIZER-OF-LENGTH-FREE~ but
+not of ~RESIZER-OF-LENGTH~.  Moreover, if ~(LENGTH VECTOR)~ is ~1000~,
+~RESIZER-OF-LENGTH-FREE~ rewrites the target.
+
+Since free theorems can match too frequently, they are disabled by default.
+
+*** Qualified Versus Unqualified Theorems
+Some theorem names are suffixed with "-KEEP", "-DROP", "-SAME", or "-DIFF".  We
+call these /qualified/ theorems.  The related theorems without these suffixes in
+their names are /unqualified/.  The unqualified theorems introduce case splits
+and are disabled by default.  ~ACCESSOR-OF-RESIZER-WH~ is a qualified theorem
+and "WH" means "with hypothesis".
+
+*** ~RESIZER-OF-RESIZER~
+Any resize followed by a contraction and any expansion followed by a resize are
+equivalent to only applying the second operation.  A contraction followed by an
+expansion is typically not.
+
+*** Equality
+Two vectors are vector-equal if they have the same length and agree on each
+element.
+
+The theorem ~EQUAL-FC~ establishes that vector equality is true equality.
+Furthermore, it is a forward chaining rule triggered by vector equality.
+
+If you prove the lemmas that two vectors have the same length and the same
+elements, then you can prove that they are equal by passing a ~:USE~ hint with
+the appropriate instance of vector equality.  Since vector equality is disabled,
+it will not be rewritten but it will insert equality with its body.  The body
+will evaluate to true due to your lemmas and the forward chaining rule will
+establish true equality.  See either variant of the theorems ~COPY-IGNORES-1~,
+~COPY-RW~, ~IMPORT-IGNORES-2~, ~IMPORT-OF-EXPORT~ for examples of this.
+
+*** Coupling
+A vector is coupled when its element are.
+
+We prove that the creator is coupled and provide theorems to establish that
+modifications of a coupled vector by coupled elements are coupled.
+
+*** Copying
+The copy function recursively copies its right argument into its left argument
+and returns the result.
+#+BEGIN_SRC lisp
+  (defthm copy-rw
+    (implies (coupledp vector)
+             (equal (copy %vector vector)
+                    (fixer vector))))
+#+END_SRC
+
+*** Export and Import
+~(EXPORT VECTOR)~ is the cons whose car is ~VECTOR~'s symbol name and whose cdr
+is the true list of the exports of the ~VECTOR~'s elements.
+
+~(IMPORT EXPORT VECTOR)~ resizes ~VECTOR~ and fills it with the imports of the
+elements of ~EXPORT~, assuming that the latter is a valid export.
+
+They are related by the following pair of theorems:
+#+BEGIN_SRC lisp
+  (defthm export-of-import
+    (implies (exportp export)
+             (equal (export (import export vector))
+                    export)))
+
+  (defthm import-of-export
+    (implies (coupledp %vector)
+             (equal (import (export %vector) vector)
+                    (fixer %vector))))
+#+END_SRC
