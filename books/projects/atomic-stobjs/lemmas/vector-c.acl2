@@ -31,5 +31,4 @@
 
 (defpkg "LEM-VECTOR$C"
   (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*
-            '(with-books)))
+            *acl2-exports*))
