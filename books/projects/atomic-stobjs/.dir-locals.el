@@ -26,6 +26,8 @@
 
 ;;; ACL2 built-ins
                (eval . (put 'defabsstobj 'common-lisp-indent-function 1))
+               (eval . (put 'defcong 'common-lisp-indent-function 4))
+               (eval . (put 'defequiv 'common-lisp-indent-function 1))
                (eval . (put 'deflabel 'common-lisp-indent-function 0))
                (eval . (put 'defpkg 'common-lisp-indent-function 1))
                (eval . (put 'defstobj 'common-lisp-indent-function 1))

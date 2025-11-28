@@ -35,8 +35,6 @@
 (local
   (include-book "std/lists/top" :dir :system))
 
-(include-book "../utilities/with-books")
-
 
 ;;;; STD Lemmas
 (local
