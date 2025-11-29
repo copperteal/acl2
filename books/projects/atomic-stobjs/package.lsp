@@ -39,7 +39,8 @@
                with-books
                make-predicate-suffix
                coupledp)
-             '(<<))
+             '(<<
+               nat-equiv))
    '(
      inline
      memoizable

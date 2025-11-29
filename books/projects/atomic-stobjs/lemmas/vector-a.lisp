@@ -203,11 +203,11 @@
 
 
 ;;;; Shared Definitions
-(defun contents-recognizer (contents)
+(defun recognizer-aux (contents)
   (declare (xargs :guard t))
   (if (consp contents)
       (and (element-recognizer (car contents))
-           (contents-recognizer (cdr contents)))
+           (recognizer-aux (cdr contents)))
       (null contents)))
 
 (defun-nx creator ()
@@ -219,7 +219,7 @@
 ;;;; Resizable Definitions
 (defun recognizer/resizable (vector)
   (declare (xargs :guard t))
-  (contents-recognizer vector))
+  (recognizer-aux vector))
 
 (defun fixer/resizable (vector)
   (declare (xargs :guard (recognizer/resizable vector)))
@@ -241,7 +241,6 @@
   (declare (xargs :guard (and (natp length)
                               (recognizer/resizable vector))))
   (let ((length (nfix length))
-        ;; TODO: adjust in constructor macro body
         (vector (fixer/resizable vector)))
     (resize-list vector length (initial-element))))
 
@@ -268,19 +267,19 @@
         vector)))
 
 
-;;;; `CONTENTS-RECOGNIZER'
-(defthm contents-recognizer-tp
-  (booleanp (contents-recognizer vector))
+;;;; `RECOGNIZER-AUX'
+(defthm recognizer-aux-tp
+  (booleanp (recognizer-aux vector))
   :rule-classes :type-prescription)
 
-(defthm contents-recognizer-cr
-  (implies (contents-recognizer vector)
+(defthm recognizer-aux-cr
+  (implies (recognizer-aux vector)
            (true-listp vector))
   :rule-classes :compound-recognizer)
 
 (local
-  (defthm contents-recognizer-of-repeat
-    (equal (contents-recognizer (acl2::repeat n x))
+  (defthm recognizer-aux-of-repeat
+    (equal (recognizer-aux (acl2::repeat n x))
            (if (zp n)
                t
                (element-recognizer x)))
@@ -289,21 +288,21 @@
       :in-theory (enable acl2::repeat)))))
 
 (local
-  (defthm contents-recognizer-of-resize-list
-    (implies (and (contents-recognizer contents)
+  (defthm recognizer-aux-of-resize-list
+    (implies (and (recognizer-aux contents)
                   (element-recognizer value))
-             (contents-recognizer (resize-list contents length value)))
+             (recognizer-aux (resize-list contents length value)))
     :hints
     (("Goal"
       :in-theory (enable resize-list)))))
 
 (local
-  (defthm contents-recognizer-of-update-nth
+  (defthm recognizer-aux-of-update-nth
     (implies (and (natp index)
                   (< index (len contents))
                   (element-recognizer value)
-                  (contents-recognizer contents))
-             (contents-recognizer (update-nth index value contents)))
+                  (recognizer-aux contents))
+             (recognizer-aux (update-nth index value contents)))
     :hints
     (("Goal"
       :in-theory (enable update-nth)))))
@@ -312,7 +311,7 @@
   (defthm element-recognizer-of-nth
     (implies (and (natp index)
                   (< index (len contents))
-                  (contents-recognizer contents))
+                  (recognizer-aux contents))
              (element-recognizer (nth index contents)))))
 
 
@@ -503,14 +502,14 @@
                      (default-value (initial-element)))))))
 
 (defthm resizer/resizable-of-updater/resizable-drop
-  (implies (or (<= (length/resizable vector) (nfix index))
-               (<= (nfix length) (nfix index)))
+  (implies (and (< (nfix index) (length/resizable vector))
+                (<= (nfix length) (nfix index)))
            (equal (resizer/resizable length (updater/resizable index value vector))
                   (resizer/resizable length vector)))
   :rule-classes
   ((:rewrite :corollary
-             (implies (or (<= (length/resizable (double-rewrite vector)) (nfix (double-rewrite index)))
-                          (<= (nfix length) (nfix (double-rewrite index))))
+             (implies (and (< (nfix (double-rewrite index)) (length/resizable (double-rewrite vector)))
+                           (<= (nfix length) (nfix (double-rewrite index))))
                       (equal (resizer/resizable length (updater/resizable index value vector))
                              (resizer/resizable length (double-rewrite vector))))))
   :hints
@@ -518,14 +517,14 @@
     :in-theory (disable nfix
                         update-nth
                         resize-list-of-update-nth-drop))
-   ("Subgoal 4"
+   ("Subgoal 3"
     :use ((:instance resize-list-of-update-nth-drop
                      (key (nfix index))
                      (val (element-fixer value))
                      (l vector)
                      (n (nfix length))
                      (default-value (initial-element)))))
-   ("Subgoal 3"
+   ("Subgoal 2"
     :use ((:instance resize-list-of-update-nth-drop
                      (key (nfix index))
                      (val (element-fixer value))
@@ -534,25 +533,33 @@
                      (n (nfix length))
                      (default-value (initial-element)))))))
 
-(defthm resizer/resizable-of-updater/resizable
-  (equal (resizer/resizable length (updater/resizable index value vector))
-         (if (and (< (nfix index) (length/resizable vector))
-                  (< (nfix index) (nfix length)))
-             (updater/resizable index value (resizer/resizable length vector))
-             (resizer/resizable length vector)))
-  :rule-classes
-  ((:rewrite :corollary
-             (equal (resizer/resizable length (updater/resizable index value vector))
-                    (if (and (< (nfix (double-rewrite index)) (length/resizable (double-rewrite vector)))
-                             (< (nfix (double-rewrite index)) (nfix length)))
-                        (updater/resizable index value (resizer/resizable length (double-rewrite vector)))
-                        (resizer/resizable length (double-rewrite vector))))))
-  :hints
-  (("Goal"
-    :in-theory (disable nfix
-                        resizer/resizable
-                        updater/resizable
-                        length/resizable))))
+(encapsulate ()
+  (local
+    (defthm updater/resizable-when-large
+      (implies (<= (length/resizable vector) (nfix index))
+               (equal (updater/resizable index value vector)
+                      (fixer/resizable vector)))))
+
+  (defthm resizer/resizable-of-updater/resizable
+    (equal (resizer/resizable length (updater/resizable index value vector))
+           (if (and (< (nfix index) (length/resizable vector))
+                    (< (nfix index) (nfix length)))
+               (updater/resizable index value (resizer/resizable length vector))
+               (resizer/resizable length vector)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (resizer/resizable length (updater/resizable index value vector))
+                      (if (and (< (nfix (double-rewrite index)) (length/resizable (double-rewrite vector)))
+                               (< (nfix (double-rewrite index)) (nfix length)))
+                          (updater/resizable index value (resizer/resizable length (double-rewrite vector)))
+                          (resizer/resizable length (double-rewrite vector))))))
+    :hints
+    (("Goal"
+      :cases ((<= (length/resizable vector) (nfix index)))
+      :in-theory (disable nfix
+                          resizer/resizable
+                          updater/resizable
+                          length/resizable)))))
 
 
 ;;;; `ACCESSOR/RESIZABLE'
@@ -578,7 +585,6 @@
            (equal (accessor/resizable index vector)
                   (initial-element))))
 
-;; TODO: Seems to be missing from macro!
 (defthm accessor/resizable-of-creator
   (equal (accessor/resizable index (creator))
          (initial-element)))
@@ -773,7 +779,7 @@
 (defun recognizer/fixed (vector)
   (declare (xargs :guard t))
   (and (equal (len vector) (default-length))
-       (contents-recognizer vector)))
+       (recognizer-aux vector)))
 
 (defun fixer/fixed (vector)
   (declare (xargs :guard (recognizer/fixed vector)))
@@ -827,7 +833,6 @@
   :rule-classes :type-prescription)
 
 (defthm recognizer/fixed-cr
-  ;; TODO: in constructor macro, if positive length, proper cons, otherwise null
   (implies (recognizer/fixed vector)
            (true-listp vector))
   :rule-classes :compound-recognizer)
@@ -848,7 +853,6 @@
 
 ;;;; `FIXER/FIXED'
 (defthm fixer/fixed-tp
-  ;; TODO: in constructor macro, if positive length, proper cons, otherwise null
   (true-listp (fixer/fixed vector))
   :rule-classes :type-prescription)
 
@@ -885,8 +889,6 @@
   (natp (length/fixed vector))
   :rule-classes :type-prescription)
 
-(defcong equiv/fixed equal (length/fixed vector) 1)
-
 (defthm length/fixed-rw
   (equal (length/fixed vector)
          (default-length)))
@@ -894,13 +896,8 @@
 
 ;;;; `RESIZER/FIXED'
 (defthm resizer/fixed-tp
-  ;; TODO: proper cons if positive length
   (true-listp (resizer/fixed length vector))
   :rule-classes :type-prescription)
-
-(defcong nat-equiv equal (resizer/fixed length vector) 1)
-
-(defcong equiv/fixed equal (resizer/fixed length vector) 2)
 
 (defthm resizer/fixed-rw
   (equal (resizer/fixed length vector)
@@ -950,7 +947,7 @@
     :in-theory (disable acl2::nth-when-zp
                         update-nth
                         acl2::update-nth-when-zp
-                        contents-recognizer))))
+                        recognizer-aux))))
 
 (defthm accessor/fixed-of-updater/fixed-diff
   (implies (and (not (nat-equiv %index index))
@@ -968,7 +965,7 @@
     :in-theory (disable acl2::nth-when-zp
                         update-nth
                         acl2::update-nth-when-zp
-                        contents-recognizer))))
+                        recognizer-aux))))
 
 (defthm accessor/fixed-of-updater/fixed
   (equal (accessor/fixed %index (updater/fixed index value vector))
@@ -1002,7 +999,6 @@
 
 ;;;; `UPDATER/FIXED'
 (defthm updater/fixed-tp
-  ;; TODO: in constructor macro, if positive length, proper cons, otherwise null
   (true-listp (updater/fixed index value vector))
   :rule-classes :type-prescription)
 
@@ -1105,7 +1101,7 @@
 (local
   (in-theory
     (disable creator
-             contents-recognizer)))
+             recognizer-aux)))
 
 
 ;;;; `EQUAL/RESIZABLE-FC'
@@ -1328,8 +1324,6 @@
   :rewrite :direct)
 
 (defthm coupledp/resizable-tp
-  ;; TODO: ensure all "element theorems", eg `BOOLEANP-OF-ELEMENT-COUPLED-P' are
-  ;; duplicated for vector, for all constrained functions.
   (booleanp (coupledp/resizable vector))
   :rule-classes :type-prescription)
 
@@ -2418,7 +2412,6 @@
       (creator)))
 
 (defthm import/fixed-tp
-  ;; TODO: if positive length, add `CONSP'
   (true-listp (import/fixed export vector))
   :rule-classes :type-prescription)
 
