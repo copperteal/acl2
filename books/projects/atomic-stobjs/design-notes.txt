@@ -180,6 +180,10 @@ Each vector has
 - a unary ~EXPORT~ function
 - a binary ~IMPORT~ function
 
+*** Auxiliary Recognizer
+We use an auxiliary recognizer to perform inductive proofs for fixed-length
+vectors.  It is an implementation detail and not a part of the vector interface.
+
 *** Out of Bounds Access
 The accessor returns the initial element for out of bounds indices.
 
