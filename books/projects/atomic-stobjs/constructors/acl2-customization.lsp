@@ -1,4 +1,9 @@
 
 (ld "cert.acl2")
+(ld "vector-c.acl2")
+(ld "vector-a.acl2")
+(ld "hash-table-c.acl2")
+(ld "hash-table-a.acl2")
+(ld "copy.acl2")
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)

@@ -34,6 +34,12 @@
             *acl2-exports*
             '(nat-equiv
               list-equiv
+              equal-by-nths-hint
+
+              repeat
+              dec-dec-induct
+              update-nth-when-zp
+              nth-when-zp
 
               %value value
               %vector vector
