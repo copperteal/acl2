@@ -52,13 +52,13 @@
     ;; TODO: This theorem is a good example of `REPEAT' refusing to expand
     ;; without a hint.
     (implies (equal x d)
-             (equal (resize-list (acl2::repeat n x) m d)
-                    (acl2::repeat m d)))
+             (equal (resize-list (repeat n x) m d)
+                    (repeat m d)))
     :hints
     (("Goal"
-      :induct (acl2::dec-dec-induct n m)
-      :expand ((acl2::repeat m d)
-               (acl2::repeat n d))))))
+      :induct (dec-dec-induct n m)
+      :expand ((repeat m d)
+               (repeat n d))))))
 
 (local
   (defthm resize-list-of-resize-list
@@ -213,13 +213,13 @@
 
 (local
   (defthm contents-recognizer-of-repeat
-    (equal (contents-recognizer (acl2::repeat n x))
+    (equal (contents-recognizer (repeat n x))
            (if (zp n)
                t
                (element-recognizer x)))
     :hints
     (("Goal"
-      :in-theory (enable acl2::repeat)))))
+      :in-theory (enable repeat)))))
 
 (local
   (defthm contents-recognizer-of-resize-list
