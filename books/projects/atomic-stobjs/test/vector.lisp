@@ -53,6 +53,12 @@
   (implies (not (integerp x))
            (equal (ifix x) 0)))
 
+(defun cons-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (consify x) (consify y)))
+
+(defequiv cons-equiv)
+
 
 ;;;; length zero, type t
 ;;; dimensions, element-type, resizable
@@ -68,6 +74,7 @@
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
+  :element-equiv cons-equiv
   :initial-element (a b)
   :resizable nil)
 
@@ -75,6 +82,7 @@
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
+  :element-equiv cons-equiv
   :initial-element (a b)
   :resizable t)
 
@@ -93,6 +101,7 @@
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
+  :element-equiv cons-equiv
   :initial-element (a b)
   :resizable nil)
 
@@ -100,6 +109,7 @@
   :element-type cons
   :element-recognizer consp
   :element-fixer consify
+  :element-equiv cons-equiv
   :initial-element (a b)
   :resizable t)
 
@@ -110,6 +120,7 @@
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :initial-element t
   :resizable nil)
 
@@ -117,6 +128,7 @@
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :initial-element t
   :resizable t)
 
@@ -127,6 +139,7 @@
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :initial-element t
   :resizable nil)
 
@@ -134,6 +147,7 @@
   :element-type (member t nil)
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :initial-element t
   :resizable t)
 
@@ -144,6 +158,7 @@
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
+  :element-equiv int-equiv
   :initial-element 0
   :resizable nil)
 
@@ -151,6 +166,7 @@
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
+  :element-equiv int-equiv
   :initial-element 0
   :resizable t)
 
@@ -161,6 +177,7 @@
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
+  :element-equiv int-equiv
   :initial-element 0
   :resizable nil)
 
@@ -168,5 +185,6 @@
   :element-type signed-byte
   :element-recognizer integerp
   :element-fixer ifix
+  :element-equiv int-equiv
   :initial-element 0
   :resizable t)
