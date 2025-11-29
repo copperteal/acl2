@@ -46,6 +46,7 @@
        (specialize-element-type 'nil specialize-element-type-supplied-p)
        (element-recognizer 'nil element-recognizer-supplied-p)
        (element-fixer 'nil element-fixer-supplied-p)
+       (element-equiv 'nil element-equiv-supplied-p)
        (element 'nil element-supplied-p)
        (initial-element 'nil initial-element-supplied-p)
        (resizable 'nil resizable-supplied-p)
@@ -78,6 +79,7 @@
                               (booleanp specialize-element-type)
                               (symbolp element-recognizer)
                               (symbolp element-fixer)
+                              (symbolp element-equiv)
                               (symbolp element)
                               (booleanp resizable)
                               (booleanp inline)
@@ -112,6 +114,7 @@
               (specialize-element-type ',specialize-element-type)
               (element-recognizer ',element-recognizer)
               (element-fixer ',element-fixer)
+              (element-equiv ',element-equiv)
               (element ',element)
               (initial-element ',initial-element)
               (resizable ',resizable)
@@ -171,6 +174,8 @@
                      `(:element-recognizer ,element-recognizer))
               ,@(and ,element-fixer-supplied-p
                      `(:element-fixer ,element-fixer))
+              ,@(and ,element-equiv-supplied-p
+                     `(:element-equiv ,element-equiv))
               ,@(and (or ,element-supplied-p
                          stobj-property)
                      `(:element ,(if stobj-property

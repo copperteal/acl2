@@ -88,6 +88,7 @@
 (atomic-stobjs::define-vector$a vec/2$a #xdead
   :element-recognizer booleanp
   :element-fixer not-null
+  :element-equiv iff
   :initial-element t
   :resizable t)
 
@@ -108,6 +109,7 @@
 (atomic-stobjs::define-vector$a vec/3$a 0
   :element-recognizer booleanp
   :element-fixer not-null
+  :element-equiv iff
   :initial-element t
   :resizable nil)
 
@@ -128,6 +130,7 @@
 (atomic-stobjs::define-vector$a vec/4$a #xbeef
   :element-recognizer natp
   :element-fixer nfix
+  :element-equiv nat-equiv
   :initial-element 0
   :resizable t)
 
