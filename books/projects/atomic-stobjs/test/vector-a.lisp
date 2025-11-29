@@ -51,6 +51,7 @@
 (atomic-stobjs::define-vector$a vec$a/10-nat-t 10
   :element-recognizer natp
   :element-fixer nfix
+  :element-equiv nat-equiv
   :element nat
   :initial-element 0
   :resizable t)
@@ -58,12 +59,14 @@
 (atomic-stobjs::define-vector$a vec$a/10-nat-nil 10
   :element-recognizer natp
   :element-fixer nfix
+  :element-equiv nat-equiv
   :element nat
   :initial-element 0)
 
 (atomic-stobjs::define-vector$a vec$a/0-nat-t 0
   :element-recognizer natp
   :element-fixer nfix
+  :element-equiv nat-equiv
   :element nat
   :initial-element 0
   :resizable t)
@@ -71,6 +74,7 @@
 (atomic-stobjs::define-vector$a vec$a/0-nat-nil 0
   :element-recognizer natp
   :element-fixer nfix
+  :element-equiv nat-equiv
   :element nat
   :initial-element 0)
 
@@ -80,6 +84,7 @@
 (atomic-stobjs::define-vector$a vec$a/10-boolean-t 10
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :element b
   :initial-element t
   :resizable t)
@@ -87,12 +92,14 @@
 (atomic-stobjs::define-vector$a vec$a/10-boolean-nil 10
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :element b
   :initial-element t)
 
 (atomic-stobjs::define-vector$a vec$a/0-boolean-t 0
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :element b
   :initial-element t
   :resizable t)
@@ -100,5 +107,6 @@
 (atomic-stobjs::define-vector$a vec$a/0-boolean-nil 0
   :element-recognizer booleanp
   :element-fixer bool-fix
+  :element-equiv iff
   :element b
   :initial-element t)
