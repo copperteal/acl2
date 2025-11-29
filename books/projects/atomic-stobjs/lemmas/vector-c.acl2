@@ -31,4 +31,6 @@
 
 (defpkg "LEM-VECTOR$C"
   (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*))
+            *acl2-exports*
+            '(dec-dec-induct
+              repeat)))

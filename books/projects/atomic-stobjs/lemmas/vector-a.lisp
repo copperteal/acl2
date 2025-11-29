@@ -54,13 +54,13 @@
     ;; TODO: This theorem is a good example of `REPEAT' refusing to expand
     ;; without a hint.
     (implies (equal x d)
-             (equal (resize-list (acl2::repeat n x) m d)
-                    (acl2::repeat m d)))
+             (equal (resize-list (repeat n x) m d)
+                    (repeat m d)))
     :hints
     (("Goal"
-      :induct (acl2::dec-dec-induct n m)
-      :expand ((acl2::repeat m d)
-               (acl2::repeat n d))))))
+      :induct (dec-dec-induct n m)
+      :expand ((repeat m d)
+               (repeat n d))))))
 
 (local
   (defthm resize-list-of-resize-list
@@ -279,13 +279,13 @@
 
 (local
   (defthm recognizer-aux-of-repeat
-    (equal (recognizer-aux (acl2::repeat n x))
+    (equal (recognizer-aux (repeat n x))
            (if (zp n)
                t
                (element-recognizer x)))
     :hints
     (("Goal"
-      :in-theory (enable acl2::repeat)))))
+      :in-theory (enable repeat)))))
 
 (local
   (defthm recognizer-aux-of-resize-list
@@ -339,7 +339,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 
 ;;;; `FIXER/RESIZABLE'
@@ -409,7 +409,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 
 ;;;; `RESIZER/RESIZABLE'
@@ -496,8 +496,8 @@
     :use ((:instance resize-list-of-update-nth-keep
                      (key (nfix index))
                      (val (element-fixer value))
-                     (l (acl2::repeat (default-length)
-                                      (initial-element)))
+                     (l (repeat (default-length)
+                                (initial-element)))
                      (n (nfix length))
                      (default-value (initial-element)))))))
 
@@ -528,8 +528,8 @@
     :use ((:instance resize-list-of-update-nth-drop
                      (key (nfix index))
                      (val (element-fixer value))
-                     (l (acl2::repeat (default-length)
-                                      (initial-element)))
+                     (l (repeat (default-length)
+                                (initial-element)))
                      (n (nfix length))
                      (default-value (initial-element)))))))
 
@@ -615,7 +615,7 @@
   (("Goal"
     :in-theory (disable nfix
                         update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm accessor/resizable-of-updater/resizable-diff
   (implies (and (not (nat-equiv %index index))
@@ -632,7 +632,7 @@
   (("Goal"
     :in-theory (disable nfix
                         update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm accessor/resizable-of-updater/resizable
   (equal (accessor/resizable %index (updater/resizable index value vector))
@@ -708,7 +708,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/resizable-of-accessor/resizable-free
   (implies (element-equiv value (accessor/resizable index vector))
@@ -717,7 +717,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/resizable-of-accessor/resizable
   (implies (nat-equiv %index index)
@@ -740,7 +740,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/resizable-of-updater/resizable-diff
   (implies (not (nat-equiv %index index))
@@ -751,7 +751,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/resizable-of-updater/resizable
   (equal (updater/resizable %index %value (updater/resizable index value vector))
@@ -848,7 +848,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 
 ;;;; `FIXER/FIXED'
@@ -944,9 +944,9 @@
                              (element-fixer (double-rewrite value))))))
   :hints
   (("Goal"
-    :in-theory (disable acl2::nth-when-zp
+    :in-theory (disable nth-when-zp
                         update-nth
-                        acl2::update-nth-when-zp
+                        update-nth-when-zp
                         recognizer-aux))))
 
 (defthm accessor/fixed-of-updater/fixed-diff
@@ -962,9 +962,9 @@
                              (accessor/fixed %index (double-rewrite vector))))))
   :hints
   (("Goal"
-    :in-theory (disable acl2::nth-when-zp
+    :in-theory (disable nth-when-zp
                         update-nth
-                        acl2::update-nth-when-zp
+                        update-nth-when-zp
                         recognizer-aux))))
 
 (defthm accessor/fixed-of-updater/fixed
@@ -1040,7 +1040,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/fixed-of-accessor/fixed
   (implies (nat-equiv %index index)
@@ -1064,7 +1064,7 @@
   (("Goal"
     :in-theory (disable nfix
                         update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/fixed-of-updater/fixed-diff
   (implies (not (nat-equiv %index index))
@@ -1075,7 +1075,7 @@
   :hints
   (("Goal"
     :in-theory (disable update-nth
-                        acl2::update-nth-when-zp))))
+                        update-nth-when-zp))))
 
 (defthm updater/fixed-of-updater/fixed
   (equal (updater/fixed %index %value (updater/fixed index value vector))
@@ -1171,7 +1171,7 @@
                                  (implies (equal/resizable %vector vector)
                                           (equal %vector vector)))))
     :hints
-    ((acl2::equal-by-nths-hint)
+    ((equal-by-nths-hint)
      ("Goal"
       :do-not-induct t)
      ("Subgoal 2"
@@ -1246,7 +1246,7 @@
                                  (implies (equal/fixed %vector vector)
                                           (equal %vector vector)))))
     :hints
-    ((acl2::equal-by-nths-hint)
+    ((equal-by-nths-hint)
      ("Goal"
       :do-not-induct t)
      ("Subgoal 1"
@@ -2150,7 +2150,7 @@
            (equal (export/resizable (import/resizable export vector))
                   export))
   :hints
-  ((acl2::equal-by-nths-hint)
+  ((equal-by-nths-hint)
    ("Goal"
     :in-theory (enable exportp/resizable))))
 
@@ -2469,7 +2469,7 @@
            (equal (export/fixed (import/fixed export vector))
                   export))
   :hints
-  ((acl2::equal-by-nths-hint)
+  ((equal-by-nths-hint)
    ("Goal"
     :in-theory (enable exportp/fixed))))
 

@@ -272,7 +272,6 @@
               (accessor-of-updater (symbolicate package-witness accessor "-OF-" updater))
               (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
               (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
-              (accessor-when-not-boundp (symbolicate package-witness accessor "-WHEN-NOT-" boundp))
               (accessor-of-remover (symbolicate package-witness accessor "-OF-" remover))
               (accessor-of-remover-same (symbolicate package-witness accessor-of-remover "-SAME"))
               (accessor-of-remover-diff (symbolicate package-witness accessor-of-remover "-DIFF"))
@@ -307,7 +306,6 @@
               (count-of-updater (symbolicate package-witness count "-OF-" updater))
               (count-of-updater-when-boundp (symbolicate package-witness count-of-updater "-WHEN-" boundp))
               (count-of-updater-when-not-boundp (symbolicate package-witness count-of-updater "-WHEN-NOT-" boundp))
-              (count-when-boundp (symbolicate package-witness count "-WHEN-" boundp))
               (count-of-remover (symbolicate package-witness count "-OF-" remover))
               (count-of-remover-when-boundp (symbolicate package-witness count-of-remover "-WHEN-" boundp))
               (count-of-remover-when-not-boundp (symbolicate package-witness count-of-remover "-WHEN-NOT-" boundp))
@@ -554,9 +552,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    ,(if copyable
-                                         'lem-hash-table$c::recognizer/copyable-of-keys-set
-                                         'lem-hash-table$c::recognizer/unique-of-keys-set)
+                                    lem-hash-table$c::recognizer/copyable-of-keys-set
                                     ,@fi-bindings))))))
 
                   ;; `ACCESSOR'
@@ -590,17 +586,6 @@
                                 'lem-hash-table$c::accessor-of-creator/unique)
                            ,@fi-bindings))))
 
-                  (defthmd ,accessor-of-updater
-                    (equal (,accessor %key (,updater key value ,hash-table))
-                           (if (equal %key key)
-                               value
-                               (,accessor %key ,hash-table)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::accessor-of-updater
-                           ,@fi-bindings))))
-
                   (defthm ,accessor-of-updater-same
                     (implies (equal %key key)
                              (equal (,accessor %key (,updater key value ,hash-table))
@@ -619,31 +604,6 @@
                     (("Goal"
                       :by (:functional-instance
                            lem-hash-table$c::accessor-of-updater-diff
-                           ,@fi-bindings))))
-
-                  (defthmd ,accessor-when-not-boundp
-                    (implies (not (,boundp key ,hash-table))
-                             (equal (,accessor key ,hash-table)
-                                    ,(if stobj-creator
-                                         `(,stobj-creator)
-                                         default-value-name)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::accessor-when-not-boundp
-                           ,@fi-bindings))))
-
-                  (defthmd ,accessor-of-remover
-                    (equal (,accessor %key (,remover key ,hash-table))
-                           (if (equal %key key)
-                               ,(if stobj-creator
-                                    `(,stobj-creator)
-                                    default-value-name)
-                               (,accessor %key ,hash-table)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::accessor-of-remover
                            ,@fi-bindings))))
 
                   (defthm ,accessor-of-remover-same
@@ -712,16 +672,6 @@
                                 'lem-hash-table$c::boundp-of-creator/unique)
                            ,@fi-bindings))))
 
-                  (defthmd ,boundp-of-updater
-                    (equal (,boundp %key (,updater key value ,hash-table))
-                           (or (equal %key key)
-                               (,boundp %key ,hash-table)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::boundp-of-updater
-                           ,@fi-bindings))))
-
                   (defthm ,boundp-of-updater-same
                     (implies (equal %key key)
                              (equal (,boundp %key (,updater key value ,hash-table))
@@ -740,17 +690,6 @@
                     (("Goal"
                       :by (:functional-instance
                            lem-hash-table$c::boundp-of-updater-diff
-                           ,@fi-bindings))))
-
-                  (defthmd ,boundp-of-remover
-                    (equal (,boundp %key (,remover key ,hash-table))
-                           (if (equal %key key)
-                               nil
-                               (,boundp %key ,hash-table)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::boundp-of-remover
                            ,@fi-bindings))))
 
                   (defthm ,boundp-of-remover-same
@@ -829,17 +768,6 @@
                                 'lem-hash-table$c::remover-of-creator/unique)
                            ,@fi-bindings))))
 
-                  (defthmd ,remover-of-updater
-                    (equal (,remover %key (,updater key value ,hash-table))
-                           (if (equal %key key)
-                               (,remover %key ,hash-table)
-                               (,updater key value (,remover %key ,hash-table))))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::remover-of-updater
-                           ,@fi-bindings))))
-
                   (defthm ,remover-of-updater-same
                     (implies (equal %key key)
                              (equal (,remover %key (,updater key value ,hash-table))
@@ -902,17 +830,6 @@
                                 'lem-hash-table$c::count-of-creator/unique)
                            ,@fi-bindings))))
 
-                  (defthmd ,count-of-updater
-                    (equal (,count (,updater key value ,hash-table))
-                           (if (,boundp key ,hash-table)
-                               (,count ,hash-table)
-                               (1+ (,count ,hash-table))))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::count-of-updater
-                           ,@fi-bindings))))
-
                   (defthm ,count-of-updater-when-boundp
                     (implies (,boundp key ,hash-table)
                              (equal (,count (,updater key value ,hash-table))
@@ -931,27 +848,6 @@
                     (("Goal"
                       :by (:functional-instance
                            lem-hash-table$c::count-of-updater-when-not-boundp
-                           ,@fi-bindings))))
-
-                  (defthm ,count-when-boundp
-                    (implies (,boundp key ,hash-table)
-                             (posp (,count ,hash-table)))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::count-when-boundp
-                           ,@fi-bindings))))
-
-                  (defthmd ,count-of-remover
-                    (equal (,count (,remover key ,hash-table))
-                           (if (,boundp key ,hash-table)
-                               (1- (,count ,hash-table))
-                               (,count ,hash-table)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$c::count-of-remover
                            ,@fi-bindings))))
 
                   (defthm ,count-of-remover-when-boundp
