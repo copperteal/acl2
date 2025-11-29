@@ -30,6 +30,8 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
+(include-book "std/basic/arith-equiv-defs" :dir :system)
+
 (include-book "../utilities/top")
 
 
@@ -321,7 +323,7 @@
                            `(:cases ((< (,vector$corr-contents-witness
                                          (,resizer$c ,resizer$c-index ,vector$c)
                                          (,resizer$a ,resizer$c-index ,vector))
-                                        (,length$a ,vector$a)))))
+                                        (,length$a ,vector)))))
                     :in-theory (e/d (,aggressive$a)
                                     (,vector$corr-contents))
                     :expand (,vector$corr-contents (,resizer$c ,resizer$c-index ,vector$c)
