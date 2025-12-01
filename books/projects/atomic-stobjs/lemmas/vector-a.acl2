@@ -42,7 +42,8 @@
               nth-when-zp
 
               %value value
-              %vector vector
               %length length
               %index index
+              %vector vector
+
               n)))

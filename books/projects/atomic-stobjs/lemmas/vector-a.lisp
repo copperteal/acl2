@@ -42,7 +42,7 @@
 (local
   (defthm resize-list-of-cons
     (equal (resize-list (cons a l) i d)
-           (if (zp i)
+           (if (zp (double-rewrite i))
                ()
                (cons a (resize-list l (1- i) d))))
     :hints
@@ -65,7 +65,7 @@
 (local
   (defthm resize-list-of-resize-list
     (implies (and (equal d e)
-                  (consp lst)
+                  (consp (double-rewrite lst))
                   (natp n)
                   (natp m)
                   (or (<= m n)
@@ -161,7 +161,7 @@
     (element-recognizer (initial-element))))
 
 (defun element-fixer (value)
-  (declare (xargs :guard (element-recognizer value)))
+  (declare (xargs :guard t))
   (if (element-recognizer value)
       value
       (initial-element)))
@@ -183,8 +183,7 @@
                     (initial-element)))))
 
 (defun element-equiv (%value value)
-  (declare (xargs :guard (and (element-recognizer %value)
-                              (element-recognizer value))))
+  (declare (xargs :guard t))
   (equal (element-fixer %value)
          (element-fixer value)))
 
@@ -280,7 +279,7 @@
 (local
   (defthm recognizer-aux-of-repeat
     (equal (recognizer-aux (repeat n x))
-           (if (zp n)
+           (if (zp (double-rewrite n))
                t
                (element-recognizer x)))
     :hints
@@ -299,7 +298,7 @@
 (local
   (defthm recognizer-aux-of-update-nth
     (implies (and (natp index)
-                  (< index (len contents))
+                  (< index (len (double-rewrite contents)))
                   (element-recognizer value)
                   (recognizer-aux contents))
              (recognizer-aux (update-nth index value contents)))
@@ -442,6 +441,7 @@
                   (fixer/resizable vector))))
 
 (defthm resizer/resizable-of-length/resizable
+  ;; TODO: for non-free variants of "free" theorems, add equiv hypothesis
   (equal (resizer/resizable (length/resizable vector) vector)
          (fixer/resizable vector))
   :hints
@@ -536,9 +536,10 @@
 (encapsulate ()
   (local
     (defthm updater/resizable-when-large
-      (implies (<= (length/resizable vector) (nfix index))
+      ;; This theorem is re-proved in the `UPDATER/RESIZABLE' section.
+      (implies (<= (length/resizable (double-rewrite vector)) (nfix (double-rewrite index)))
                (equal (updater/resizable index value vector)
-                      (fixer/resizable vector)))))
+                      (fixer/resizable (double-rewrite vector))))))
 
   (defthm resizer/resizable-of-updater/resizable
     (equal (resizer/resizable length (updater/resizable index value vector))
@@ -679,7 +680,12 @@
 (defthm updater/resizable-when-large
   (implies (<= (length/resizable vector) (nfix index))
            (equal (updater/resizable index value vector)
-                  (fixer/resizable vector))))
+                  (fixer/resizable vector)))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (<= (length/resizable (double-rewrite vector)) (nfix (double-rewrite index)))
+                      (equal (updater/resizable index value vector)
+                             (fixer/resizable (double-rewrite vector)))))))
 
 (defthm updater/resizable-when-not-natp
   (implies (not (natp index))
@@ -901,7 +907,11 @@
 
 (defthm resizer/fixed-rw
   (equal (resizer/fixed length vector)
-         (fixer/fixed vector)))
+         (fixer/fixed vector))
+  :rule-classes
+  ((:rewrite :corollary
+             (equal (resizer/fixed length vector)
+                    (fixer/fixed (double-rewrite vector))))))
 
 
 ;;;; `ACCESSOR/FIXED'
@@ -1134,7 +1144,8 @@
       (implies (and (recognizer/resizable %vector)
                     (recognizer/resizable vector))
                (iff (equal (len %vector) (len vector))
-                    (equal (length/resizable %vector) (length/resizable vector))))
+                    (equal (length/resizable (double-rewrite %vector))
+                           (length/resizable (double-rewrite vector)))))
       :hints
       (("Goal"
         :in-theory (enable length/resizable)))))
@@ -1143,13 +1154,13 @@
     (defthmd equal/resizable-fc-lemma-1
       (implies (and (recognizer/resizable %vector)
                     (recognizer/resizable vector)
-                    (equal (length/resizable %vector)
-                           (length/resizable vector))
+                    (equal (length/resizable (double-rewrite %vector))
+                           (length/resizable (double-rewrite vector)))
                     (contents-equal/resizable %vector vector)
                     (natp n)
                     (< n (len %vector)))
                (equal (nth n %vector)
-                      (nth n vector)))
+                      (nth n (double-rewrite vector))))
       :rule-classes
       ((:rewrite :match-free :all))
       :hints
@@ -1224,7 +1235,7 @@
                     (natp n)
                     (< n (len %vector)))
                (equal (nth n %vector)
-                      (nth n vector)))
+                      (nth n (double-rewrite vector))))
       :rule-classes
       ((:rewrite :match-free :all))
       :hints
@@ -1306,7 +1317,12 @@
   (defthm element-copy-rw
     (implies (element-coupled-p value)
              (equal (element-copy %value value)
-                    (element-fixer value)))))
+                    (element-fixer value)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (element-coupled-p (double-rewrite value))
+                        (equal (element-copy %value value)
+                               (element-fixer (double-rewrite value))))))))
 
 (local
   (defcong element-equiv equal (element-copy %value value) 2
@@ -1382,10 +1398,6 @@
                      (vector (updater/resizable 0 value vector))))
     :expand (:free (index)
                    (coupledp/resizable (updater/resizable index value vector))))))
-
-(local
-  (in-theory
-    (disable coupledp/resizable)))
 
 
 ;;;; `COPY/RESIZABLE-REC'
@@ -1497,6 +1509,8 @@
 
 (local
   (defthm coupledp/resizable-of-copy/resizable
+    ;; CONJECTURE: Swap antecedent and consequent and replace implication with
+    ;; equality.  Make the resulting theorem global.
     (implies (coupledp/resizable vector)
              (coupledp/resizable (copy/resizable %vector vector)))
     :hints
@@ -1597,10 +1611,6 @@
                      (vector (updater/fixed 0 value vector))))
     :expand (:free (index)
                    (coupledp/fixed (updater/fixed index value vector))))))
-
-(local
-  (in-theory
-    (disable coupledp/fixed)))
 
 
 ;;;; `COPY/FIXED-REC'
@@ -1869,7 +1879,7 @@
                               (recognizer/resizable vector)
                               (<= index (length/resizable vector)))))
   (if (zp index)
-      acc
+      (true-list-fix acc)
       (let* ((index (1- index))
              (value (accessor/resizable index vector))
              (export (element-export value)))
@@ -1877,14 +1887,17 @@
 
 (local
   (defthm export-acc/resizable-tp
-    (implies (true-listp acc)
-             (true-listp (export-acc/resizable index acc vector)))
+    (true-listp (export-acc/resizable index acc vector))
     :rule-classes :type-prescription))
 
 (local
   (defthm exportp-rec-of-export-acc/resizable
     (equal (exportp-rec (export-acc/resizable index acc vector))
-           (exportp-rec acc))))
+           (exportp-rec (true-list-fix acc)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (exportp-rec (export-acc/resizable index acc vector))
+                      (exportp-rec (true-list-fix (double-rewrite acc))))))))
 
 (local
   (defcong nat-equiv equal (export-acc/resizable index acc vector) 1))
@@ -2161,7 +2174,7 @@
   :hints
   (("Goal"
     :use ((:instance equal/resizable
-                     (%vector (import/resizable (export/resizable %vector) vector))
+                     (%vector (import/resizable (export/resizable %vector) (creator)))
                      (vector (fixer/resizable %vector)))))))
 
 
@@ -2480,5 +2493,5 @@
   :hints
   (("Goal"
     :use ((:instance equal/fixed
-                     (%vector (import/fixed (export/fixed %vector) vector))
+                     (%vector (import/fixed (export/fixed %vector) (creator)))
                      (vector (fixer/fixed %vector)))))))
