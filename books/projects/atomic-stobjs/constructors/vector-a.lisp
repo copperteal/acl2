@@ -1018,8 +1018,9 @@
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-length
-                            (equal (,resizer (,length ,vector) ,vector)
-                                   (,fixer ,vector))
+                            (implies (,equiv ,%vector ,vector)
+                                     (equal (,resizer (,length ,%vector) ,vector)
+                                            (,fixer ,vector)))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -1110,6 +1111,10 @@
                         `((defthm ,resizer-rw
                             (equal (,resizer length ,vector)
                                    (,fixer ,vector))
+                            :rule-classes
+                            ((:rewrite :corollary
+                                       (equal (,resizer length ,vector)
+                                              (,fixer (double-rewrite ,vector)))))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -1358,6 +1363,14 @@
                                  (nfix ,index))
                              (equal (,updater ,index ,element ,vector)
                                     (,fixer ,vector)))
+                    :rule-classes
+                    ((:rewrite :corollary
+                               (implies (<= ,(if resizable
+                                                 `(,length (double-rewrite ,vector))
+                                                 default-length-name)
+                                            (nfix (double-rewrite ,index)))
+                                        (equal (,updater ,index ,element ,vector)
+                                               (,fixer (double-rewrite ,vector))))))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -1441,8 +1454,9 @@
                            ,@fi-bindings))))
 
                   (defthm ,updater-of-accessor
-                    (implies (nat-equiv ,%index ,index)
-                             (equal (,updater ,%index (,accessor ,index ,vector) ,vector)
+                    (implies (and (nat-equiv ,%index ,index)
+                                  (,equiv ,%vector ,vector))
+                             (equal (,updater ,%index (,accessor ,index ,%vector) ,vector)
                                     (,fixer ,vector)))
                     :hints
                     (("Goal"
