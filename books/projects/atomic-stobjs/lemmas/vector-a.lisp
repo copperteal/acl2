@@ -441,15 +441,16 @@
                   (fixer/resizable vector))))
 
 (defthm resizer/resizable-of-length/resizable
-  ;; TODO: for non-free variants of "free" theorems, add equiv hypothesis
-  (equal (resizer/resizable (length/resizable vector) vector)
-         (fixer/resizable vector))
+  (implies (equiv/resizable %vector vector)
+           (equal (resizer/resizable (length/resizable %vector) vector)
+                  (fixer/resizable vector)))
   :hints
   (("Goal"
     :in-theory (disable resizer/resizable-of-length/resizable-free
                         resizer/resizable
                         length/resizable
-                        fixer/resizable)
+                        fixer/resizable
+                        equiv/resizable)
     :use (:instance resizer/resizable-of-length/resizable-free
                     (length (length/resizable vector))))))
 
@@ -726,15 +727,17 @@
                         update-nth-when-zp))))
 
 (defthm updater/resizable-of-accessor/resizable
-  (implies (nat-equiv %index index)
-           (equal (updater/resizable %index (accessor/resizable index vector) vector)
+  (implies (and (nat-equiv %index index)
+                (equiv/resizable %vector vector))
+           (equal (updater/resizable %index (accessor/resizable index %vector) vector)
                   (fixer/resizable vector)))
   :hints
   (("Goal"
     :in-theory (disable updater/resizable-of-accessor/resizable-free
                         updater/resizable
                         accessor/resizable
-                        fixer/resizable)
+                        fixer/resizable
+                        equiv/resizable)
     :use (:instance updater/resizable-of-accessor/resizable-free
                     (index %index)
                     (value (accessor/resizable index vector))))))
@@ -1053,15 +1056,17 @@
                         update-nth-when-zp))))
 
 (defthm updater/fixed-of-accessor/fixed
-  (implies (nat-equiv %index index)
-           (equal (updater/fixed %index (accessor/fixed index vector) vector)
+  (implies (and (nat-equiv %index index)
+                (equiv/fixed %vector vector))
+           (equal (updater/fixed %index (accessor/fixed index %vector) vector)
                   (fixer/fixed vector)))
   :hints
   (("Goal"
     :in-theory (disable updater/fixed-of-accessor/fixed-free
                         updater/fixed
                         accessor/fixed
-                        fixer/fixed)
+                        fixer/fixed
+                        equiv/fixed)
     :use (:instance updater/fixed-of-accessor/fixed-free
                     (index %index)
                     (value (accessor/fixed index vector))))))
