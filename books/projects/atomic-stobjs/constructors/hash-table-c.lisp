@@ -1073,7 +1073,8 @@
                   ,@(and copyable
                          `((defun ,clear (,hash-table)
                              (declare (xargs :stobjs ,hash-table))
-                             (let* ((,hash-table (,fixer ,hash-table))
+                             (let* ((,hash-table (mbe :logic (,fixer ,hash-table)
+                                                      :exec ,hash-table))
                                     (,hash-table (,keys-set '() ,hash-table)))
                                (,%clear ,hash-table)))
 
@@ -1113,7 +1114,8 @@
                                                                   (<= 0 rehash-threshold)
                                                                   (<= rehash-threshold 1))
                                                              (not rehash-threshold)))))
-                             (let* ((,hash-table (,fixer ,hash-table))
+                             (let* ((,hash-table (mbe :logic (,fixer ,hash-table)
+                                                      :exec ,hash-table))
                                     (,hash-table (,keys-set '() ,hash-table)))
                                (,%init ht-size rehash-size rehash-threshold ,hash-table)))
 
