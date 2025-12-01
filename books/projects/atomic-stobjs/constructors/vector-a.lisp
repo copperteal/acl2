@@ -270,32 +270,28 @@
 
               ;; Epilogue
               (vector-theorems (symbolicate package-witness vector "-THEOREMS"))
-              (vector-definitions (symbolicate package-witness vector "-DEFINITIONS"))
               (vector-aggressive (symbolicate package-witness vector "-AGGRESSIVE"))
               (epilogue
                `((deflabel ,vector-end)
-
-                 (deftheory-static ,vector-definitions
-                   ',(append
-                      (and (not resizable)
-                           element-recognizer
-                           (list recognizer-aux))
-                      (list recognizer
-                            creator
-                            fixer
-                            equiv
-                            length
-                            resizer
-                            accessor
-                            updater
-                            vector-equal)))
 
                  (deftheory-static ,vector-theorems
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',vector-end)
                      (current-theory ',vector-begin))
-                    (union-theories (theory ',vector-definitions)
+                    (union-theories ',(append
+                                       (and (not resizable)
+                                            element-recognizer
+                                            (list recognizer-aux))
+                                       (list recognizer
+                                             creator
+                                             fixer
+                                             equiv
+                                             length
+                                             resizer
+                                             accessor
+                                             updater
+                                             vector-equal))
                                     '(,vector-constraints
                                       ,vector-equal-constraints))))
 
@@ -434,6 +430,11 @@
                     (in-theory
                       (disable make-list-ac
                                (:e make-list-ac))))
+
+                  ,@(and element-recognizer
+                         `((local
+                             (in-theory
+                               (enable (:e ,element-recognizer))))))
 
                   ;; Fixed-length vectors with specialized elements need a
                   ;; predicate to check element-wise validity.
@@ -1618,7 +1619,8 @@
                                             ,element-recognizer
                                             ,(and (not stobj-property)
                                                   initial-element-name)
-                                            ,element-fixer)
+                                            ,element-fixer
+                                            ,element-equiv)
                                            (,resizable
                                             ,default-length-name)
                                            (,length
