@@ -83,6 +83,7 @@
                               (symbol-listp (list recognizer
                                                   creator
                                                   fixer
+                                                  equiv
                                                   length
                                                   resizer
                                                   accessor
@@ -306,6 +307,8 @@
                             updater-when-not-recognizer
                             updater-of-accessor-free
                             updater-of-updater)
+                      (and element-recognizer
+                           (list updater-when-not-element-recognizer))
                       (and resizable
                            (list length-when-not-recognizer
                                  resizer-when-not-natp
@@ -313,9 +316,7 @@
                                  resizer-of-length-free
                                  resizer-of-resizer-split
                                  resizer-of-updater
-                                 accessor-of-resizer))
-                      (and element-recognizer
-                           (list updater-when-not-element-recognizer))))
+                                 accessor-of-resizer))))
 
                  (in-theory
                    (union-theories (current-theory ',vector-begin)
@@ -366,6 +367,7 @@
                      (if resizable
                          `(lem-vector$a::updater/resizable ,updater)
                          `(lem-vector$a::updater/fixed ,updater))))
+
               (fi-bindings-with-skolem
                (list* (if resizable
                           `(lem-vector$a::contents-equal/resizable ,contents-equal)
