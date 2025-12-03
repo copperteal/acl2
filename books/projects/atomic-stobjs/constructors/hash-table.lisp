@@ -46,10 +46,12 @@
        (element-type 't element-type-supplied-p)
        (key-recognizer 'nil key-recognizer-supplied-p)
        (key-fixer 'nil key-fixer-supplied-p)
+       (key-equiv 'nil key-equiv-supplied-p)
        (key 'nil key-supplied-p)
        (default-key 'nil default-key-supplied-p)
        (val-recognizer 'nil val-recognizer-supplied-p)
        (val-fixer 'nil val-fixer-supplied-p)
+       (val-equiv 'nil val-equiv-supplied-p)
        (val 'nil val-supplied-p)
        (default-val 'nil default-val-supplied-p)
        (copyable 't copyable-supplied-p)
@@ -88,9 +90,11 @@
                               (booleanp copyable)
                               (symbol-listp (list key-recognizer
                                                   key-fixer
+                                                  key-equiv
                                                   key
                                                   val-recognizer
                                                   val-fixer
+                                                  val-equiv
                                                   val))
                               (or (and (not key-recognizer)
                                        (not key-fixer)
@@ -143,10 +147,12 @@
                                    (getpropc element-type 'acl2::stobj)))
               (key-recognizer ',key-recognizer)
               (key-fixer ',key-fixer)
+              (key-equiv ',key-equiv)
               (key ',key)
               (default-key ',default-key)
               (val-recognizer ',val-recognizer)
               (val-fixer ',val-fixer)
+              (val-equiv ',val-equiv)
               (val ',val)
               (default-val ',default-val)
               (copyable ',copyable)
@@ -224,6 +230,8 @@
                      `(:key-recognizer ,key-recognizer))
               ,@(and ,key-fixer-supplied-p
                      `(:key-fixer ,key-fixer))
+              ,@(and ,key-equiv-supplied-p
+                     `(:key-equiv ,key-equiv))
               ,@(and ,key-supplied-p
                      `(:key ,key))
               ,@(and ,default-key-supplied-p
@@ -232,6 +240,8 @@
                      `(:val-recognizer ,val-recognizer))
               ,@(and ,val-fixer-supplied-p
                      `(:val-fixer ,val-fixer))
+              ,@(and ,val-equiv-supplied-p
+                     `(:val-equiv ,val-equiv))
               ,@(and (or ,val-supplied-p
                          stobj-property)
                      `(:val ,(if stobj-property

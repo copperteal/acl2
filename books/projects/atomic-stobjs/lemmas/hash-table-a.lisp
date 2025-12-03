@@ -33,17 +33,10 @@
 (include-book "std/osets/top" :dir :system)
 (include-book "std/omaps/core" :dir :system)
 
-(local ; TODO: delete?
-  (include-book "std/lists/top" :dir :system))
-(local ; TODO: delete?
-  (include-book "std/alists/top" :dir :system))
-
 
-;;;; Key-Value Constraints
+;;;; Key Constraints
 (encapsulate (((key-recognizer *) => *)
-              ((default-key) => *)
-              ((val-recognizer *) => *)
-              ((default-val) => *))
+              ((default-key) => *))
   (local
     (defun key-recognizer (key)
       (declare (xargs :guard t))
@@ -59,24 +52,7 @@
       '||))
 
   (defthm key-recognizer-of-default-key
-    (key-recognizer (default-key)))
-
-  (local
-    (defun val-recognizer (val)
-      (declare (xargs :guard t))
-      (symbolp val)))
-
-  (defthm val-recognizer-tp
-    (booleanp (val-recognizer val))
-    :rule-classes :type-prescription)
-
-  (local
-    (defun default-val ()
-      (declare (xargs :guard t))
-      '||))
-
-  (defthm val-recognizer-of-default-val
-    (val-recognizer (default-val))))
+    (key-recognizer (default-key))))
 
 (defun key-fixer (key)
   (declare (xargs :guard t))
@@ -113,6 +89,27 @@
 (local
   (defthm key-fixer-mod-key-equiv
     (key-equiv (key-fixer key) key)))
+
+
+;;;; Value Constraints
+(encapsulate (((val-recognizer *) => *)
+              ((default-val) => *))
+  (local
+    (defun val-recognizer (val)
+      (declare (xargs :guard t))
+      (symbolp val)))
+
+  (defthm val-recognizer-tp
+    (booleanp (val-recognizer val))
+    :rule-classes :type-prescription)
+
+  (local
+    (defun default-val ()
+      (declare (xargs :guard t))
+      '||))
+
+  (defthm val-recognizer-of-default-val
+    (val-recognizer (default-val))))
 
 (defun val-fixer (val)
   (declare (xargs :guard t))
@@ -159,7 +156,6 @@
 ;;;; Unique Definitions
 (defun recognizer/unique (hash-table)
   (declare (xargs :guard t))
-  ;; TODO: adjust constructor definition
   (if (consp hash-table)
       (and (consp (car hash-table))
            (key-recognizer (caar hash-table))
@@ -212,8 +208,7 @@
         (hash-table (fixer/unique hash-table)))
     (cond
       ((endp hash-table)
-       (list (cons key val)))
-      ;; TODO: update defun in constructor macro
+       (acons key val nil))
       ((<< key (caar hash-table))
        (acons key val hash-table))
       ((equal key (caar hash-table))
@@ -265,7 +260,6 @@
 (defun count/unique (hash-table)
   (declare (xargs :guard (recognizer/unique hash-table)))
   (let ((hash-table (fixer/unique hash-table)))
-    ;; TODO: update macro def
     (if (consp hash-table)
         (1+ (count/unique (cdr hash-table)))
         0)))
@@ -1379,6 +1373,14 @@
    ("Subgoal 1"
     :by remover/unique-of-remover/unique-same)))
 
+(defthm remover/unique-when-count/unique-is-zero
+  (implies (equal (count/unique hash-table) 0)
+           (equal (remover/unique key hash-table)
+                  (creator/unique)))
+  :hints
+  (("Goal"
+    :in-theory (enable omap::unfold-equal-size-const))))
+
 
 ;;;; `COUNT/UNIQUE'
 (defthm count/unique-tp
@@ -1542,7 +1544,6 @@
 ;;;; Copyable Definitions
 (defun keysp (set)
   (declare (xargs :guard t))
-  ;; TODO: update macro def
   (if (consp set)
       (and (key-recognizer (car set))
            (or (null (cdr set))
@@ -1742,7 +1743,7 @@
   (("Goal"
     :in-theory (enable set::in))))
 
-(defthm keysp-when-subset
+(defthm subset-when-keysp
   (implies (and (not (keysp %set))
                 (keysp set))
            (equal (set::subset %set set)
@@ -1769,8 +1770,8 @@
     :in-theory (enable set::union))))
 
 (defthm keysp-of-intersect
-  (implies (and (keysp %set)
-                (keysp set))
+  (implies (or (keysp %set)
+               (keysp set))
            (keysp (set::intersect %set set)))
   :hints
   (("Goal"
@@ -2088,7 +2089,10 @@
   ((:rewrite :corollary
              (implies (key-equiv %key (double-rewrite key))
                       (equal (updater/copyable %key val (remover/copyable key hash-table))
-                             (updater/copyable %key val (double-rewrite hash-table)))))))
+                             (updater/copyable %key val (double-rewrite hash-table))))))
+  :hints
+  (("Goal"
+    :in-theory (enable creator/unique))))
 
 
 ;;;; `BOUNDP/COPYABLE'
@@ -2241,7 +2245,10 @@
 (defthm remover/copyable-of-updater/copyable-diff
   (implies (not (key-equiv %key key))
            (equal (remover/copyable %key (updater/copyable key val hash-table))
-                  (updater/copyable key val (remover/copyable %key hash-table)))))
+                  (updater/copyable key val (remover/copyable %key hash-table))))
+  :hints
+  (("Goal"
+    :in-theory (enable creator/unique))))
 
 (defthm remover/copyable-of-updater/copyable
   (equal (remover/copyable %key (updater/copyable key val hash-table))
@@ -2287,6 +2294,12 @@
     :by remover/copyable-of-remover/copyable-diff)
    ("Subgoal 1"
     :by remover/copyable-of-remover/copyable-same)))
+
+(defthm remover/copyable-when-count/copyable-is-zero
+  (implies (equal (count/copyable hash-table) 0)
+           (equal (remover/copyable key hash-table)
+                  (keys-set (keys hash-table)
+                            (creator/copyable)))))
 
 
 ;;;; `COUNT/COPYABLE'
@@ -2351,7 +2364,11 @@
 
 (defthm count/copyable-of-keys-set
   (equal (count/copyable (keys-set set hash-table))
-         (count/copyable (double-rewrite hash-table))))
+         (count/copyable hash-table))
+  :rule-classes
+  ((:rewrite :corollary
+             (equal (count/copyable (keys-set set hash-table))
+                    (count/copyable (double-rewrite hash-table))))))
 
 (defthm creator/copyable-when-count/copyable-is-zero
   (implies (and (set::emptyp (keys hash-table))
@@ -2424,7 +2441,11 @@
 
 (defthm keys-of-keys-set
   (equal (keys (keys-set set hash-table))
-         (keys-fix (double-rewrite set))))
+         (keys-fix set))
+  :rule-classes
+  ((:rewrite :corollary
+             (equal (keys (keys-set set hash-table))
+                    (keys-fix (double-rewrite set))))))
 
 
 ;;;; `KEYS-SET'
@@ -2513,7 +2534,6 @@
                               (recognizer/unique hash-table))
                   :verify-guards nil))
   (forall key
-    ;; TODO: change def
     (equal (boundp/unique key %hash-table)
            (boundp/unique key hash-table)))
   :rewrite :direct)
@@ -2523,7 +2543,6 @@
                               (recognizer/unique hash-table))
                   :verify-guards nil))
   (forall key
-    ;; TODO: change def
     (equal (accessor/unique key %hash-table)
            (accessor/unique key hash-table)))
   :rewrite :direct)
@@ -2738,7 +2757,6 @@
                               (recognizer/copyable hash-table))
                   :verify-guards nil))
   (forall key
-    ;; TODO: change def
     (equal (boundp/copyable key %hash-table)
            (boundp/copyable key hash-table)))
   :rewrite :direct)
@@ -2748,7 +2766,6 @@
                               (recognizer/copyable hash-table))
                   :verify-guards nil))
   (forall key
-    ;; TODO: change def
     (equal (accessor/copyable key %hash-table)
            (accessor/copyable key hash-table)))
   :rewrite :direct)
