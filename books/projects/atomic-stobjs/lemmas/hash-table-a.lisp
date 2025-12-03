@@ -1760,11 +1760,11 @@
     :in-theory (enable set::delete))))
 
 (defthm keysp-of-union
-  (equal (keysp (set::union %set set))
-         (and (or (set::emptyp %set)
-                  (keysp %set))
-              (or (set::emptyp set)
-                  (keysp set))))
+  (implies (and (not (set::emptyp %set))
+                (not (set::emptyp set)))
+           (equal (keysp (set::union %set set))
+                  (and (keysp %set)
+                       (keysp set))))
   :hints
   (("Goal"
     :in-theory (enable set::union))))
