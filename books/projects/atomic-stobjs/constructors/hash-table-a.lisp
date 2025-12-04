@@ -3449,14 +3449,13 @@
                                                 ,remover
                                                 ,count
                                                 ,clear
-                                                ,init
-                                                ;; HERE: update accesses to these
-                                                ,@(and copyable
-                                                       `((,keys
-                                                          ,keys-set
-                                                          ,keysp
-                                                          ,keys-fix
-                                                          ,keys-equiv))))))))
+                                                ,init)
+                                               ,@(and copyable
+                                                      `((,keys
+                                                         ,keys-set
+                                                         ,keysp
+                                                         ,keys-fix
+                                                         ,keys-equiv)))))))
 
          `(progn
             ,@prologue

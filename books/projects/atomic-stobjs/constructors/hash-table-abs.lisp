@@ -104,7 +104,7 @@
               (boundp$a (third (fourth (third stobj$a-property))))
               (count$a (sixth (fourth (third stobj$a-property))))
               (keys$a (and copyable
-                           (nth 10 (fourth (third stobj$a-property))))))
+                           (first (fifth (third stobj$a-property))))))
 
          `(progn
             (defun-sk ,hash-table$corr-keys (,hash-table$c ,hash-table$a)
@@ -327,12 +327,12 @@
               (count$a (sixth (fourth (third stobj$a-property))))
               (clear$a (seventh (fourth (third stobj$a-property))))
               (init$a (eighth (fourth (third stobj$a-property))))
-              (keys$ap (and copyable
-                            (ninth (fourth (third stobj$a-property)))))
               (keys$a (and copyable
-                           (nth 10 (fourth (third stobj$a-property)))))
+                           (first (fifth (third stobj$a-property)))))
               (keys-set$a (and copyable
-                               (nth 11 (fourth (third stobj$a-property)))))
+                               (second (fifth (third stobj$a-property)))))
+              (keys$ap (and copyable
+                            (third (fifth (third stobj$a-property)))))
 
               (key-recognizer (second (first (third stobj$a-property))))
               (val (first (second (third stobj$a-property))))
@@ -341,7 +341,6 @@
                                   (caadr val-stobj-property)
                                   (second (second (third stobj$a-property)))))
               (test (first (third (third stobj$a-property))))
-
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
@@ -480,13 +479,11 @@
                   (("Goal"
                     :in-theory (e/d (,aggressive$a)
                                     (,hash-table$corr-keys
-                                     ,hash-table$corr-vals)))
-                   ("Subgoal 4"
-                    :expand (,hash-table$corr-keys (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
-                                                   (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))
-                   ("Subgoal 3"
-                    :expand (,hash-table$corr-vals (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
-                                                   (,updater$a ,updater$c-key ,updater$c-val ,hash-table)))))
+                                     ,hash-table$corr-vals))
+                    :expand ((,hash-table$corr-keys (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
+                                                    (,updater$a ,updater$c-key ,updater$c-val ,hash-table))
+                             (,hash-table$corr-vals (,updater$c ,updater$c-key ,updater$c-val ,hash-table$c)
+                                                    (,updater$a ,updater$c-key ,updater$c-val ,hash-table))))))
 
                 ,@(and updater$c-guard
                        `((defthm ,updater{guard-thm}
@@ -573,13 +570,11 @@
                   (("Goal"
                     :in-theory (e/d (,aggressive$a)
                                     (,hash-table$corr-keys
-                                     ,hash-table$corr-vals)))
-                   ("Subgoal 4"
-                    :expand (,hash-table$corr-keys (,remover$c ,remover$c-key ,hash-table$c)
-                                                   (,remover$a ,remover$c-key ,hash-table)))
-                   ("Subgoal 3"
-                    :expand (,hash-table$corr-vals (,remover$c ,remover$c-key ,hash-table$c)
-                                                   (,remover$a ,remover$c-key ,hash-table)))))
+                                     ,hash-table$corr-vals))
+                    :expand ((,hash-table$corr-keys (,remover$c ,remover$c-key ,hash-table$c)
+                                                    (,remover$a ,remover$c-key ,hash-table))
+                             (,hash-table$corr-vals (,remover$c ,remover$c-key ,hash-table$c)
+                                                    (,remover$a ,remover$c-key ,hash-table))))))
 
                 ,@(and (or (eq test 'eq)
                            (eq test 'eql))
@@ -699,18 +694,11 @@
                            (("Goal"
                              :in-theory (e/d (,aggressive$a)
                                              (,hash-table$corr-keys
-                                              ,hash-table$corr-vals)))
-                            ("Subgoal 3"
+                                              ,hash-table$corr-vals))
                              :expand ((,hash-table$corr-keys (,keys-set$c ,keys-set$c-set ,hash-table$c)
                                                              (,keys-set$a ,keys-set$c-set ,hash-table))
                                       (,hash-table$corr-vals (,keys-set$c ,keys-set$c-set ,hash-table$c)
-                                                             (,keys-set$a ,keys-set$c-set ,hash-table))))
-                            ("Subgoal 2"
-                             :expand (,hash-table$corr-vals (,keys-set$c (,keys$a ,hash-table) ,hash-table$c)
-                                                            ,hash-table))
-                            ("Subgoal 1"
-                             :expand (,hash-table$corr-keys (,keys-set$c (,keys$a ,hash-table) ,hash-table$c)
-                                                            ,hash-table))))
+                                                             (,keys-set$a ,keys-set$c-set ,hash-table))))))
 
                          (defthm ,keys-set{preserved}
                            (implies (and (,keys$ap v)
