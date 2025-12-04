@@ -1775,7 +1775,8 @@
   (local
     (defun element-export-p (export)
       (declare (xargs :guard t))
-      (element-recognizer export)))
+      (and (element-recognizer export)
+           (element-coupled-p export))))
 
   (defthm element-export-p-tp
     (booleanp (element-export-p export))
@@ -1784,22 +1785,32 @@
   (local
     (defun element-export (value)
       (declare (xargs :guard (element-recognizer value)))
-      (element-fixer value)))
+      (if (element-coupled-p value)
+          (element-fixer value)
+          (initial-element))))
 
   (defthm element-export-p-of-element-export
     (element-export-p (element-export value)))
 
-  (defcong element-equiv equal (element-export value) 1)
+  (defcong element-equiv equal (element-export value) 1
+    :hints
+    (("Goal"
+      :in-theory (disable element-equiv))))
 
   (local
     (defun element-import (export value)
       (declare (xargs :guard (and (element-export-p export)
                                   (element-recognizer value)))
                (ignore value))
-      (element-fixer export)))
+      (if (element-coupled-p export)
+          (element-fixer export)
+          (initial-element))))
 
   (defthm element-recognizer-of-element-import
     (element-recognizer (element-import export value)))
+
+  (defthm element-coupled-p-of-element-import
+    (element-coupled-p (element-import export value)))
 
   (defthm element-import-when-not-element-export-p
     (implies (not (element-export-p export))
@@ -1969,27 +1980,30 @@
   (("Goal"
     :in-theory (enable exportp/resizable))))
 
-(defcong equiv/resizable equal (export/resizable vector) 1)
+(local
+  (defcong equiv/resizable equal (export/resizable vector) 1))
 
-(defthm len-of-export/resizable
-  (equal (len (export/resizable vector))
-         (1+ (length/resizable vector))))
+(local
+  (defthm len-of-export/resizable
+    (equal (len (export/resizable vector))
+           (1+ (length/resizable vector)))))
 
-(defthm nth-of-export/resizable
-  (equal (nth index (export/resizable vector))
-         (cond
-           ((zp index)
-            (name))
-           ((<= index (length/resizable vector))
-            (element-export (accessor/resizable (1- index) vector)))))
-  :rule-classes
-  ((:rewrite :corollary
-             (equal (nth index (export/resizable vector))
-                    (cond
-                      ((zp (double-rewrite index))
-                       (name))
-                      ((<= index (length/resizable vector))
-                       (element-export (accessor/resizable (1- index) vector))))))))
+(local
+  (defthm nth-of-export/resizable
+    (equal (nth index (export/resizable vector))
+           (cond
+             ((zp index)
+              (name))
+             ((<= index (length/resizable vector))
+              (element-export (accessor/resizable (1- index) vector)))))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (nth index (export/resizable vector))
+                      (cond
+                        ((zp (double-rewrite index))
+                         (name))
+                        ((<= index (length/resizable vector))
+                         (element-export (accessor/resizable (1- index) vector)))))))))
 
 (local
   (in-theory
@@ -2123,6 +2137,13 @@
 
 (defthm recognizer/resizable-of-import/resizable
   (recognizer/resizable (import/resizable export vector)))
+
+(defthm coupledp/resizable-of-import/resizable
+  (coupledp/resizable (import/resizable export vector))
+  :hints
+  (("Goal"
+    :in-theory (enable coupledp/resizable
+                       exportp/resizable))))
 
 (defthm import/resizable-when-not-exportp/resizable
   (implies (not (exportp/resizable export))
@@ -2306,27 +2327,30 @@
   (("Goal"
     :in-theory (enable exportp/fixed))))
 
-(defcong equiv/fixed equal (export/fixed vector) 1)
+(local
+  (defcong equiv/fixed equal (export/fixed vector) 1))
 
-(defthm len-of-export/fixed
-  (equal (len (export/fixed vector))
-         (1+ (default-length))))
+(local
+  (defthm len-of-export/fixed
+    (equal (len (export/fixed vector))
+           (1+ (default-length)))))
 
-(defthm nth-of-export/fixed
-  (equal (nth index (export/fixed vector))
-         (cond
-           ((zp index)
-            (name))
-           ((<= index (default-length))
-            (element-export (accessor/fixed (1- index) vector)))))
-  :rule-classes
-  ((:rewrite :corollary
-             (equal (nth index (export/fixed vector))
-                    (cond
-                      ((zp (double-rewrite index))
-                       (name))
-                      ((<= index (default-length))
-                       (element-export (accessor/fixed (1- index) vector))))))))
+(local
+  (defthm nth-of-export/fixed
+    (equal (nth index (export/fixed vector))
+           (cond
+             ((zp index)
+              (name))
+             ((<= index (default-length))
+              (element-export (accessor/fixed (1- index) vector)))))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (nth index (export/fixed vector))
+                      (cond
+                        ((zp (double-rewrite index))
+                         (name))
+                        ((<= index (default-length))
+                         (element-export (accessor/fixed (1- index) vector)))))))))
 
 (local
   (in-theory
@@ -2450,6 +2474,13 @@
 
 (defthm recognizer/fixed-of-import/fixed
   (recognizer/fixed (import/fixed export vector)))
+
+(defthm coupledp/fixed-of-import/fixed
+  (coupledp/fixed (import/fixed export vector))
+  :hints
+  (("Goal"
+    :in-theory (enable coupledp/fixed
+                       exportp/fixed))))
 
 (defthm import/fixed-when-not-exportp/fixed
   (implies (not (exportp/fixed export))
