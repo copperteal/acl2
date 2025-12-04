@@ -209,4 +209,11 @@
                      `(:executable ,executable))
               ,@(and ,package-witness-supplied-p
                      `(:package-witness ,package-witness))
-              :debug ,debug))))))
+              :debug ,debug)
+
+            (in-theory
+              (disable ,(symbolicate (if ,package-witness-supplied-p
+                                         package-witness
+                                         vector$c)
+                                     vector$c
+                                     "-THEOREMS"))))))))
