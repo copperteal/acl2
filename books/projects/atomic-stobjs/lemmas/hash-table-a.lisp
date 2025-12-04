@@ -3442,7 +3442,8 @@
   (local
     (defun val-export-p (export)
       (declare (xargs :guard t))
-      (val-recognizer export)))
+      (and (val-recognizer export)
+           (val-coupled-p export))))
 
   (defthm val-export-p-tp
     (booleanp (val-export-p export))
@@ -3451,22 +3452,32 @@
   (local
     (defun val-export (val)
       (declare (xargs :guard (val-recognizer val)))
-      (val-fixer val)))
+      (if (val-coupled-p val)
+          (val-fixer val)
+          (default-val))))
 
   (defthm val-export-p-of-val-export
     (val-export-p (val-export val)))
 
-  (defcong val-equiv equal (val-export val) 1)
+  (defcong val-equiv equal (val-export val) 1
+    :hints
+    (("Goal"
+      :in-theory (disable val-equiv))))
 
   (local
     (defun val-import (export val)
       (declare (xargs :guard (and (val-export-p export)
                                   (val-recognizer val)))
                (ignore val))
-      (val-fixer export)))
+      (if (val-coupled-p export)
+          (val-fixer export)
+          (default-val))))
 
   (defthm val-recognizer-of-val-import
     (val-recognizer (val-import export val)))
+
+  (defthm val-coupled-p-of-val-import
+    (val-coupled-p (val-import export val)))
 
   (defthm val-import-when-not-val-export-p
     (implies (not (val-export-p export))
@@ -3825,25 +3836,29 @@
   (("Goal"
     :in-theory (enable exportp))))
 
-(defcong equiv/copyable equal (export hash-table) 1)
+(local
+  (defcong equiv/copyable equal (export hash-table) 1))
 
-(defthm keys-of-export
-  (equal (omap::keys (cdr (export hash-table)))
-         (keys hash-table)))
+(local
+  (defthm keys-of-export
+    (equal (omap::keys (cdr (export hash-table)))
+           (keys hash-table))))
 
 (local
   (defthm size-of-export
-    (implies (coupledp hash-table)
-             (equal (omap::size (cdr (export hash-table)))
-                    (count/copyable hash-table)))))
+    (equal (omap::size (cdr (export hash-table)))
+           (set::cardinality (keys hash-table)))))
 
 (local
   (defthm assoc-of-export
-    (implies (and (key-recognizer key)
-                  (coupledp hash-table))
-             (equal (omap::assoc key (cdr (export hash-table)))
-                    (and (boundp/copyable (double-rewrite key) hash-table)
-                         (cons key (val-export (accessor/copyable (double-rewrite key) hash-table))))))))
+    (equal (omap::assoc key (cdr (export hash-table)))
+           (and (set::in key (keys hash-table))
+                (cons key (val-export (accessor/copyable key hash-table)))))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (omap::assoc key (cdr (export hash-table)))
+                      (and (set::in key (keys hash-table))
+                           (cons key (val-export (accessor/copyable (double-rewrite key) hash-table)))))))))
 
 (local
   (in-theory
@@ -3944,6 +3959,26 @@
                                   (1+ (count/copyable (import-rec (omap::tail map) hash-table)))))))))))
 
 (local
+  (defthm count/copyable-of-import-rec-of-creator/copyable
+    (implies (exportp-rec map)
+             (equal (count/copyable (import-rec map (creator/copyable)))
+                    (omap::size map)))))
+
+(local
+  (defthm coupled-keys-p-of-keys-set-of-import-rec
+    (implies (exportp-rec map)
+             (coupled-keys-p (keys-set (omap::keys map)
+                                       (import-rec map (creator/copyable)))))
+    :hints
+    (("Goal"
+      :in-theory (enable omap::keys)))))
+
+(local
+  (defthm coupled-vals-p-of-import-rec
+    (implies (coupled-vals-p hash-table)
+             (coupled-vals-p (import-rec map hash-table)))))
+
+(local
   (in-theory
     (disable import-rec)))
 
@@ -3971,6 +4006,13 @@
 
 (defthm recognizer/copyable-of-import
   (recognizer/copyable (import export hash-table)))
+
+(defthm coupledp-of-import
+  (coupledp (import export hash-table))
+  :hints
+  (("Goal"
+    :in-theory (enable coupledp
+                       exportp))))
 
 (defthm import-when-not-exportp
   (implies (not (exportp export))
