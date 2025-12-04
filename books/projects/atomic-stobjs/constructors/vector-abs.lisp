@@ -316,38 +316,16 @@
                                 (,recognizer$a ,vector))
                            (,vector$corr (,resizer$c ,resizer$c-index ,vector$c)
                                          (,resizer$a ,resizer$c-index ,vector)))
-                  :rule-classes nil ; TODO: Something's fishy here.
+                  :rule-classes nil
                   :hints
                   (("Goal"
-                    ,@(and resizable
-                           `(:cases ((< (,vector$corr-contents-witness
-                                         (,resizer$c ,resizer$c-index ,vector$c)
-                                         (,resizer$a ,resizer$c-index ,vector))
-                                        (,length$a ,vector)))))
+                    :cases ((< (,vector$corr-contents-witness (,resizer$c ,resizer$c-index ,vector$c)
+                                                              (,resizer$a ,resizer$c-index ,vector))
+                               (,length$c ,vector$c)))
                     :in-theory (e/d (,aggressive$a)
                                     (,vector$corr-contents))
                     :expand (,vector$corr-contents (,resizer$c ,resizer$c-index ,vector$c)
-                                                   (,resizer$a ,resizer$c-index ,vector)))
-                   ,@(and resizable
-                          (let ((accessor-of-resizer-inner (symbolicate vector$c accessor$c "-OF-" resizer$c "-INNER"))
-                                (accessor-of-resizer-outer (symbolicate vector$c accessor$c "-OF-" resizer$c "-OUTER"))
-                                (index `(,vector$corr-contents-witness
-                                         (,resizer$c ,resizer$c-index ,vector$c)
-                                         (,resizer$a ,resizer$c-index ,vector))))
-                            `(("Subgoal 2"
-                               :in-theory (e/d (,aggressive$a)
-                                               (,vector$corr-contents
-                                                ,accessor-of-resizer-outer))
-                               :use ((:instance ,accessor-of-resizer-outer
-                                                (length ,resizer$c-index)
-                                                (index ,index))))
-                              ("Subgoal 1"
-                               :in-theory (e/d (,aggressive$a)
-                                               (,vector$corr-contents
-                                                ,accessor-of-resizer-inner))
-                               :use ((:instance ,accessor-of-resizer-inner
-                                                (length ,resizer$c-index)
-                                                (index ,index)))))))))
+                                                   (,resizer$a ,resizer$c-index ,vector)))))
 
                 (defthm ,resizer{preserved}
                   (implies (and (natp ,resizer$c-index)
