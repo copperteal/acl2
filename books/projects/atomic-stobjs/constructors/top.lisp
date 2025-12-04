@@ -35,12 +35,14 @@
 (include-book "vector")
 (include-book "hash-table")
 (include-book "frame")
+(include-book "export")
 
 (defconst *exports*
   '(define-congruent
 
     coupledp
     define-copy
+    define-export
 
     define-vector$c
     define-vector$a
