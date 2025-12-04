@@ -30,6 +30,7 @@
 (in-package "ACL2")
 
 (include-book "std/basic/defs" :dir :system)
+(include-book "std/basic/arith-equivs" :dir :system)
 
 (include-book "../constructors/hash-table-c")
 (include-book "../constructors/hash-table-a")
@@ -52,13 +53,12 @@
 (defthm keywordp-of-keyword-fix
   (keywordp (keyword-fix key)))
 
-(defthm nfix-when-natp
-  (implies (natp key)
-           (equal (nfix key) key)))
+(defun keyword-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (keyword-fix x)
+         (keyword-fix y)))
 
-(defthm nfix-when-not-natp
-  (implies (not (natp key))
-           (equal (nfix key) 0)))
+(defequiv keyword-equiv)
 
 (defun string-fix (x)
   (declare (xargs :guard t))
@@ -77,6 +77,13 @@
   (implies (not (stringp val))
            (equal (string-fix val) "")))
 
+(defun string-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (string-fix x)
+         (string-fix y)))
+
+(defequiv string-equiv)
+
 (defun if-bool-fix (x)
   (declare (xargs :guard t))
   (if (booleanp x)
@@ -90,6 +97,13 @@
 (defthm if-bool-fix-when-not-booleanp
   (implies (not (booleanp val))
            (equal (if-bool-fix val) t)))
+
+(defun char-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (char-fix x)
+         (char-fix y)))
+
+(defequiv char-equiv)
 
 
 (atomic-stobjs::define-hash-table$c ht/0$c equal)
@@ -141,6 +155,7 @@
 (atomic-stobjs::define-hash-table$a ht/2$a eq
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||)
 
 (atomic-stobjs::define-hash-table$corr ht/2)
@@ -154,6 +169,7 @@
 (atomic-stobjs::define-hash-table$a htn/2$a eq
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||
   :copyable nil)
 
@@ -169,6 +185,7 @@
 (atomic-stobjs::define-hash-table$a ht/3$a eql
   :key-recognizer natp
   :key-fixer nfix
+  :key-equiv nat-equiv
   :default-key 0)
 
 (atomic-stobjs::define-hash-table$corr ht/3)
@@ -182,6 +199,7 @@
 (atomic-stobjs::define-hash-table$a htn/3$a eql
   :key-recognizer natp
   :key-fixer nfix
+  :key-equiv nat-equiv
   :default-key 0
   :copyable nil)
 
@@ -197,6 +215,7 @@
 (atomic-stobjs::define-hash-table$a ht/4$a eql
   :key-recognizer characterp
   :key-fixer char-fix
+  :key-equiv char-equiv
   :default-key #.acl2::*null-char*)
 
 (atomic-stobjs::define-hash-table$corr ht/4)
@@ -210,6 +229,7 @@
 (atomic-stobjs::define-hash-table$a htn/4$a eql
   :key-recognizer characterp
   :key-fixer char-fix
+  :key-equiv char-equiv
   :default-key #.acl2::*null-char*
   :copyable nil)
 
@@ -228,9 +248,11 @@
 (atomic-stobjs::define-hash-table$a ht-string/0$a eq
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val "")
 
 (atomic-stobjs::define-hash-table$corr ht-string/0)
@@ -247,9 +269,11 @@
 (atomic-stobjs::define-hash-table$a htn-string/0$a eq
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val ""
   :copyable nil)
 
@@ -267,9 +291,11 @@
 (atomic-stobjs::define-hash-table$a ht-string/1$a eql
   :key-recognizer natp
   :key-fixer nfix
+  :key-equiv nat-equiv
   :default-key 0
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val "")
 
 (atomic-stobjs::define-hash-table$corr ht-string/1)
@@ -285,9 +311,11 @@
 (atomic-stobjs::define-hash-table$a htn-string/1$a eql
   :key-recognizer natp
   :key-fixer nfix
+  :key-equiv nat-equiv
   :default-key 0
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val ""
   :copyable nil)
 
@@ -305,9 +333,11 @@
 (atomic-stobjs::define-hash-table$a ht-string/2$a eql
   :key-recognizer characterp
   :key-fixer char-fix
+  :key-equiv char-equiv
   :default-key #.acl2::*null-char*
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val "")
 
 (atomic-stobjs::define-hash-table$corr ht-string/2)
@@ -323,9 +353,11 @@
 (atomic-stobjs::define-hash-table$a htn-string/2$a eql
   :key-recognizer characterp
   :key-fixer char-fix
+  :key-equiv char-equiv
   :default-key #.acl2::*null-char*
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val ""
   :copyable nil)
 
@@ -343,6 +375,7 @@
 (atomic-stobjs::define-hash-table$a ht-string/3$a hons-equal
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val "")
 
 (atomic-stobjs::define-hash-table$corr ht-string/3)
@@ -358,6 +391,7 @@
 (atomic-stobjs::define-hash-table$a htn-string/3$a hons-equal
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val ""
   :copyable nil)
 
@@ -375,6 +409,7 @@
 (atomic-stobjs::define-hash-table$a ht-string/4$a equal
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val "")
 
 (atomic-stobjs::define-hash-table$corr ht-string/4)
@@ -390,6 +425,7 @@
 (atomic-stobjs::define-hash-table$a htn-string/4$a equal
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val ""
   :copyable nil)
 
@@ -408,9 +444,11 @@
 (atomic-stobjs::define-hash-table$a ht-boolean/0$a eq
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t)
 
 (atomic-stobjs::define-hash-table$corr ht-boolean/0)
@@ -427,9 +465,11 @@
 (atomic-stobjs::define-hash-table$a htn-boolean/0$a eq
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t
   :copyable nil)
 
@@ -447,9 +487,11 @@
 (atomic-stobjs::define-hash-table$a ht-boolean/1$a eql
   :key-recognizer natp
   :key-fixer nfix
+  :key-equiv nat-equiv
   :default-key 0
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t)
 
 (atomic-stobjs::define-hash-table$corr ht-boolean/1)
@@ -465,9 +507,11 @@
 (atomic-stobjs::define-hash-table$a htn-boolean/1$a eql
   :key-recognizer natp
   :key-fixer nfix
+  :key-equiv nat-equiv
   :default-key 0
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t
   :copyable nil)
 
@@ -485,9 +529,11 @@
 (atomic-stobjs::define-hash-table$a ht-boolean/2$a eql
   :key-recognizer characterp
   :key-fixer char-fix
+  :key-equiv char-equiv
   :default-key #.acl2::*null-char*
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t)
 
 (atomic-stobjs::define-hash-table$corr ht-boolean/2)
@@ -503,9 +549,11 @@
 (atomic-stobjs::define-hash-table$a htn-boolean/2$a eql
   :key-recognizer characterp
   :key-fixer char-fix
+  :key-equiv char-equiv
   :default-key #.acl2::*null-char*
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t
   :copyable nil)
 
@@ -523,6 +571,7 @@
 (atomic-stobjs::define-hash-table$a ht-boolean/3$a hons-equal
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t)
 
 (atomic-stobjs::define-hash-table$corr ht-boolean/3)
@@ -538,6 +587,7 @@
 (atomic-stobjs::define-hash-table$a htn-boolean/3$a hons-equal
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t
   :copyable nil)
 
@@ -555,6 +605,7 @@
 (atomic-stobjs::define-hash-table$a ht-boolean/4$a equal
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t)
 
 (atomic-stobjs::define-hash-table$corr ht-boolean/4)
@@ -570,6 +621,7 @@
 (atomic-stobjs::define-hash-table$a htn-boolean/4$a equal
   :val-recognizer booleanp
   :val-fixer if-bool-fix
+  :val-equiv iff
   :default-val t
   :copyable nil)
 
