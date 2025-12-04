@@ -1304,10 +1304,15 @@
       (declare (xargs :guard (and (element-recognizer %value)
                                   (element-recognizer value)))
                (ignore %value))
-      (element-fixer value)))
+      (if (element-coupled-p value)
+          (element-fixer value)
+          (initial-element))))
 
   (defthm element-recognizer-of-element-copy
     (element-recognizer (element-copy %value value)))
+
+  (defthm element-coupled-p-of-element-copy
+    (element-coupled-p (element-copy %value value)))
 
   (defthm element-copy-ignores-1
     (equal (element-copy %value value)
@@ -1512,34 +1517,29 @@
                      (%vector (copy/resizable %vector vector))
                      (vector (copy/resizable %vector vector-equiv)))))))
 
-(local
-  (defthm coupledp/resizable-of-copy/resizable
-    ;; CONJECTURE: Swap antecedent and consequent and replace implication with
-    ;; equality.  Make the resulting theorem global.
-    (implies (coupledp/resizable vector)
-             (coupledp/resizable (copy/resizable %vector vector)))
-    :hints
-    (("Subgoal 2"
-      :expand (coupledp/resizable (copy/resizable-rec (default-length)
-                                                      (creator) vector)))
-     ("Subgoal 1"
-      :expand (coupledp/resizable (copy/resizable-rec (length/resizable vector)
-                                                      (resizer/resizable (length/resizable vector)
-                                                                         (creator))
-                                                      vector))))))
+(defthm coupledp/resizable-of-copy/resizable
+  (coupledp/resizable (copy/resizable %vector vector))
+  :hints
+  (("Subgoal 2"
+    :expand (coupledp/resizable (copy/resizable-rec (default-length)
+                                                    (creator) vector)))
+   ("Subgoal 1"
+    :expand (coupledp/resizable (copy/resizable-rec (length/resizable vector)
+                                                    (resizer/resizable (length/resizable vector)
+                                                                       (creator))
+                                                    vector)))))
 
 (defthm length/resizable-of-copy/resizable
   (equal (length/resizable (copy/resizable %vector vector))
          (length/resizable vector)))
 
-(local
-  (defthm accessor/resizable-of-copy/resizable
-    (implies (coupledp/resizable vector)
-             (equal (accessor/resizable index (copy/resizable %vector vector))
-                    (accessor/resizable index vector)))
-    :hints
-    (("Goal"
-      :cases ((< (nfix index) (length/resizable vector)))))))
+(defthm accessor/resizable-of-copy/resizable
+  (equal (accessor/resizable index (copy/resizable %vector vector))
+         (element-copy (initial-element)
+                       (accessor/resizable index vector)))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (length/resizable vector))))))
 
 (local
   (in-theory
@@ -1710,23 +1710,20 @@
                      (%vector (copy/fixed %vector vector))
                      (vector (copy/fixed %vector vector-equiv)))))))
 
-(local
-  (defthm coupledp/fixed-of-copy/fixed
-    (implies (coupledp/fixed vector)
-             (coupledp/fixed (copy/fixed %vector vector)))
-    :hints
-    (("Goal"
-      :expand (coupledp/fixed (copy/fixed-rec (default-length)
-                                              %vector vector))))))
+(defthm coupledp/fixed-of-copy/fixed
+  (coupledp/fixed (copy/fixed %vector vector))
+  :hints
+  (("Goal"
+    :expand (coupledp/fixed (copy/fixed-rec (default-length)
+                                            %vector vector)))))
 
-(local
-  (defthm accessor/fixed-of-copy/fixed
-    (implies (coupledp/fixed vector)
-             (equal (accessor/fixed index (copy/fixed %vector vector))
-                    (accessor/fixed index vector)))
-    :hints
-    (("Goal"
-      :cases ((< (nfix index) (default-length)))))))
+(defthm accessor/fixed-of-copy/fixed
+  (equal (accessor/fixed index (copy/fixed %vector vector))
+         (element-copy (initial-element)
+                       (accessor/fixed index vector)))
+  :hints
+  (("Goal"
+    :cases ((< (nfix index) (default-length))))))
 
 (local
   (in-theory
