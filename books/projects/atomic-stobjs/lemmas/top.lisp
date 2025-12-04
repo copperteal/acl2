@@ -31,11 +31,6 @@
 (set-verify-guards-eagerness 2)
 
 #||
-(include-book "total-order")
-(include-book "osets")
-(include-book "omaps")
-(include-book "std")
-
 (include-book "vector-c")
 (include-book "vector-a")
 (include-book "hash-table-c")
