@@ -3380,11 +3380,19 @@
   (equal (count/copyable (copy %hash-table hash-table))
          (set::cardinality (keys hash-table))))
 
-(defthm accessor/copyable-of-copy
+(defthm val-copy-of-accessor/copyable
+  (implies (set::in (key-fixer key) (keys hash-table))
+           (equal (val-copy val (accessor/copyable key hash-table))
+                  (accessor/copyable key (copy (creator/copyable) hash-table)))))
+
+(defthmd accessor/copyable-of-copy
   (equal (accessor/copyable key (copy %hash-table hash-table))
          (if (set::in (key-fixer key) (keys hash-table))
              (val-copy (default-val) (accessor/copyable key hash-table))
-             (default-val))))
+             (default-val)))
+  :hints
+  (("Goal"
+    :in-theory (disable val-copy-of-accessor/copyable))))
 
 (defthm boundp/copyable-of-copy
   (equal (boundp/copyable key (copy %hash-table hash-table))
@@ -3410,6 +3418,8 @@
                   (fixer/copyable hash-table)))
   :hints
   (("Goal"
+    :in-theory (e/d (accessor/copyable-of-copy)
+                    (val-copy-of-accessor/copyable))
     :use ((:instance equal/copyable
                      (%hash-table (copy %hash-table hash-table))
                      (hash-table (fixer/copyable hash-table)))))))
