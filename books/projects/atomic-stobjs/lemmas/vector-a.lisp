@@ -1533,13 +1533,20 @@
   (equal (length/resizable (copy/resizable %vector vector))
          (length/resizable vector)))
 
-(defthm accessor/resizable-of-copy/resizable
-  (equal (accessor/resizable index (copy/resizable %vector vector))
-         (element-copy (initial-element)
-                       (accessor/resizable index vector)))
+(defthm element-copy-of-accessor/resizable
+  (equal (element-copy val (accessor/resizable index vector))
+         (accessor/resizable index (copy/resizable (creator) vector)))
   :hints
   (("Goal"
     :cases ((< (nfix index) (length/resizable vector))))))
+
+(defthmd accessor/resizable-of-copy/resizable
+  (equal (accessor/resizable index (copy/resizable %vector vector))
+         (element-copy (initial-element) (accessor/resizable index vector)))
+  :hints
+  (("Goal"
+    :in-theory (disable element-copy-of-accessor/resizable)
+    :use element-copy-of-accessor/resizable)))
 
 (local
   (in-theory
@@ -1551,6 +1558,8 @@
                   (fixer/resizable vector)))
   :hints
   (("Goal"
+    :in-theory (e/d (accessor/resizable-of-copy/resizable)
+                    (element-copy-of-accessor/resizable))
     :use ((:instance equal/resizable
                      (%vector (copy/resizable %vector vector))
                      (vector (fixer/resizable vector)))))))
@@ -1717,13 +1726,20 @@
     :expand (coupledp/fixed (copy/fixed-rec (default-length)
                                             %vector vector)))))
 
-(defthm accessor/fixed-of-copy/fixed
-  (equal (accessor/fixed index (copy/fixed %vector vector))
-         (element-copy (initial-element)
-                       (accessor/fixed index vector)))
+(defthm element-copy-of-accessor/fixed
+  (equal (element-copy val (accessor/fixed index vector))
+         (accessor/fixed index (copy/fixed (creator) vector)))
   :hints
   (("Goal"
     :cases ((< (nfix index) (default-length))))))
+
+(defthmd accessor/fixed-of-copy/fixed
+  (equal (accessor/fixed index (copy/fixed %vector vector))
+         (element-copy (initial-element) (accessor/fixed index vector)))
+  :hints
+  (("Goal"
+    :in-theory (disable element-copy-of-accessor/fixed)
+    :use element-copy-of-accessor/fixed)))
 
 (local
   (in-theory
@@ -1735,6 +1751,8 @@
                   (fixer/fixed vector)))
   :hints
   (("Goal"
+    :in-theory (e/d (accessor/fixed-of-copy/fixed)
+                    (element-copy-of-accessor/fixed))
     :use ((:instance equal/fixed
                      (%vector (copy/fixed %vector vector))
                      (vector (fixer/fixed vector)))))))
