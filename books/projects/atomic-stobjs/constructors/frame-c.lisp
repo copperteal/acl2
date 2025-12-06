@@ -438,7 +438,7 @@
                             :as stobj-recognizer :in stobj-recognizers
                             :as field :in fields
                             :as %field :in %fields
-                            :as i :from 0 :to (1- (len fields))
+                            :as i :from 1 :to (len fields)
                             :when stobj-copy
                             :collect `(local
                                         (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-copy "-" i)
@@ -448,7 +448,7 @@
                             :as stobj-coupled-p :in stobj-coupled-p-list
                             :as field :in fields
                             :as %field :in %fields
-                            :as i :from 0 :to (1- (len fields))
+                            :as i :from 1 :to (len fields)
                             :when (and stobj-copy
                                        stobj-coupled-p)
                             :collect `(local
@@ -460,7 +460,7 @@
                             :as stobj-recognizer :in stobj-recognizers
                             :as field :in fields
                             :as %field :in %fields
-                            :as i :from 0 :to (1- (len fields))
+                            :as i :from 1 :to (len fields)
                             :when stobj-copy
                             :collect `(local
                                         (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copy "-RW-" i)
@@ -475,7 +475,7 @@
                             :as %field :in %fields
                             :as stobj-recognizer :in stobj-recognizers
                             :as stobj-creator :in stobj-creators
-                            :as i :from 0 :to (1- (len fields))
+                            :as i :from 1 :to (len fields)
                             :when stobj-copy
                             :collect `(local
                                         (defthm ,(symbolicate "ATOMIC-STOBJS" stobj-copy "-IGNORES-1-" i)
