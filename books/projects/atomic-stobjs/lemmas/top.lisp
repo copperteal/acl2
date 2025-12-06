@@ -30,9 +30,9 @@
 (in-package "ACL2")
 (set-verify-guards-eagerness 2)
 
-#||
+#|
 (include-book "vector-c")
 (include-book "vector-a")
 (include-book "hash-table-c")
 (include-book "hash-table-a")
-||#
+|#

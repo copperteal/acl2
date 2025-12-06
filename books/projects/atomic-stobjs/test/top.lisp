@@ -29,7 +29,7 @@
 
 (in-package "ACL2")
 
-#||
+#|
 (include-book "vector-c")
 (include-book "vector-a")
 (include-book "vector-abs")
@@ -46,4 +46,4 @@
 (include-book "frame")
 
 (include-book "copy")
-||#
+|#
