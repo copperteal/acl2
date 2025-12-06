@@ -191,12 +191,10 @@
               (vector-constraints (symbolicate package-witness vector "-CONSTRAINTS"))
 
               (recognizer-aux (symbolicate package-witness vector "-AUX-P"))
-              ;; (true-listp-when-recognizer-aux (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-WHEN-" recognizer-aux))
               (recognizer-aux-tp (symbolicate package-witness recognizer-aux "-TP"))
               (recognizer-aux-cr (symbolicate package-witness recognizer-aux "-CR"))
 
               (recognizer-tp (symbolicate package-witness recognizer "-TP"))
-              ;; (true-listp-when-recognizer (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-WHEN-" recognizer))
               (recognizer-cr (symbolicate package-witness recognizer "-CR"))
               (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
               (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
