@@ -40,10 +40,10 @@
 
 ;;;; Constants
 (defconst *field-keywords$a*
-  '(:recognizer :fixer :stobj :initial-element :accessor :updater))
+  '(:recognizer :fixer :equiv :stobj :initial-element :accessor :updater))
 
 (defconst *body-keywords$a*
-  '(:recognizer :creator :fixer :view
+  '(:recognizer :creator :fixer :equiv :view
     :package-witness :debug))
 
 
@@ -58,6 +58,7 @@
               (subsetp (evens kvl) *field-keywords$a* :test 'eq)
               (let ((recognizer (cadr (assoc-keyword :recognizer kvl)))
                     (fixer (cadr (assoc-keyword :fixer kvl)))
+                    (equiv (cadr (assoc-keyword :equiv kvl)))
                     (stobj (cadr (assoc-keyword :stobj kvl)))
                     (initial-element (cadr (assoc-keyword :initial-element kvl)))
                     (accessor (cadr (assoc-keyword :accessor kvl)))
@@ -65,6 +66,7 @@
                 (declare (ignore initial-element))
                 (and (symbolp recognizer)
                      (symbolp fixer)
+                     (symbolp equiv)
                      (or (and (not recognizer)
                               (not fixer))
                          (and recognizer
@@ -91,12 +93,14 @@
                 (let ((recognizer (cadr (assoc-keyword :recognizer body)))
                       (creator (cadr (assoc-keyword :creator body)))
                       (fixer (cadr (assoc-keyword :fixer body)))
+                      (equiv (cadr (assoc-keyword :equiv body)))
                       (view (cadr (assoc-keyword :view body)))
                       (package-witness (cadr (assoc-keyword :package-witness body)))
                       (debug (cadr (assoc-keyword :debug body))))
                   (and (symbolp recognizer)
                        (symbolp creator)
                        (symbolp fixer)
+                       (symbolp equiv)
                        (symbolp view)
                        (package-witness-p package-witness)
                        (booleanp debug)))))))
@@ -143,12 +147,13 @@
                     (frame$a-body-p kvl)
                     (keyword-value-listp kvl))))))
 
-(defun parse-fds$a (fds fields recognizers fixers stobjs
+(defun parse-fds$a (fds fields recognizers fixers equivs stobjs
                     initial-elements accessors updaters)
   (declare (xargs :guard (and (frame$a-descriptor-list-p fds)
                               (symbol-listp fields)
                               (symbol-listp recognizers)
                               (symbol-listp fixers)
+                              (symbol-listp equivs)
                               (symbol-listp stobjs)
                               (true-listp initial-elements)
                               (symbol-listp accessors)
@@ -157,6 +162,7 @@
       (mv (reverse fields)
           (reverse recognizers)
           (reverse fixers)
+          (reverse equivs)
           (reverse stobjs)
           (reverse initial-elements)
           (reverse accessors)
@@ -166,6 +172,7 @@
              (kvl (cdr descriptor))
              (recognizer (cadr (assoc-keyword :recognizer kvl)))
              (fixer (cadr (assoc-keyword :fixer kvl)))
+             (equiv (cadr (assoc-keyword :equiv kvl)))
              (stobj (cadr (assoc-keyword :stobj kvl)))
              (initial-element (cadr (assoc-keyword :initial-element kvl)))
              (accessor (cadr (assoc-keyword :accessor kvl)))
@@ -174,6 +181,7 @@
                      (cons field fields)
                      (cons recognizer recognizers)
                      (cons fixer fixers)
+                     (cons equiv equivs)
                      (cons stobj stobjs)
                      (cons initial-element initial-elements)
                      (cons accessor accessors)
@@ -185,13 +193,14 @@
   (let* ((recognizer (cadr (assoc-keyword :recognizer kvl)))
          (creator (cadr (assoc-keyword :creator kvl)))
          (fixer (cadr (assoc-keyword :fixer kvl)))
+         (equiv (cadr (assoc-keyword :equiv kvl)))
          (view (cadr (assoc-keyword :view kvl)))
          (package-witness-supplied-p (assoc-keyword :package-witness kvl))
          (package-witness (cadr package-witness-supplied-p))
          (package-witness-supplied-p (and package-witness-supplied-p
                                           t))
          (debug (cadr (assoc-keyword :debug kvl))))
-    (mv recognizer creator fixer view
+    (mv recognizer creator fixer equiv view
         package-witness package-witness-supplied-p debug)))
 
 (defun parse-form$a (form)
@@ -199,15 +208,15 @@
   (let ((body (cddr form)))
     (mv-let (fds kvl)
             (split-body$a () body)
-      (mv-let (fields recognizers fixers stobjs
+      (mv-let (fields recognizers fixers equivs stobjs
                       initial-elements accessors updaters)
-              (parse-fds$a fds () () () () () () ())
-        (mv-let (recognizer creator fixer view
+              (parse-fds$a fds () () () () () () () ())
+        (mv-let (recognizer creator fixer equiv view
                             package-witness package-witness-supplied-p debug)
                 (parse-kvl$a kvl)
-          (mv fields recognizers fixers stobjs
+          (mv fields recognizers fixers equivs stobjs
               initial-elements accessors updaters
-              recognizer creator fixer view
+              recognizer creator fixer equiv view
               package-witness package-witness-supplied-p debug))))))
 
 
@@ -215,9 +224,9 @@
 (defmacro define-frame$a (&whole form frame &body body)
   (declare (xargs :guard (frame$a-form-p form))
            (ignore body))
-  (mv-let (fields recognizers fixers stobjs
+  (mv-let (fields recognizers fixers equivs stobjs
                   initial-elements accessors updaters
-                  recognizer creator fixer view
+                  recognizer creator fixer equiv view
                   package-witness package-witness-supplied-p debug)
           (parse-form$a form)
 
@@ -279,6 +288,16 @@
                                           (third (second stobj$a-property)))
                                          (t
                                           (cdr (assoc stobj fixer-alist))))))
+                (equivs ',equivs)
+                (equivs (loop$ :for equiv :in equivs
+                              :as stobj :in stobjs
+                              :as stobj$a-property :in stobj$a-property-list
+                              :collect (cond
+                                         (equiv)
+                                         (stobj$a-property
+                                          (fourth (second stobj$a-property)))
+                                         (t
+                                          'equal))))
                 (initial-element-names (loop$ :for field :in fields
                                              :collect (symbolicate package-witness "*" frame "-" field "-INITIAL-ELEMENT*")))
                 (initial-elements (loop$ :for initial-element-name :in initial-element-names
@@ -290,6 +309,7 @@
                 (recognizer ',recognizer)
                 (creator ',creator)
                 (fixer ',fixer)
+                (equiv ',equiv)
                 (view ',view)
                 (accessors ',accessors)
                 (updaters ',updaters)
@@ -301,6 +321,8 @@
                              (symbolicate package-witness "CREATE-" frame)))
                 (fixer (or fixer
                            (symbolicate package-witness frame "-FIX")))
+                (equiv (or equiv
+                           (symbolicate package-witness frame "-EQUIV")))
                 (view (or view
                           (symbolicate package-witness frame "-VIEW")))
                 (accessors (loop$ :for field :in fields
@@ -326,19 +348,25 @@
                    ,@defconst-forms))
 
                 ;; Theorem Names
+                (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
+                (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
+
                 (recognizer-tp (symbolicate package-witness recognizer "-TP"))
                 (recognizer-cr (symbolicate package-witness recognizer "-CR"))
                 (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
                 (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
                 (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
 
-                (fixer-rw (symbolicate package-witness fixer "-RW"))
+                (fixer-tp (symbolicate package-witness fixer "-TP"))
                 (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
                 (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
+                (equiv-tp (symbolicate package-witness equiv "-TP"))
+                (fixer-mod-equiv (symbolicate package-witness fixer "-MOD-" equiv))
+                (equiv-when-not-recognizer (symbolicate package-witness equiv "-WHEN-NOT-" recognizer))
+
                 (view-tp (symbolicate package-witness view "-TP"))
-                (view-collapse (symbolicate package-witness view "-COLLAPSE"))
-                (view-rw (symbolicate package-witness view "-RW"))
+                (view-elim (symbolicate package-witness view "-ELIM"))
 
                 (%frame (symbolicate package-witness "%" frame))
                 (frame-equal (symbolicate package-witness frame "-EQUAL"))
@@ -346,37 +374,31 @@
 
                 ;; Epilogue
                 (frame-theorems (symbolicate package-witness frame "-THEOREMS"))
-                (frame-definitions (symbolicate package-witness frame "-DEFINITIONS"))
                 (frame-aggressive (symbolicate package-witness frame "-AGGRESSIVE"))
                 (epilogue
                  `((in-theory
-                     (enable ,view-rw
-                             ,@(loop$ :for updater :in updaters
+                     (enable ,@(loop$ :for updater :in updaters
                                      :collect (symbolicate package-witness updater "-RW"))))
 
                    (deflabel ,frame-end)
-
-                   (deftheory-static ,frame-definitions
-                     ',(append
-                        (list recognizer
-                              creator
-                              fixer
-                              view
-                              frame-equal)
-                        accessors
-                        updaters))
 
                    (deftheory-static ,frame-theorems
                      (set-difference-theories
                       (set-difference-theories
                        (current-theory ',frame-end)
                        (current-theory ',frame-begin))
-                      (theory ',frame-definitions)))
+                      ',(append
+                         (list recognizer
+                               creator
+                               fixer
+                               equiv
+                               view
+                               frame-equal)
+                         accessors
+                         updaters)))
 
                    (deftheory-static ,frame-aggressive
                      ',(append
-                        (list fixer-rw
-                              view-collapse)
                         (loop$ :for i :from 1 :to (len fields)
                               :as recognizer :in recognizers
                               :when recognizer
@@ -391,27 +413,34 @@
                 (body
                  `(encapsulate ()
 
+                    (local
+                      (defthm ,len-of-cons
+                        (equal (len (cons a d))
+                               (1+ (len d)))))
+
+                    (local
+                      (defthm ,nth-of-cons
+                        (equal (nth n (cons a d))
+                               (if (zp n)
+                                   a
+                                   (nth (1- n) d)))))
+
                     ,@(loop$ :for i :from 1 :to (len fields)
                             :as field :in fields
                             :as recognizer :in recognizers
-                            :when recognizer
-                            :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" "BOOLEANP-OF-" recognizer "-" i)
-                                          (booleanp (,recognizer ,field))
-                                          :rule-classes
-                                          (:rewrite
-                                           :type-prescription))))
-
-                    ,@(loop$ :for i :from 1 :to (len fields)
                             :as initial-element :in initial-elements
                             :as initial-element-name :in initial-element-names
-                            :as recognizer :in recognizers
                             :when recognizer
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer "-OF-" initial-element "-" i)
-                                          (,recognizer ,initial-element)
-                                          ,@(and (equal initial-element initial-element-name)
-                                                 `(:rule-classes nil)))))
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer "-CONSTRAINTS-" i)
+                                          (and (booleanp (,recognizer ,field))
+                                               (,recognizer ,initial-element))
+                                          :rule-classes
+                                          ((:rewrite :corollary
+                                                     (booleanp (,recognizer ,field)))
+                                           ,@(and (not (equal initial-element initial-element-name))
+                                                  `((:rewrite :corollary
+                                                              (,recognizer ,initial-element))))))))
 
                     ,@(loop$ :for i :from 1 :to (len fields)
                             :as field :in fields
@@ -421,17 +450,38 @@
                             :when (and recognizer
                                        fixer)
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-RW" "-" i)
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
                                           (equal (,fixer ,field)
                                                  (if (,recognizer ,field)
                                                      ,field
                                                      ,initial-element)))))
 
+                    ,@(loop$ :for i :from 1 :to (len fields)
+                            :as equiv :in equivs
+                            :as %field :in %fields
+                            :as field :in fields
+                            :as fixer :in fixers
+                            :when fixer
+                            :collect `(local
+                                        (defthm ,(symbolicate "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
+                                          (equal (,equiv ,%field ,field)
+                                                 (equal (,fixer ,%field)
+                                                        (,fixer ,field))))))
+
+                    (local
+                      (deflabel end-of-prologue))
+
+                    (local
+                      (include-book "std/lists/nth" :dir :system))
+
+                    (local
+                      (table acl2::theory-invariant-table nil nil :clear))
+
                     (local
                       (in-theory
                         (union-theories (current-theory 'acl2::ground-zero)
                                         (set-difference-theories
-                                         (universal-theory :here)
+                                         (universal-theory 'end-of-prologue)
                                          (universal-theory ',frame-begin)))))
 
                     ,@(loop$ :for absstobj-info :in absstobj-info-list
@@ -440,17 +490,18 @@
                                         (in-theory
                                           (enable ,@(strip-cars (cdr absstobj-info))))))
 
+                    (local
+                      (in-theory
+                        (disable len
+                                 nth
+                                 update-nth)))
+
                     ,@(let ((exec-recognizers (loop$ :for recognizer :in recognizers
                                                     :when recognizer
-                                                    :collect `(:e ,recognizer)))
-                            (exec-fixers (loop$ :for fixer :in fixers
-                                               :when fixer
-                                               :collect `(:e ,fixer))))
-                        (and (or exec-recognizers
-                                 exec-fixers)
+                                                    :collect `(:e ,recognizer))))
+                        (and exec-recognizers
                              `((in-theory
-                                 (enable ,@exec-recognizers
-                                         ,@exec-fixers)))))
+                                 (enable ,@exec-recognizers)))))
 
                     (defun ,recognizer (,frame)
                       (declare (xargs :guard t))
@@ -462,12 +513,9 @@
                                    :collect `(,recognizer (nth ,i ,frame)))
                            t))
 
-                    (defun ,creator ()
+                    (defun-nx ,creator ()
                       (declare (xargs :guard t))
                       (list ,@initial-elements))
-
-                    (in-theory
-                      (disable (:e ,creator)))
 
                     (defun ,fixer (,frame)
                       (declare (xargs :guard (,recognizer ,frame)))
@@ -475,14 +523,24 @@
                           ,frame
                           (,creator)))
 
-                    (defun-nx ,view (,@fields ,frame)
-                      (declare (xargs :guard ,(if fields
-                                                  `(and ,@(loop$ :for field :in fields
-                                                                :as recognizer :in recognizers
-                                                                :when recognizer
-                                                                :collect `(,recognizer ,field))
-                                                        (,recognizer ,frame))
-                                                  `(,recognizer ,frame))))
+                    (defun ,equiv (,%frame ,frame)
+                      (declare (xargs :guard (and (,recognizer ,%frame)
+                                                  (,recognizer ,frame))))
+                      (equal (,fixer ,%frame)
+                             (,fixer ,frame)))
+
+                    (defun-nx ,view (,@fields)
+                      (declare (xargs :guard ,(let* ((guard (loop$ :for field :in fields
+                                                                  :as recognizer :in recognizers
+                                                                  :when recognizer
+                                                                  :collect `(,recognizer ,field))))
+                                                (cond
+                                                  ((null guard)
+                                                   't)
+                                                  ((null (cdr guard))
+                                                   (car guard))
+                                                  (t
+                                                   (cons 'and guard))))))
                       (let (,@(loop$ :for field :in fields
                                     :as fixer :in fixers
                                     :when fixer
@@ -531,78 +589,78 @@
                       (,recognizer (,creator)))
 
                     (defthm ,recognizer-of-fixer
-                      (,recognizer (,fixer ,frame)))
+                      (,recognizer (,fixer ,frame))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,recognizer))))
 
                     (defthm ,recognizer-of-view
-                      (,recognizer (,view ,@fields ,frame)))
+                      (,recognizer (,view ,@fields)))
 
                     ;; `FIXER'
-                    (with-books (("std/lists/nth" :dir :system))
-                      (local
-                        (defthm nth-of-cons
-                          (equal (nth i (cons a d))
-                                 (if (zp i)
-                                     a
-                                     (nth (1- i) d)))))
-
-                      (local
-                        (in-theory
-                          (disable nth
-                                   acl2::nth-when-zp)))
-
-                      (defthmd ,fixer-rw
-                        (equal (,fixer ,frame)
-                               (,view ,@(loop$ :for accessor :in accessors
-                                              :collect `(,accessor ,frame))
-                                      ,frame))
-                        :hints
-                        ((acl2::equal-by-nths-hint))))
+                    (defthm ,fixer-tp
+                      ,(if (consp fields)
+                           `(and (consp (,fixer ,frame))
+                                 (true-listp (,fixer ,frame)))
+                           `(null (,fixer ,frame)))
+                      :rule-classes :type-prescription)
 
                     (defthm ,fixer-when-recognizer
                       (implies (,recognizer ,frame)
                                (equal (,fixer ,frame)
-                                      ,frame)))
+                                      ,frame))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,recognizer))))
 
                     (defthm ,fixer-when-not-recognizer
                       (implies (not (,recognizer ,frame))
                                (equal (,fixer ,frame)
-                                      (,creator))))
+                                      (,creator)))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,recognizer))))
+
+                    ;; `EQUIV'
+                    (defthm ,equiv-tp
+                      (booleanp (,equiv ,%frame ,frame))
+                      :rule-classes :type-prescription)
+
+                    (defequiv ,equiv
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,fixer))))
+
+                    (defcong ,equiv equal (,fixer ,frame) 1
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,fixer))))
+
+                    (defthm ,fixer-mod-equiv
+                      (,equiv (,fixer ,frame) ,frame)
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,fixer))))
+
+                    (defthm ,equiv-when-not-recognizer
+                      (implies (not (,recognizer ,frame))
+                               (,equiv ,frame (,creator)))
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,fixer))))
 
                     ;; `VIEW'
                     (defthm ,view-tp
                       ,(if (consp fields)
-                           `(and (consp (,view ,@fields ,frame))
-                                 (true-listp (,view ,@fields ,frame)))
-                           `(null (,view ,frame)))
+                           `(and (consp (,view ,@fields))
+                                 (true-listp (,view ,@fields)))
+                           `(null (,view)))
                       :rule-classes :type-prescription)
 
-                    (with-books (("std/lists/nth" :dir :system))
-                      (local
-                        (defthm nth-of-cons
-                          (equal (nth i (cons a d))
-                                 (if (zp i)
-                                     a
-                                     (nth (1- i) d)))))
-
-                      (local
-                        (in-theory
-                          (disable nth
-                                   acl2::nth-when-zp)))
-
-                      (defthmd ,view-collapse
-                        (implies (case-split (,recognizer ,%frame))
-                                 (equal (,view ,@(loop$ :for accessor :in accessors
-                                                       :collect `(,accessor ,%frame))
-                                               ,frame)
-                                        ,%frame))
-                        :hints
-                        ((acl2::equal-by-nths-hint))))
-
-                    (defthmd ,view-rw
-                      (implies (syntaxp (not (and (consp ,frame)
-                                                  (eq (car ,frame) ',creator))))
-                               (equal (,view ,@fields ,frame)
-                                      (,view ,@fields (,creator)))))
+                    ,@(loop$ :for equiv :in equivs
+                            :as i :from 1 :to (len fields)
+                            :when (not (eq equiv 'equal))
+                            :collect `(defcong ,equiv equal (,view ,@fields) ,i))
 
                     ,@(loop$ :for i :from 1 :to (len fields)
                             :as j :from 0 :to (1- (len fields))
@@ -612,17 +670,18 @@
                             :when recognizer
                             :collect `(defthmd ,(symbolicate package-witness view "-WHEN-NOT-" recognizer "-" i)
                                         (implies (not (,recognizer ,field))
-                                                 (equal (,view ,@fields ,frame)
-                                                        (,view ,@(update-nth j initial-element fields) ,frame)))))
+                                                 (equal (,view ,@fields)
+                                                        (,view ,@(update-nth j initial-element fields))))))
 
-                    ,@(loop$ :for i :from 1 :to (len fields)
-                            :as j :from 0 :to (1- (len fields))
-                            :as field :in fields
-                            :as fixer :in fixers
-                            :when fixer
-                            :collect `(defthm ,(symbolicate package-witness view "-OF-" fixer "-" i)
-                                        (equal (,view ,@(update-nth j `(,fixer ,field) fields) ,frame)
-                                               (,view ,@fields ,frame))))
+                    ,@(and (consp fields)
+                           `((defthm ,view-elim
+                               (implies (,recognizer ,frame)
+                                        (equal (,view ,@(loop$ :for accessor :in accessors
+                                                              :collect `(,accessor ,frame)))
+                                               ,frame))
+                               :rule-classes :elim
+                               :hints
+                               ((acl2::equal-by-nths-hint)))))
 
                     ;; `ACCESSORS'
                     ,@(loop$ :for recognizer :in recognizers
@@ -633,6 +692,9 @@
                                         :rule-classes
                                         (:rewrite
                                          :type-prescription)))
+
+                    ,@(loop$ :for accessor :in accessors
+                            :collect `(defcong ,equiv equal (,accessor ,frame) 1))
 
                     ,@(loop$ :for accessor :in accessors
                             :as initial-element :in initial-elements
@@ -647,54 +709,37 @@
                                         (equal (,accessor (,creator))
                                                ,initial-element)))
 
-                    ,@(loop$ :for accessor :in accessors
-                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" fixer)
-                                        (equal (,accessor (,fixer ,frame))
-                                               (,accessor ,frame))))
-
                     ,@(loop$ :for field :in fields
                             :as fixer :in fixers
                             :as accessor :in accessors
                             :collect `(defthm ,(symbolicate package-witness accessor "-OF-" view)
-                                        (equal (,accessor (,view ,@fields ,frame))
+                                        (equal (,accessor (,view ,@fields))
                                                ,(if fixer
                                                     `(,fixer ,field)
                                                     field))))
 
                     ;; `UPDATERS'
-                    ,@(and fields
-                           `((with-books (("std/lists/nth" :dir :system))
-                               (local
-                                 (defthm nth-of-cons
-                                   (equal (nth i (cons a d))
-                                          (if (zp i)
-                                              a
-                                              (nth (1- i) d)))))
-
-                               (local
-                                 (in-theory
-                                   (disable nth
-                                            acl2::nth-when-zp)))
-
-                               ,@(let ((arguments (loop$ :for accessor :in accessors
-                                                        :collect `(,accessor ,frame))))
-                                   (loop$ :for i :from 0 :to (1- (len fields))
-                                         :as field :in fields
-                                         :as updater :in updaters
-                                         :collect `(defthmd ,(symbolicate package-witness updater "-RW")
-                                                     (implies (syntaxp (not (and (consp ,frame)
-                                                                                 (eq (car ,frame) ',view))))
-                                                              (equal (,updater ,field ,frame)
-                                                                     (,view ,@(update-nth i field arguments) ,frame)))
-                                                     :hints
-                                                     ((acl2::equal-by-nths-hint))))))))
+                    ,@(let ((arguments (loop$ :for accessor :in accessors
+                                             :collect `(,accessor ,frame))))
+                        (loop$ :for i :from 0 :to (1- (len fields))
+                              :as field :in fields
+                              :as updater :in updaters
+                              :collect `(defthmd ,(symbolicate package-witness updater "-RW")
+                                          (implies (syntaxp (not (and (consp ,frame)
+                                                                      (eq (car ,frame) ',view))))
+                                                   (equal (,updater ,field ,frame)
+                                                          (,view ,@(update-nth i field arguments))))
+                                          :hints
+                                          ((acl2::equal-by-nths-hint)))))
 
                     ,@(loop$ :for i :from 0 :to (1- (len fields))
                             :as %field :in %fields
                             :as updater :in updaters
                             :collect `(defthm ,(symbolicate package-witness updater "-OF-" view)
-                                        (equal (,updater ,%field (,view ,@fields ,frame))
-                                               (,view ,@(update-nth i %field fields) ,frame))))
+                                        (equal (,updater ,%field (,view ,@fields))
+                                               (,view ,@(update-nth i %field fields)))
+                                        :hints
+                                        ((acl2::equal-by-nths-hint))))
 
                     ;; `FRAME-EQUAL'
                     (defun-nx ,frame-equal (,%frame ,frame)
@@ -708,43 +753,32 @@
 
                     (table equality ',frame ',frame-equal)
 
-                    (with-books (("std/lists/nth" :dir :system))
-                      (local
-                        (defthm nth-of-cons
-                          (equal (nth i (cons a d))
-                                 (if (zp i)
-                                     a
-                                     (nth (1- i) d)))))
-
-                      (local
-                        (in-theory
-                          (disable nth
-                                   acl2::nth-when-zp)))
-
-                      (defthm ,frame-equal-fc
-                        (implies (,frame-equal ,%frame ,frame)
-                                 (equal ,%frame ,frame))
-                        :rule-classes
-                        ((:forward-chaining :trigger-terms
-                                            ((,frame-equal ,%frame ,frame))
-                                            :corollary
-                                            (implies t
-                                                     (implies (,frame-equal ,%frame ,frame)
-                                                              (equal ,%frame ,frame)))))
-                        :hints
-                        ((acl2::equal-by-nths-hint)
-                         ,@(and fields
-                                `(("Subgoal 1"
-                                   :cases ,(loop$ :for i :from 0 :to (1- (len fields))
-                                                 :collect `(equal acl2::n ,i))))))))))
+                    (defthm ,frame-equal-fc
+                      (implies (,frame-equal ,%frame ,frame)
+                               (equal ,%frame ,frame))
+                      :rule-classes
+                      ((:forward-chaining :trigger-terms
+                                          ((,frame-equal ,%frame ,frame))
+                                          :corollary
+                                          (implies t
+                                                   (implies (,frame-equal ,%frame ,frame)
+                                                            (equal ,%frame ,frame)))))
+                      :hints
+                      ((acl2::equal-by-nths-hint)
+                       ,@(and (consp fields)
+                              `(("Subgoal 1"
+                                 :cases ,(loop$ :for i :from 0 :to (1- (len fields))
+                                               :collect `(equal acl2::n ,i)))))))))
 
                 (stobj$a-property `(,frame (,recognizer
                                             ,creator
-                                            ,fixer)
+                                            ,fixer
+                                            ,equiv)
                                            (,fields
                                             ,recognizers
                                             ,initial-element-names
                                             ,fixers
+                                            ,equivs
                                             ,stobjs
                                             ,accessors
                                             ,updaters
