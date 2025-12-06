@@ -3380,19 +3380,11 @@
   (equal (count/copyable (copy %hash-table hash-table))
          (set::cardinality (keys hash-table))))
 
-(defthm val-copy-of-accessor/copyable
-  (implies (set::in (key-fixer key) (keys hash-table))
-           (equal (val-copy val (accessor/copyable key hash-table))
-                  (accessor/copyable key (copy (creator/copyable) hash-table)))))
-
-(defthmd accessor/copyable-of-copy
+(defthm accessor/copyable-of-copy
   (equal (accessor/copyable key (copy %hash-table hash-table))
          (if (set::in (key-fixer key) (keys hash-table))
              (val-copy (default-val) (accessor/copyable key hash-table))
-             (default-val)))
-  :hints
-  (("Goal"
-    :in-theory (disable val-copy-of-accessor/copyable))))
+             (default-val))))
 
 (defthm boundp/copyable-of-copy
   (equal (boundp/copyable key (copy %hash-table hash-table))
@@ -3408,6 +3400,40 @@
   (("Goal"
     :in-theory (enable coupledp))))
 
+(defthm copy-of-updater/copyable
+  (equal (copy %hash-table (updater/copyable key val hash-table))
+         (if (set::in (key-fixer key) (keys hash-table))
+             (updater/copyable key
+                               (val-copy (default-val) val)
+                               (copy %hash-table hash-table))
+             (copy %hash-table hash-table)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/copyable
+                     (%hash-table (copy %hash-table (updater/copyable key val hash-table)))
+                     (hash-table (if (set::in (key-fixer key) (keys hash-table))
+                                     (updater/copyable key
+                                                       (val-copy (default-val) val)
+                                                       (copy %hash-table hash-table))
+                                     (copy %hash-table hash-table))))))))
+
+(defthm copy-of-remover/copyable
+  (equal (copy %hash-table (remover/copyable key hash-table))
+         (if (set::in (key-fixer key) (keys hash-table))
+             (updater/copyable key
+                               (default-val)
+                               (copy %hash-table hash-table))
+             (copy %hash-table hash-table)))
+  :hints
+  (("Goal"
+    :use ((:instance equal/copyable
+                     (%hash-table (copy %hash-table (remover/copyable key hash-table)))
+                     (hash-table (if (set::in (key-fixer key) (keys hash-table))
+                                     (updater/copyable key
+                                                       (default-val)
+                                                       (copy %hash-table hash-table))
+                                     (copy %hash-table hash-table))))))))
+
 (local
   (in-theory
     (disable copy)))
@@ -3418,8 +3444,6 @@
                   (fixer/copyable hash-table)))
   :hints
   (("Goal"
-    :in-theory (e/d (accessor/copyable-of-copy)
-                    (val-copy-of-accessor/copyable))
     :use ((:instance equal/copyable
                      (%hash-table (copy %hash-table hash-table))
                      (hash-table (fixer/copyable hash-table)))))))
