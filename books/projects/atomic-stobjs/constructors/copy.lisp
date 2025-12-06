@@ -31,6 +31,7 @@
 (set-verify-guards-eagerness 2)
 
 #|
+(include-book "std/lists/top" :dir :system)
 (include-book "../lemmas/vector-a")
 (include-book "../lemmas/hash-table-a")
 |#
@@ -1926,8 +1927,8 @@
                  (= (len (third stobj$a-property)) 3))
             (make-vector-copy-events stobj package-witness debug state))
            ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 4))
+                 (= (len (third stobj$a-property)) 5))
             (make-hash-table-copy-events stobj package-witness debug state))
            ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 8))
+                 (= (len (third stobj$a-property)) 9))
             (make-frame-copy-events stobj package-witness debug state)))))))

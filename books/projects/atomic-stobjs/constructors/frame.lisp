@@ -31,9 +31,9 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-#||
+#|
 (include-book "std/lists/top" :dir :system)
-||#
+|#
 
 (include-book "../type-spec")
 (include-book "../utilities/top")
