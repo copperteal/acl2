@@ -61,13 +61,13 @@
      &key
        (key-recognizer 'nil)
        (key-fixer 'nil)
-       (key-equiv 'equal)
+       (key-equiv 'nil)
        (key 'nil)
        (%key 'nil)
        (default-key 'nil)
        (val-recognizer 'nil)
        (val-fixer 'nil)
-       (val-equiv 'equal)
+       (val-equiv 'nil)
        (val 'nil)
        (%val 'nil)
        (default-val 'nil)
@@ -162,7 +162,8 @@
                         (symbolicate key "%" key)))
               (key-recognizer ',key-recognizer)
               (key-fixer ',key-fixer)
-              (key-equiv ',key-equiv)
+              (key-equiv (or ',key-equiv
+                             'equal))
               (default-key-name (symbolicate package-witness "*" hash-table "-DEFAULT-KEY*"))
               (default-key default-key-name)
 
@@ -194,7 +195,9 @@
               (val-equiv (cond
                            (',val-equiv)
                            (stobj$a-property
-                            (fourth (second stobj$a-property)))))
+                            (fourth (second stobj$a-property)))
+                           (t
+                            'equal)))
               (default-val-name (symbolicate package-witness "*" hash-table "-DEFAULT-VAL*"))
               (default-val (if val-creator
                                `(,val-creator)

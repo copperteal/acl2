@@ -45,7 +45,7 @@
        (%index 'nil)
        (element-recognizer 'nil)
        (element-fixer 'nil)
-       (element-equiv 'equal)
+       (element-equiv 'nil)
        (element 'nil)
        (%element 'nil)
        (initial-element 'nil)
@@ -138,7 +138,9 @@
               (element-equiv (cond
                                (',element-equiv)
                                (stobj$a-property
-                                (fourth (second stobj$a-property)))))
+                                (fourth (second stobj$a-property)))
+                               (t
+                                'equal)))
               (initial-element-name (symbolicate package-witness "*" vector "-INITIAL-ELEMENT*"))
               (initial-element (if element-creator
                                    `(,element-creator)
