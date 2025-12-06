@@ -34,7 +34,6 @@
 (include-book "std/lists/top" :dir :system)
 ||#
 
-(include-book "../type-spec")
 (include-book "../utilities/top")
 
 
@@ -68,9 +67,11 @@
                      (symbolp fixer)
                      (symbolp equiv)
                      (or (and (not recognizer)
-                              (not fixer))
+                              (not fixer)
+                              (not equiv))
                          (and recognizer
-                              fixer))
+                              fixer
+                              equiv))
                      (symbolp stobj)
                      (symbolp accessor)
                      (symbolp updater)))))))
