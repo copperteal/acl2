@@ -29,28 +29,29 @@
 
 (in-package "ACL2")
 
+(include-book "std/basic/arith-equivs" :dir :system)
+
 (include-book "../constructors/frame")
 
-(defun symbol-fix (x)
+(defun null-symbol-fix (x)
   (declare (xargs :guard t))
   (and (symbolp x)
        x))
 
-(defthm symbol-fix-when-symbolp
+(defthm null-symbol-fix-when-symbolp
   (implies (symbolp key)
-           (equal (symbol-fix key) key)))
+           (equal (null-symbol-fix key) key)))
 
-(defthm symbol-fix-when-not-symbolp
+(defthm null-symbol-fix-when-not-symbolp
   (implies (not (symbolp key))
-           (not (symbol-fix key))))
+           (not (null-symbol-fix key))))
 
-(defthm nfix-when-natp
-  (implies (natp key)
-           (equal (nfix key) key)))
+(defun null-symbol-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (null-symbol-fix x)
+         (null-symbol-fix y)))
 
-(defthm nfix-when-not-natp
-  (implies (not (natp key))
-           (equal (nfix key) 0)))
+(defequiv null-symbol-equiv)
 
 (defun string-fix (x)
   (declare (xargs :guard t))
@@ -69,6 +70,13 @@
   (implies (not (stringp val))
            (equal (string-fix val) "")))
 
+(defun string-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (string-fix x)
+         (string-fix y)))
+
+(defequiv string-equiv)
+
 
 (atomic-stobjs::define-frame fr/empty)
 
@@ -76,13 +84,16 @@
   (f0 :element-type unsigned-byte
       :recognizer natp
       :fixer nfix
+      :equiv nat-equiv
       :initial-element 0)
   (f1 :element-type symbol
       :recognizer symbolp
-      :fixer symbol-fix)
+      :fixer null-symbol-fix
+      :equiv null-symbol-equiv)
   (f2 :element-type string
       :recognizer stringp
       :fixer string-fix
+      :equiv string-equiv
       :initial-element ""))
 
 

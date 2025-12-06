@@ -44,7 +44,7 @@
 
 ;;;; Constants
 (defconst *field-keywords*
-  '(:element-type :recognizer :fixer
+  '(:element-type :recognizer :fixer :equiv
     :initial-element :accessor :updater))
 
 (defconst *body-keywords*
@@ -65,6 +65,7 @@
               (let ((element-type (assoc-keyword :element-type kvl))
                     (recognizer (cadr (assoc-keyword :recognizer kvl)))
                     (fixer (cadr (assoc-keyword :fixer kvl)))
+                    (equiv (cadr (assoc-keyword :equiv kvl)))
                     (initial-element (cadr (assoc-keyword :initial-element kvl)))
                     (accessor (cadr (assoc-keyword :accessor kvl)))
                     (updater (cadr (assoc-keyword :updater kvl))))
@@ -75,10 +76,13 @@
                                (symbolp element-type))))
                      (symbolp recognizer)
                      (symbolp fixer)
+                     (symbolp equiv)
                      (or (and (not recognizer)
-                              (not fixer))
+                              (not fixer)
+                              (not equiv))
                          (and recognizer
-                              fixer))
+                              fixer
+                              equiv))
                      (symbolp accessor)
                      (symbolp updater)))))))
 
@@ -161,7 +165,7 @@
                     (keyword-value-listp kvl))))))
 
 (defun parse-fds (fds fields element-types element-type-supplies
-                  recognizers fixers
+                  recognizers fixers equivs
                   initial-elements initial-element-supplies
                   accessors updaters)
   (declare (xargs :guard (and (frame-descriptor-list-p fds)
@@ -170,6 +174,7 @@
                               (boolean-listp element-type-supplies)
                               (symbol-listp recognizers)
                               (symbol-listp fixers)
+                              (symbol-listp equivs)
                               (true-listp initial-elements)
                               (boolean-listp initial-element-supplies)
                               (symbol-listp accessors)
@@ -180,6 +185,7 @@
           (reverse element-type-supplies)
           (reverse recognizers)
           (reverse fixers)
+          (reverse equivs)
           (reverse initial-elements)
           (reverse initial-element-supplies)
           (reverse accessors)
@@ -195,6 +201,7 @@
                                't))
              (recognizer (cadr (assoc-keyword :recognizer kvl)))
              (fixer (cadr (assoc-keyword :fixer kvl)))
+             (equiv (cadr (assoc-keyword :equiv kvl)))
              (initial-element (assoc-keyword :initial-element kvl))
              (initial-element-supplied-p (and initial-element
                                               t))
@@ -207,6 +214,7 @@
                    (cons element-type-supplied-p element-type-supplies)
                    (cons recognizer recognizers)
                    (cons fixer fixers)
+                   (cons equiv equivs)
                    (cons initial-element initial-elements)
                    (cons initial-element-supplied-p initial-element-supplies)
                    (cons accessor accessors)
@@ -239,17 +247,17 @@
     (mv-let (fds kvl)
             (split-body () body)
       (mv-let (fields element-types element-type-supplies
-                      recognizers fixers
+                      recognizers fixers equivs
                       initial-elements initial-element-supplies
                       accessors updaters)
-              (parse-fds fds () () () () () () () () ())
+              (parse-fds fds () () () () () () () () () ())
         (mv-let (inline memoizable executable
                         recognizer creator fixer
                         logic exec
                         package-witness package-witness-supplied-p debug)
                 (parse-kvl kvl)
           (mv fields element-types element-type-supplies
-              recognizers fixers
+              recognizers fixers equivs
               initial-elements initial-element-supplies
               accessors updaters
               inline memoizable executable
@@ -263,7 +271,7 @@
   (declare (xargs :guard (frame-form-p form))
            (ignore body))
   (mv-let (fields element-types element-type-supplies
-                  recognizers fixers
+                  recognizers fixers equivs
                   initial-elements initial-element-supplies
                   accessors updaters
                   inline memoizable executable
@@ -289,9 +297,14 @@
                 (world (w state))
                 (stobj-property-list (loop$ :for element-type :in element-types
                                            :collect (and (symbolp element-type)
-                                                         (getprop element-type 'acl2::stobj nil 'acl2::current-acl2-world world))))
+                                                         (getprop element-type
+                                                                  'acl2::stobj
+                                                                  nil
+                                                                  'acl2::current-acl2-world
+                                                                  world))))
                 (recognizers ',recognizers)
                 (fixers ',fixers)
+                (equivs ',equivs)
                 (initial-elements ',initial-elements)
                 (initial-element-supplies ',initial-element-supplies)
 
@@ -343,6 +356,7 @@
                 ,@(loop$ :for field :in fields
                         :as recognizer :in recognizers
                         :as fixer :in fixers
+                        :as equiv :in equivs
                         :as element-type :in element-types
                         :as stobj-property :in stobj-property-list
                         :as initial-element :in initial-elements
@@ -351,6 +365,8 @@
                                                  `(:recognizer ,recognizer))
                                           ,@(and fixer
                                                  `(:fixer ,fixer))
+                                          ,@(and equiv
+                                                 `(:equiv ,equiv))
                                           ,@(and stobj-property
                                                  `(:stobj ,element-type))
                                           ,@(and initial-element-supplied-p
@@ -387,4 +403,11 @@
                        `(:executable ,executable))
                 ,@(and ,package-witness-supplied-p
                        `(:package-witness ,package-witness))
-                :debug ,debug)))))))
+                :debug ,debug)
+
+              (in-theory
+                (disable ,(symbolicate (if ,package-witness-supplied-p
+                                           package-witness
+                                           frame$c)
+                                       frame$c
+                                       "-THEOREMS")))))))))

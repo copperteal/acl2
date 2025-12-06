@@ -101,7 +101,7 @@
 
               (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a-property (w state)))))
               (recognizer$a (first (second stobj$a-property)))
-              (accessors$a (sixth (third stobj$a-property))))
+              (accessors$a (seventh (third stobj$a-property))))
 
          `(progn
             (defun-nx ,frame$corr (,frame$c ,frame$a)
@@ -410,8 +410,8 @@
                                      :collect (if stobj-property
                                                   (caadr stobj-property)
                                                   recognizer$a)))
-                (accessors$a (sixth (third stobj$a-property)))
-                (updaters$a (seventh (third stobj$a-property)))
+                (accessors$a (seventh (third stobj$a-property)))
+                (updaters$a (eighth (third stobj$a-property)))
 
                 ;; Theorem Names
                 (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
