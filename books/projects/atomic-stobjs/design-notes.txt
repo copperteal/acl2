@@ -257,7 +257,7 @@ Each pairwise composition of interface functions has an associated rewrite rule.
 The normal form between a composition of the updater and resizer is that the
 resizer is /heavier/ than the updater (in the sense of
 [[https://acl2.org/doc/?topic=ACL2____INTRODUCTION-TO-REWRITE-RULES-PART-2][introduction-to-rewrite-rules-part-2]]).  This order was chosen with the
-expectation is that updates are more common than resizings.
+expectation that updates are more common than resizings.
 
 *** Free Theorems
 The "free" variant of a theorem has a LHS that freely matches an appropriate
