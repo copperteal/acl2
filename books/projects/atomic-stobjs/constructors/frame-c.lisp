@@ -601,6 +601,10 @@
                                                              element-type
                                                              field))
                                           (list frame))
+                      ;; TODO: Eliminate most concrete theorems and just use
+                      ;; nth/update-nth for defabsstobj proofs!  This removes
+                      ;; dependence of frame on `COPY' and `COUPLEDP' and
+                      ;; significantly reduces theorems needed.
                       (declare (xargs :stobjs ,(append (loop$ :for element-type :in element-types
                                                              :as stobj-property :in stobj-property-list
                                                              :when stobj-property
