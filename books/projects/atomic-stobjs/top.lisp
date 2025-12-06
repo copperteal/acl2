@@ -30,11 +30,11 @@
 (in-package "ACL2")
 (set-verify-guards-eagerness 2)
 
-#||
+#|
 (include-book "symbolic-ordinals")
 (include-book "lemmas/top")
 (include-book "test/top")
-||#
+|#
 
 (include-book "type-spec")
 (include-book "utilities/top")

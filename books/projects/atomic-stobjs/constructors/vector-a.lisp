@@ -30,9 +30,9 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-#||
+#|
 (include-book "../lemmas/vector-a")
-||#
+|#
 
 (include-book "../utilities/top")
 
