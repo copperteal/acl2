@@ -115,9 +115,6 @@ it once, provided that the the second resizing is a contraction of the first, or
 that the first was an extension of the vector.  This theorem fails specifically
 when the vector is contracted and then expanded.
 
-*** Fixed-Length Adjustments
-Calls of vector length are systematically replaced by the default length.
-
 * lemmas/vector-a
 This book contains the logical interface for an abstract vector.  This interface
 is designed to /fully/ characterize a vector.  There are two variants of
@@ -135,6 +132,7 @@ We assume
 - a binary function ~ELEMENT-COPY~ which
   + is recognized
   + ignores its first argument
+  + returns a coupled element
   + is congruent to its second argument, if that argument is coupled
 - a symbol ~NAME~
 - the predicate ~ELEMENT-EXPORT-P~
@@ -142,7 +140,7 @@ We assume
   + returns a valid export
   + is constant on equivalence classes
 - the binary ~ELEMENT-IMPORT~ function which
-  + is recognzed
+  + is recognized
   + maps invalid exports to the initial element
   + ignores its second argument
   + is a right inverse to ~ELEMENT-EXPORT~ for valid exports
@@ -258,7 +256,7 @@ Each pairwise composition of interface functions has an associated rewrite rule.
 
 The normal form between a composition of the updater and resizer is that the
 resizer is /heavier/ than the updater (in the sense of
-/introduction-to-rewrite-rules-part-2/).  This order was chosen with the
+[[https://acl2.org/doc/?topic=ACL2____INTRODUCTION-TO-REWRITE-RULES-PART-2][introduction-to-rewrite-rules-part-2]]).  This order was chosen with the
 expectation is that updates are more common than resizings.
 
 *** Free Theorems
@@ -273,8 +271,9 @@ For example, compare ~RESIZER-OF-LENGTH-FREE~ and ~RESIZER-OF-LENGTH~:
                     (fixer vector))))
 
   (defthm resizer-of-length
-    (equal (resizer (length vector) vector)
-           (fixer vector)))
+    (implies (equiv %vector vector)
+             (equal (resizer (length %vector) vector)
+                    (fixer vector))))
 #+END_SRC
 The term ~(RESIZER 1000 VECTOR)~ matches the LHS of ~RESIZER-OF-LENGTH-FREE~ but
 not of ~RESIZER-OF-LENGTH~.  Moreover, if ~(LENGTH VECTOR)~ is ~1000~,
@@ -295,19 +294,20 @@ equivalent to only applying the second operation.  A contraction followed by an
 expansion is typically not.
 
 *** Equality
-Two vectors are vector-equal if they have the same length and agree on each
+Two vectors are ~VECTOR-EQUAL~ if they have the same length and agree on each
 element.
 
 The theorem ~EQUAL-FC~ establishes that vector equality is true equality.
 Furthermore, it is a forward chaining rule triggered by vector equality.
 
-If you prove the lemmas that two vectors have the same length and the same
-elements, then you can prove that they are equal by passing a ~:USE~ hint with
-the appropriate instance of vector equality.  Since vector equality is disabled,
-it will not be rewritten but it will insert equality with its body.  The body
-will evaluate to true due to your lemmas and the forward chaining rule will
-establish true equality.  See either variant of the theorems ~COPY-IGNORES-1~,
-~COPY-RW~, ~IMPORT-IGNORES-2~, ~IMPORT-OF-EXPORT~ for examples of this.
+If you prove lemmas that two vector-valued expressions have the same length and
+the same elements, then you can prove that they are equal by passing a ~:USE~
+hint with the appropriate instance of vector equality.  Since vector equality is
+disabled, it will not be rewritten but it will insert equality with its body.
+The body will evaluate to true due to your lemmas and the forward chaining rule
+will establish true equality.  See either variant of the theorems
+~COPY-IGNORES-1~, ~COPY-RW~, ~IMPORT-IGNORES-2~, ~IMPORT-OF-EXPORT~ for examples
+of this.
 
 *** Coupling
 A vector is coupled when its element are.
