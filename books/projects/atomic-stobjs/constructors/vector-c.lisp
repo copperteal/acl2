@@ -157,10 +157,10 @@
                          (symbolicate package-witness vector "-FIX")))
               (length-stobj-default (symbolicate package-witness contents "-LENGTH"))
               (length (or length
-                          (symbolicate package-witness vector "-LENGTH")))
+                          (symbolicate package-witness vector "-LEN")))
               (resizer-stobj-default (symbolicate package-witness "RESIZE-" contents))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RESIZE")))
+                           (symbolicate package-witness vector "-RSZ")))
               (accessor-stobj-default (symbolicate package-witness contents "I"))
               (accessor (or accessor
                             (symbolicate package-witness vector "-REF")))

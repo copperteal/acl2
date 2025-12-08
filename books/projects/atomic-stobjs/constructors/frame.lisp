@@ -405,6 +405,11 @@
                        `(:package-witness ,package-witness))
                 :debug ,debug)
 
+              (defmacro ,(symbolicate package-witness "THE-" frame) (,frame)
+                (declare (xargs :guard (symbolp ,frame)))
+                `(mbe :logic ,(list ',fixer ,frame)
+                      :exec ,,frame))
+
               (in-theory
                 (disable ,(symbolicate (if ,package-witness-supplied-p
                                            package-witness

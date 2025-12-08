@@ -193,9 +193,9 @@
               (fixer (or fixer
                          (symbolicate package-witness vector "-FIX")))
               (length (or length
-                          (symbolicate package-witness vector "-LENGTH")))
+                          (symbolicate package-witness vector "-LEN")))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RESIZE")))
+                           (symbolicate package-witness vector "-RSZ")))
               (accessor (or accessor
                             (symbolicate package-witness vector "-REF")))
               (updater (or updater

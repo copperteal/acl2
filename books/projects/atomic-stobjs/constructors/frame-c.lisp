@@ -36,7 +36,7 @@
 
 (include-book "../type-spec")
 (include-book "../utilities/top")
-(include-book "copy")
+(include-book "copy") ; TODO: Remove this dependency
 
 
 ;;;; Constants

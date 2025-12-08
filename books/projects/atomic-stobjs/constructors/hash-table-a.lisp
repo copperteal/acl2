@@ -241,15 +241,15 @@
               (updater (or updater
                            (symbolicate package-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate package-witness hash-table "-BOUNDP")))
+                          (symbolicate package-witness hash-table "-BNDP")))
               (getp (or getp
                         (symbolicate package-witness hash-table "-GETP")))
               (remover (or remover
                            (symbolicate package-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate package-witness hash-table "-COUNT")))
+                         (symbolicate package-witness hash-table "-CNT")))
               (clear (or clear
-                         (symbolicate package-witness hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLR")))
               (init (or init
                         (symbolicate package-witness hash-table "-INIT")))
               (keysp (if (and copyable
@@ -291,7 +291,7 @@
                                     (symbolicate package-witness contents "-PUT")
                                     updater))
               (contents-boundp (if copyable
-                                   (symbolicate package-witness contents "-BOUNDP")
+                                   (symbolicate package-witness contents "-BNDP")
                                    boundp))
               (contents-getp (if copyable
                                  (symbolicate package-witness contents "-GETP")
@@ -300,10 +300,10 @@
                                     (symbolicate package-witness contents "-REM")
                                     remover))
               (contents-count (if copyable
-                                  (symbolicate package-witness contents "-COUNT")
+                                  (symbolicate package-witness contents "-CNT")
                                   count))
               (contents-clear (if copyable
-                                  (symbolicate package-witness contents "-CLEAR")
+                                  (symbolicate package-witness contents "-CLR")
                                   clear))
               (contents-init (if copyable
                                  (symbolicate package-witness contents "-INIT")
@@ -577,7 +577,8 @@
 
                  (in-theory
                    ;; Ensure `:USE' `HASH-TABLE-EQUAL' automagically works.
-                   (enable ,keys-equal
+                   (enable ,equiv
+                           ,keys-equal
                            ,vals-equal))))
 
               ;; Functional Instantiation
@@ -667,7 +668,10 @@
                                     (,key-recognizer ,default-key))
                                :rule-classes
                                ((:rewrite :corollary
-                                          (booleanp (,key-recognizer ,key))))))
+                                          (booleanp (,key-recognizer ,key)))
+                                ,@(and (not (equal default-key default-key-name))
+                                       `((:rewrite :corollary
+                                                   (,key-recognizer ,default-key)))))))
 
                            (local
                              (defthm ,key-fixer-constraints
@@ -691,7 +695,10 @@
                                     (,val-recognizer ,default-val))
                                :rule-classes
                                ((:rewrite :corollary
-                                          (booleanp (,val-recognizer ,val))))))
+                                          (booleanp (,val-recognizer ,val)))
+                                ,@(and (not (equal default-val default-val-name))
+                                       `((:rewrite :corollary
+                                                   (,val-recognizer ,default-val)))))))
 
                            (local
                              (defthm ,val-fixer-constraints
@@ -1060,7 +1067,26 @@
                   (local
                     ;; This is a hack.
                     (defthm null-contents
-                      (not (,contents-remover ,key nil))))
+                      (and (not (,contents-remover ,key nil))
+                           (equal (,contents-accessor ,key nil)
+                                  ,default-val)
+                           ,@(and key-recognizer
+                                  `((implies (and (consp ,contents)
+                                                  (not (cdr ,contents))
+                                                  (not (<< ,default-key (caar ,contents)))
+                                                  (not (equal ,default-key (caar ,contents)))
+                                                  (not (,key-recognizer ,key)))
+                                             (equal (,contents-accessor ,key ,contents)
+                                                    ,default-val)))))
+                      :hints
+                      (,@(and key-recognizer
+                              `(("Goal"
+                                 :expand (,contents-accessor ,key ,contents)))))))
+
+                  (local
+                    (in-theory
+                      (disable (:e ,contents-accessor)
+                               (:e ,contents-remover))))
 
                   (defthm ,hash-table-constraints
                     (and (equal (,contents-recognizer ,contents)
@@ -1577,11 +1603,11 @@
                     :hints
                     (("Goal"
                       :do-not-induct t
-                      ,@(and (eq keysp 'set::setp)
-                             `(:in-theory (enable set::setp
-                                                  set::sfix
-                                                  set::equiv
-                                                  set::emptyp))))))
+                      :in-theory (e/d (,@(and (eq keysp 'set::setp)
+                                              `(set::setp
+                                                set::sfix
+                                                set::equiv
+                                                set::emptyp)))))))
 
                   (local
                     (in-theory
@@ -1619,192 +1645,192 @@
 
                   ;; `KEYSP'
                   ,@(and copyable
-                         key-recognizer
-                         `((defthm ,keysp-tp
-                             (booleanp (,keysp ,set))
-                             :rule-classes :type-prescription
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-tp
-                                    ,@fi-bindings))))
+                         (append
+                          `((defthm ,keysp-of-keys
+                              (,keysp (,keys ,hash-table))
+                              :hints
+                              (("Goal"
+                                :by (:functional-instance
+                                     lem-hash-table$a::keysp-of-keys
+                                     ,@fi-bindings)))))
+                          (and key-recognizer
+                               `((defthm ,keysp-tp
+                                   (booleanp (,keysp ,set))
+                                   :rule-classes :type-prescription
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-tp
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-cr
-                             (implies (,keysp ,set)
-                                      (true-listp ,set))
-                             :rule-classes :compound-recognizer
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-cr
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-cr
+                                   (implies (,keysp ,set)
+                                            (true-listp ,set))
+                                   :rule-classes :compound-recognizer
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-cr
+                                          ,@fi-bindings))))
 
-                           (defthmd ,keysp-def
-                             (equal (,keysp ,set)
-                                    (and (set::setp ,set)
-                                         (or (set::emptyp ,set)
-                                             (and (,key-recognizer (set::head ,set))
-                                                  (,keysp (set::tail ,set))))))
-                             :rule-classes
-                             ((:definition :controller-alist ((,keysp t))))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-def
-                                    ,@fi-bindings))))
+                                 (defthmd ,keysp-def
+                                   (equal (,keysp ,set)
+                                          (and (set::setp ,set)
+                                               (or (set::emptyp ,set)
+                                                   (and (,key-recognizer (set::head ,set))
+                                                        (,keysp (set::tail ,set))))))
+                                   :rule-classes
+                                   ((:definition :controller-alist ((,keysp t))))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-def
+                                          ,@fi-bindings))))
 
-                           (defthm ,setp-when-keysp
-                             (implies (,keysp ,set)
-                                      (set::setp ,set))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::setp-when-keysp
-                                    ,@fi-bindings))))
+                                 (defthm ,setp-when-keysp
+                                   (implies (,keysp ,set)
+                                            (set::setp ,set))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::setp-when-keysp
+                                          ,@fi-bindings))))
 
-                           (defthmd ,keysp-when-emptyp
-                             (implies (set::emptyp ,set)
-                                      (equal (,keysp ,set)
-                                             (set::setp ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-when-emptyp
-                                    ,@fi-bindings))))
+                                 (defthmd ,keysp-when-emptyp
+                                   (implies (set::emptyp ,set)
+                                            (equal (,keysp ,set)
+                                                   (set::setp ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-when-emptyp
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-keys-fix
-                             (,keysp (,keys-fix ,set))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-keys-fix
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-keys-fix
+                                   (,keysp (,keys-fix ,set))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-keys-fix
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-keys
-                             (,keysp (,keys ,hash-table))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-keys
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-sfix
+                                   (equal (,keysp (set::sfix set))
+                                          (or (set::emptyp set)
+                                              (,keysp set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-sfix
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-sfix
-                             (equal (,keysp (set::sfix set))
-                                    (or (set::emptyp set)
-                                        (,keysp set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-sfix
-                                    ,@fi-bindings))))
+                                 (defthm ,key-recognizer-of-head-when-keysp
+                                   (implies (and (not (set::emptyp ,set))
+                                                 (,keysp ,set))
+                                            (,key-recognizer (set::head ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::key-recognizer-of-head-when-keysp
+                                          ,@fi-bindings))))
 
-                           (defthm ,key-recognizer-of-head-when-keysp
-                             (implies (and (not (set::emptyp ,set))
-                                           (,keysp ,set))
-                                      (,key-recognizer (set::head ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::key-recognizer-of-head-when-keysp
-                                    ,@fi-bindings))))
-
-                           (defthm ,keysp-of-tail-when-keysp
-                             (implies (and (not (set::emptyp ,set))
-                                           (,keysp ,set))
-                                      (,keysp (set::tail ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-tail-when-keysp
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-tail-when-keysp
+                                   (implies (and (not (set::emptyp ,set))
+                                                 (,keysp ,set))
+                                            (,keysp (set::tail ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-tail-when-keysp
+                                          ,@fi-bindings))))
 
 
-                           (defthm ,keysp-of-insert
-                             (equal (,keysp (set::insert key set))
-                                    (and (,key-recognizer key)
-                                         (or (set::emptyp set)
-                                             (,keysp set))))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-insert
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-insert
+                                   (equal (,keysp (set::insert key set))
+                                          (and (,key-recognizer key)
+                                               (or (set::emptyp set)
+                                                   (,keysp set))))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-insert
+                                          ,@fi-bindings))))
 
-                           (defthmd ,in-when-keysp-split
-                             (implies (and (,keysp ,set)
-                                           (not (,key-recognizer ,key)))
-                                      (not (set::in ,key ,set)))
-                             :rule-classes
-                             ((:rewrite :corollary
-                                        (implies (and (,keysp ,set)
-                                                      (not (case-split (,key-recognizer ,key))))
-                                                 (not (set::in ,key ,set)))))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::in-when-keysp
-                                    ,@fi-bindings))))
+                                 (defthmd ,in-when-keysp-split
+                                   (implies (and (,keysp ,set)
+                                                 (not (,key-recognizer ,key)))
+                                            (not (set::in ,key ,set)))
+                                   :rule-classes
+                                   ((:rewrite :corollary
+                                              (implies (and (,keysp ,set)
+                                                            (not (case-split (,key-recognizer ,key))))
+                                                       (not (set::in ,key ,set)))))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::in-when-keysp
+                                          ,@fi-bindings))))
 
-                           (defthm ,in-when-keysp
-                             (implies (and (,keysp ,set)
-                                           (not (,key-recognizer ,key)))
-                                      (not (set::in ,key ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::in-when-keysp
-                                    ,@fi-bindings))))
+                                 (defthm ,in-when-keysp
+                                   (implies (and (,keysp ,set)
+                                                 (not (,key-recognizer ,key)))
+                                            (not (set::in ,key ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::in-when-keysp
+                                          ,@fi-bindings))))
 
-                           (defthmd ,subset-when-keysp
-                             (implies (and (not (,keysp ,%set))
-                                           (,keysp ,set))
-                                      (equal (set::subset ,%set ,set)
-                                             (set::emptyp ,%set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::subset-when-keysp
-                                    ,@fi-bindings))))
+                                 (defthmd ,subset-when-keysp
+                                   (implies (and (not (,keysp ,%set))
+                                                 (,keysp ,set))
+                                            (equal (set::subset ,%set ,set)
+                                                   (set::emptyp ,%set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::subset-when-keysp
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-delete
-                             (implies (,keysp ,set)
-                                      (,keysp (set::delete ,key ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-delete
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-delete
+                                   (implies (,keysp ,set)
+                                            (,keysp (set::delete ,key ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-delete
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-union
-                             (implies (and (not (set::emptyp ,%set))
-                                           (not (set::emptyp ,set)))
-                                      (equal (,keysp (set::union ,%set ,set))
-                                             (and (,keysp ,%set)
-                                                  (,keysp ,set))))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-union
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-union
+                                   (implies (and (not (set::emptyp ,%set))
+                                                 (not (set::emptyp ,set)))
+                                            (equal (,keysp (set::union ,%set ,set))
+                                                   (and (,keysp ,%set)
+                                                        (,keysp ,set))))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-union
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-intersect
-                             (implies (or (,keysp ,%set)
-                                          (,keysp ,set))
-                                      (,keysp (set::intersect ,%set ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-intersect
-                                    ,@fi-bindings))))
+                                 (defthm ,keysp-of-intersect
+                                   (implies (or (,keysp ,%set)
+                                                (,keysp ,set))
+                                            (,keysp (set::intersect ,%set ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-intersect
+                                          ,@fi-bindings))))
 
-                           (defthm ,keysp-of-difference
-                             (implies (,keysp ,%set)
-                                      (,keysp (set::difference ,%set ,set)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-hash-table$a::keysp-of-difference
-                                    ,@fi-bindings))))))
+                                 (defthm ,keysp-of-difference
+                                   (implies (,keysp ,%set)
+                                            (,keysp (set::difference ,%set ,set)))
+                                   :hints
+                                   (("Goal"
+                                     :by (:functional-instance
+                                          lem-hash-table$a::keysp-of-difference
+                                          ,@fi-bindings))))))))
 
                   ;; `KEYS-FIX'
                   ,@(and copyable

@@ -256,15 +256,15 @@
               (updater (or updater
                            (symbolicate package-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate package-witness hash-table "-BOUNDP")))
+                          (symbolicate package-witness hash-table "-BNDP")))
               (getp (or getp
                         (symbolicate package-witness hash-table "-GETP")))
               (remover (or remover
                            (symbolicate package-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate package-witness hash-table "-COUNT")))
+                         (symbolicate package-witness hash-table "-CNT")))
               (clear (or clear
-                         (symbolicate package-witness hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLR")))
               (init (or init
                         (symbolicate package-witness hash-table "-INIT")))
               (keys (or keys

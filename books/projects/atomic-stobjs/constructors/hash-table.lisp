@@ -62,6 +62,7 @@
 
        (recognizer 'nil)
        (creator 'nil)
+       (fixer 'nil)
        (accessor 'nil)
        (updater 'nil)
        (boundp 'nil)
@@ -111,6 +112,7 @@
                               (booleanp executable)
                               (symbol-listp (list recognizer
                                                   creator
+                                                  fixer
                                                   accessor
                                                   updater
                                                   boundp
@@ -163,6 +165,7 @@
 
               (recognizer ',recognizer)
               (creator ',creator)
+              (fixer ',fixer)
               (accessor ',accessor)
               (updater ',updater)
               (boundp ',boundp)
@@ -184,20 +187,22 @@
                               (symbolicate package-witness hash-table (make-predicate-suffix hash-table))))
               (creator (or creator
                            (symbolicate package-witness "CREATE-" hash-table)))
+              (fixer (or fixer
+                         (symbolicate package-witness hash-table "-FIX")))
               (accessor (or accessor
                             (symbolicate package-witness hash-table "-GET")))
               (updater (or updater
                            (symbolicate package-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate package-witness hash-table "-BOUNDP")))
+                          (symbolicate package-witness hash-table "-BNDP")))
               (getp (or getp
                         (symbolicate package-witness hash-table "-GETP")))
               (remover (or remover
                            (symbolicate package-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate package-witness hash-table "-COUNT")))
+                         (symbolicate package-witness hash-table "-CNT")))
               (clear (or clear
-                         (symbolicate package-witness hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLR")))
               (init (or init
                         (symbolicate package-witness hash-table "-INIT")))
               (keys (or keys
@@ -270,6 +275,7 @@
               :copyable ,copyable
               :recognizer ,recognizer
               :creator ,creator
+              :fixer ,fixer
               :accessor ,accessor
               :updater ,updater
               :boundp ,boundp
@@ -286,6 +292,11 @@
               ,@(and ,package-witness-supplied-p
                      `(:package-witness ,package-witness))
               :debug ,debug)
+
+            (defmacro ,(symbolicate package-witness "THE-" hash-table) (,hash-table)
+              (declare (xargs :guard (symbolp ,hash-table)))
+              `(mbe :logic ,(list ',fixer ,hash-table)
+                    :exec ,,hash-table))
 
             (in-theory
               (disable ,(symbolicate (if ,package-witness-supplied-p

@@ -409,7 +409,10 @@
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
-                                     (theory ',frame-theorems)))))
+                                     (theory ',frame-theorems)))
+
+                   (in-theory
+                     (enable ,equiv))))
 
                 (body
                  `(encapsulate ()
@@ -501,8 +504,9 @@
                                                     :when recognizer
                                                     :collect `(:e ,recognizer))))
                         (and exec-recognizers
-                             `((in-theory
-                                 (enable ,@exec-recognizers)))))
+                             `((local
+                                 (in-theory
+                                   (enable ,@exec-recognizers))))))
 
                     (defun ,recognizer (,frame)
                       (declare (xargs :guard t))
@@ -593,7 +597,8 @@
                       (,recognizer (,fixer ,frame))
                       :hints
                       (("Goal"
-                        :in-theory (disable ,recognizer))))
+                        :in-theory (disable ,recognizer
+                                            ,creator))))
 
                     (defthm ,recognizer-of-view
                       (,recognizer (,view ,@fields)))
