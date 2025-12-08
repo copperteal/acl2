@@ -387,9 +387,9 @@
                 (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
                                     fixer$c))
                 (n (floor (len (third stobj-property)) 4))
-                (accessors$c (loop$ :for i :from 0 :to n
+                (accessors$c (loop$ :for i :from 0 :to (1- n)
                                    :collect (nth (+ n (* 2 i)) (third stobj-property))))
-                (updaters$c (loop$ :for i :from 0 :to n
+                (updaters$c (loop$ :for i :from 0 :to (1- n)
                                   :collect (nth (+ 1 n (* 2 i)) (third stobj-property))))
 
                 ;; `FRAME$A'
@@ -397,7 +397,7 @@
                 (recognizer$a (first (second stobj$a-property)))
                 (creator$a (second (second stobj$a-property)))
                 (fixer$a (third (second stobj$a-property)))
-
+                (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
                 (stobj-property-list (loop$ :for stobj :in stobjs
                                            :collect (and stobj
                                                          (getprop stobj
@@ -405,15 +405,38 @@
                                                                   nil
                                                                   'acl2::current-acl2-world
                                                                   world))))
-                (recognizers$a (loop$ :for stobj-property :in stobj-property-list
-                                     :as recognizer$a :in (second (third stobj$a-property))
-                                     :collect (if stobj-property
-                                                  (caadr stobj-property)
-                                                  recognizer$a)))
+
+                (recognizers (loop$ :for stobj-property :in stobj-property-list
+                                   :as recognizer$a :in (second (third stobj$a-property))
+                                   :collect (if stobj-property
+                                                (caadr stobj-property)
+                                                recognizer$a)))
+                (absstobj-info-list (loop$ :for stobj :in stobjs
+                                          :collect (and stobj
+                                                        (getprop stobj
+                                                                 'acl2::absstobj-info
+                                                                 nil
+                                                                 'acl2::current-acl2-world
+                                                                 world))))
+                (recognizers$a (second (third stobj$a-property)))
+                (stobj$a-property-list (loop$ :for stobj :in stobjs
+                                             :collect (and stobj
+                                                           (cdr (assoc stobj
+                                                                       (table-alist 'stobj$a-property
+                                                                                    world))))))
+                (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
+                                  :collect (and stobj$a-property
+                                                (second (second stobj$a-property)))))
+                (initial-element-names (third (third stobj$a-property)))
+                (fixers$a (fourth (third stobj$a-property)))
+                (equivs$a (fifth (third stobj$a-property)))
                 (accessors$a (seventh (third stobj$a-property)))
                 (updaters$a (eighth (third stobj$a-property)))
 
                 ;; Theorem Names
+                (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
+                (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
+
                 (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
                 (creator{preserved} (symbolicate package-witness creator "{PRESERVED}"))
                 (fixer{correspondence} (symbolicate package-witness fixer "{CORRESPONDENCE}"))
@@ -443,6 +466,105 @@
                 (updater$c-fields (frame$abs-updater$c-fields updaters$c () state)))
 
            `(encapsulate ()
+
+              (local
+                (deflabel start-of-prologue))
+
+              (local
+                (defthm ,len-of-cons
+                  (equal (len (cons a d))
+                         (1+ (len d)))))
+
+              (local
+                (defthm ,nth-of-cons
+                  (equal (nth n (cons a d))
+                         (if (zp n)
+                             a
+                             (nth (1- n) d)))))
+
+              ,@(loop$ :for i :from 1 :to (len fields)
+                      :as field :in fields
+                      :as recognizer :in recognizers$a
+                      :as creator :in creators$a
+                      :as initial-element-name :in initial-element-names
+                      :when recognizer
+                      :collect `(local
+                                  (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer "-CONSTRAINTS-" i)
+                                    (and (booleanp (,recognizer ,field))
+                                         (,recognizer ,(or initial-element-name
+                                                           `(,creator))))
+                                    :rule-classes
+                                    ((:rewrite :corollary
+                                               (booleanp (,recognizer ,field)))
+                                     ,@(and (not initial-element-name)
+                                            `((:rewrite :corollary
+                                                        (,recognizer (,creator)))))))))
+
+              ,@(loop$ :for i :from 1 :to (len fields)
+                      :as field :in fields
+                      :as recognizer :in recognizers$a
+                      :as creator :in creators$a
+                      :as initial-element-name :in initial-element-names
+                      :as fixer :in fixers$a
+                      :when (and recognizer
+                                 fixer)
+                      :collect `(local
+                                  (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
+                                    (equal (,fixer ,field)
+                                           (if (,recognizer ,field)
+                                               ,field
+                                               ,(or initial-element-name
+                                                    `(,creator)))))))
+
+              ,@(loop$ :for i :from 1 :to (len fields)
+                      :as equiv :in equivs$a
+                      :as field :in fields
+                      :as fixer :in fixers$a
+                      :when fixer
+                      :collect (let ((%field (symbolicate "ATOMIC-STOBJS" "%" field)))
+                                 `(local
+                                    (defthm ,(symbolicate "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
+                                      (equal (,equiv ,%field ,field)
+                                             (equal (,fixer ,%field)
+                                                    (,fixer ,field)))))))
+
+              (local
+                (deflabel end-of-prologue))
+
+              (local
+                (table acl2::theory-invariant-table nil nil :clear))
+
+              (local
+                (in-theory
+                  (union-theories
+                   (union-theories (current-theory 'acl2::ground-zero)
+                                   (theory ',frame$a-theorems))
+                   (set-difference-theories (universal-theory 'end-of-prologue)
+                                            (universal-theory 'start-of-prologue)))))
+
+              (local
+                (in-theory
+                  (enable ,recognizer$c
+                          ,creator$c
+                          ,@accessors$c
+                          ,@updaters$c
+                          ,frame$corr
+                          ,@(loop$ :for stobj$a-property :in stobj$a-property-list
+                                  :when stobj$a-property
+                                  :collect (let ((stobj$a (car stobj$a-property)))
+                                             (symbolicate stobj$a stobj$a "-THEOREMS"))))))
+
+              ,@(loop$ :for absstobj-info :in absstobj-info-list
+                      :when absstobj-info
+                      :collect `(local
+                                  (in-theory
+                                    (enable ,@(strip-cars (cdr absstobj-info))))))
+
+              (local
+                (in-theory
+                  (disable len
+                           nth
+                           update-nth)))
 
               (local
                 (progn
@@ -483,11 +605,11 @@
                           :as updater$c :in updaters$c
                           :as updater$a :in updaters$a
                           :as updater$c-field :in updater$c-fields
-                          :as field-recognizer$a :in recognizers$a
+                          :as field-recognizer :in recognizers
                           :collect `(defthm ,(symbolicate package-witness updater "{CORRESPONDENCE}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
-                                                    ,@(and field-recognizer$a
-                                                           `((,field-recognizer$a ,updater$c-field)))
+                                                    ,@(and field-recognizer
+                                                           `((,field-recognizer ,updater$c-field)))
                                                     (,recognizer$a ,frame))
                                                (,frame$corr (,updater$c ,updater$c-field ,frame$c)
                                                             (,updater$a ,updater$c-field ,frame)))
@@ -496,11 +618,11 @@
                   ,@(loop$ :for updater :in updaters
                           :as updater$c-guard :in updater$c-guards
                           :as updater$c-field :in updater$c-fields
-                          :as field-recognizer$a :in recognizers$a
+                          :as field-recognizer :in recognizers
                           :collect `(defthm ,(symbolicate package-witness updater "{GUARD-THM}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
-                                                    ,@(and field-recognizer$a
-                                                           `((,field-recognizer$a ,updater$c-field)))
+                                                    ,@(and field-recognizer
+                                                           `((,field-recognizer ,updater$c-field)))
                                                     (,recognizer$a ,frame))
                                                ,updater$c-guard)
                                       :rule-classes nil))
@@ -508,10 +630,10 @@
                   ,@(loop$ :for updater :in updaters
                           :as updater$a :in updaters$a
                           :as updater$c-field :in updater$c-fields
-                          :as field-recognizer$a :in recognizers$a
+                          :as field-recognizer :in recognizers
                           :collect `(defthm ,(symbolicate package-witness updater "{PRESERVED}")
-                                      (implies ,(if field-recognizer$a
-                                                    `(and (,field-recognizer$a ,updater$c-field)
+                                      (implies ,(if field-recognizer
+                                                    `(and (,field-recognizer ,updater$c-field)
                                                           (,recognizer$a ,frame))
                                                     `(,recognizer$a ,frame))
                                                (,recognizer$a (,updater$a ,updater$c-field ,frame)))
