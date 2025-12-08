@@ -88,8 +88,9 @@
                       (car list))
                     (,exportp-rec list))))
 
-         (in-theory
-           (disable ,exportp-rec))
+         (local
+           (in-theory
+             (disable ,exportp-rec)))
 
          ;; `EXPORTP'
          (defun ,exportp (export)
@@ -114,8 +115,9 @@
 
          ;; len when exportp (for non-resizable)
 
-         (in-theory
-           (disable ,exportp))
+         (local
+           (in-theory
+             (disable ,exportp)))
 
          ;; `EXPORT-ACC'
          (defun ,export-acc (,index acc ,vector)
@@ -137,8 +139,9 @@
                             (,element (,accessor ,index ,vector)))
                        (,export-acc ,index (cons ,element acc) ,vector)))))
 
-         (in-theory
-           (disable ,export-acc))
+         (local
+           (in-theory
+             (disable ,export-acc)))
 
          ;; `EXPORT'
          (defun ,export (,vector)
@@ -176,8 +179,9 @@
                           `(,element-export (,accessor$a (1- ,index) ,vector))
                           `(,accessor$a (1- ,index) ,vector))))))
 
-         (in-theory
-           (disable ,export))
+         (local
+           (in-theory
+             (disable ,export)))
 
          ;; `IMPORT-REC'
          (defun ,import-rec (list ,index ,vector)
@@ -203,8 +207,9 @@
                                              :exec ,index))
                                     ,vector)))))
 
-         (in-theory
-           (disable ,import-rec))
+         (local
+           (in-theory
+             (disable ,import-rec)))
 
          ;; `IMPORT'
          (defun ,import (export ,vector)
@@ -262,8 +267,9 @@
                                              ,initial-element)
                            `(nth (1+ (nfix ,index)) export)))))
 
-         (in-theory
-           (disable ,import))
+         (local
+           (in-theory
+             (disable ,import)))
 
          ;; Composition Theorems
          (defthm ,export-of-import
@@ -341,8 +347,9 @@
                              (<< (caar omap) (caadr omap))
                              (exportp-rec (cdr omap)))))))
 
-         (in-theory
-           (disable ,exportp-rec))
+         (local
+           (in-theory
+             (disable ,exportp-rec)))
 
          ;; `EXPORTP'
          (defun ,exportp (export)
@@ -365,8 +372,9 @@
 
          ;; TODO: assoc when export
 
-         (in-theory
-           (disable ,exportp))
+         (local
+           (in-theory
+             (disable ,exportp)))
 
          ;; `EXPORT-ACC'
          (defun ,export-acc (set acc ,hash-table)
@@ -388,8 +396,9 @@
                             (,val (,accessor ,key ,hash-table)))
                        (,export-acc (set::tail set) (omap::update ,key ,val acc) ,hash-table)))))
 
-         (in-theory
-           (disable ,export-acc))
+         (local
+           (in-theory
+             (disable ,export-acc)))
 
          ;; `EXPORT'
          (defun ,export (,hash-table)
@@ -425,8 +434,9 @@
                                                 `(,val-export (,accessor$a ,key ,hash-table))
                                                 `(,accessor$a ,key ,hash-table)))))))
 
-         (in-theory
-           (disable ,export))
+         (local
+           (in-theory
+             (disable ,export)))
 
          ;; `IMPORT-REC'
          (defun ,import-rec (omap ,index ,hash-table)
@@ -446,8 +456,9 @@
                       `(let ((,hash-table (,updater ,key ,val-export ,hash-table)))
                          (,import-rec (omap::tail omap) ,hash-table))))))
 
-         (in-theory
-           (disable ,import-rec))
+         (local
+           (in-theory
+             (disable ,import-rec)))
 
          ;; `IMPORT'
          (defun ,import (export ,hash-table)
@@ -516,8 +527,9 @@
                       (omap::size (cdr export))
                       0)))
 
-         (in-theory
-           (disable ,import))
+         (local
+           (in-theory
+             (disable ,import)))
 
          ;; Composition Theorems
          (defthm ,export-of-import
@@ -576,8 +588,8 @@
            (and (consp export)
                 (equal (car export) ',frame)
                 ,@(loop$ #|check that all fields
-                satisfy appropriate recognizers.  the format of an export is the
-                symbol naming the stobj consed onto a keyword-value list|#)))
+                        satisfy appropriate recognizers.  the format of an export is the
+                        symbol naming the stobj consed onto a keyword-value list|#)))
 
          (defthm ,exportp-tp
            (booleanp (,exportp export))
@@ -591,8 +603,9 @@
 
          ;; TODO: assoc-keyword when export
 
-         (in-theory ; TODO: maybe move this later?
-           (disable ,exportp))
+         (local
+           (in-theory ; TODO: maybe move this later?
+             (disable ,exportp)))
 
          ;; `EXPORT'
          (defun ,export (,frame)
@@ -611,8 +624,9 @@
          ;; TODO: assoc-keyword of export: (equal (cadr (assoc-keyword :field
          ;; (,export ,frame))) (,accessor ,frame))
 
-         (in-theory
-           (disable ,export))
+         (local
+           (in-theory
+             (disable ,export)))
 
          ;; `IMPORT'
          (defun ,import (export ,frame)
@@ -649,8 +663,9 @@
 
          ,@(loop$ #|accessors to import get export values via assoc-keyword|#)
 
-         (in-theory
-           (disable ,import))
+         (local
+           (in-theory
+             (disable ,import)))
 
          ;; Composition Theorems
          (defthm ,export-of-import

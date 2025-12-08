@@ -166,9 +166,9 @@
               (equiv (or equiv
                          (symbolicate package-witness vector "-EQUIV")))
               (length (or length
-                          (symbolicate package-witness vector "-LENGTH")))
+                          (symbolicate package-witness vector "-LEN")))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RESIZE")))
+                           (symbolicate package-witness vector "-RSZ")))
               (accessor (or accessor
                             (symbolicate package-witness vector "-REF")))
               (updater (or updater
@@ -190,11 +190,15 @@
               (element-fixer-constraints (symbolicate "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
               (element-equiv-constraints (symbolicate "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
 
-              (vector-constraints (symbolicate package-witness vector "-CONSTRAINTS"))
-
               (recognizer-aux (symbolicate package-witness vector "-AUX-P"))
-              (recognizer-aux-tp (symbolicate package-witness recognizer-aux "-TP"))
-              (recognizer-aux-cr (symbolicate package-witness recognizer-aux "-CR"))
+              (recognizer-aux-tp (symbolicate "ATOMIC-STOBJS" recognizer-aux "-TP"))
+              (recognizer-aux-cr (symbolicate "ATOMIC-STOBJS" recognizer-aux "-CR"))
+              (element-recognizer-of-nth-when-recognizer-aux (symbolicate "ATOMIC-STOBJS"
+                                                                          element-recognizer
+                                                                          "-OF-NTH-WHEN-"
+                                                                          recognizer-aux))
+
+              (vector-constraints (symbolicate package-witness vector "-CONSTRAINTS"))
 
               (recognizer-tp (symbolicate package-witness recognizer "-TP"))
               (recognizer-cr (symbolicate package-witness recognizer "-CR"))
@@ -323,7 +327,8 @@
                                    (theory ',vector-theorems)))
                  (in-theory
                    ;; Ensure `:USE' `VECTOR-EQUAL' automagically works.
-                   (enable ,contents-equal))))
+                   (enable ,equiv
+                           ,contents-equal))))
 
               ;; Functional Instantiation
               (fi-bindings
@@ -392,7 +397,10 @@
                                     (,element-recognizer ,initial-element))
                                :rule-classes
                                ((:rewrite :corollary
-                                          (booleanp (,element-recognizer ,element))))))
+                                          (booleanp (,element-recognizer ,element)))
+                                ,@(and (not (equal initial-element initial-element-name))
+                                       `((:rewrite :corollary
+                                                   (,element-recognizer ,initial-element)))))))
 
                            (local
                              (defthm ,element-fixer-constraints
@@ -447,7 +455,40 @@
                              (if (consp ,vector)
                                  (and (,element-recognizer (car ,vector))
                                       (,recognizer-aux (cdr ,vector)))
-                                 (null ,vector)))))
+                                 (null ,vector)))
+
+                           (local
+                             (defthm ,recognizer-aux-tp
+                               (booleanp (,recognizer-aux ,vector))
+                               :rule-classes :type-prescription
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance lem-vector$a::recognizer-aux-tp
+                                                           (lem-vector$a::recognizer-aux ,recognizer-aux)
+                                                           (lem-vector$a::element-recognizer ,element-recognizer))))))
+
+                           (local
+                             (defthm ,recognizer-aux-cr
+                               (implies (,recognizer-aux ,vector)
+                                        (true-listp ,vector))
+                               :rule-classes :compound-recognizer
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance lem-vector$a::recognizer-aux-cr
+                                                           (lem-vector$a::recognizer-aux ,recognizer-aux)
+                                                           (lem-vector$a::element-recognizer ,element-recognizer))))))
+
+                           (local
+                             (defthm ,element-recognizer-of-nth-when-recognizer-aux
+                               (implies (and (,recognizer-aux ,vector)
+                                             (natp ,index)
+                                             (< ,index (len ,vector)))
+                                        (,element-recognizer (nth ,index ,vector)))
+                               :hints
+                               (("Goal"
+                                 :by (:functional-instance lem-vector$a::element-recognizer-of-nth-when-recognizer-aux
+                                                           (lem-vector$a::recognizer-aux ,recognizer-aux)
+                                                           (lem-vector$a::element-recognizer ,element-recognizer))))))))
 
                   (defun ,recognizer (,vector)
                     (declare (xargs :guard t))
@@ -704,28 +745,6 @@
                                ,resizer
                                ,accessor
                                ,updater)))
-
-                  ;; `RECOGNIZER-AUX'
-                  ,@(and (not resizable)
-                         element-recognizer
-                         `((defthm ,recognizer-aux-tp
-                             (booleanp (,recognizer-aux ,vector))
-                             :rule-classes :type-prescription
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$a::recognizer-aux-tp
-                                    ,@fi-bindings))))
-
-                           (defthm ,recognizer-aux-cr
-                             (implies (,recognizer-aux ,vector)
-                                      (true-listp ,vector))
-                             :rule-classes :compound-recognizer
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$a::recognizer-aux-cr
-                                    ,@fi-bindings))))))
 
                   ;; `RECOGNIZER'
                   (defthm ,recognizer-tp
