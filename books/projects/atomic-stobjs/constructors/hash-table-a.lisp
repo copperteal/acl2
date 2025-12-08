@@ -198,7 +198,8 @@
                             (fourth (second stobj$a-property)))
                            (t
                             'equal)))
-              (default-val-name (symbolicate package-witness "*" hash-table "-DEFAULT-VAL*"))
+              (default-val-name (and (not stobj-property)
+                                     (symbolicate package-witness "*" hash-table "-DEFAULT-VAL*")))
               (default-val (if val-creator
                                `(,val-creator)
                                default-val-name))
@@ -317,7 +318,7 @@
 
                  (defconst ,default-key-name ',',default-key)
 
-                 ,@(and (not stobj-property)
+                 ,@(and default-val-name
                         `((defconst ,default-val-name ',',default-val)))))
 
               ;; Theorem Names
@@ -696,7 +697,7 @@
                                :rule-classes
                                ((:rewrite :corollary
                                           (booleanp (,val-recognizer ,val)))
-                                ,@(and (not (equal default-val default-val-name))
+                                ,@(and (not default-val-name)
                                        `((:rewrite :corollary
                                                    (,val-recognizer ,default-val)))))))
 
@@ -3465,8 +3466,7 @@
                                                 ,key-equiv)
                                                (,val
                                                 ,val-recognizer
-                                                ,(and (not stobj-property)
-                                                      default-val-name)
+                                                ,default-val-name
                                                 ,val-fixer
                                                 ,val-equiv)
                                                (,test
