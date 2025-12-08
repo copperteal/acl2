@@ -306,12 +306,11 @@
     (("Goal"
       :in-theory (enable update-nth)))))
 
-(local
-  (defthm element-recognizer-of-nth
-    (implies (and (natp index)
-                  (< index (len contents))
-                  (recognizer-aux contents))
-             (element-recognizer (nth index contents)))))
+(defthm element-recognizer-of-nth-when-recognizer-aux
+  (implies (and (natp index)
+                (< index (len contents))
+                (recognizer-aux contents))
+           (element-recognizer (nth index contents))))
 
 
 ;;;; `RECOGNIZER/RESIZABLE'
@@ -1384,9 +1383,9 @@
 (defthm coupledp/resizable-of-updater/resizable
   (implies (coupledp/resizable vector)
            (equal (coupledp/resizable (updater/resizable index value vector))
-                  (if (<= (length/resizable vector) (nfix index))
-                      t
-                      (element-coupled-p value))))
+                  (if (< (nfix index) (length/resizable vector))
+                      (element-coupled-p value)
+                      t)))
   :hints
   (("Goal"
     :cases ((< (nfix index) (length/resizable vector)))
@@ -1617,9 +1616,9 @@
 (defthm coupledp/fixed-of-updater/fixed
   (implies (coupledp/fixed vector)
            (equal (coupledp/fixed (updater/fixed index value vector))
-                  (if (<= (default-length) (nfix index))
-                      t
-                      (element-coupled-p value))))
+                  (if (< (nfix index) (default-length))
+                      (element-coupled-p value)
+                      t)))
   :hints
   (("Goal"
     :cases ((< (nfix index) (default-length)))

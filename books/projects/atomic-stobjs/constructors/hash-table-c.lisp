@@ -178,7 +178,7 @@
                            (symbolicate package-witness hash-table "-PUT")))
               (boundp-stobj-default (symbolicate package-witness contents "-BOUNDP"))
               (boundp (or boundp
-                          (symbolicate package-witness hash-table "-BOUNDP")))
+                          (symbolicate package-witness hash-table "-BNDP")))
               (getp-stobj-default (symbolicate package-witness contents "-GET?"))
               (getp (or getp
                         (symbolicate package-witness hash-table "-GETP")))
@@ -187,10 +187,10 @@
                            (symbolicate package-witness hash-table "-REM")))
               (count-stobj-default (symbolicate package-witness contents "-COUNT"))
               (count (or count
-                         (symbolicate package-witness hash-table "-COUNT")))
+                         (symbolicate package-witness hash-table "-CNT")))
               (clear-stobj-default (symbolicate package-witness contents "-CLEAR"))
               (clear (or clear
-                         (symbolicate package-witness hash-table "-CLEAR")))
+                         (symbolicate package-witness hash-table "-CLR")))
               (%clear (if copyable
                           (symbolicate package-witness hash-table "-%CLEAR")
                           clear))

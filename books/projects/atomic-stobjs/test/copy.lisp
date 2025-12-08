@@ -29,7 +29,12 @@
 
 (in-package "ACL2")
 
-(include-book "../constructors/top")
+(include-book "std/basic/arith-equivs" :dir :system)
+
+(include-book "../constructors/vector")
+(include-book "../constructors/hash-table")
+(include-book "../constructors/frame")
+(include-book "../constructors/copy")
 
 
 (defun bytep (x)
@@ -48,10 +53,20 @@
        (implies (not (bytep v))
                 (equal (byte-fix v) 0))))
 
+(defun byte-equiv (x y)
+  (declare (xargs :guard (and (bytep x)
+                              (bytep y))))
+  (equal (byte-fix x)
+         (byte-fix y)))
+
+(defequiv byte-equiv)
+
+
 (atomic-stobjs::define-vector vec0 1024
   :element-type (unsigned-byte 8)
   :element-recognizer bytep
   :element-fixer byte-fix
+  :element-equiv byte-equiv
   :initial-element 0)
 
 (atomic-stobjs::define-copy vec0)
@@ -62,10 +77,19 @@
       x
       ""))
 
+(defun string-equiv (x y)
+  (declare (xargs :guard (and (stringp x)
+                              (stringp y))))
+  (equal (string-fix x)
+         (string-fix y)))
+
+(defequiv string-equiv)
+
 (atomic-stobjs::define-vector vec1 1024
   :element-type string
   :element-recognizer stringp
   :element-fixer string-fix
+  :element-equiv string-equiv
   :initial-element "")
 
 (atomic-stobjs::define-copy vec1)
@@ -97,19 +121,35 @@
       x
       :||))
 
+(defun keyword-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (keyword-fix x)
+         (keyword-fix y)))
+
+(defequiv keyword-equiv)
+
 (defun character-fix (x)
   (declare (xargs :guard t))
   (if (characterp x)
       x
       #.acl2::*null-char*))
 
+(defun character-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (character-fix x)
+         (character-fix y)))
+
+(defequiv character-equiv)
+
 (atomic-stobjs::define-hash-table ht0 eq
   :element-type unsigned-byte
   :key-recognizer keywordp
   :key-fixer keyword-fix
+  :key-equiv keyword-equiv
   :default-key :||
   :val-recognizer natp
   :val-fixer nfix
+  :val-equiv nat-equiv
   :default-val 0)
 
 (atomic-stobjs::define-copy ht0)
@@ -118,6 +158,7 @@
   :element-type ht0
   :key-recognizer characterp
   :key-fixer character-fix
+  :key-equiv character-equiv
   :default-key #.acl2::*null-char*)
 
 (atomic-stobjs::define-copy ht1)
@@ -156,12 +197,22 @@
       x
       '||))
 
+(defun %symbol-equiv (x y)
+  (declare (xargs :guard (and (symbolp x)
+                              (symbolp y))))
+  (equal (%symbol-fix x)
+         (%symbol-fix y)))
+
+(defequiv %symbol-equiv)
+
 (atomic-stobjs::define-hash-table ht eq
   :key-recognizer symbolp
   :key-fixer %symbol-fix
+  :key-equiv %symbol-equiv
   :default-key ||
   :val-recognizer stringp
   :val-fixer string-fix
+  :val-equiv string-equiv
   :default-val ""
   :element-type string)
 
@@ -176,6 +227,7 @@
 (atomic-stobjs::define-hash-table ht2$ eql
   :key-recognizer integerp
   :key-fixer ifix
+  :key-equiv int-equiv
   :default-key 0
   :element-type vec)
 
@@ -188,6 +240,7 @@
   (f3 :element-type symbol
       :recognizer symbolp
       :fixer %symbol-fix
+      :equiv %symbol-equiv
       :initial-element ||))
 
 (atomic-stobjs::define-copy fr)
