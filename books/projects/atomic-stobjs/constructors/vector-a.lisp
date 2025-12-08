@@ -141,7 +141,8 @@
                                 (fourth (second stobj$a-property)))
                                (t
                                 'equal)))
-              (initial-element-name (symbolicate package-witness "*" vector "-INITIAL-ELEMENT*"))
+              (initial-element-name (and (not stobj-property)
+                                         (symbolicate package-witness "*" vector "-INITIAL-ELEMENT*")))
               (initial-element (if element-creator
                                    `(,element-creator)
                                    initial-element-name))
@@ -182,7 +183,7 @@
 
                  (defconst ,default-length-name ',default-length)
 
-                 ,@(and (not stobj-property)
+                 ,@(and initial-element-name
                         `((defconst ,initial-element-name ',',initial-element)))))
 
               ;; Theorem Names
@@ -398,7 +399,7 @@
                                :rule-classes
                                ((:rewrite :corollary
                                           (booleanp (,element-recognizer ,element)))
-                                ,@(and (not (equal initial-element initial-element-name))
+                                ,@(and (not initial-element-name)
                                        `((:rewrite :corollary
                                                    (,element-recognizer ,initial-element)))))))
 
@@ -1638,8 +1639,7 @@
                                            ,equiv)
                                           ((,element
                                             ,element-recognizer
-                                            ,(and (not stobj-property)
-                                                  initial-element-name)
+                                            ,initial-element-name
                                             ,element-fixer
                                             ,element-equiv)
                                            (,resizable

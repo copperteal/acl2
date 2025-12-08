@@ -300,7 +300,9 @@
                                          (t
                                           'equal))))
                 (initial-element-names (loop$ :for field :in fields
-                                             :collect (symbolicate package-witness "*" frame "-" field "-INITIAL-ELEMENT*")))
+                                             :as stobj-property :in stobj-property-list
+                                             :collect (and (not stobj-property)
+                                                           (symbolicate package-witness "*" frame "-" field "-INITIAL-ELEMENT*"))))
                 (initial-elements (loop$ :for initial-element-name :in initial-element-names
                                         :as creator :in creators
                                         :collect (if creator
@@ -341,7 +343,7 @@
                 (defconst-forms (loop$ :for initial-element-name :in initial-element-names
                                       :as initial-element :in ',initial-elements
                                       :as stobj-property :in stobj-property-list
-                                      :when (not stobj-property)
+                                      :when initial-element-name
                                       :collect `(defconst ,initial-element-name ',initial-element)))
                 (prologue
                  `((deflabel ,frame-begin)
@@ -442,7 +444,7 @@
                                           :rule-classes
                                           ((:rewrite :corollary
                                                      (booleanp (,recognizer ,field)))
-                                           ,@(and (not (equal initial-element initial-element-name))
+                                           ,@(and (not initial-element-name)
                                                   `((:rewrite :corollary
                                                               (,recognizer ,initial-element))))))))
 
