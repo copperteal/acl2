@@ -45,7 +45,179 @@
                   :guard (and (symbolp vector)
                               (package-witness-p package-witness))
                   :verify-guards nil))
-  (let* ()
+  (let* ((%vector (symbolicate package-witness "%" vector))
+
+         (export (symbolicate package-witness vector "-EXPORT"))
+         (export-begin (symbolicate package-witness export "-BEGIN"))
+         (export-end (symbolicate package-witness export "-END"))
+         (export-theory (symbolicate package-witness export "-THEORY"))
+         (exportp (symbolicate package-witness export (make-predicate-suffix export)))
+         (exportp-rec (symbolicate package-witness exportp "-REC"))
+         (export-acc (symbolicate package-witness export "-ACC"))
+         (import (symbolicate package-witness vector "-IMPORT"))
+         (import-rec (symbolicate package-witness import "-REC"))
+
+         (stobj-property (getpropc vector 'acl2::stobj))
+         (creator (cdadr stobj-property))
+         (the-vector (symbolicate vector "THE-" vector))
+         (length (second (third stobj-property)))
+         (resizer (third (third stobj-property)))
+         (accessor (fourth (third stobj-property)))
+         (updater (fifth (third stobj-property)))
+
+         (world (w state))
+         (coupledp (cdr (assoc vector (table-alist 'coupledp world))))
+
+         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
+         (vector$a (first stobj$a-property))
+         (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
+         (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
+         (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
+         (vector$a-constraints (symbolicate vector$a vector$a "-CONSTRAINTS"))
+         (recognizer$a (first (second stobj$a-property)))
+         (creator$a (second (second stobj$a-property)))
+         (fixer$a (third (second stobj$a-property)))
+         (length$a (first (third (third stobj$a-property))))
+         (resizer$a (second (third (third stobj$a-property))))
+         (accessor$a (third (third (third stobj$a-property))))
+         (updater$a (fourth (third (third stobj$a-property))))
+
+         (index (symbolicate package-witness "I"))
+         (resizable (first (second (third stobj$a-property))))
+         (element (first (first (third stobj$a-property))))
+         (%element (symbolicate element "%" element))
+         (element-stobj-property (getpropc element 'acl2::stobj))
+         (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
+         (initial-element-name (third (first (third stobj$a-property))))
+         (element-creator (second (second element-stobj$a-property)))
+         (initial-element (if element-stobj-property
+                              `(,element-creator)
+                              initial-element-name))
+         (default-length-name (second (second (third stobj$a-property))))
+         (element-recognizer (second (first (third stobj$a-property))))
+         (element-fixer (fourth (first (third stobj$a-property))))
+         (element-equiv (fifth (first (third stobj$a-property))))
+         (exportp-rec (if element-recognizer
+                          exportp-rec
+                          'true-listp))
+
+         (element-coupled-p (cdr (assoc element (table-alist 'coupledp world))))
+         (element-export-list (cdr (assoc element (table-alist 'export world))))
+         (element-export-p (first element-export-list))
+         (element-export (second element-export-list))
+         (element-import (third element-export-list))
+
+         ;; Theorem Names
+         (element-recognizer-constraints (symbolicate "ATOMIC-STOBJS" element-recognizer "-CONSTRAINTS"))
+         (element-fixer-constraints (symbolicate "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
+         (element-equiv-constraints (symbolicate "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
+
+         (exportp-tp (symbolicate package-witness exportp "-TP"))
+         (exportp-cr (symbolicate package-witness exportp "-CR"))
+
+         (export-tp (symbolicate package-witness export "-TP"))
+         (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
+
+         (import-tp (symbolicate package-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
+         (length$a-of-import (symbolicate package-witness length$a "-OF-" import))
+         (accessor$a-of-import (symbolicate package-witness accessor$a "-OF-" import))
+
+         (export-of-import (symbolicate package-witness export "-OF-" import))
+         (import-of-export (symbolicate package-witness import "-OF-" export))
+
+         (fi-bindings
+          (list `(lem-vector$a::element-recognizer ,(or element-recognizer
+                                                        `(lambda (element)
+                                                           t)))
+                `(lem-vector$a::element-fixer ,(or element-fixer
+                                                   'identity))
+                `(lem-vector$a::element-equiv ,(or element-equiv
+                                                   'equal))
+                `(lem-vector$a::initial-element ,(if element-stobj$a-property
+                                                     `(,element-creator)
+                                                     `(lambda ()
+                                                        ,initial-element-name)))
+                `(lem-vector$a::element-coupled-p ,(or element-coupled-p
+                                                       `(lambda (element)
+                                                          t)))
+                `(lem-vector$a::element-export-p ,(or element-export-p
+                                                      element-recognizer
+                                                      `(lambda ()
+                                                         t)))
+                `(lem-vector$a::element-export ,(or element-export
+                                                    element-fixer
+                                                    'identity))
+                `(lem-vector$a::element-import ,(or element-import
+                                                    `(lambda (export element)
+                                                       (,element-fixer export))
+                                                    `(lambda (export element)
+                                                       export)))
+
+                `(lem-vector$a::name (lambda ()
+                                       ',vector))
+                `(lem-vector$a::exportp-rec ,exportp-rec)
+                (if resizable
+                    `(lem-vector$a::exportp/resizable ,exportp)
+                    `(lem-vector$a::exportp/fixed ,exportp))
+
+                `(lem-vector$a::default-length (lambda ()
+                                                 ,default-length-name))))
+
+         (fi-bindings-post-export
+          (append
+           (and resizable
+                (list `(lem-vector$a::length/resizable ,length$a)
+                      `(lem-vector$a::resizer/resizable ,resizer$a)))
+           (list* (if resizable
+                      `(lem-vector$a::export-acc/resizable ,export-acc)
+                      `(lem-vector$a::export-acc/fixed ,export-acc))
+                  (if resizable
+                      `(lem-vector$a::export/resizable ,export)
+                      `(lem-vector$a::export/fixed ,export))
+
+                  `(lem-vector$a::recognizer-aux ,(if element-recognizer
+                                                      (if resizable
+                                                          recognizer$a
+                                                          recognizer$a-aux)
+                                                      'true-listp))
+                  (if resizable
+                      `(lem-vector$a::recognizer/resizable ,recognizer$a)
+                      `(lem-vector$a::recognizer/fixed ,recognizer$a))
+                  `(lem-vector$a::creator ,creator$a)
+                  (if resizable
+                      `(lem-vector$a::fixer/resizable ,fixer$a)
+                      `(lem-vector$a::fixer/fixed ,fixer$a))
+                  (if resizable
+                      `(lem-vector$a::accessor/resizable ,accessor$a)
+                      `(lem-vector$a::accessor/fixed ,accessor$a))
+
+                  fi-bindings)))
+
+         (fi-bindings-post-import
+          (list* (if resizable
+                     `(lem-vector$a::coupledp/resizable ,(or coupledp
+                                                             `(lambda (vector)
+                                                                t)))
+                     `(lem-vector$a::coupledp/fixed ,(or coupledp
+                                                         `(lambda (vector)
+                                                            t))))
+
+                 (if resizable
+                     `(lem-vector$a::updater/resizable ,updater$a)
+                     `(lem-vector$a::updater/fixed ,updater$a))
+
+                 (if resizable
+                     `(lem-vector$a::import-rec/resizable ,import-rec)
+                     `(lem-vector$a::import-rec/fixed ,import-rec))
+                 (if resizable
+                     `(lem-vector$a::import/resizable ,import)
+                     `(lem-vector$a::import/fixed ,import))
+
+                 fi-bindings-post-export)))
 
     `(progn
        (deflabel ,export-begin)
@@ -54,6 +226,33 @@
 
          (local
            (deflabel prologue-begin))
+
+         ,@(and element-fixer
+                element-recognizer
+                (not (eq element-equiv 'equal))
+                `((local
+                    (defthm ,element-recognizer-constraints
+                      (and (booleanp (,element-recognizer ,element))
+                           (,element-recognizer ,initial-element))
+                      :rule-classes
+                      ((:rewrite :corollary
+                                 (booleanp (,element-recognizer ,element)))
+                       ,@(and (not (equal initial-element initial-element-name))
+                              `((:rewrite :corollary
+                                          (,element-recognizer ,initial-element)))))))
+
+                  (local
+                    (defthm ,element-fixer-constraints
+                      (equal (,element-fixer ,element)
+                             (if (,element-recognizer ,element)
+                                 ,element
+                                 ,initial-element))))
+
+                  (local
+                    (defthm ,element-equiv-constraints
+                      (equal (,element-equiv ,%element ,element)
+                             (equal (,element-fixer ,%element)
+                                    (,element-fixer ,element)))))))
 
          (local
            (deflabel prologue-end))
@@ -66,58 +265,73 @@
 
          (local
            (in-theory
-             (union-theories
-              (union-theories (theory 'acl2::ground-zero)
-                              (theory ',vector$a-definitions))
-              (set-difference-theories (current-theory 'prologue-end)
-                                       (current-theory 'prologue-begin)))))
+             (union-theories (theory 'acl2::ground-zero)
+                             (set-difference-theories (current-theory 'prologue-end)
+                                                      (current-theory 'prologue-begin)))))
 
          (local
            (in-theory
              (disable make-list-ac
                       (:e make-list-ac))))
 
-         ;; `EXPORTP-REC'
-         (defun ,exportp-rec (list)
-           (declare (xargs :guard t))
-           (if (atom list)
-               (null list)
-               ;; TODO: handle true-listp case
-               (and (,(or element-export-p
-                          element-recognizer)
-                      (car list))
-                    (,exportp-rec list))))
+         ,@(and element-recognizer
+                `((local
+                    (in-theory
+                      (enable (:e ,element-recognizer))))))
+
+         ,@(and element-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,@(strip-cars (cdr (getpropc element 'acl2::absstobj-info))))))))
 
          (local
            (in-theory
-             (disable ,exportp-rec)))
+             (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
+
+         ;; `EXPORTP-REC'
+         ,@(and element-recognizer
+                `((defun ,exportp-rec (list)
+                    (declare (xargs :guard t))
+                    (if (consp list)
+                        (and (,(or element-export-p
+                                   element-recognizer)
+                               (car list))
+                             (,exportp-rec (cdr list)))
+                        (null list)))))
 
          ;; `EXPORTP'
          (defun ,exportp (export)
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',vector)
+                ;; TODO: `EXPORTP-REC' defaults to `TRUE-LISTP'
                 (,exportp-rec (cdr export))
                 ,@(and (not resizable)
                        `((= (len (cdr export)) ,default-length-name)))))
 
          (defthm ,exportp-tp
            (booleanp (,exportp export))
-           :rule-classes :type-prescription)
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::exportp/resizable-tp
+                       'lem-vector$a::exportp/fixed-tp)
+                  ,@fi-bindings))))
 
          (defthm ,exportp-cr
            (implies (,exportp export)
                     (and (consp export)
                          (true-listp export)))
-           :rule-classes :compound-recognizer)
-
-         ;; nth when exportp, satisfies element-recognizer
-
-         ;; len when exportp (for non-resizable)
-
-         (local
-           (in-theory
-             (disable ,exportp)))
+           :rule-classes :compound-recognizer
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::exportp/resizable-cr
+                       'lem-vector$a::exportp/fixed-cr)
+                  ,@fi-bindings))))
 
          ;; `EXPORT-ACC'
          (defun ,export-acc (,index acc ,vector)
@@ -128,7 +342,8 @@
                                                        `(,length ,vector)
                                                        default-length-name)))))
            (if (zp ,index)
-               acc
+               (mbe :logic (true-list-fix acc)
+                    :exec acc)
                ,(if element-export
                     `(let ((,index (1- ,index)))
                        (stobj-let ((,element (,accessor ,index ,vector) ,updater))
@@ -139,10 +354,6 @@
                             (,element (,accessor ,index ,vector)))
                        (,export-acc ,index (cons ,element acc) ,vector)))))
 
-         (local
-           (in-theory
-             (disable ,export-acc)))
-
          ;; `EXPORT'
          (defun ,export (,vector)
            (declare (xargs :stobjs ,vector))
@@ -151,49 +362,45 @@
                                    `(,length ,vector)
                                    default-length-name)
                               ()
-                              ',vector)))
+                              ,vector)))
 
          (defthm ,export-tp
            (and (consp (,export ,vector))
                 (true-listp (,export ,vector)))
-           :rule-classes :type-prescription)
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :in-theory (enable ,vector$a-constraints)
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::export/resizable-tp
+                       'lem-vector$a::export/fixed-tp)
+                  ,@fi-bindings-post-export))))
 
          (defthm ,exportp-of-export
-           (,exportp (,export ,vector)))
-
-         (defthm ,len-of-export
-           (equal (len (,export ,vector))
-                  (1+ ,(if resizable
-                           `(,length$a ,vector)
-                           default-length-name))))
-
-         (defthm ,nth-of-export
-           (equal (nth ,index (,export ,vector))
-                  (cond
-                    ((zp ,index)
-                     ',vector)
-                    ((<= ,index ,(if resizable
-                                     `(,length$a ,vector)
-                                     default-length-name))
-                     ,(if element-export
-                          `(,element-export (,accessor$a (1- ,index) ,vector))
-                          `(,accessor$a (1- ,index) ,vector))))))
-
-         (local
-           (in-theory
-             (disable ,export)))
+           (,exportp (,export ,vector))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::exportp/resizable-of-export/resizable
+                       'lem-vector$a::exportp/fixed-of-export/fixed)
+                  ,@fi-bindings-post-export))))
 
          ;; `IMPORT-REC'
          (defun ,import-rec (list ,index ,vector)
            (declare (xargs :stobjs ,vector
-                           :guard (and (,export-rec list)
+                           :guard (and (,exportp-rec list)
                                        (natp ,index)
                                        (<= (+ (len list) ,index) ,(if resizable
                                                                       `(,length ,vector)
-                                                                      default-length-name)))))
-           (if (endp list)
-               (,fixer ,vector)
-               ,(if ,element-import
+                                                                      default-length-name)))
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable ,vector$a-theorems)))))
+           (if (consp list)
+               ,(if element-import
                     `(stobj-let ((,element (,accessor ,index ,vector) ,updater))
                                 (,element)
                                 (,element-import (car list) ,element)
@@ -205,16 +412,16 @@
                        (,import-rec (cdr list)
                                     (1+ (mbe :logic (nfix ,index)
                                              :exec ,index))
-                                    ,vector)))))
-
-         (local
-           (in-theory
-             (disable ,import-rec)))
+                                    ,vector)))
+               (,the-vector ,vector)))
 
          ;; `IMPORT'
          (defun ,import (export ,vector)
            (declare (xargs :stobjs ,vector
-                           :guard (,exportp export)))
+                           :guard (,exportp export)
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable ,vector$a-theorems)))))
            (if (mbt (,exportp export))
                (let* ((list (cdr export))
                       ,@(and resizable
@@ -225,19 +432,61 @@
                  ,vector)))
 
          (defthm ,import-tp
-           ;; TODO: for fixed positive length vectors add consp
            (true-listp (,import export ,vector))
-           :rule-classes :type-prescription)
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::import/resizable-tp
+                       'lem-vector$a::import/fixed-tp)
+                  ,@fi-bindings-post-import))
+            ,@(and resizable
+                   `(("Subgoal 3"
+                      :in-theory (enable ,vector$a-constraints))))
+            ("Subgoal 2"
+             :in-theory (enable ,vector$a-aggressive)
+             :expand (,import-rec lem-vector$a::list
+                                  lem-vector$a::index
+                                  lem-vector$a::vector))
+            ("Subgoal 1"
+             :in-theory (enable ,vector$a-constraints))))
 
          (defthm ,recognizer$a-of-import
-           (,recognizer$a (,import export ,vector)))
+           (,recognizer$a (,import export ,vector))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::recognizer/resizable-of-import/resizable
+                       'lem-vector$a::recognizer/fixed-of-import/fixed)
+                  ,@fi-bindings-post-import))))
+
+         ,@(and coupledp
+                `((defthm ,coupledp-of-import
+                    (,coupledp (,import export ,vector))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp/resizable-of-import/resizable
+                                'lem-vector$a::coupledp/fixed-of-import/fixed)
+                           ,@fi-bindings-post-import))))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
                     (equal (,import export ,vector)
-                           (,creator$a))))
+                           (,creator$a)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::import/resizable-when-not-exportp/resizable
+                       'lem-vector$a::import/fixed-when-not-exportp/fixed)
+                  ,@fi-bindings-post-import))))
 
-         (defthm ,import-ignores-vector
+         (defthm ,import-ignores-2
            (equal (,import export ,vector)
                   (,import export (,creator$a)))
            :rule-classes
@@ -245,58 +494,138 @@
                       (implies (syntaxp (not (and (consp ,vector)
                                                   (eq (car ,vector) ',creator$a))))
                                (equal (,import export ,vector)
-                                      (,import export (,creator$a)))))))
-
-         (defthm ,length$a-of-import
-           (equal (,length$a (,import export ,vector))
+                                      (,import export (,creator$a))))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
                   ,(if resizable
-                       `(if (,exportp export)
-                            (1- (len export))
-                            ,default-length-name)
-                       default-length-name)))
+                       'lem-vector$a::import/resizable-ignores-2
+                       'lem-vector$a::import/fixed-ignores-2)
+                  ,@fi-bindings-post-import))))
+
+         ,@(and resizable
+                `((defthm ,length$a-of-import
+                    (equal (,length$a (,import export ,vector))
+                           (if (,exportp export)
+                               (1- (len export))
+                               ,default-length-name))
+                    :rule-classes
+                    ((:rewrite :corollary
+                               (equal (,length$a (,import export ,vector))
+                                      (if (,exportp export)
+                                          (1- (len (double-rewrite export)))
+                                          ,default-length-name))))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           lem-vector$a::length/resizable-of-import/resizable
+                           ,@fi-bindings-post-import))))))
 
          (defthm ,accessor$a-of-import
-           (equal (,accessor$a index (,import export ,vector))
-                  (if (or (not (,exportp export))
-                          ,(if resizable
-                               `(<= (len export) (1+ (nfix ,index)))
-                               `(<= ,default-length-name (nfix ,index))))
-                      ,initial-element
-                      ,(if element-import
-                           `(,element-import (nth (1+ (nfix ,index)) export)
-                                             ,initial-element)
-                           `(nth (1+ (nfix ,index)) export)))))
-
-         (local
-           (in-theory
-             (disable ,import)))
+           (equal (,accessor$a ,index (,import export ,vector))
+                  (if (and (,exportp export)
+                           ,(if resizable
+                                `(< (1+ (nfix ,index)) (len export))
+                                `(< (nfix ,index) ,default-length-name)))
+                      ,@(cond
+                          (element-import
+                           `((,element-import (nth (1+ (nfix ,index)) export)
+                                              (,element-creator))
+                             (,element-creator)))
+                          (element-fixer
+                           `((,element-fixer (nth (1+ (nfix ,index)) export))
+                             ,initial-element-name))
+                          (t
+                           `((nth (1+ (nfix ,index)) export)
+                             ,initial-element-name)))))
+           :rule-classes
+           ((:rewrite :corollary
+                      (equal (,accessor$a ,index (,import export vector))
+                             (if (and (,exportp export)
+                                      ,(if resizable
+                                           `(< (1+ (nfix ,index)) (len (double-rewrite export)))
+                                           `(< (nfix ,index) ,default-length-name)))
+                                 ,@(cond
+                                     (element-import
+                                      `((,element-import (nth (1+ (nfix ,index)) (double-rewrite export))
+                                                         (,element-creator))
+                                        (,element-creator)))
+                                     (element-fixer
+                                      `((,element-fixer (nth (1+ (nfix ,index)) (double-rewrite export)))
+                                        ,initial-element-name))
+                                     (t
+                                      `((nth (1+ (nfix ,index)) (double-rewrite export))
+                                        ,initial-element-name)))))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::accessor/resizable-of-import/resizable
+                       'lem-vector$a::accessor/fixed-of-import/fixed)
+                  ,@fi-bindings-post-import))))
 
          ;; Composition Theorems
          (defthm ,export-of-import
            (implies (,exportp export)
                     (equal (,export (,import export ,vector))
-                           export)))
+                           export))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::export/resizable-of-import/resizable
+                       'lem-vector$a::export/fixed-of-import/fixed)
+                  ,@fi-bindings-post-import))))
 
          (defthm ,import-of-export
+           ;; TODO: Remove hypothesis and rewrite to copy of `%VECTOR'
            ,(if coupledp
                 `(implies (,coupledp ,%vector)
                           (equal (,import (,export ,%vector) ,vector)
                                  (,fixer$a ,%vector)))
                 `(equal (,import (,export ,%vector) ,vector)
-                        (,fixer$a ,%vector))))
-
-         ;; TODO: table event
-         )
+                        (,fixer$a ,%vector)))
+           :rule-classes
+           ((:rewrite :corollary
+                      ,(if coupledp
+                           `(implies (,coupledp ,%vector)
+                                     (equal (,import (,export ,%vector) ,vector)
+                                            (,fixer$a (double-rewrite ,%vector))))
+                           `(equal (,import (,export ,%vector) ,vector)
+                                   (,fixer$a (double-rewrite ,%vector))))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::import/resizable-of-export/resizable
+                       'lem-vector$a::import/fixed-of-export/fixed)
+                  ,@fi-bindings-post-import)))))
 
        (deflabel ,export-end)
 
+       (table export ',vector ',(list exportp
+                                      export
+                                      import))
+
        (deftheory-static ,export-theory
-         (set-different-theories (current-theory ',export-end)
-                                 (current-theory ',export-begin))))))
+         (set-difference-theories
+          (set-difference-theories (current-theory ',export-end)
+                                   (current-theory ',export-begin))
+          '(,@(and element-recognizer
+                   `(,exportp-rec))
+            ,exportp
+            ,export-acc
+            ,export
+            ,import-rec
+            ,import)))
+
+       (in-theory
+         (union-theories (current-theory ',export-begin)
+                         (theory ',export-theory))))))
 
 
 ;;;; `MAKE-HASH-TABLE-EXPORT-EVENTS'
-(defun make-hash-table-export-events (hash-table package-witness state)
+#|(defun make-hash-table-export-events (hash-table package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
                               (package-witness-p package-witness))
@@ -323,58 +652,58 @@
          (local
            (in-theory
              (union-theories
-              (union-theories (theory 'acl2::ground-zero)
-                              (theory ',hash-table$a-definitions))
+              (union-theories (theory 'acl2::ground-zero))
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
          ;; `EXPORTP-REC'
-         (defun ,exportp-rec (omap)
-           (declare (xargs :guard t))
-           (if (atom omap)
-               (null omap)
-               (and (consp (car omap))
-                    ,@(and key-recognizer
-                           `((,key-recognizer (caar omap))))
-                    ,@(cond
-                        (val-export-p
-                         `((,val-export-p (cdar omap))))
-                        (val-recognizer
-                         `((,val-recognizer (cdar omap)))))
-                    (or (null (cdr omap))
-                        (and (consp (cdr omap))
-                             (consp (cadr omap))
-                             (<< (caar omap) (caadr omap))
-                             (exportp-rec (cdr omap)))))))
-
-         (local
-           (in-theory
-             (disable ,exportp-rec)))
+         ,@(and (or key-recognizer
+                    val-recognizer)
+                `((defun ,exportp-rec (map)
+                    (declare (xargs :guard t))
+                    (if (consp map)
+                        (and (consp (car map))
+                             ,@(and key-recognizer
+                                    `((,key-recognizer (caar map))))
+                             ,@(cond
+                                 (val-export-p
+                                  `((,val-export-p (cdar map))))
+                                 (val-recognizer
+                                  `((,val-recognizer (cdar map)))))
+                             (or (null (cdr map))
+                                 (and (consp (cdr map))
+                                      (consp (cadr map))
+                                      (<< (caar map) (caadr map))
+                                      (exportp-rec (cdr map)))))
+                        (null map)))))
 
          ;; `EXPORTP'
          (defun ,exportp (export)
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',hash-table)
+                ;; TODO: `EXPORTP-REC' defaults to `OMAP::MAPP'
                 (,exportp-rec (cdr export))))
 
          (defthm ,exportp-tp
            (booleanp (,exportp export))
-           :rule-classes :type-prescription)
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::exportp-tp
+                  ,@fi-bindings))))
 
          (defthm ,exportp-cr
            (implies (,exportp export)
                     (and (consp export)
                          (true-listp export)))
-           :rule-classes :compound-recognizer)
-
-         ;; TODO: mapp when export
-
-         ;; TODO: assoc when export
-
-         (local
-           (in-theory
-             (disable ,exportp)))
+           :rule-classes :compound-recognizer
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::exportp-cr
+                  ,@fi-bindings))))
 
          ;; `EXPORT-ACC'
          (defun ,export-acc (set acc ,hash-table)
@@ -396,10 +725,6 @@
                             (,val (,accessor ,key ,hash-table)))
                        (,export-acc (set::tail set) (omap::update ,key ,val acc) ,hash-table)))))
 
-         (local
-           (in-theory
-             (disable ,export-acc)))
-
          ;; `EXPORT'
          (defun ,export (,hash-table)
            (declare (xargs :stobjs ,hash-table))
@@ -409,67 +734,49 @@
          (defthm ,export-tp
            (and (consp (,export ,hash-table))
                 (true-listp (,export ,hash-table)))
-           :rule-classes :type-prescription)
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::export-tp
+                  ,@fi-bindings))))
 
          (defthm ,exportp-of-export
-           (,exportp (,export ,hash-table)))
-
-         (defthm ,keys-of-export
-           (equal (omap::keys (cdr (,export ,hash-table)))
-                  (,keys$a ,hash-table)))
-
-         (defthm ,size-of-export
-           (implies (,coupledp ,hash-table)
-                    (equal (omap::size (cdr (,export ,hash-table)))
-                           (,count$a ,hash-table))))
-
-         (defthm ,assoc-of-export
-           (implies ,(if key-recognizer
-                         `(and (,key-recognizer ,key)
-                               (,coupledp ,hash-table))
-                         `(,coupledp ,hash-table))
-                    (equal (omap::assoc ,key (cdr (,export ,hash-table)))
-                           (and (,boundp$a ,key ,hash-table)
-                                (cons ,key ,(if val-export
-                                                `(,val-export (,accessor$a ,key ,hash-table))
-                                                `(,accessor$a ,key ,hash-table)))))))
-
-         (local
-           (in-theory
-             (disable ,export)))
+           (,exportp (,export ,hash-table))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::exportp-of-export
+                  ,@fi-bindings))))
 
          ;; `IMPORT-REC'
-         (defun ,import-rec (omap ,index ,hash-table)
+         (defun ,import-rec (map ,index ,hash-table)
            (declare (xargs :stobjs ,hash-table
-                           :guard (,exportp-rec omap)))
-           (if (mbe :logic (or (omap::emptyp omap)
-                               (not (exportp-rec omap)))
-                    :exec (endp omap))
-               (,fixer ,hash-table)
+                           :guard (,exportp-rec map)))
+           (if (mbe :logic (or (omap::emptyp map)
+                               (not (exportp-rec map)))
+                    :exec (endp map))
+               (,the-hash-table ,hash-table)
                (mv-let (,key ,val-export)
-                       (omap::head omap)
+                       (omap::head map)
                  ,(if val-import
                       `(stobj-let ((,val (,accessor ,key ,hash-table) ,updater))
                                   (,val)
                                   (,val-import ,val-export ,val)
-                         (,import-rec (omap::tail omap) ,hash-table))
+                         (,import-rec (omap::tail map) ,hash-table))
                       `(let ((,hash-table (,updater ,key ,val-export ,hash-table)))
-                         (,import-rec (omap::tail omap) ,hash-table))))))
-
-         (local
-           (in-theory
-             (disable ,import-rec)))
+                         (,import-rec (omap::tail map) ,hash-table))))))
 
          ;; `IMPORT'
          (defun ,import (export ,hash-table)
            (declare (xargs :stobjs ,hash-table
                            :guard (,exportp export)))
            (if (mbt (,exportp export))
-               (let* ((omap (cdr export))
-                      (count (omap::size omap))
+               (let* ((map (cdr export))
+                      (count (omap::size map))
                       (,hash-table (,init count nil nil ,hash-table))
-                      (,hash-table (,import-rec omap ,hash-table))
-                      (,hash-table (,keys-set (omap::keys omap) ,hash-table)))
+                      (,hash-table (,import-rec map ,hash-table))
+                      (,hash-table (,keys-set (omap::keys map) ,hash-table)))
                  ,hash-table)
                (let ((,hash-table (,creator)))
                  ,hash-table)))
@@ -477,17 +784,40 @@
          (defthm ,import-tp
            (and (consp (,import export ,hash-table))
                 (true-listp (,import export ,hash-table)))
-           :rule-classes :type-prescription)
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::import-tp
+                  ,@fi-bindings))))
 
          (defthm ,recognizer$a-of-import
-           (,recognizer$a (,import export ,hash-table)))
+           (,recognizer$a (,import export ,hash-table))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::recognizer/copyable-of-import
+                  ,@fi-bindings))))
+
+         (defthm ,coupledp-of-import
+           (,coupledp (,import export ,hash-table))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-of-import
+                  ,@fi-bindings))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
                     (equal (,import export ,hash-table)
-                           (,creator$a))))
+                           (,creator$a)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::import-when-not-exportp
+                  ,@fi-bindings))))
 
-         (defthm ,import-ignores-hash-table
+         (defthm ,import-ignores-2
            (equal (,import export ,hash-table)
                   (,import export (,creator$a)))
            :rule-classes
@@ -495,65 +825,118 @@
                       (implies (syntaxp (not (and (consp ,hash-table)
                                                   (eq (car ,hash-table) ',creator$a))))
                                (equal (,import export ,hash-table)
-                                      (,import export (,creator$a)))))))
+                                      (,import export (,creator$a))))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::import-ignores-2
+                  ,@fi-bindings))))
 
          (defthm ,keys$a-of-import
            (equal (,keys$a (,import export ,hash-table))
                   (and (,exportp export)
-                       (omap::,keys$a (cdr export)))))
+                       (omap::,keys$a (cdr export))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::keys-of-import
+                  ,@fi-bindings))))
 
          (defthm ,boundp$a-of-import
            (equal (,boundp$a ,key (,import export ,hash-table))
-                  (and (omap::assoc ,(if key-fixer
-                                         `(,key-fixer ,key)
-                                         key)
+                  (and (omap::assoc ,(if key-fixer `(,key-fixer ,key) key)
                                     (cdr export))
-                       (,exportp export))))
+                       (,exportp export)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::boundp/copyable-of-import
+                  ,@fi-bindings))))
 
          (defthm ,accessor$a-of-import
            (equal (,accessor$a ,key (,import export ,hash-table))
-                  (let ((pair (omap::assoc ,(if key-fixer
-                                                `(,key-fixer ,key)
-                                                key)
+                  (let ((pair (omap::assoc ,(if key-fixer `(,key-fixer ,key) key)
                                            (cdr export))))
-                    (if (and (,exportp export)
-                             pair)
-                        (,val-import (cdr pair) ,default-val)
-                        ,default-val))))
+                    ,(if val-import
+                         `(if (and (,exportp export)
+                                   pair)
+                              (,val-import (cdr pair) (,val-creator))
+                              (,val-creator))
+                         `(if (and (,exportp export)
+                                   pair)
+                              (cdr pair)
+                              ,default-val-name))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::accessor/copyable-of-import
+                  ,@fi-bindings))))
 
          (defthm ,count$a-of-import
            (equal (,count$a (,import export ,hash-table))
                   (if (,exportp export)
                       (omap::size (cdr export))
-                      0)))
-
-         (local
-           (in-theory
-             (disable ,import)))
+                      0))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::count/copyable-of-import
+                  ,@fi-bindings))))
 
          ;; Composition Theorems
          (defthm ,export-of-import
            (implies (,exportp export)
                     (equal (,export (,import export ,hash-table))
-                           export)))
+                           export))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::export-of-import
+                  ,@fi-bindings))))
 
          (defthm ,import-of-export
-           (implies (,coupledp ,%hash-table)
-                    (equal (,import (,export ,%hash-table) ,hash-table)
-                           (,fixer$a ,%hash-table))))
-
-         ;; TODO: table event
-         )
+           ;; TODO: Remove hypothesis and rewrite to copy of `%HASH-TABLE'
+           ,(if coupledp
+                `(implies (,coupledp ,%hash-table)
+                          (equal (,import (,export ,%hash-table) ,hash-table)
+                                 (,fixer$a ,%hash-table)))
+                `(equal (,import (,export ,%hash-table) ,hash-table)
+                        (,fixer$a ,%hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::import-of-export
+                  ,@fi-bindings)))))
 
        (deflabel ,export-end)
 
+       (table export ',hash-table ',(list exportp-rec
+                                          exportp
+                                          export-acc
+                                          export
+                                          import-rec
+                                          import))
+
        (deftheory-static ,export-theory
-         (set-different-theories (current-theory ',export-end)
-                                 (current-theory ',export-begin))))))
+         (set-difference-theories
+          (set-different-theories (current-theory ',export-end)
+                                  (current-theory ',export-begin))
+          '(,@(and (or key-recognizer
+                       val-recognizer)
+                   `(,exportp-rec))
+            ,exportp
+            ,export-acc
+            ,export
+            ,import-rec
+            ,import)))
+
+       (in-theory
+         (union-theories (current-theory ',export-begin)
+                         (theory ',export-theory))))))|#
 
 
 ;;;; `MAKE-FRAME-EXPORT-EVENTS'
-(defun make-frame-export-events (frame package-witness state)
+#|(defun make-frame-export-events (frame package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
                               (package-witness-p package-witness))
@@ -571,7 +954,7 @@
          (local
            (deflabel prologue-end))
 
-         (local ; TODO: ensure other frame books do this!
+         (local
            (table acl2::theory-invariant-table nil nil :clear))
 
          (local
@@ -587,9 +970,16 @@
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',frame)
-                ,@(loop$ #|check that all fields
-                        satisfy appropriate recognizers.  the format of an export is the
-                        symbol naming the stobj consed onto a keyword-value list|#)))
+                (true-listp export)
+                (= (len export) ,(1+ (* 2 (len fields))))
+                ,@(loop$ :for field :in fields
+                        :as recognizer :in recognizers
+                        :as field-export-p :in field-export-p-list
+                        :as i :from 1 :to (len fields)
+                        :append `((eq ,(intern (symbol-name field) "KEYWORD")
+                                      (nth ,(1- (* 2 i)) export))
+                                  (,(or field-export-p recognizer)
+                                    (nth ,(* 2 i) export))))))
 
          (defthm ,exportp-tp
            (booleanp (,exportp export))
@@ -601,17 +991,14 @@
                          (true-listp export)))
            :rule-classes :compound-recognizer)
 
-         ;; TODO: assoc-keyword when export
-
-         (local
-           (in-theory ; TODO: maybe move this later?
-             (disable ,exportp)))
-
          ;; `EXPORT'
          (defun ,export (,frame)
            (declare (xargs :stobjs ,frame))
            (list ',frame
-                 ,@(loop$ #|insert keyword value pairs in field order|#)))
+                 ,@(loop$ :for field :in fields
+                         :as accessor :in accessors
+                         :append `(,(intern (symbol-name field) "KEYWORD")
+                                    (,accessor ,frame)))))
 
          (defthm ,export-tp
            (and (consp (,export ,frame))
@@ -621,37 +1008,40 @@
          (defthm ,exportp-of-export
            (,exportp (,export ,frame)))
 
-         ;; TODO: assoc-keyword of export: (equal (cadr (assoc-keyword :field
-         ;; (,export ,frame))) (,accessor ,frame))
-
-         (local
-           (in-theory
-             (disable ,export)))
-
          ;; `IMPORT'
          (defun ,import (export ,frame)
            (declare (xargs :stobj ,frame
                            :guard (,exportp export)))
            (if (mbt (,exportp export))
-               ,(loop$ #|do-loop that sets every field in frame from the export|#)
+               ;; HERE
+               ,(loop$ :with body := `(,the-frame ,frame)
+                      :do
+                      (progn
+                        )
+                      #|do-loop that sets every field in frame from the export|#
+                      )
                (let ((,frame (,creator)))
                  ,frame)))
 
          (defthm ,import-tp
-           ;; TODO: if zero fields, only true-listp
-           (and (consp (,import export ,frame))
-                (true-listp (,import export ,frame)))
+           ,(if (consp fields)
+                `(and (consp (,import export ,frame))
+                      (true-listp (,import export ,frame)))
+                `(null (,import export ,frame)))
            :rule-classes :type-prescription)
 
          (defthm ,recognizer$a-of-import
            (,recognizer$a (,import export ,frame)))
+
+         (defthm ,coupledp-of-import
+           (,coupledp (,import export ,frame)))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
                     (equal (,import export ,frame)
                            (,creator$a))))
 
-         (defthm ,import-ignores-frame
+         (defthm ,import-ignores-2
            (equal (,import export ,frame)
                   (,import export (,creator$a)))
            :rule-classes
@@ -661,11 +1051,31 @@
                                (equal (,import export ,frame)
                                       (,import export (,creator$a)))))))
 
-         ,@(loop$ #|accessors to import get export values via assoc-keyword|#)
-
-         (local
-           (in-theory
-             (disable ,import)))
+         ,@(loop$ :for field :in fields
+                 :as field-creator$a :in field-creators$a
+                 :as i :from 1 :to (len fields)
+                 :as initial-element-name :in initial-element-names
+                 :collect `(defthm ,(symbolicate package-witness accessor$a "-OF-" import)
+                             (equal (,accessor$a (,import export ,frame))
+                                    ,(if field-import
+                                         `(if (,exportp export)
+                                              (,field-import (nth ,(* 2 i) export)
+                                                             (,field-creator$a))
+                                              (,field-creator$a))
+                                         `(if (,exportp export)
+                                              (nth ,(* 2 i) export)
+                                              ,initial-element-name)))
+                             :rule-classes
+                             ((:rewrite :corollary
+                                        (equal (,accessor$a (,import export ,frame))
+                                               ,(if field-import
+                                                    `(if (,exportp export)
+                                                         (,field-import (nth ,(* 2 i) (double-rewrite export))
+                                                                        (,field-creator$a))
+                                                         (,field-creator$a))
+                                                    `(if (,exportp export)
+                                                         (nth ,(* 2 i) (double-rewrite export))
+                                                         ,initial-element-name)))))))
 
          ;; Composition Theorems
          (defthm ,export-of-import
@@ -674,25 +1084,37 @@
                            export)))
 
          (defthm ,import-of-export
+           ;; TODO: Remove hypothesis and rewrite to copy of `%FRAME'
            ,(if coupledp
                 `(implies (,coupledp ,%frame)
                           (equal (,import (,export ,%frame) ,frame)
                                  (,fixer$a ,%frame)))
                 `(equal (,import (,export ,%frame) ,frame)
-                        (,fixer$a ,%frame))))
-
-         ;; TODO: table event
-         )
+                        (,fixer$a ,%frame)))))
 
        (deflabel ,export-end)
 
+       (table export ',frame ',(list exportp
+                                     export
+                                     import))
+
        (deftheory-static ,export-theory
-         (set-different-theories (current-theory ',export-end)
-                                 (current-theory ',export-begin))))))
+         (set-difference-theories
+          (set-different-theories (current-theory ',export-end)
+                                  (current-theory ',export-begin))
+          '(,exportp
+            ,export
+            ,import)))
+
+       (in-theory
+         (union-theories (current-theory ',export-begin)
+                         (theory ',export-theory))))))|#
 
 
 ;;;; `DEFINE-EXPORT'
-(defmacro define-export (stobj &key (debug 'nil) (package-witness 'nil package-witness-supplied-p))
+(defmacro define-export (stobj &key
+                                 (debug 't)
+                                 (package-witness 'nil package-witness-supplied-p))
   (declare (xargs :guard (and (symbolp stobj)
                               (booleanp debug)
                               (package-witness-p package-witness))))
@@ -715,9 +1137,9 @@
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
             (make-vector-export-events stobj package-witness state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 4))
-            (make-hash-table-export-events stobj package-witness state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 8))
-            (make-frame-export-events stobj package-witness state)))))))
+           #|((and (= (len stobj$a-property) 3)
+                 (= (len (third stobj$a-property)) 5))
+            (make-hash-table-export-events stobj package-witness state))|#
+           #|((and (= (len stobj$a-property) 3)
+                 (= (len (third stobj$a-property)) 9))
+            (make-frame-export-events stobj package-witness state))|#)))))
