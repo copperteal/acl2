@@ -303,8 +303,7 @@
 
          (local
            (in-theory
-             (union-theories
-              (theory 'acl2::ground-zero)
+             (union-theories (theory 'acl2::ground-zero)
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
@@ -1105,8 +1104,7 @@
 
          (local
            (in-theory
-             (union-theories
-              (theory 'acl2::ground-zero)
+             (union-theories (theory 'acl2::ground-zero)
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 

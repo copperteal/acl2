@@ -1914,11 +1914,12 @@
                 (true-listp export)))
   :rule-classes :compound-recognizer)
 
-(defthm element-export-p-of-nth-when-exportp/resizable
-  (implies (and (exportp/resizable export)
-                (posp n)
-                (< n (len export)))
-           (element-export-p (nth n export))))
+(local
+  (defthm element-export-p-of-nth-when-exportp/resizable
+    (implies (and (exportp/resizable export)
+                  (posp n)
+                  (< n (len export)))
+             (element-export-p (nth n export)))))
 
 (local
   (in-theory
@@ -2201,19 +2202,19 @@
 
 (defthm accessor/resizable-of-import/resizable
   (equal (accessor/resizable index (import/resizable export vector))
-         (if (or (not (exportp/resizable export))
-                 (<= (len export) (1+ (nfix index))))
-             (initial-element)
+         (if (and (exportp/resizable export)
+                  (< (1+ (nfix index)) (len export)))
              (element-import (nth (1+ (nfix index)) export)
-                             (initial-element))))
+                             (initial-element))
+             (initial-element)))
   :rule-classes
   ((:rewrite :corollary
              (equal (accessor/resizable index (import/resizable export vector))
-                    (if (or (not (exportp/resizable export))
-                            (<= (len (double-rewrite export)) (1+ (nfix index))))
-                        (initial-element)
+                    (if (and (exportp/resizable export)
+                             (< (1+ (nfix index)) (len (double-rewrite export))))
                         (element-import (nth (1+ (nfix index)) (double-rewrite export))
-                                        (initial-element)))))))
+                                        (initial-element))
+                        (initial-element))))))
 
 (local
   (in-theory
@@ -2259,16 +2260,18 @@
                 (true-listp export)))
   :rule-classes :compound-recognizer)
 
-(defthm len-when-exportp/fixed
-  (implies (exportp/fixed export)
-           (equal (len export)
-                  (1+ (default-length)))))
+(local
+  (defthm len-when-exportp/fixed
+    (implies (exportp/fixed export)
+             (equal (len export)
+                    (1+ (default-length))))))
 
-(defthm element-export-p-of-nth-when-exportp/fixed
-  (implies (and (exportp/fixed export)
-                (posp n)
-                (<= n (default-length)))
-           (element-export-p (nth n export))))
+(local
+  (defthm element-export-p-of-nth-when-exportp/fixed
+    (implies (and (exportp/fixed export)
+                  (posp n)
+                  (<= n (default-length)))
+             (element-export-p (nth n export)))))
 
 (local
   (in-theory
@@ -2282,7 +2285,7 @@
                               (recognizer/fixed vector)
                               (<= index (default-length)))))
   (if (zp index)
-      acc
+      (true-list-fix acc)
       (let* ((index (1- index))
              (value (accessor/fixed index vector))
              (export (element-export value)))
@@ -2290,14 +2293,17 @@
 
 (local
   (defthm export-acc/fixed-tp
-    (implies (true-listp acc)
-             (true-listp (export-acc/fixed index acc vector)))
+    (true-listp (export-acc/fixed index acc vector))
     :rule-classes :type-prescription))
 
 (local
   (defthm exportp-rec-of-export-acc/fixed
     (equal (exportp-rec (export-acc/fixed index acc vector))
-           (exportp-rec acc))))
+           (exportp-rec (true-list-fix acc)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (exportp-rec (export-acc/fixed index acc vector))
+                      (exportp-rec (true-list-fix (double-rewrite acc))))))))
 
 (local
   (defcong nat-equiv equal (export-acc/fixed index acc vector) 1))
@@ -2527,19 +2533,19 @@
 
 (defthm accessor/fixed-of-import/fixed
   (equal (accessor/fixed index (import/fixed export vector))
-         (if (or (not (exportp/fixed export))
-                 (<= (default-length) (nfix index)))
-             (initial-element)
+         (if (and (exportp/fixed export)
+                  (< (nfix index) (default-length)))
              (element-import (nth (1+ (nfix index)) export)
-                             (initial-element))))
+                             (initial-element))
+             (initial-element)))
   :rule-classes
   ((:rewrite :corollary
              (equal (accessor/fixed index (import/fixed export vector))
-                    (if (or (not (exportp/fixed export))
-                            (<= (default-length) (nfix index)))
-                        (initial-element)
+                    (if (and (exportp/fixed export)
+                             (< (nfix index) (default-length)))
                         (element-import (nth (1+ (nfix index)) (double-rewrite export))
-                                        (initial-element))))))
+                                        (initial-element))
+                        (initial-element)))))
   :hints
   (("Goal"
     :in-theory (enable exportp/fixed))))
