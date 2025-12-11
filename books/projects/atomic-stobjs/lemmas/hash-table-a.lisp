@@ -3508,7 +3508,7 @@
              (equal (val-import export val)
                     (default-val))))
 
-  (defthm val-import-ignores-val-2
+  (defthm val-import-ignores-2
     (equal (val-import export val)
            (val-import export (default-val)))
     :rule-classes
@@ -4043,7 +4043,7 @@
            (equal (import export hash-table)
                   (creator/copyable))))
 
-(defthm import-ignores-hash-table-2
+(defthm import-ignores-2
   (equal (import export hash-table)
          (import export (creator/copyable)))
   :rule-classes
