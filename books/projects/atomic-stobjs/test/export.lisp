@@ -83,3 +83,30 @@
 (atomic-stobjs::define-export vec1)
 
 
+(defun keyword-fix (x)
+  (declare (xargs :guard t))
+  (if (keywordp x)
+      x
+      :||))
+
+(defun keyword-equiv (x y)
+  (declare (xargs :guard t))
+  (equal (keyword-fix x)
+         (keyword-fix y)))
+
+(defequiv keyword-equiv)
+
+(atomic-stobjs::define-hash-table ht0 eq
+  :element-type unsigned-byte
+  :key-recognizer keywordp
+  :key-fixer keyword-fix
+  :key-equiv keyword-equiv
+  :default-key :||
+  :val-recognizer natp
+  :val-fixer nfix
+  :val-equiv nat-equiv
+  :default-val 0)
+
+(atomic-stobjs::define-copy ht0)
+
+(atomic-stobjs::define-export ht0)

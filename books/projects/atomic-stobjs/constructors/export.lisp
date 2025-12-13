@@ -35,6 +35,8 @@
 (include-book "../lemmas/hash-table-a")
 |#
 
+(include-book "std/omaps/core" :dir :system)
+
 (include-book "../utilities/top")
 (include-book "copy")
 
@@ -135,8 +137,7 @@
                                                            t)))
                 `(lem-vector$a::element-fixer ,(or element-fixer
                                                    'identity))
-                `(lem-vector$a::element-equiv ,(or element-equiv
-                                                   'equal))
+                `(lem-vector$a::element-equiv ,element-equiv)
                 `(lem-vector$a::initial-element ,(if element-stobj$a-property
                                                      `(,element-creator)
                                                      `(lambda ()
@@ -269,6 +270,11 @@
                              (set-difference-theories (current-theory 'prologue-end)
                                                       (current-theory 'prologue-begin)))))
 
+         ,@(and element-recognizer
+                `((local
+                    (in-theory
+                      (disable ,element-recognizer)))))
+
          (local
            (in-theory
              (disable make-list-ac
@@ -304,7 +310,6 @@
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',vector)
-                ;; TODO: `EXPORTP-REC' defaults to `TRUE-LISTP'
                 (,exportp-rec (cdr export))
                 ,@(and (not resizable)
                        `((= (len (cdr export)) ,default-length-name)))))
@@ -625,12 +630,229 @@
 
 
 ;;;; `MAKE-HASH-TABLE-EXPORT-EVENTS'
-#|(defun make-hash-table-export-events (hash-table package-witness state)
+(defun make-hash-table-export-events (hash-table package-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
                               (package-witness-p package-witness))
                   :verify-guards nil))
-  (let* ()
+  (let* ((%hash-table (symbolicate package-witness "%" hash-table))
+
+         (export (symbolicate package-witness hash-table "-EXPORT"))
+         (export-begin (symbolicate package-witness export "-BEGIN"))
+         (export-end (symbolicate package-witness export "-END"))
+         (export-theory (symbolicate package-witness export "-THEORY"))
+         (exportp (symbolicate package-witness export (make-predicate-suffix export)))
+         (exportp-rec (symbolicate package-witness exportp "-REC"))
+         (export-acc (symbolicate package-witness export "-ACC"))
+         (import (symbolicate package-witness hash-table "-IMPORT"))
+         (import-rec (symbolicate package-witness import "-REC"))
+
+         (stobj-property (getpropc hash-table 'acl2::stobj))
+         (creator (cdadr stobj-property))
+         (the-hash-table (symbolicate hash-table "THE-" hash-table))
+         (accessor (second (third stobj-property)))
+         (updater (third (third stobj-property)))
+         ;; (count (seventh (third stobj-property)))
+         (init (ninth (third stobj-property)))
+         (keys (tenth (third stobj-property)))
+         (keys-set (nth 10 (third stobj-property)))
+
+         (world (w state))
+         (coupledp (cdr (assoc hash-table (table-alist 'coupledp world))))
+         (coupled-keys-p (symbolicate coupledp hash-table "-COUPLED-KEYS-P"))
+         (coupled-keys-p-witness (symbolicate coupledp coupled-keys-p "-WITNESS"))
+         (coupled-vals-p (symbolicate coupledp hash-table "-COUPLED-VALS-P"))
+         (coupledp-constraints (symbolicate coupledp coupledp "-CONSTRAINTS"))
+
+         (copy (cdr (assoc hash-table (table-alist 'copy world))))
+         (copy-theory (symbolicate copy copy "-THEORY"))
+
+         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
+         (hash-table$a (first stobj$a-property))
+         (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
+         ;; (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
+         (hash-table$a-constraints (symbolicate hash-table$a hash-table$a "-CONSTRAINTS"))
+         (recognizer$a (first (second stobj$a-property)))
+         (creator$a (second (second stobj$a-property)))
+         (fixer$a (third (second stobj$a-property)))
+         (accessor$a (first (fourth (third stobj$a-property))))
+         (updater$a (second (fourth (third stobj$a-property))))
+         (boundp$a (third (fourth (third stobj$a-property))))
+         ;; (getp$a (fourth (fourth (third stobj$a-property))))
+         ;; (remover$a (fifth (fourth (third stobj$a-property))))
+         (count$a (sixth (fourth (third stobj$a-property))))
+         ;; (clear$a (seventh (fourth (third stobj$a-property))))
+         (init$a (eighth (fourth (third stobj$a-property))))
+         (keys$a (first (fifth (third stobj$a-property))))
+         (keys$a-set (second (fifth (third stobj$a-property))))
+         (keys$ap (third (fifth (third stobj$a-property))))
+         (keys$a-fix (fourth (fifth (third stobj$a-property))))
+
+         (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
+         (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
+         ;; (contents-creator$a (symbolicate hash-table$a "CREATE-" contents$a))
+         (contents-fixer$a (symbolicate hash-table$a contents$a "-FIX"))
+         (contents-accessor$a (symbolicate hash-table$a contents$a "-GET"))
+         (contents-updater$a (symbolicate hash-table$a contents$a "-PUT"))
+         (contents-boundp$a (symbolicate hash-table$a contents$a "-BNDP"))
+         ;; (contents-getp$a (symbolicate hash-table$a contents$a "-GETP"))
+         ;; (contents-remover$a (symbolicate hash-table$a contents$a "-REM"))
+         (contents-count$a (symbolicate hash-table$a contents$a "-CNT"))
+         ;; (contents-clear$a (symbolicate hash-table$a contents$a "-CLR"))
+         ;; (contents-init$a (symbolicate hash-table$a contents$a "-INIT"))
+
+         (key (first (first (third stobj$a-property))))
+         (%key (symbolicate key "%" key))
+         (key-recognizer (second (first (third stobj$a-property))))
+         (default-key-name (third (first (third stobj$a-property))))
+         (key-fixer (fourth (first (third stobj$a-property))))
+         (key-equiv (fifth (first (third stobj$a-property))))
+
+         (val (first (second (third stobj$a-property))))
+         (%val (symbolicate val "%" val))
+         (val-stobj-property (getpropc val 'acl2::stobj))
+         (val-stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
+         (val-recognizer (second (second (third stobj$a-property))))
+         (default-val-name (third (second (third stobj$a-property))))
+         (val-creator (second (second val-stobj$a-property)))
+         (default-val (if val-stobj-property
+                          `(,val-creator)
+                          default-val-name))
+         (val-fixer (fourth (second (third stobj$a-property))))
+         (val-equiv (fifth (second (third stobj$a-property))))
+         (exportp-rec (if (or key-recognizer
+                              val-recognizer)
+                          exportp-rec
+                          'omap::mapp))
+
+         (val-coupled-p (cdr (assoc val (table-alist 'coupledp world))))
+         (val-export-list (cdr (assoc val (table-alist 'export world))))
+         (val-export-p (first val-export-list))
+         (val-export (second val-export-list))
+         (val-import (third val-export-list))
+
+         ;; Theorem Names
+         (key-recognizer-constraints (symbolicate "ATOMIC-STOBJS" key-recognizer "-CONSTRAINTS"))
+         (key-fixer-constraints (symbolicate "ATOMIC-STOBJS" key-fixer "-CONSTRAINTS"))
+         (key-equiv-constraints (symbolicate "ATOMIC-STOBJS" key-equiv "-CONSTRAINTS"))
+
+         (val-recognizer-constraints (symbolicate "ATOMIC-STOBJS" val-recognizer "-CONSTRAINTS"))
+         (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINTS"))
+         (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINTS"))
+
+         (exportp-tp (symbolicate package-witness exportp "-TP"))
+         (exportp-cr (symbolicate package-witness exportp "-CR"))
+         (mapp-when-exportp-rec (symbolicate "ATOMIC-STOBJS" "MAPP-WHEN-" exportp-rec))
+         (key-recognizer-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS" key-recognizer "-HEAD-WHEN-" exportp-rec))
+         (val-export-p-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS"
+                                                          (or val-export-p
+                                                              val-recognizer)
+                                                          "-HEAD-WHEN-"
+                                                          exportp-rec))
+         (exportp-rec-of-tail (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-TAIL"))
+         (exportp-rec-of-update (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-UPDATE"))
+         (keysp-of-keys-when-exportp-rec (symbolicate "ATOMIC-STOBJS" keys$ap "-OF-KEYS-WHEN-" exportp-rec))
+
+         (export-tp (symbolicate package-witness export "-TP"))
+         (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
+
+         (import-tp (symbolicate package-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
+         (keys$a-of-import (symbolicate package-witness keys$a "-OF-" import))
+         (boundp$a-of-import (symbolicate package-witness boundp$a "-OF-" import))
+         (accessor$a-of-import (symbolicate package-witness accessor$a "-OF-" import))
+         (count$a-of-import (symbolicate package-witness count$a "-OF-" import))
+
+         (export-of-import (symbolicate package-witness export "-OF-" import))
+         (import-of-export (symbolicate package-witness import "-OF-" export))
+
+         (fi-bindings
+          (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
+                                                        `(lambda (key)
+                                                           t)))
+                `(lem-hash-table$a::key-fixer ,(or key-fixer
+                                                   'identity))
+                ;; `(lem-hash-table$a::key-equiv ,key-equiv)
+                `(lem-hash-table$a::default-key (lambda ()
+                                                  ,default-key-name))
+
+                `(lem-hash-table$a::val-recognizer ,(or val-recognizer
+                                                        `(lambda (val)
+                                                           t)))
+                `(lem-hash-table$a::val-fixer ,(or val-fixer
+                                                   'identity))
+                `(lem-hash-table$a::val-equiv ,val-equiv)
+                `(lem-hash-table$a::default-val ,(if val-stobj$a-property
+                                                     `(,val-creator)
+                                                     `(lambda ()
+                                                        ,default-val-name)))
+
+                `(lem-hash-table$a::val-coupled-p ,(or val-coupled-p
+                                                       `(lambda (val)
+                                                          t)))
+                `(lem-hash-table$a::val-export-p ,(or val-export-p
+                                                      val-recognizer
+                                                      `(lambda ()
+                                                         t)))
+                `(lem-hash-table$a::val-export ,(or val-export
+                                                    val-fixer
+                                                    'identity))
+                `(lem-hash-table$a::val-import ,(or val-import
+                                                    `(lambda (export val)
+                                                       (,val-fixer export))
+                                                    `(lambda (export val)
+                                                       export)))
+
+                `(lem-hash-table$a::keysp ,keys$ap)
+
+                `(lem-hash-table$a::name (lambda ()
+                                           ',hash-table))
+                `(lem-hash-table$a::exportp-rec ,exportp-rec)
+                `(lem-hash-table$a::exportp ,exportp)
+                ))
+
+         (fi-bindings-post-export
+          (list* `(lem-hash-table$a::export-acc ,export-acc)
+                 `(lem-hash-table$a::export ,export)
+
+                 `(lem-hash-table$a::recognizer/copyable ,recognizer$a)
+                 `(lem-hash-table$a::creator/copyable ,creator$a)
+                 `(lem-hash-table$a::fixer/copyable ,fixer$a)
+                 `(lem-hash-table$a::accessor/copyable ,accessor$a)
+                 `(lem-hash-table$a::keys ,keys$a)
+
+                 `(lem-hash-table$a::recognizer/unique ,contents-recognizer$a)
+                 `(lem-hash-table$a::fixer/unique ,contents-fixer$a)
+                 `(lem-hash-table$a::accessor/unique ,contents-accessor$a)
+
+                 fi-bindings))
+
+         (fi-bindings-post-import
+          (list* `(lem-hash-table$a::coupledp ,coupledp)
+                 `(lem-hash-table$a::coupled-keys-p ,coupled-keys-p)
+                 `(lem-hash-table$a::coupled-keys-p-witness ,coupled-keys-p-witness)
+                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupled-p
+                                                         coupled-vals-p
+                                                         `(lambda (x)
+                                                            t)))
+
+                 `(lem-hash-table$a::import-rec ,import-rec)
+                 `(lem-hash-table$a::import ,import)
+
+                 `(lem-hash-table$a::keys-set ,keys$a-set)
+                 `(lem-hash-table$a::keys-fix ,keys$a-fix)
+                 `(lem-hash-table$a::updater/copyable ,updater$a)
+                 `(lem-hash-table$a::updater/unique ,contents-updater$a)
+                 `(lem-hash-table$a::boundp/copyable ,boundp$a)
+                 `(lem-hash-table$a::boundp/unique ,contents-boundp$a)
+                 `(lem-hash-table$a::count/copyable ,count$a)
+                 `(lem-hash-table$a::count/unique ,contents-count$a)
+                 `(lem-hash-table$a::init/copyable ,init$a)
+
+                 fi-bindings-post-export)))
 
     `(progn
        (deflabel ,export-begin)
@@ -639,6 +861,57 @@
 
          (local
            (deflabel prologue-begin))
+
+         ,@(and key-fixer
+                key-recognizer
+                (not (eq key-equiv 'equal))
+                `((local
+                    (defthm ,key-recognizer-constraints
+                      (and (booleanp (,key-recognizer ,key))
+                           (,key-recognizer ,default-key-name))
+                      :rule-classes
+                      ((:rewrite :corollary
+                                 (booleanp (,key-recognizer ,key))))))
+
+                  (local
+                    (defthm ,key-fixer-constraints
+                      (equal (,key-fixer ,key)
+                             (if (,key-recognizer ,key)
+                                 ,key
+                                 ,default-key-name))))
+
+                  (local
+                    (defthm ,key-equiv-constraints
+                      (equal (,key-equiv ,%key ,key)
+                             (equal (,key-fixer ,%key)
+                                    (,key-fixer ,key)))))))
+
+         ,@(and val-fixer
+                val-recognizer
+                (not (eq val-equiv 'equal))
+                `((local
+                    (defthm ,val-recognizer-constraints
+                      (and (booleanp (,val-recognizer ,val))
+                           (,val-recognizer ,default-val))
+                      :rule-classes
+                      ((:rewrite :corollary
+                                 (booleanp (,val-recognizer ,val)))
+                       ,@(and (not (equal default-val default-val-name))
+                              `((:rewrite :corollary
+                                          (,val-recognizer ,default-val)))))))
+
+                  (local
+                    (defthm ,val-fixer-constraints
+                      (equal (,val-fixer ,val)
+                             (if (,val-recognizer ,val)
+                                 ,val
+                                 ,default-val))))
+
+                  (local
+                    (defthm ,val-equiv-constraints
+                      (equal (,val-equiv ,%val ,val)
+                             (equal (,val-fixer ,%val)
+                                    (,val-fixer ,val)))))))
 
          (local
            (deflabel prologue-end))
@@ -651,10 +924,50 @@
 
          (local
            (in-theory
-             (union-theories
-              (union-theories (theory 'acl2::ground-zero))
-              (set-difference-theories (current-theory 'prologue-end)
-                                       (current-theory 'prologue-begin)))))
+             (union-theories (theory 'acl2::ground-zero)
+                             (set-difference-theories (current-theory 'prologue-end)
+                                                      (current-theory 'prologue-begin)))))
+
+         ,@(and key-recognizer
+                `((local
+                    (in-theory
+                      (disable ,key-recognizer)))))
+
+         ,@(and (not val-stobj-property)
+                `((local
+                    (in-theory
+                      (disable ,val-recognizer)))))
+
+         (local
+           (in-theory
+             (e/d ((:e set::emptyp)
+                   set::never-in-empty
+                   set::setp-type
+                   set::sets-are-true-lists-compound-recognizer
+                   (:e omap::emptyp)
+                   omap::mfix-when-mapp
+                   omap::mapp-non-nil-implies-not-emptyp
+                   (:e set::cardinality))
+                  (mv-nth))))
+
+         ,@(and key-recognizer
+                `((local
+                    (in-theory
+                      (enable (:e ,key-recognizer))))))
+
+         ,@(and val-recognizer
+                `((local
+                    (in-theory
+                      (enable (:e ,val-recognizer))))))
+
+         ,@(and val-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,@(strip-cars (cdr (getpropc val 'acl2::absstobj-info))))))))
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
 
          ;; `EXPORTP-REC'
          ,@(and (or key-recognizer
@@ -674,7 +987,7 @@
                                  (and (consp (cdr map))
                                       (consp (cadr map))
                                       (<< (caar map) (caadr map))
-                                      (exportp-rec (cdr map)))))
+                                      (,exportp-rec (cdr map)))))
                         (null map)))))
 
          ;; `EXPORTP'
@@ -682,7 +995,6 @@
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',hash-table)
-                ;; TODO: `EXPORTP-REC' defaults to `OMAP::MAPP'
                 (,exportp-rec (cdr export))))
 
          (defthm ,exportp-tp
@@ -705,13 +1017,97 @@
                   lem-hash-table$a::exportp-cr
                   ,@fi-bindings))))
 
+         (local
+           (defthm ,mapp-when-exportp-rec
+             (implies (,exportp-rec map)
+                      (omap::mapp map))
+             :hints
+             (("Goal"
+               :by (:functional-instance
+                    lem-hash-table$a::mapp-when-exportp-rec
+                    ,@fi-bindings)))))
+
+         ,@(and key-recognizer
+                `((local
+                    (defthm ,key-recognizer-head-when-exportp-rec
+                      (implies (and (not (omap::emptyp map))
+                                    (,exportp-rec map))
+                               (,key-recognizer (mv-nth 0 (omap::head map))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::key-recognizer-head-when-exportp-rec
+                             ,@fi-bindings)))))))
+
+         ,@(and val-recognizer
+                `((local
+                    (defthm ,val-export-p-head-when-exportp-rec
+                      (implies (and (not (omap::emptyp map))
+                                    (,exportp-rec map))
+                               (,(or val-export-p
+                                     val-recognizer)
+                                 (mv-nth 1 (omap::head map))))
+                      :hints
+                      (("Goal"
+                        :by (:functional-instance
+                             lem-hash-table$a::val-export-p-head-when-exportp-rec
+                             ,@fi-bindings)))))))
+
+         (local
+           (defthm ,exportp-rec-of-tail
+             (implies (,exportp-rec map)
+                      (,exportp-rec (omap::tail map)))
+             :hints
+             (("Goal"
+               :by (:functional-instance
+                    lem-hash-table$a::exportp-rec-of-tail
+                    ,@fi-bindings)))))
+
+         (local
+           (defthm ,exportp-rec-of-update
+             (implies (and (,exportp-rec map)
+                           ,@(and key-recognizer
+                                  `((,key-recognizer key)))
+                           ,@(cond
+                               (val-export-p
+                                `((,val-export-p val)))
+                               (val-recognizer
+                                `((,val-recognizer val)))))
+                      (,exportp-rec (omap::update key val map)))
+             :hints
+             (("Goal"
+               :by (:functional-instance
+                    lem-hash-table$a::exportp-rec-of-update
+                    ,@fi-bindings)))))
+
+         ,@(and key-recognizer
+                `((local
+                    (defthm ,keysp-of-keys-when-exportp-rec
+                      (implies (,exportp-rec map)
+                               (,keys$ap (omap::keys map)))
+                      :hints
+                      (("Goal"
+                        :do-not-induct t
+                        :in-theory (enable ,hash-table$a-constraints)
+                        :by (:functional-instance
+                             lem-hash-table$a::keysp-of-keys-when-exportp-rec
+                             ,@fi-bindings)))))))
+
          ;; `EXPORT-ACC'
          (defun ,export-acc (set acc ,hash-table)
            (declare (xargs :stobjs ,hash-table
-                           :guard (and (,keysp set)
-                                       (,exportp-rec acc))))
+                           :guard (and (,keys$ap set)
+                                       (,exportp-rec acc))
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable ,hash-table$a-theorems
+                                                set::emptyp)))
+                           :measure (set::cardinality set)
+                           :hints
+                           (("Goal"
+                             :in-theory (enable set::cardinality)))))
            (if (mbe :logic (or (set::emptyp set)
-                               (not (keysp set)))
+                               (not (,keys$ap set)))
                     :exec (endp set))
                (mbe :logic (omap::mfix acc)
                     :exec acc)
@@ -729,7 +1125,7 @@
          (defun ,export (,hash-table)
            (declare (xargs :stobjs ,hash-table))
            (cons ',hash-table
-                 (,export-acc (,keys ,hash-table) () ',hash-table)))
+                 (,export-acc (,keys ,hash-table) () ,hash-table)))
 
          (defthm ,export-tp
            (and (consp (,export ,hash-table))
@@ -737,9 +1133,11 @@
            :rule-classes :type-prescription
            :hints
            (("Goal"
+             :do-not-induct t
+             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
                   lem-hash-table$a::export-tp
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-export))))
 
          (defthm ,exportp-of-export
            (,exportp (,export ,hash-table))
@@ -747,24 +1145,31 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::exportp-of-export
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-export))))
 
          ;; `IMPORT-REC'
-         (defun ,import-rec (map ,index ,hash-table)
+         (defun ,import-rec (map ,hash-table)
            (declare (xargs :stobjs ,hash-table
-                           :guard (,exportp-rec map)))
+                           :guard (,exportp-rec map)
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable ,hash-table$a-theorems)))
+                           :measure (omap::size map)
+                           :hints
+                           (("Goal"
+                             :in-theory (enable omap::size)))))
            (if (mbe :logic (or (omap::emptyp map)
-                               (not (exportp-rec map)))
+                               (not (,exportp-rec map)))
                     :exec (endp map))
                (,the-hash-table ,hash-table)
-               (mv-let (,key ,val-export)
+               (mv-let (,key val-export)
                        (omap::head map)
                  ,(if val-import
                       `(stobj-let ((,val (,accessor ,key ,hash-table) ,updater))
                                   (,val)
-                                  (,val-import ,val-export ,val)
+                                  (,val-import val-export ,val)
                          (,import-rec (omap::tail map) ,hash-table))
-                      `(let ((,hash-table (,updater ,key ,val-export ,hash-table)))
+                      `(let ((,hash-table (,updater ,key val-export ,hash-table)))
                          (,import-rec (omap::tail map) ,hash-table))))))
 
          ;; `IMPORT'
@@ -787,9 +1192,17 @@
            :rule-classes :type-prescription
            :hints
            (("Goal"
+             :do-not-induct t
+             :in-theory (enable ,hash-table$a-theorems)
              :by (:functional-instance
                   lem-hash-table$a::import-tp
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))
+            ("Subgoal 4"
+             :in-theory (enable ,hash-table$a-constraints))
+            ("Subgoal 3"
+             :in-theory (enable ,hash-table$a-constraints))
+            ("Subgoal 2"
+             :in-theory (enable ,hash-table$a-constraints))))
 
          (defthm ,recognizer$a-of-import
            (,recognizer$a (,import export ,hash-table))
@@ -797,15 +1210,29 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::recognizer/copyable-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,coupledp-of-import
            (,coupledp (,import export ,hash-table))
            :hints
            (("Goal"
+             :do-not-induct t
+             :in-theory (enable ,copy-theory)
              :by (:functional-instance
                   lem-hash-table$a::coupledp-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))
+            ("Subgoal 7"
+             :in-theory (enable ,coupledp))
+            ("Subgoal 5"
+             :in-theory (enable ,coupledp-constraints))
+            ("Subgoal 4"
+             :in-theory (enable ,hash-table$a-constraints))
+            ("Subgoal 3"
+             :in-theory (enable ,hash-table$a-constraints))
+            ("Subgoal 2"
+             :in-theory (enable ,hash-table$a-constraints))
+            ("Subgoal 1"
+             :in-theory (enable ,hash-table$a-constraints))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
@@ -815,7 +1242,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::import-when-not-exportp
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,import-ignores-2
            (equal (,import export ,hash-table)
@@ -830,17 +1257,17 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::import-ignores-2
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,keys$a-of-import
            (equal (,keys$a (,import export ,hash-table))
                   (and (,exportp export)
-                       (omap::,keys$a (cdr export))))
+                       (omap::keys (cdr export))))
            :hints
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::keys-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,boundp$a-of-import
            (equal (,boundp$a ,key (,import export ,hash-table))
@@ -849,28 +1276,37 @@
                        (,exportp export)))
            :hints
            (("Goal"
+             :do-not-induct t
+             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
                   lem-hash-table$a::boundp/copyable-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,accessor$a-of-import
            (equal (,accessor$a ,key (,import export ,hash-table))
                   (let ((pair (omap::assoc ,(if key-fixer `(,key-fixer ,key) key)
                                            (cdr export))))
-                    ,(if val-import
-                         `(if (and (,exportp export)
-                                   pair)
-                              (,val-import (cdr pair) (,val-creator))
-                              (,val-creator))
-                         `(if (and (,exportp export)
-                                   pair)
-                              (cdr pair)
-                              ,default-val-name))))
+                    ,(cond
+                       (val-import
+                        `(if (and (,exportp export)
+                                  pair)
+                             (,val-import (cdr pair) (,val-creator))
+                             (,val-creator)))
+                       (val-fixer
+                        `(if (and (,exportp export)
+                                  pair)
+                             (,val-fixer (cdr pair))
+                             ,default-val-name))
+                       (t
+                        `(if (and (,exportp export)
+                                  pair)
+                             (cdr pair)
+                             ,default-val-name)))))
            :hints
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::accessor/copyable-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,count$a-of-import
            (equal (,count$a (,import export ,hash-table))
@@ -881,7 +1317,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::count/copyable-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          ;; Composition Theorems
          (defthm ,export-of-import
@@ -892,35 +1328,29 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::export-of-import
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,import-of-export
            ;; TODO: Remove hypothesis and rewrite to copy of `%HASH-TABLE'
-           ,(if coupledp
-                `(implies (,coupledp ,%hash-table)
-                          (equal (,import (,export ,%hash-table) ,hash-table)
-                                 (,fixer$a ,%hash-table)))
-                `(equal (,import (,export ,%hash-table) ,hash-table)
-                        (,fixer$a ,%hash-table)))
+           (implies (,coupledp ,%hash-table)
+                    (equal (,import (,export ,%hash-table) ,hash-table)
+                           (,fixer$a ,%hash-table)))
            :hints
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::import-of-export
-                  ,@fi-bindings)))))
+                  ,@fi-bindings-post-import)))))
 
        (deflabel ,export-end)
 
-       (table export ',hash-table ',(list exportp-rec
-                                          exportp
-                                          export-acc
+       (table export ',hash-table ',(list exportp
                                           export
-                                          import-rec
                                           import))
 
        (deftheory-static ,export-theory
          (set-difference-theories
-          (set-different-theories (current-theory ',export-end)
-                                  (current-theory ',export-begin))
+          (set-difference-theories (current-theory ',export-end)
+                                   (current-theory ',export-begin))
           '(,@(and (or key-recognizer
                        val-recognizer)
                    `(,exportp-rec))
@@ -932,7 +1362,7 @@
 
        (in-theory
          (union-theories (current-theory ',export-begin)
-                         (theory ',export-theory))))))|#
+                         (theory ',export-theory))))))
 
 
 ;;;; `MAKE-FRAME-EXPORT-EVENTS'
@@ -1100,8 +1530,8 @@
 
        (deftheory-static ,export-theory
          (set-difference-theories
-          (set-different-theories (current-theory ',export-end)
-                                  (current-theory ',export-begin))
+          (set-difference-theories (current-theory ',export-end)
+                                   (current-theory ',export-begin))
           '(,exportp
             ,export
             ,import)))
@@ -1137,9 +1567,9 @@
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
             (make-vector-export-events stobj package-witness state))
-           #|((and (= (len stobj$a-property) 3)
+           ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 5))
-            (make-hash-table-export-events stobj package-witness state))|#
+            (make-hash-table-export-events stobj package-witness state))
            #|((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 9))
             (make-frame-export-events stobj package-witness state))|#)))))
