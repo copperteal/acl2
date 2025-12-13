@@ -32,6 +32,8 @@
 
 (include-book "std/util/bstar" :dir :system)
 
+(include-book "../utilities/symbolicate")
+
 
 ;;;; `%GET-PREFIX'
 (defun %get-prefix-acc (char-list %prefix)
