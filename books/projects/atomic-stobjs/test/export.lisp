@@ -68,7 +68,8 @@
   :element-recognizer bytep
   :element-fixer byte-fix
   :element-equiv byte-equiv
-  :initial-element 0)
+  :initial-element 0
+  :resizable nil)
 
 (atomic-stobjs::define-export vec0)
 

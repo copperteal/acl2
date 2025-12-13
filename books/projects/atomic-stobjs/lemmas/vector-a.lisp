@@ -1273,26 +1273,26 @@
 
 
 ;;;; Element Copy
-(encapsulate (((element-coupled-p *) => *))
+(encapsulate (((element-coupledp *) => *))
   (local
-    (defun element-coupled-p (value)
+    (defun element-coupledp (value)
       (declare (xargs :guard t)
                (ignore value))
       t))
 
-  (defthm element-coupled-p-tp
-    (booleanp (element-coupled-p value))
+  (defthm element-coupledp-tp
+    (booleanp (element-coupledp value))
     :rule-classes :type-prescription)
 
-  (defthm element-coupled-p-when-not-element-recognizer
+  (defthm element-coupledp-when-not-element-recognizer
     (implies (not (element-recognizer value))
-             (element-coupled-p value)))
+             (element-coupledp value)))
 
-  (defthm element-coupled-p-of-initial-element
-    (element-coupled-p (initial-element))))
+  (defthm element-coupledp-of-initial-element
+    (element-coupledp (initial-element))))
 
 (local
-  (defcong element-equiv equal (element-coupled-p value) 1
+  (defcong element-equiv equal (element-coupledp value) 1
     :hints
     (("Goal"
       :in-theory (enable element-fixer)))))
@@ -1303,15 +1303,15 @@
       (declare (xargs :guard (and (element-recognizer %value)
                                   (element-recognizer value)))
                (ignore %value))
-      (if (element-coupled-p value)
+      (if (element-coupledp value)
           (element-fixer value)
           (initial-element))))
 
   (defthm element-recognizer-of-element-copy
     (element-recognizer (element-copy %value value)))
 
-  (defthm element-coupled-p-of-element-copy
-    (element-coupled-p (element-copy %value value)))
+  (defthm element-coupledp-of-element-copy
+    (element-coupledp (element-copy %value value)))
 
   (defthm element-copy-ignores-1
     (equal (element-copy %value value)
@@ -1324,12 +1324,12 @@
                                (element-copy (initial-element) value))))))
 
   (defthm element-copy-rw
-    (implies (element-coupled-p value)
+    (implies (element-coupledp value)
              (equal (element-copy %value value)
                     (element-fixer value)))
     :rule-classes
     ((:rewrite :corollary
-               (implies (element-coupled-p (double-rewrite value))
+               (implies (element-coupledp (double-rewrite value))
                         (equal (element-copy %value value)
                                (element-fixer (double-rewrite value))))))))
 
@@ -1345,7 +1345,7 @@
   (declare (xargs :guard (recognizer/resizable vector)
                   :verify-guards nil))
   (forall index
-    (element-coupled-p (accessor/resizable index vector)))
+    (element-coupledp (accessor/resizable index vector)))
   :rewrite :direct)
 
 (defthm coupledp/resizable-tp
@@ -1376,15 +1376,15 @@
   (("Goal"
     :expand (coupledp/resizable (resizer/resizable length vector)))))
 
-(defthm element-coupled-p-of-accessor/resizable
+(defthm element-coupledp-of-accessor/resizable
   (implies (coupledp/resizable vector)
-           (element-coupled-p (accessor/resizable index vector))))
+           (element-coupledp (accessor/resizable index vector))))
 
 (defthm coupledp/resizable-of-updater/resizable
   (implies (coupledp/resizable vector)
            (equal (coupledp/resizable (updater/resizable index value vector))
                   (if (< (nfix index) (length/resizable vector))
-                      (element-coupled-p value)
+                      (element-coupledp value)
                       t)))
   :hints
   (("Goal"
@@ -1585,7 +1585,7 @@
   (declare (xargs :guard (recognizer/fixed vector)
                   :verify-guards nil))
   (forall index
-    (element-coupled-p (accessor/fixed index vector)))
+    (element-coupledp (accessor/fixed index vector)))
   :rewrite :direct)
 
 (defthm coupledp/fixed-tp
@@ -1609,15 +1609,15 @@
     :in-theory (enable fixer/fixed
                        equiv/fixed))))
 
-(defthm element-coupled-p-of-accessor/fixed
+(defthm element-coupledp-of-accessor/fixed
   (implies (coupledp/fixed vector)
-           (element-coupled-p (accessor/fixed index vector))))
+           (element-coupledp (accessor/fixed index vector))))
 
 (defthm coupledp/fixed-of-updater/fixed
   (implies (coupledp/fixed vector)
            (equal (coupledp/fixed (updater/fixed index value vector))
                   (if (< (nfix index) (default-length))
-                      (element-coupled-p value)
+                      (element-coupledp value)
                       t)))
   :hints
   (("Goal"
@@ -1798,7 +1798,7 @@
     (defun element-export-p (export)
       (declare (xargs :guard t))
       (and (element-recognizer export)
-           (element-coupled-p export))))
+           (element-coupledp export))))
 
   (defthm element-export-p-tp
     (booleanp (element-export-p export))
@@ -1807,7 +1807,7 @@
   (local
     (defun element-export (value)
       (declare (xargs :guard (element-recognizer value)))
-      (if (element-coupled-p value)
+      (if (element-coupledp value)
           (element-fixer value)
           (initial-element))))
 
@@ -1824,15 +1824,15 @@
       (declare (xargs :guard (and (element-export-p export)
                                   (element-recognizer value)))
                (ignore value))
-      (if (element-coupled-p export)
+      (if (element-coupledp export)
           (element-fixer export)
           (initial-element))))
 
   (defthm element-recognizer-of-element-import
     (element-recognizer (element-import export value)))
 
-  (defthm element-coupled-p-of-element-import
-    (element-coupled-p (element-import export value)))
+  (defthm element-coupledp-of-element-import
+    (element-coupledp (element-import export value)))
 
   (defthm element-import-when-not-element-export-p
     (implies (not (element-export-p export))
@@ -1855,7 +1855,7 @@
                     export)))
 
   (defthm element-import-of-element-export
-    (implies (element-coupled-p %value)
+    (implies (element-coupledp %value)
              (equal (element-import (element-export %value) value)
                     (element-fixer %value)))))
 

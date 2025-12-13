@@ -49,7 +49,7 @@
        (element 'nil)
        (%element 'nil)
        (initial-element 'nil)
-       (resizable 'nil)
+       (resizable 't)
 
        (recognizer 'nil)
        (creator 'nil)

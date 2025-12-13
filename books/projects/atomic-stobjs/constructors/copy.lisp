@@ -57,7 +57,7 @@
                              (list (symbolicate name (coerce (remove #\% (coerce (symbol-name name)
                                                                                  'list))
                                                              'string)
-                                                "-COUPLED-P")
+                                                "-COUPLEDP")
                                    name))
                            acc)))))
 
@@ -81,7 +81,7 @@
          (copy-rec (symbolicate package-witness copy "-REC"))
          (index (symbolicate package-witness "I"))
 
-         (coupledp (symbolicate package-witness vector "-COUPLED-P"))
+         (coupledp (symbolicate package-witness vector "-COUPLEDP"))
          (coupledp-witness (symbolicate package-witness coupledp "-WITNESS"))
          (coupledp-necc (symbolicate package-witness coupledp "-NECC"))
 
@@ -144,7 +144,7 @@
 
          (element-copy (cdr (assoc element (table-alist 'copy world))))
          (element-copy-theory (symbolicate element-copy element-copy "-THEORY"))
-         (element-coupled-p (cdr (assoc element (table-alist 'coupledp world))))
+         (element-coupledp (cdr (assoc element (table-alist 'coupledp world))))
 
          (copy-begin (symbolicate package-witness copy "-BEGIN"))
          (copy-end (symbolicate package-witness copy "-END"))
@@ -160,7 +160,7 @@
          (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
          (coupledp-of-resizer$a (symbolicate package-witness coupledp "-OF-" resizer$a))
-         (element-coupled-p-of-accessor$a (symbolicate package-witness element-coupled-p "-OF-" accessor$a))
+         (element-coupledp-of-accessor$a (symbolicate package-witness element-coupledp "-OF-" accessor$a))
          (coupledp-of-updater$a (symbolicate package-witness coupledp "-OF-" updater$a))
 
          (copy-rec-of-fixer$a-2 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-2"))
@@ -180,20 +180,20 @@
 
          (fi-bindings
           (append
-           (and element-coupled-p
+           (and element-coupledp
                 (list (if resizable
                           `(lem-vector$a::coupledp/resizable-witness ,coupledp-witness)
                           `(lem-vector$a::coupledp/fixed-witness ,coupledp-witness))))
 
-           (list `(lem-vector$a::element-coupled-p ,(or element-coupled-p
-                                                        '(lambda (element)
-                                                          t)))
+           (list `(lem-vector$a::element-coupledp ,(or element-coupledp
+                                                       '(lambda (element)
+                                                         t)))
                  (if resizable
-                     `(lem-vector$a::coupledp/resizable ,(if element-coupled-p
+                     `(lem-vector$a::coupledp/resizable ,(if element-coupledp
                                                              coupledp
                                                              '(lambda (element)
                                                                t)))
-                     `(lem-vector$a::coupledp/fixed ,(if element-coupled-p
+                     `(lem-vector$a::coupledp/fixed ,(if element-coupledp
                                                          coupledp
                                                          '(lambda (element)
                                                            t))))
@@ -304,8 +304,8 @@
          (local
            (in-theory
              (union-theories (theory 'acl2::ground-zero)
-              (set-difference-theories (current-theory 'prologue-end)
-                                       (current-theory 'prologue-begin)))))
+                             (set-difference-theories (current-theory 'prologue-end)
+                                                      (current-theory 'prologue-begin)))))
 
          ,@(and element-copy
                 `((local
@@ -336,12 +336,12 @@
            :debug ,debug)
 
          ;; `COUPLEDP'
-         ,@(and element-coupled-p
+         ,@(and element-coupledp
                 `((defun-sk ,coupledp (,vector)
                     (declare (xargs :guard (,recognizer ,vector)
                                     :verify-guards nil))
                     (forall ,index
-                      (,element-coupled-p (,accessor$a ,index ,vector)))
+                      (,element-coupledp (,accessor$a ,index ,vector)))
                     :rewrite :direct)
 
                   (table coupledp ',vector ',coupledp)
@@ -349,21 +349,21 @@
                   (defthm ,coupledp-constraints
                     (and (equal (,coupledp ,vector)
                                 ((lambda (,index ,vector)
-                                   (,element-coupled-p (,accessor$a ,index ,vector)))
+                                   (,element-coupledp (,accessor$a ,index ,vector)))
                                  (,coupledp-witness ,vector)
                                  ,vector))
                          (implies (,coupledp ,vector)
-                                  (,element-coupled-p (,accessor$a ,index ,vector))))
+                                  (,element-coupledp (,accessor$a ,index ,vector))))
                     :rule-classes
                     ((:definition :corollary
                          (equal (,coupledp ,vector)
                                 ((lambda (,index ,vector)
-                                   (,element-coupled-p (,accessor$a ,index ,vector)))
+                                   (,element-coupledp (,accessor$a ,index ,vector)))
                                  (,coupledp-witness ,vector)
                                  ,vector)))
                      (:rewrite :corollary
                                (implies (,coupledp ,vector)
-                                        (,element-coupled-p (,accessor$a ,index ,vector)))))
+                                        (,element-coupledp (,accessor$a ,index ,vector)))))
                     :hints
                     (("Goal"
                       :in-theory (disable ,coupledp-necc)
@@ -448,15 +448,15 @@
                                     lem-vector$a::coupledp/resizable-of-resizer/resizable
                                     ,@fi-bindings))))))
 
-                  (defthm ,element-coupled-p-of-accessor$a
+                  (defthm ,element-coupledp-of-accessor$a
                     (implies (,coupledp ,vector)
-                             (,element-coupled-p (,accessor$a ,index ,vector)))
+                             (,element-coupledp (,accessor$a ,index ,vector)))
                     :hints
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$a::element-coupled-p-of-accessor/resizable
-                                'lem-vector$a::element-coupled-p-of-accessor/fixed)
+                                'lem-vector$a::element-coupledp-of-accessor/resizable
+                                'lem-vector$a::element-coupledp-of-accessor/fixed)
                            ,@fi-bindings))))
 
                   (defthm ,coupledp-of-updater$a
@@ -466,7 +466,7 @@
                                            ,(if resizable
                                                 `(,length$a ,vector)
                                                 default-length-name))
-                                        (,element-coupled-p ,element)
+                                        (,element-coupledp ,element)
                                         t)))
                     :hints
                     (("Goal"
@@ -679,7 +679,7 @@
                        'lem-vector$a::equiv/fixed-implies-equal-copy/fixed-2)
                   ,@fi-bindings-with-copy))))
 
-         ,@(and element-coupled-p
+         ,@(and element-coupledp
                 `((defthm ,coupledp-of-copy
                     (,coupledp (,copy ,%vector ,vector))
                     :hints
@@ -777,7 +777,7 @@
              :use ,copy-of-updater$a-lemma)))
 
          (defthm ,copy-rw
-           ,(if element-coupled-p
+           ,(if element-coupledp
                 `(implies (,coupledp ,vector)
                           (equal (,copy ,%vector ,vector)
                                  (,fixer$a ,vector)))
@@ -797,7 +797,7 @@
          (set-difference-theories
           (set-difference-theories (current-theory ',copy-end)
                                    (current-theory ',copy-begin))
-          '(,@(and element-coupled-p
+          '(,@(and element-coupledp
                    `(,coupledp
                      ,coupledp-constraints))
             ,copy-rec
@@ -820,7 +820,7 @@
          (copy (symbolicate package-witness hash-table "-COPY"))
          (copy-rec (symbolicate package-witness copy "-REC"))
 
-         (coupledp (symbolicate package-witness hash-table "-COUPLED-P"))
+         (coupledp (symbolicate package-witness hash-table "-COUPLEDP"))
          (coupled-keys-p (symbolicate package-witness hash-table "-COUPLED-KEYS-P"))
          (coupled-keys-p-witness (symbolicate package-witness coupled-keys-p "-WITNESS"))
          (coupled-keys-p-necc (symbolicate package-witness coupled-keys-p "-NECC"))
@@ -908,7 +908,7 @@
 
          (val-copy (cdr (assoc val (table-alist 'copy world))))
          (val-copy-theory (symbolicate val-copy val-copy "-THEORY"))
-         (val-coupled-p (cdr (assoc val (table-alist 'coupledp world))))
+         (val-coupledp (cdr (assoc val (table-alist 'coupledp world))))
 
          (copy-begin (symbolicate package-witness copy "-BEGIN"))
          (copy-end (symbolicate package-witness copy "-END"))
@@ -927,7 +927,7 @@
          (coupledp-tp (symbolicate package-witness coupledp "-TP"))
          (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
-         (val-coupled-p-of-accessor$a (symbolicate package-witness val-coupled-p "-OF-" accessor$a))
+         (val-coupledp-of-accessor$a (symbolicate package-witness val-coupledp "-OF-" accessor$a))
          (coupledp-of-updater$a-when-boundp$a (symbolicate package-witness coupledp "-OF-" updater$a "-WHEN-" boundp$a))
          (coupledp-of-updater$a-when-not-boundp$a (symbolicate package-witness coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
          (in-of-keys$a-when-coupledp (symbolicate package-witness "IN-OF-" keys$a "-WHEN-" coupledp))
@@ -956,14 +956,14 @@
 
          (fi-bindings
           (append
-           (and val-coupled-p
+           (and val-coupledp
                 (list `(lem-hash-table$a::coupled-vals-p-witness ,coupled-vals-p-witness)))
-           (list `(lem-hash-table$a::val-coupled-p ,(or val-coupled-p
-                                                        '(lambda (val)
-                                                          t)))
+           (list `(lem-hash-table$a::val-coupledp ,(or val-coupledp
+                                                       '(lambda (val)
+                                                         t)))
                  `(lem-hash-table$a::coupled-keys-p ,coupled-keys-p)
                  `(lem-hash-table$a::coupled-keys-p-witness ,coupled-keys-p-witness)
-                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupled-p
+                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupledp
                                                          coupled-vals-p
                                                          '(lambda (hash-table)
                                                            t)))
@@ -1105,8 +1105,8 @@
          (local
            (in-theory
              (union-theories (theory 'acl2::ground-zero)
-              (set-difference-theories (current-theory 'prologue-end)
-                                       (current-theory 'prologue-begin)))))
+                             (set-difference-theories (current-theory 'prologue-end)
+                                                      (current-theory 'prologue-begin)))))
 
          ,@(and val-copy
                 `((local
@@ -1159,12 +1159,12 @@
            :rewrite :direct)
 
          ;; `COUPLED-VALS-P'
-         ,@(and val-coupled-p
+         ,@(and val-coupledp
                 `((defun-sk ,coupled-vals-p (,hash-table)
                     (declare (xargs :guard (,recognizer ,hash-table)
                                     :verify-guards nil))
                     (forall ,key
-                      (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                      (,val-coupledp (,accessor$a ,key ,hash-table)))
                     :rewrite :direct)))
 
          ;; `COUPLEDP'
@@ -1174,7 +1174,7 @@
            (and (= (set::cardinality (,keys$a ,hash-table))
                    (,count$a ,hash-table))
                 (,coupled-keys-p ,hash-table)
-                ,@(and val-coupled-p
+                ,@(and val-coupledp
                        `((,coupled-vals-p ,hash-table)))))
 
          (table coupledp ',hash-table ',coupledp)
@@ -1197,18 +1197,18 @@
                                           (,boundp$a ,key ,hash-table)
                                           'nil)
                                      `(,boundp$a ,key ,hash-table))))
-                ,@(and val-coupled-p
+                ,@(and val-coupledp
                        `((equal (,coupled-vals-p ,hash-table)
                                 ((lambda (,key ,hash-table)
-                                   (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                                   (,val-coupledp (,accessor$a ,key ,hash-table)))
                                  (,coupled-vals-p-witness ,hash-table)
                                  ,hash-table))
                          (implies (,coupled-vals-p ,hash-table)
-                                  (,val-coupled-p (,accessor$a ,key ,hash-table)))))
+                                  (,val-coupledp (,accessor$a ,key ,hash-table)))))
                 (equal (,coupledp ,hash-table)
                        (if (equal (set::cardinality (,keys$a ,hash-table))
                                   (,count$a ,hash-table))
-                           ,(if val-coupled-p
+                           ,(if val-coupledp
                                 `(if (,coupled-keys-p ,hash-table)
                                      (,coupled-vals-p ,hash-table)
                                      'nil)
@@ -1234,21 +1234,21 @@
                                                 (,boundp$a ,key ,hash-table)
                                                 'nil)
                                            `(,boundp$a ,key ,hash-table)))))
-            ,@(and val-coupled-p
+            ,@(and val-coupledp
                    `((:definition :corollary
                          (equal (,coupled-vals-p ,hash-table)
                                 ((lambda (,key ,hash-table)
-                                   (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                                   (,val-coupledp (,accessor$a ,key ,hash-table)))
                                  (,coupled-vals-p-witness ,hash-table)
                                  ,hash-table)))
                      (:rewrite :corollary
                                (implies (,coupled-vals-p ,hash-table)
-                                        (,val-coupled-p (,accessor$a ,key ,hash-table))))))
+                                        (,val-coupledp (,accessor$a ,key ,hash-table))))))
             (:definition :corollary
                 (equal (,coupledp ,hash-table)
                        (if (equal (set::cardinality (,keys$a ,hash-table))
                                   (,count$a ,hash-table))
-                           ,(if val-coupled-p
+                           ,(if val-coupledp
                                 `(if (,coupled-keys-p ,hash-table)
                                      (,coupled-vals-p ,hash-table)
                                      'nil)
@@ -1257,10 +1257,10 @@
            :hints
            (("Goal"
              :in-theory (disable ,coupled-keys-p-necc
-                                 ,@(and val-coupled-p
+                                 ,@(and val-coupledp
                                         `(,coupled-vals-p-necc)))
              :use ((:instance ,coupled-keys-p-necc)
-                   ,@(and val-coupled-p
+                   ,@(and val-coupledp
                           `((:instance ,coupled-vals-p-necc)))))))
 
          (local
@@ -1268,7 +1268,7 @@
              (disable ,coupledp
                       ,coupled-keys-p
                       (:definition ,coupledp-constraints . 1)
-                      ,@(and val-coupled-p
+                      ,@(and val-coupledp
                              `(,coupled-vals-p
                                (:definition ,coupledp-constraints . 2))))))
 
@@ -1281,7 +1281,7 @@
              :by (:functional-instance
                   lem-hash-table$a::coupledp-tp
                   ,@fi-bindings))
-            ,@(and val-coupled-p
+            ,@(and val-coupledp
                    key-recognizer
                    `(("Subgoal 14"
                       :in-theory (e/d (,hash-table$a-constraints)
@@ -1292,7 +1292,7 @@
                      ("Subgoal 13"
                       :use ((:instance (:definition ,coupledp-constraints . 2)
                                        (,hash-table lem-hash-table$a::hash-table))))))
-            ,@(and val-coupled-p
+            ,@(and val-coupledp
                    (not key-recognizer)
                    `(("Subgoal 13"
                       :in-theory (e/d (,hash-table$a-constraints)
@@ -1339,22 +1339,22 @@
                   lem-hash-table$a::equiv/copyable-implies-equal-coupledp-1
                   ,@fi-bindings))))
 
-         ,@(and val-coupled-p
-                `((defthm ,val-coupled-p-of-accessor$a
+         ,@(and val-coupledp
+                `((defthm ,val-coupledp-of-accessor$a
                     (implies (,coupledp ,hash-table)
-                             (,val-coupled-p (,accessor$a ,key ,hash-table)))
+                             (,val-coupledp (,accessor$a ,key ,hash-table)))
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           lem-hash-table$a::val-coupled-p-of-accessor/copyable
+                           lem-hash-table$a::val-coupledp-of-accessor/copyable
                            ,@fi-bindings))))))
 
          (defthm ,coupledp-of-updater$a-when-boundp$a
            (implies (and (,boundp$a ,key ,hash-table)
                          (,coupledp ,hash-table))
                     (equal (,coupledp (,updater$a ,key ,val ,hash-table))
-                           ,(if val-coupled-p
-                                `(,val-coupled-p ,val)
+                           ,(if val-coupledp
+                                `(,val-coupledp ,val)
                                 't)))
            :hints
            (("Goal"
@@ -1371,8 +1371,8 @@
                            (set::in ,(if key-fixer `(,key-fixer ,key) key) ,keys$a)
                            (,coupledp (,keys$a-set trimmed ,hash-table))))
                     (equal (,coupledp (,updater$a ,key ,val ,hash-table))
-                           ,(if val-coupled-p
-                                `(,val-coupled-p ,val)
+                           ,(if val-coupledp
+                                `(,val-coupledp ,val)
                                 't)))
            :hints
            (("Goal"
@@ -1816,7 +1816,7 @@
          (set-difference-theories
           (set-difference-theories (current-theory ',copy-end)
                                    (current-theory ',copy-begin))
-          '(,@(and val-coupled-p
+          '(,@(and val-coupledp
                    `(,coupled-vals-p))
             ,coupled-keys-p
             ,coupledp
@@ -1840,7 +1840,7 @@
   (let* ((%frame (symbolicate package-witness "%" frame))
          (copy (symbolicate package-witness frame "-COPY"))
 
-         (coupledp (symbolicate package-witness frame "-COUPLED-P"))
+         (coupledp (symbolicate package-witness frame "-COUPLEDP"))
 
          ;; `FRAME'
          (stobj-property (getpropc frame 'acl2::stobj))
@@ -1958,10 +1958,10 @@
                                                     nil
                                                     'acl2::current-acl2-world
                                                     world)))))
-         (stobj-coupled-p-alist (table-alist 'coupledp world))
-         (stobj-coupled-p-list (loop$ :for stobj :in stobjs
-                                     :collect (and stobj
-                                                   (cdr (assoc stobj stobj-coupled-p-alist)))))
+         (stobj-coupledp-alist (table-alist 'coupledp world))
+         (stobj-coupledp-list (loop$ :for stobj :in stobjs
+                                    :collect (and stobj
+                                                  (cdr (assoc stobj stobj-coupledp-alist)))))
 
          (copy-begin (symbolicate package-witness copy "-BEGIN"))
          (copy-end (symbolicate package-witness copy "-END"))
@@ -2063,14 +2063,14 @@
            :debug ,debug)
 
          ;; `COUPLEDP'
-         ,@(and (remove nil stobj-coupled-p-list)
+         ,@(and (remove nil stobj-coupledp-list)
                 `((defun-nx ,coupledp (,frame)
                     (declare (xargs :guard (,recognizer ,frame)
                                     :verify-guards nil))
-                    ,(let ((body (loop$ :for stobj-coupled-p :in stobj-coupled-p-list
+                    ,(let ((body (loop$ :for stobj-coupledp :in stobj-coupledp-list
                                        :as accessor$a :in accessors$a
-                                       :when stobj-coupled-p
-                                       :collect `(,stobj-coupled-p (,accessor$a ,frame)))))
+                                       :when stobj-coupledp
+                                       :collect `(,stobj-coupledp (,accessor$a ,frame)))))
                        (if (consp (cdr body))
                            (cons 'and body)
                            (car body))))
@@ -2095,20 +2095,20 @@
 
                   (defthm ,coupledp-of-view$a
                     (equal (,coupledp (,view$a ,@fields))
-                           ,(let ((constraints (loop$ :for stobj-coupled-p :in stobj-coupled-p-list
+                           ,(let ((constraints (loop$ :for stobj-coupledp :in stobj-coupledp-list
                                                      :as field :in fields
-                                                     :when stobj-coupled-p
-                                                     :collect `(,stobj-coupled-p ,field))))
+                                                     :when stobj-coupledp
+                                                     :collect `(,stobj-coupledp ,field))))
                               (if (consp (cdr constraints))
                                   (cons 'and constraints)
                                   (car constraints)))))
 
                   ,@(loop$ :for accessor$a :in accessors$a
-                          :as stobj-coupled-p :in stobj-coupled-p-list
-                          :when stobj-coupled-p
-                          :collect `(defthm ,(symbolicate package-witness stobj-coupled-p "-OF-" accessor$a)
+                          :as stobj-coupledp :in stobj-coupledp-list
+                          :when stobj-coupledp
+                          :collect `(defthm ,(symbolicate package-witness stobj-coupledp "-OF-" accessor$a)
                                       (implies (,coupledp ,frame)
-                                               (,stobj-coupled-p (,accessor$a ,frame)))))
+                                               (,stobj-coupledp (,accessor$a ,frame)))))
 
                   (local
                     (in-theory
@@ -2165,14 +2165,18 @@
            (,recognizer$a (,copy ,%frame ,frame)))
 
          (defthm ,copy-ignores-1
-           (implies (syntaxp (not (and (consp ,%frame)
-                                       (eq (car ,%frame) ',creator$a))))
-                    (equal (,copy ,%frame ,frame)
-                           (,copy (,creator$a) ,frame))))
+           (equal (,copy ,%frame ,frame)
+                  (,copy (,creator$a) ,frame))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (syntaxp (not (and (consp ,%frame)
+                                                  (eq (car ,%frame) ',creator$a))))
+                               (equal (,copy ,%frame ,frame)
+                                      (,copy (,creator$a) ,frame))))))
 
          (defcong ,equiv$a equal (,copy ,%frame ,frame) 2)
 
-         ,@(and (remove nil stobj-coupled-p-list)
+         ,@(and (remove nil stobj-coupledp-list)
                 `((defthm ,coupledp-of-copy
                     (,coupledp (,copy ,%frame ,frame)))))
 
@@ -2210,7 +2214,7 @@
              (disable ,copy)))
 
          (defthm ,copy-rw
-           ,(if (remove nil stobj-coupled-p-list)
+           ,(if (remove nil stobj-coupledp-list)
                 `(implies (,coupledp ,frame)
                           (equal (,copy ,%frame ,frame)
                                  (,fixer$a ,frame)))
@@ -2229,7 +2233,7 @@
          (set-difference-theories
           (set-difference-theories (current-theory ',copy-end)
                                    (current-theory ',copy-begin))
-          '(,@(and (remove nil stobj-coupled-p-list)
+          '(,@(and (remove nil stobj-coupledp-list)
                    `(,coupledp))
             ,copy)))
 

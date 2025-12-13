@@ -67,7 +67,8 @@
   :element-recognizer bytep
   :element-fixer byte-fix
   :element-equiv byte-equiv
-  :initial-element 0)
+  :initial-element 0
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec0)
 
@@ -90,17 +91,20 @@
   :element-recognizer stringp
   :element-fixer string-fix
   :element-equiv string-equiv
-  :initial-element "")
+  :initial-element ""
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec1)
 
 (atomic-stobjs::define-vector vec2 13
-  :element-type vec0)
+  :element-type vec0
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec2)
 
 (atomic-stobjs::define-vector vec3 13
-  :element-type vec2)
+  :element-type vec2
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec3)
 
@@ -110,7 +114,8 @@
 
 (atomic-stobjs::define-copy vec4)
 
-(atomic-stobjs::define-vector vec5 20000)
+(atomic-stobjs::define-vector vec5 20000
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec5)
 
@@ -180,7 +185,8 @@
 (atomic-stobjs::define-copy ht-of-vec)
 
 (atomic-stobjs::define-vector vec-of-ht 3000
-  :element-type ht3)
+  :element-type ht3
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec-of-ht)
 
@@ -246,7 +252,8 @@
 (atomic-stobjs::define-copy fr)
 
 (atomic-stobjs::define-vector vec2$ 3
-  :element-type fr)
+  :element-type fr
+  :resizable nil)
 
 (atomic-stobjs::define-copy vec2$)
 
