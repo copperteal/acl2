@@ -3576,13 +3576,12 @@
   (in-theory
     (disable exportp-rec)))
 
-(local
-  (defthm mapp-when-exportp-rec
-    (implies (exportp-rec map)
-             (omap::mapp map))
-    :hints
-    (("Goal"
-      :expand (exportp-rec map)))))
+(defthm mapp-when-exportp-rec
+  (implies (exportp-rec map)
+           (omap::mapp map))
+  :hints
+  (("Goal"
+    :expand (exportp-rec map))))
 
 (local
   (defthm exportp-rec-when-emptyp
@@ -3590,22 +3589,19 @@
              (equal (exportp-rec map)
                     (null map)))))
 
-(local
-  (defthm key-recognizer-head-when-exportp-rec
-    (implies (and (not (omap::emptyp map))
-                  (exportp-rec map))
-             (key-recognizer (omap::head-key map)))))
+(defthm key-recognizer-head-when-exportp-rec
+  (implies (and (not (omap::emptyp map))
+                (exportp-rec map))
+           (key-recognizer (mv-nth 0 (omap::head map)))))
 
-(local
-  (defthm val-export-p-head-when-exportp-rec
-    (implies (and (not (omap::emptyp map))
-                  (exportp-rec map))
-             (val-export-p (omap::head-val map)))))
+(defthm val-export-p-head-when-exportp-rec
+  (implies (and (not (omap::emptyp map))
+                (exportp-rec map))
+           (val-export-p (mv-nth 1 (omap::head map)))))
 
-(local
-  (defthm exportp-rec-of-tail
-    (implies (exportp-rec map)
-             (exportp-rec (omap::tail map)))))
+(defthm exportp-rec-of-tail
+  (implies (exportp-rec map)
+           (exportp-rec (omap::tail map))))
 
 (local
   (defthm key-recognizer-when-exportp-rec
@@ -3625,28 +3621,26 @@
     (("Goal"
       :in-theory (enable omap::values)))))
 
-(local
-  (defthm exportp-rec-of-update
-    (implies (and (exportp-rec map)
-                  (key-recognizer key)
-                  (val-export-p val))
-             (exportp-rec (omap::update key val map)))
-    :hints
-    (("Goal"
-      :induct (omap::size map)
-      :in-theory (enable omap::size))
-     ("Subgoal *1/2"
-      :expand (exportp-rec (omap::update key val map))))))
+(defthm exportp-rec-of-update
+  (implies (and (exportp-rec map)
+                (key-recognizer key)
+                (val-export-p val))
+           (exportp-rec (omap::update key val map)))
+  :hints
+  (("Goal"
+    :induct (omap::size map)
+    :in-theory (enable omap::size))
+   ("Subgoal *1/2"
+    :expand (exportp-rec (omap::update key val map)))))
 
-(local
-  (defthm keysp-of-keys-when-exportp-rec
-    (implies (exportp-rec map)
-             (keysp (omap::keys map)))
-    :hints
-    (("Goal"
-      :induct (omap::keys map)
-      :in-theory (enable keysp-def
-                         omap::keys)))))
+(defthm keysp-of-keys-when-exportp-rec
+  (implies (exportp-rec map)
+           (keysp (omap::keys map)))
+  :hints
+  (("Goal"
+    :induct (omap::keys map)
+    :in-theory (enable keysp-def
+                       omap::keys))))
 
 (local
   (in-theory
