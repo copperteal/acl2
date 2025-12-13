@@ -45,7 +45,7 @@
        (element-type 't)
        (specialize-element-type 'nil)
        (initial-element 'nil)
-       (resizable 'nil)
+       (resizable 't)
 
        (inline 'nil)
        (memoizable 'nil)

@@ -2870,26 +2870,26 @@
 
 
 ;;;; Val Copy
-(encapsulate (((val-coupled-p *) => *))
+(encapsulate (((val-coupledp *) => *))
   (local
-    (defun val-coupled-p (val)
+    (defun val-coupledp (val)
       (declare (xargs :guard t)
                (ignore val))
       t))
 
-  (defthm val-coupled-p-tp
-    (booleanp (val-coupled-p val))
+  (defthm val-coupledp-tp
+    (booleanp (val-coupledp val))
     :rule-classes :type-prescription)
 
-  (defthm val-coupled-p-when-not-val-recognizer
+  (defthm val-coupledp-when-not-val-recognizer
     (implies (not (val-recognizer val))
-             (val-coupled-p val)))
+             (val-coupledp val)))
 
-  (defthm val-coupled-p-of-default-val
-    (val-coupled-p (default-val))))
+  (defthm val-coupledp-of-default-val
+    (val-coupledp (default-val))))
 
 (local
-  (defcong val-equiv equal (val-coupled-p val) 1
+  (defcong val-equiv equal (val-coupledp val) 1
     :hints
     (("Goal"
       :in-theory (enable val-fixer)))))
@@ -2900,15 +2900,15 @@
       (declare (xargs :guard (and (val-recognizer %val)
                                   (val-recognizer val)))
                (ignore %val))
-      (if (val-coupled-p val)
+      (if (val-coupledp val)
           (val-fixer val)
           (default-val))))
 
   (defthm val-recognizer-of-val-copy
     (val-recognizer (val-copy %val val)))
 
-  (defthm val-coupled-p-of-val-copy
-    (val-coupled-p (val-copy %val cal)))
+  (defthm val-coupledp-of-val-copy
+    (val-coupledp (val-copy %val cal)))
 
   (defthm val-copy-ignores-1
     (equal (val-copy %value value)
@@ -2921,12 +2921,12 @@
                                (val-copy (default-val) value))))))
 
   (defthm val-copy-rw
-    (implies (val-coupled-p val)
+    (implies (val-coupledp val)
              (equal (val-copy %val val)
                     (val-fixer val)))
     :rule-classes
     ((:rewrite :corollary
-               (implies (val-coupled-p (double-rewrite val))
+               (implies (val-coupledp (double-rewrite val))
                         (equal (val-copy %val val)
                                (val-fixer (double-rewrite val))))))))
 
@@ -3025,7 +3025,7 @@
   (declare (xargs :guard (recognizer/copyable hash-table)
                   :verify-guards nil))
   (forall key
-    (val-coupled-p (accessor/copyable key hash-table)))
+    (val-coupledp (accessor/copyable key hash-table)))
   :rewrite :direct)
 
 (defthm coupled-vals-p-tp
@@ -3052,7 +3052,7 @@
 (defthm coupled-vals-p-of-updater/copyable
   (implies (coupled-vals-p hash-table)
            (equal (coupled-vals-p (updater/copyable key val hash-table))
-                  (val-coupled-p val)))
+                  (val-coupledp val)))
   :hints
   (("Goal"
     :cases ((coupled-vals-p (updater/copyable key val hash-table))))
@@ -3113,15 +3113,15 @@
     :in-theory (enable fixer/copyable
                        equiv/copyable))))
 
-(defthm val-coupled-p-of-accessor/copyable
+(defthm val-coupledp-of-accessor/copyable
   (implies (coupledp hash-table)
-           (val-coupled-p (accessor/copyable key hash-table))))
+           (val-coupledp (accessor/copyable key hash-table))))
 
 (defthm coupledp-of-updater/copyable-when-boundp/copyable
   (implies (and (boundp/copyable key hash-table)
                 (coupledp hash-table))
            (equal (coupledp (updater/copyable key val hash-table))
-                  (val-coupled-p val))))
+                  (val-coupledp val))))
 
 (defthm coupledp-of-updater/copyable-when-not-boundp/copyable
   (implies (let* ((keys (keys hash-table))
@@ -3130,7 +3130,7 @@
                   (set::in (key-fixer key) keys)
                   (coupledp (keys-set trimmed hash-table))))
            (equal (coupledp (updater/copyable key val hash-table))
-                  (val-coupled-p val)))
+                  (val-coupledp val)))
   :hints
   (("Goal"
     :in-theory (enable set::delete-cardinality))))
@@ -3467,7 +3467,7 @@
     (defun val-export-p (export)
       (declare (xargs :guard t))
       (and (val-recognizer export)
-           (val-coupled-p export))))
+           (val-coupledp export))))
 
   (defthm val-export-p-tp
     (booleanp (val-export-p export))
@@ -3476,7 +3476,7 @@
   (local
     (defun val-export (val)
       (declare (xargs :guard (val-recognizer val)))
-      (if (val-coupled-p val)
+      (if (val-coupledp val)
           (val-fixer val)
           (default-val))))
 
@@ -3493,15 +3493,15 @@
       (declare (xargs :guard (and (val-export-p export)
                                   (val-recognizer val)))
                (ignore val))
-      (if (val-coupled-p export)
+      (if (val-coupledp export)
           (val-fixer export)
           (default-val))))
 
   (defthm val-recognizer-of-val-import
     (val-recognizer (val-import export val)))
 
-  (defthm val-coupled-p-of-val-import
-    (val-coupled-p (val-import export val)))
+  (defthm val-coupledp-of-val-import
+    (val-coupledp (val-import export val)))
 
   (defthm val-import-when-not-val-export-p
     (implies (not (val-export-p export))
@@ -3524,7 +3524,7 @@
                     export)))
 
   (defthm val-import-of-val-export
-    (implies (val-coupled-p %val)
+    (implies (val-coupledp %val)
              (equal (val-import (val-export %val) val)
                     (val-fixer %val)))))
 

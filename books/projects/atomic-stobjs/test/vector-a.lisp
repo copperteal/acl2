@@ -35,9 +35,11 @@
 
 
 ;;;; Concrete Tests
-(atomic-stobjs::define-vector$a vec/0 0)
+(atomic-stobjs::define-vector$a vec/0 0
+  :resizable nil)
 
-(atomic-stobjs::define-vector$a vec/1 #xbabe)
+(atomic-stobjs::define-vector$a vec/1 #xbabe
+  :resizable nil)
 
 (atomic-stobjs::define-vector$a vec/2 0
   :resizable t)
@@ -61,7 +63,8 @@
   :element-fixer nfix
   :element-equiv nat-equiv
   :element nat
-  :initial-element 0)
+  :initial-element 0
+  :resizable nil)
 
 (atomic-stobjs::define-vector$a vec$a/0-nat-t 0
   :element-recognizer natp
@@ -76,7 +79,8 @@
   :element-fixer nfix
   :element-equiv nat-equiv
   :element nat
-  :initial-element 0)
+  :initial-element 0
+  :resizable nil)
 
 
 ;;;; `BOOLEANP' Elements
@@ -94,7 +98,8 @@
   :element-fixer bool-fix
   :element-equiv iff
   :element b
-  :initial-element t)
+  :initial-element t
+  :resizable nil)
 
 (atomic-stobjs::define-vector$a vec$a/0-boolean-t 0
   :element-recognizer booleanp
@@ -109,4 +114,5 @@
   :element-fixer bool-fix
   :element-equiv iff
   :element b
-  :initial-element t)
+  :initial-element t
+  :resizable nil)
