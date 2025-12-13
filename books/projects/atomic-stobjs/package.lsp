@@ -40,13 +40,20 @@
                make-predicate-suffix
                coupledp)
              '(<<
-               nat-equiv))
-   '(
-     inline
-     memoizable
-     executable
-     debug
+               nat-equiv
 
+               b*
+               def-b*-binder
+               args
+               forms
+               rest-expr
+
+               inline
+               memoizable
+               executable
+               debug))
+
+   '(
      ;; VECTOR Construction Variables
      vector
      dimensions

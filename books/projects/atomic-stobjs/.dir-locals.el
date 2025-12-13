@@ -60,6 +60,7 @@
 
 ;;; Atomic-Stobjs
                (eval . (put 'with-books 'common-lisp-indent-function 1))
+               (eval . (put 'define-b* 'common-lisp-indent-function 1))
                (eval . (put 'define-congruent 'common-lisp-indent-function 1))
                (eval . (put 'define-copy 'common-lisp-indent-function 1))
                (eval . (put 'define-export 'common-lisp-indent-function 1))

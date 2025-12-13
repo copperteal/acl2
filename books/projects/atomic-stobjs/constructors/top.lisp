@@ -36,6 +36,7 @@
 (include-book "congruent")
 (include-book "copy")
 (include-book "export")
+(include-book "bstar")
 
 (defconst *exports*
   '(define-vector$c
@@ -59,4 +60,5 @@
     define-congruent
     coupledp
     define-copy
-    define-export))
+    define-export
+    define-b*))
