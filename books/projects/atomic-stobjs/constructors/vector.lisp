@@ -49,7 +49,7 @@
        (element-equiv 'nil element-equiv-supplied-p)
        (element 'nil element-supplied-p)
        (initial-element 'nil initial-element-supplied-p)
-       (resizable 'nil resizable-supplied-p)
+       (resizable 't resizable-supplied-p)
 
        (inline 'nil inline-supplied-p)
        (memoizable 'nil memoizable-supplied-p)

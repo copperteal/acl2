@@ -52,9 +52,11 @@
            (equal (nfix x) 0)))
 
 
-(atomic-stobjs::define-vector$c vec/0$c #xbabe)
+(atomic-stobjs::define-vector$c vec/0$c #xbabe
+  :resizable nil)
 
-(atomic-stobjs::define-vector$a vec/0$a #xbabe)
+(atomic-stobjs::define-vector$a vec/0$a #xbabe
+  :resizable nil)
 
 (atomic-stobjs::define-vector$corr vec/0
   :logic vec/0$a

@@ -103,7 +103,7 @@
                           exportp-rec
                           'true-listp))
 
-         (element-coupled-p (cdr (assoc element (table-alist 'coupledp world))))
+         (element-coupledp (cdr (assoc element (table-alist 'coupledp world))))
          (element-export-list (cdr (assoc element (table-alist 'export world))))
          (element-export-p (first element-export-list))
          (element-export (second element-export-list))
@@ -142,9 +142,9 @@
                                                      `(,element-creator)
                                                      `(lambda ()
                                                         ,initial-element-name)))
-                `(lem-vector$a::element-coupled-p ,(or element-coupled-p
-                                                       `(lambda (element)
-                                                          t)))
+                `(lem-vector$a::element-coupledp ,(or element-coupledp
+                                                      `(lambda (element)
+                                                         t)))
                 `(lem-vector$a::element-export-p ,(or element-export-p
                                                       element-recognizer
                                                       `(lambda ()
@@ -715,7 +715,7 @@
                           exportp-rec
                           'omap::mapp))
 
-         (val-coupled-p (cdr (assoc val (table-alist 'coupledp world))))
+         (val-coupledp (cdr (assoc val (table-alist 'coupledp world))))
          (val-export-list (cdr (assoc val (table-alist 'export world))))
          (val-export-p (first val-export-list))
          (val-export (second val-export-list))
@@ -779,9 +779,9 @@
                                                      `(lambda ()
                                                         ,default-val-name)))
 
-                `(lem-hash-table$a::val-coupled-p ,(or val-coupled-p
-                                                       `(lambda (val)
-                                                          t)))
+                `(lem-hash-table$a::val-coupledp ,(or val-coupledp
+                                                      `(lambda (val)
+                                                         t)))
                 `(lem-hash-table$a::val-export-p ,(or val-export-p
                                                       val-recognizer
                                                       `(lambda ()
@@ -822,7 +822,7 @@
           (list* `(lem-hash-table$a::coupledp ,coupledp)
                  `(lem-hash-table$a::coupled-keys-p ,coupled-keys-p)
                  `(lem-hash-table$a::coupled-keys-p-witness ,coupled-keys-p-witness)
-                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupled-p
+                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupledp
                                                          coupled-vals-p
                                                          `(lambda (x)
                                                             t)))

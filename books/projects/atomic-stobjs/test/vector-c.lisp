@@ -31,7 +31,8 @@
 
 (include-book "../constructors/vector-c")
 
-(atomic-stobjs::define-vector$c vec$c/nargs 31)
+(atomic-stobjs::define-vector$c vec$c/nargs 31
+  :resizable nil)
 
 
 ;;;; Stobj Values
