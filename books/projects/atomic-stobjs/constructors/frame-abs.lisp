@@ -387,6 +387,7 @@
                 (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
                                     fixer$c))
                 (n (floor (len (third stobj-property)) 4))
+                (recognizers$c (take n (third stobj-property)))
                 (accessors$c (loop$ :for i :from 0 :to (1- n)
                                    :collect (nth (+ n (* 2 i)) (third stobj-property))))
                 (updaters$c (loop$ :for i :from 0 :to (1- n)
@@ -484,21 +485,33 @@
 
               ,@(loop$ :for i :from 1 :to (len fields)
                       :as field :in fields
-                      :as recognizer :in recognizers$a
+                      :as recognizer$c :in recognizers$c
+                      :as recognizer$a :in recognizers$a
+                      :as updater$c-guard :in updater$c-guards
+                      :as updater$c-field :in updater$c-fields
                       :as creator :in creators$a
                       :as initial-element-name :in initial-element-names
-                      :when recognizer
+                      :when recognizer$a
                       :collect `(local
-                                  (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer "-CONSTRAINTS-" i)
-                                    (and (booleanp (,recognizer ,field))
-                                         (,recognizer ,(or initial-element-name
-                                                           `(,creator))))
+                                  (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer$a "-CONSTRAINTS-" i)
+                                    (and (booleanp (,recognizer$a ,field))
+                                         (,recognizer$a ,(or initial-element-name
+                                                             `(,creator)))
+                                         (implies (,recognizer$a ,updater$c-field)
+                                                  (and ,updater$c-guard
+                                                       (,recognizer$c ,updater$c-field))))
                                     :rule-classes
                                     ((:rewrite :corollary
-                                               (booleanp (,recognizer ,field)))
+                                               (booleanp (,recognizer$a ,field)))
                                      ,@(and (not initial-element-name)
                                             `((:rewrite :corollary
-                                                        (,recognizer (,creator)))))))))
+                                                        (,recognizer$a (,creator)))))
+                                     (:rewrite :corollary
+                                               (implies (,recognizer$a ,updater$c-field)
+                                                        ,updater$c-guard))
+                                     (:rewrite :corollary
+                                               (implies (,recognizer$a ,updater$c-field)
+                                                        (,recognizer$c ,updater$c-field)))))))
 
               ,@(loop$ :for i :from 1 :to (len fields)
                       :as field :in fields
@@ -546,6 +559,8 @@
                 (in-theory
                   (enable ,recognizer$c
                           ,creator$c
+                          ,@(loop$ :for recognizer$c :in recognizers$c
+                                  :collect `(:e ,recognizer$c))
                           ,@accessors$c
                           ,@updaters$c
                           ,frame$corr
