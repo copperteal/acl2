@@ -800,8 +800,7 @@
                 `(lem-hash-table$a::name (lambda ()
                                            ',hash-table))
                 `(lem-hash-table$a::exportp-rec ,exportp-rec)
-                `(lem-hash-table$a::exportp ,exportp)
-                ))
+                `(lem-hash-table$a::exportp ,exportp)))
 
          (fi-bindings-post-export
           (list* `(lem-hash-table$a::export-acc ,export-acc)
@@ -1462,7 +1461,6 @@
                                 (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
                            (setq stobjs (cdr stobjs)))))
 
-
          (export-alist (table-alist 'export world))
          (export-list (loop$ :for stobj :in stobjs
                             :collect (and stobj
@@ -1486,9 +1484,7 @@
          (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
 
          (export-of-import (symbolicate package-witness export "-OF-" import))
-         (import-of-export (symbolicate package-witness import "-OF-" export))
-
-         )
+         (import-of-export (symbolicate package-witness import "-OF-" export)))
 
     `(progn
        (deflabel ,export-begin)
