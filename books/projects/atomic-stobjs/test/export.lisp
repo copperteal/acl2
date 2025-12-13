@@ -110,3 +110,23 @@
 (atomic-stobjs::define-copy ht0)
 
 (atomic-stobjs::define-export ht0)
+
+
+(atomic-stobjs::define-frame fr0
+  (f0 :element-type (unsigned-byte 8)
+      :recognizer bytep
+      :fixer byte-fix
+      :equiv byte-equiv
+      :initial-element 0)
+  (f1 :element-type symbol
+      :recognizer keywordp
+      :fixer keyword-fix
+      :equiv keyword-equiv
+      :initial-element :||)
+  (f2 :element-type unsigned-byte
+      :recognizer natp
+      :fixer nfix
+      :equiv nat-equiv
+      :initial-element 0))
+
+(atomic-stobjs::define-export fr0)
