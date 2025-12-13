@@ -652,7 +652,6 @@
          (the-hash-table (symbolicate hash-table "THE-" hash-table))
          (accessor (second (third stobj-property)))
          (updater (third (third stobj-property)))
-         ;; (count (seventh (third stobj-property)))
          (init (ninth (third stobj-property)))
          (keys (tenth (third stobj-property)))
          (keys-set (nth 10 (third stobj-property)))
@@ -670,7 +669,6 @@
          (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
          (hash-table$a (first stobj$a-property))
          (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
-         ;; (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
          (hash-table$a-constraints (symbolicate hash-table$a hash-table$a "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
@@ -678,10 +676,7 @@
          (accessor$a (first (fourth (third stobj$a-property))))
          (updater$a (second (fourth (third stobj$a-property))))
          (boundp$a (third (fourth (third stobj$a-property))))
-         ;; (getp$a (fourth (fourth (third stobj$a-property))))
-         ;; (remover$a (fifth (fourth (third stobj$a-property))))
          (count$a (sixth (fourth (third stobj$a-property))))
-         ;; (clear$a (seventh (fourth (third stobj$a-property))))
          (init$a (eighth (fourth (third stobj$a-property))))
          (keys$a (first (fifth (third stobj$a-property))))
          (keys$a-set (second (fifth (third stobj$a-property))))
@@ -690,16 +685,11 @@
 
          (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
          (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
-         ;; (contents-creator$a (symbolicate hash-table$a "CREATE-" contents$a))
          (contents-fixer$a (symbolicate hash-table$a contents$a "-FIX"))
          (contents-accessor$a (symbolicate hash-table$a contents$a "-GET"))
          (contents-updater$a (symbolicate hash-table$a contents$a "-PUT"))
          (contents-boundp$a (symbolicate hash-table$a contents$a "-BNDP"))
-         ;; (contents-getp$a (symbolicate hash-table$a contents$a "-GETP"))
-         ;; (contents-remover$a (symbolicate hash-table$a contents$a "-REM"))
          (contents-count$a (symbolicate hash-table$a contents$a "-CNT"))
-         ;; (contents-clear$a (symbolicate hash-table$a contents$a "-CLR"))
-         ;; (contents-init$a (symbolicate hash-table$a contents$a "-INIT"))
 
          (key (first (first (third stobj$a-property))))
          (%key (symbolicate key "%" key))
@@ -775,7 +765,6 @@
                                                            t)))
                 `(lem-hash-table$a::key-fixer ,(or key-fixer
                                                    'identity))
-                ;; `(lem-hash-table$a::key-equiv ,key-equiv)
                 `(lem-hash-table$a::default-key (lambda ()
                                                   ,default-key-name))
 
@@ -1366,12 +1355,140 @@
 
 
 ;;;; `MAKE-FRAME-EXPORT-EVENTS'
-#|(defun make-frame-export-events (frame package-witness state)
+(defun make-frame-export-events (frame package-witness state)
   (declare (xargs :stobjs state
-                  :guard (and (symbolp hash-table)
+                  :guard (and (symbolp frame)
                               (package-witness-p package-witness))
                   :verify-guards nil))
-  (let* ()
+  (let* ((%frame (symbolicate package-witness "%" frame))
+
+         (export (symbolicate package-witness frame "-EXPORT"))
+         (export-begin (symbolicate package-witness export "-BEGIN"))
+         (export-end (symbolicate package-witness export "-END"))
+         (export-theory (symbolicate package-witness export "-THEORY"))
+         (exportp (symbolicate package-witness export (make-predicate-suffix export)))
+         (import (symbolicate package-witness frame "-IMPORT"))
+
+         (stobj-property (getpropc frame 'acl2::stobj))
+         (creator (cdadr stobj-property))
+         (the-frame (symbolicate frame "THE-" frame))
+
+         (world (w state))
+         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a-property world))))
+         (frame$a (first stobj$a-property))
+         (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
+         (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
+         (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
+         (recognizer$a (first (second stobj$a-property)))
+         (creator$a (second (second stobj$a-property)))
+         (fixer$a (third (second stobj$a-property)))
+
+         (fields (first (third stobj$a-property)))
+         (%fields (loop$ :for field :in fields
+                        :collect (symbolicate field "%" field)))
+         (stobjs (sixth (third stobj$a-property)))
+         (stobj-property-list (loop$ :for stobj :in stobjs
+                                    :collect (and (symbolp stobj)
+                                                  (getprop stobj
+                                                           'acl2::stobj
+                                                           nil
+                                                           'acl2::current-acl2-world
+                                                           world))))
+         (absstobj-info-list (loop$ :for stobj :in stobjs
+                                   :collect (and (symbolp stobj)
+                                                 (getprop stobj
+                                                          'acl2::absstobj-info
+                                                          nil
+                                                          'acl2::current-acl2-world
+                                                          world))))
+         (stobj$a-property-alist (table-alist 'stobj$a-property world))
+         (stobj$a-property-list (loop$ :for stobj :in stobjs
+                                      :collect (and (symbolp stobj)
+                                                    (cdr (assoc stobj stobj$a-property-alist)))))
+         (recognizers$a (second (third stobj$a-property)))
+         (initial-element-names (third (third stobj$a-property)))
+         (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
+                           :collect (and stobj$a-property
+                                         (second (second stobj$a-property)))))
+         (initial-elements (loop$ :for stobj-property :in stobj-property-list
+                                 :as stobj$a-property :in stobj$a-property-list
+                                 :as initial-element-name :in initial-element-names
+                                 :as creator$a :in creators$a
+                                 :collect (if stobj-property
+                                              `(,creator$a)
+                                              initial-element-name)))
+         (fixers$a (fourth (third stobj$a-property)))
+         (equivs$a (fifth (third stobj$a-property)))
+         (accessors$a (seventh (third stobj$a-property)))
+
+         (stobj-count (len (remove nil stobjs)))
+         (stobj-accessors-and-updaters (third stobj-property))
+         (non-stobj-accessors-and-updaters (nthcdr (1+ (* 2 stobj-count)) stobj-accessors-and-updaters))
+         (accessors (loop$ :with stobj-accessors-and-updaters := stobj-accessors-and-updaters
+                          :with non-stobj-accessors-and-updaters := non-stobj-accessors-and-updaters
+                          :with stobjs := stobjs
+                          :with accessors := ()
+                          :do
+                          (progn
+                            (cond
+                              ((endp stobjs)
+                               (return (reverse accessors)))
+                              ((car stobjs)
+                               (progn
+                                 (setq accessors (cons (car stobj-accessors-and-updaters) accessors))
+                                 (setq stobj-accessors-and-updaters (cddr stobj-accessors-and-updaters))))
+                              (t
+                               (progn
+                                 (setq accessors (cons (car non-stobj-accessors-and-updaters) accessors))
+                                 (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
+                            (setq stobjs (cdr stobjs)))))
+         (updaters (loop$ :with stobj-accessors-and-updaters := (cdr stobj-accessors-and-updaters)
+                         :with non-stobj-accessors-and-updaters := (nthcdr (- (len fields) stobj-count)
+                                                                           non-stobj-accessors-and-updaters)
+                         :with stobjs := stobjs
+                         :with updaters := ()
+                         :do
+                         (progn
+                           (cond
+                             ((endp stobjs)
+                              (return (reverse updaters)))
+                             ((car stobjs)
+                              (progn
+                                (setq updaters (cons (car stobj-accessors-and-updaters) updaters))
+                                (setq stobj-accessors-and-updaters (cddr stobj-accessors-and-updaters))))
+                             (t
+                              (progn
+                                (setq updaters (cons (car non-stobj-accessors-and-updaters) updaters))
+                                (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
+                           (setq stobjs (cdr stobjs)))))
+
+
+         (export-alist (table-alist 'export world))
+         (export-list (loop$ :for stobj :in stobjs
+                            :collect (and stobj
+                                          (cdr (assoc stobj export-alist)))))
+         (coupledp (cdr (assoc frame (table-alist 'coupledp world))))
+
+         ;; Theorem Names
+         (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
+         (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
+
+         (exportp-tp (symbolicate package-witness exportp "-TP"))
+         (exportp-cr (symbolicate package-witness exportp "-CR"))
+
+         (export-tp (symbolicate package-witness export "-TP"))
+         (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
+
+         (import-tp (symbolicate package-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
+
+         (export-of-import (symbolicate package-witness export "-OF-" import))
+         (import-of-export (symbolicate package-witness import "-OF-" export))
+
+         )
 
     `(progn
        (deflabel ,export-begin)
@@ -1382,7 +1499,57 @@
            (deflabel prologue-begin))
 
          (local
+           (defthm ,len-of-cons
+             (equal (len (cons a d))
+                    (1+ (len d)))))
+
+         (local
+           (defthm ,nth-of-cons
+             (equal (nth n (cons a d))
+                    (if (zp n)
+                        a
+                        (nth (1- n) d)))))
+
+         ,@(loop$ :for fixer$a :in fixers$a
+                 :as recognizer$a :in recognizers$a
+                 :as equiv$a :in equivs$a
+                 :as initial-element :in initial-elements
+                 :as initial-element-name :in initial-element-names
+                 :as field :in fields
+                 :as %field :in %fields
+                 :as i :from 1 :to (len fields)
+                 :when (and fixer$a
+                            recognizer$a
+                            (not (eq equiv$a 'equal)))
+                 :append `((local
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer$a "-CONSTRAINTS-" i)
+                               (and (booleanp (,recognizer$a ,field))
+                                    (,recognizer$a ,initial-element))
+                               :rule-classes
+                               ((:rewrite :corollary
+                                          (booleanp (,recognizer$a ,field)))
+                                ,@(and (not (equal initial-element initial-element-name))
+                                       `((:rewrite :corollary
+                                                   (,recognizer$a ,initial-element)))))))
+
+                           (local
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "-CONSTRAINTS-" i)
+                               (equal (,fixer$a ,field)
+                                      (if (,recognizer$a ,field)
+                                          ,field
+                                          ,initial-element))))
+
+                           (local
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" equiv$a "-CONSTRAINTS-" i)
+                               (equal (,equiv$a ,%field ,field)
+                                      (equal (,fixer$a ,%field)
+                                             (,fixer$a ,field)))))))
+
+         (local
            (deflabel prologue-end))
+
+         (local
+           (include-book "std/lists/nth" :dir :system))
 
          (local
            (table acl2::theory-invariant-table nil nil :clear))
@@ -1395,6 +1562,23 @@
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
+         ,@(loop$ :for recognizer$a :in recognizers$a
+                 :when recognizer$a
+                 :collect `(local
+                             (in-theory
+                               (e/d ((:e ,recognizer$a))
+                                    (,recognizer$a)))))
+
+         ,@(loop$ :for absstobj-info :in absstobj-info-list
+                 :when absstobj-info
+                 :collect `(local
+                             (in-theory
+                               (enable ,@(strip-cars (cdr absstobj-info))))))
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc frame 'acl2::absstobj-info))))))
+
          ;; `EXPORTP'
          (defun ,exportp (export)
            (declare (xargs :guard t))
@@ -1403,12 +1587,12 @@
                 (true-listp export)
                 (= (len export) ,(1+ (* 2 (len fields))))
                 ,@(loop$ :for field :in fields
-                        :as recognizer :in recognizers
-                        :as field-export-p :in field-export-p-list
+                        :as recognizer$a :in recognizers$a
+                        :as export :in export-list
                         :as i :from 1 :to (len fields)
                         :append `((eq ,(intern (symbol-name field) "KEYWORD")
                                       (nth ,(1- (* 2 i)) export))
-                                  (,(or field-export-p recognizer)
+                                  (,(or (first export) recognizer$a)
                                     (nth ,(* 2 i) export))))))
 
          (defthm ,exportp-tp
@@ -1427,8 +1611,16 @@
            (list ',frame
                  ,@(loop$ :for field :in fields
                          :as accessor :in accessors
+                         :as updater :in updaters
+                         :as export :in export-list
+                         :as stobj :in stobjs
                          :append `(,(intern (symbol-name field) "KEYWORD")
-                                    (,accessor ,frame)))))
+                                    ,(if stobj
+                                         `(stobj-let ((,stobj (,accessor ,frame) ,updater))
+                                                     (export)
+                                                     (,(second export) ,stobj)
+                                            export)
+                                         `(,accessor ,frame))))))
 
          (defthm ,export-tp
            (and (consp (,export ,frame))
@@ -1440,16 +1632,40 @@
 
          ;; `IMPORT'
          (defun ,import (export ,frame)
-           (declare (xargs :stobj ,frame
+           (declare (xargs :stobjs ,frame
                            :guard (,exportp export)))
            (if (mbt (,exportp export))
-               ;; HERE
                ,(loop$ :with body := `(,the-frame ,frame)
+                      :with fields := (reverse fields)
+                      :with stobjs := (reverse stobjs)
+                      :with export-list := (reverse export-list)
+                      :with accessors := (reverse accessors)
+                      :with updaters := (reverse updaters)
+                      :with i := (* 2 (len fields))
                       :do
                       (progn
-                        )
-                      #|do-loop that sets every field in frame from the export|#
-                      )
+                        (cond
+                          ((endp stobjs)
+                           (return body))
+                          ((car stobjs)
+                           (setq body (let ((stobj (car stobjs))
+                                            (import (third (car export-list)))
+                                            (accessor (car accessors))
+                                            (updater (car updaters)))
+                                        `(stobj-let ((,stobj (,accessor ,frame) ,updater))
+                                                    (,stobj)
+                                                    (,import (nth ,i export) ,stobj)
+                                           ,body))))
+                          (t
+                           (setq body `(let* ((,(car fields) (nth ,i export))
+                                              (,frame (,(car updaters) ,(car fields) ,frame)))
+                                         ,body))))
+                        (setq fields (cdr fields))
+                        (setq stobjs (cdr stobjs))
+                        (setq export-list (cdr export-list))
+                        (setq accessors (cdr accessors))
+                        (setq updaters (cdr updaters))
+                        (setq i (- i 2))))
                (let ((,frame (,creator)))
                  ,frame)))
 
@@ -1463,8 +1679,9 @@
          (defthm ,recognizer$a-of-import
            (,recognizer$a (,import export ,frame)))
 
-         (defthm ,coupledp-of-import
-           (,coupledp (,import export ,frame)))
+         ,@(and coupledp
+                `((defthm ,coupledp-of-import
+                    (,coupledp (,import export ,frame)))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
@@ -1482,27 +1699,32 @@
                                       (,import export (,creator$a)))))))
 
          ,@(loop$ :for field :in fields
-                 :as field-creator$a :in field-creators$a
+                 :as creator$a :in creators$a
                  :as i :from 1 :to (len fields)
                  :as initial-element-name :in initial-element-names
+                 :as accessor$a :in accessors$a
+                 :as export :in export-list
+                 :as stobj :in stobjs
                  :collect `(defthm ,(symbolicate package-witness accessor$a "-OF-" import)
                              (equal (,accessor$a (,import export ,frame))
-                                    ,(if field-import
+                                    ,(if stobj
                                          `(if (,exportp export)
-                                              (,field-import (nth ,(* 2 i) export)
-                                                             (,field-creator$a))
-                                              (,field-creator$a))
+                                              (,(third export)
+                                                (nth ,(* 2 i) export)
+                                                (,creator$a))
+                                              (,creator$a))
                                          `(if (,exportp export)
                                               (nth ,(* 2 i) export)
                                               ,initial-element-name)))
                              :rule-classes
                              ((:rewrite :corollary
                                         (equal (,accessor$a (,import export ,frame))
-                                               ,(if field-import
+                                               ,(if stobj
                                                     `(if (,exportp export)
-                                                         (,field-import (nth ,(* 2 i) (double-rewrite export))
-                                                                        (,field-creator$a))
-                                                         (,field-creator$a))
+                                                         (,(third export)
+                                                           (nth ,(* 2 i) (double-rewrite export))
+                                                           (,creator$a))
+                                                         (,creator$a))
                                                     `(if (,exportp export)
                                                          (nth ,(* 2 i) (double-rewrite export))
                                                          ,initial-element-name)))))))
@@ -1511,7 +1733,9 @@
          (defthm ,export-of-import
            (implies (,exportp export)
                     (equal (,export (,import export ,frame))
-                           export)))
+                           export))
+           :hints
+           ((acl2::equal-by-nths-hint)))
 
          (defthm ,import-of-export
            ;; TODO: Remove hypothesis and rewrite to copy of `%FRAME'
@@ -1520,7 +1744,12 @@
                           (equal (,import (,export ,%frame) ,frame)
                                  (,fixer$a ,%frame)))
                 `(equal (,import (,export ,%frame) ,frame)
-                        (,fixer$a ,%frame)))))
+                        (,fixer$a ,%frame)))
+           :hints
+           (("Goal"
+             :use ((:instance ,frame$a-equal
+                              (,%frame$a (,import (,export ,%frame) ,frame))
+                              (,frame$a (,fixer$a ,%frame))))))))
 
        (deflabel ,export-end)
 
@@ -1538,12 +1767,12 @@
 
        (in-theory
          (union-theories (current-theory ',export-begin)
-                         (theory ',export-theory))))))|#
+                         (theory ',export-theory))))))
 
 
 ;;;; `DEFINE-EXPORT'
 (defmacro define-export (stobj &key
-                                 (debug 't)
+                                 (debug 'nil)
                                  (package-witness 'nil package-witness-supplied-p))
   (declare (xargs :guard (and (symbolp stobj)
                               (booleanp debug)
@@ -1570,6 +1799,6 @@
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 5))
             (make-hash-table-export-events stobj package-witness state))
-           #|((and (= (len stobj$a-property) 3)
+           ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 9))
-            (make-frame-export-events stobj package-witness state))|#)))))
+            (make-frame-export-events stobj package-witness state)))))))
