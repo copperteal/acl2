@@ -64,56 +64,56 @@
                    (:t interval-designator-p))))))
 
 
-;;;; `MEMBERP'
-(defun-inline memberp-eq (x list)
+;;;; `MEMBERP$'
+(defun-inline memberp$-eq (x list)
   (declare (xargs :guard (and (symbolp x)
                               (true-listp list))))
   (and (member x list :test 'eq)
        t))
 
-(defun-inline memberp-eql (x list)
+(defun-inline memberp$-eql (x list)
   (declare (xargs :guard (and (eqlablep x)
                               (true-listp list))))
   (and (member x list :test 'eql)
        t))
 
-(defun-inline memberp-equal (x list)
+(defun-inline memberp$-equal (x list)
   (declare (xargs :guard (true-listp list)))
   (and (member x list :test 'equal)
        t))
 
-(defmacro memberp (x list)
-  `(memberp-equal ,x ,list))
+(defmacro memberp$ (x list)
+  `(memberp$-equal ,x ,list))
 
-(add-macro-fn memberp memberp-equal)
+(add-macro-fn memberp$ memberp$-equal)
 
-(defthm memberp-eq-rw
-  (equal (memberp-eq x list)
-         (memberp x list)))
-
-(in-theory
-  (disable memberp-eq))
-
-(defthm memberp-eql-rw
-  (equal (memberp-eql x list)
-         (memberp x list)))
+(defthm memberp$-eq-rw
+  (equal (memberp$-eq x list)
+         (memberp$ x list)))
 
 (in-theory
-  (disable memberp-eql))
+  (disable memberp$-eq))
 
-(defthm memberp-iff-member
-  (iff (memberp x list)
+(defthm memberp$-eql-rw
+  (equal (memberp$-eql x list)
+         (memberp$ x list)))
+
+(in-theory
+  (disable memberp$-eql))
+
+(defthm memberp$-iff-member
+  (iff (memberp$ x list)
        (member x list))
   :rule-classes
   (:rewrite
    (:forward-chaining :trigger-terms
                       ((member x list))
                       :corollary
-                      (implies (memberp x list)
+                      (implies (memberp$ x list)
                                (member x list)))))
 
 (in-theory
-  (disable memberp-equal))
+  (disable memberp$-equal))
 
 
 ;;;; `ACL2-TYPE-SPEC-P'
@@ -121,7 +121,7 @@
   (declare (xargs :guard t))
   (cond
     ((symbolp type-spec)
-     (memberp-eq type-spec *atomic-type-specifiers*))
+     (memberp$-eq type-spec *atomic-type-specifiers*))
     ((consp type-spec)
      (let ((name (car type-spec))
            (params (cdr type-spec)))
@@ -139,7 +139,7 @@
                     (null (cdr params))
                     (let ((type-spec (car params)))
                       (or (and (symbolp type-spec)
-                               (memberp-eq type-spec *atomic-real-subtype-specifiers*))
+                               (memberp$-eq type-spec *atomic-real-subtype-specifiers*))
                           (and (consp type-spec)
                                (symbolp (car type-spec))
                                (member (car type-spec) *compound-real-type-specifier-names*
@@ -201,7 +201,7 @@
 (defthm acl2-type-spec-p-when-atom
   (implies (atom type-spec)
            (equal (acl2-type-spec-p type-spec)
-                  (memberp type-spec *atomic-type-specifiers*))))
+                  (memberp$ type-spec *atomic-type-specifiers*))))
 
 
 ;;;; `TYPEP$RUNTIME'
@@ -293,7 +293,7 @@
                         (t
                          (<= object j))))))
               (member ; (member . (x1 ... xn))
-               (memberp object params))
+               (memberp$ object params))
               (mod ; (mod . (i))
                (and (integerp object)
                     (<= 0 object)
@@ -425,7 +425,7 @@
                          ,@(and upper (list upper)))
                    recognizer)))
             (member ; (member . (x1 ... xn))
-             `(memberp ,object ',params))
+             `(memberp$ ,object ',params))
             (mod ; (mod . (i))
              `(and (integerp ,object)
                    (<= 0 ,object)
@@ -595,8 +595,8 @@
                   (let ((type-spec (cadr type-spec)))
                     (and (complex-rationalp object)
                          (if (consp type-spec)
-                             (memberp (car type-spec) *compound-real-type-specifier-names*)
-                             (memberp type-spec *atomic-real-subtype-specifiers*))
+                             (memberp$ (car type-spec) *compound-real-type-specifier-names*)
+                             (memberp$ type-spec *atomic-real-subtype-specifiers*))
                          (typep$ (realpart object) type-spec)
                          (typep$ (imagpart object) type-spec))))))
 
@@ -628,7 +628,7 @@
                 (equal (car type-spec) 'member))
            (equal (typep$ object type-spec)
                   (and (eqlable-listp (cdr type-spec))
-                       (memberp object (cdr type-spec))))))
+                       (memberp$ object (cdr type-spec))))))
 
 (defthm typep$-mod
   (implies (and (consp type-spec)
@@ -759,15 +759,15 @@
 (deftheory type-spec-theory
   '((:e interval-designator-p)
     (:t interval-designator-p)
-    (:e memberp-eq$inline)
-    (:t memberp-eq$inline)
-    (:e memberp-eql$inline)
-    (:t memberp-eql$inline)
-    (:e memberp-equal$inline)
-    (:t memberp-equal$inline)
-    memberp-eq-rw
-    memberp-eql-rw
-    memberp-iff-member
+    (:e memberp$-eq$inline)
+    (:t memberp$-eq$inline)
+    (:e memberp$-eql$inline)
+    (:t memberp$-eql$inline)
+    (:e memberp$-equal$inline)
+    (:t memberp$-equal$inline)
+    memberp$-eq-rw
+    memberp$-eql-rw
+    memberp$-iff-member
     (:e acl2-type-spec-p)
     (:t acl2-type-spec-p)
     apply$-warrant-acl2-type-spec-p-necc
