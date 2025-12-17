@@ -268,3 +268,9 @@
   (f2 :element-type ht2$))
 
 (atomic-stobjs::define-copy fr2)
+
+(atomic-stobjs::define-frame fr3
+  (f0 :element-type fr)
+  (f1 :element-type fr))
+
+(atomic-stobjs::define-copy fr3)
