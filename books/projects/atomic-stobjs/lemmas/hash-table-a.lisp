@@ -3699,6 +3699,19 @@
   (defcong equiv/copyable equal (export-acc set acc hash-table) 3))
 
 (local
+  (defthm export-acc-when-not-recognizer/copyable
+    (implies (not (recognizer/copyable hash-table))
+             (equal (export-acc set acc hash-table)
+                    (export-acc set acc (creator/copyable))))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (syntaxp (not (and (consp hash-table)
+                                                (eq (car hash-table) 'creator/copyable))))
+                             (not (recognizer/copyable hash-table)))
+                        (equal (export-acc set acc hash-table)
+                               (export-acc set acc (creator/copyable))))))))
+
+(local
   (defthm keys-of-export-acc
     (equal (omap::keys (export-acc set acc hash-table))
            (if (keysp set)
@@ -3856,6 +3869,18 @@
 
 (local
   (defcong equiv/copyable equal (export hash-table) 1))
+
+(defthm export-when-not-recognizer/copyable
+  (implies (not (recognizer/copyable hash-table))
+           (equal (export hash-table)
+                  (export (creator/copyable))))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (and (syntaxp (not (and (consp hash-table)
+                                              (eq (car hash-table) 'creator/copyable))))
+                           (not (recognizer/copyable hash-table)))
+                      (equal (export hash-table)
+                             (export (creator/copyable)))))))
 
 (local
   (defthm keys-of-export

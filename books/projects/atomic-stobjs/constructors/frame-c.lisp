@@ -434,10 +434,10 @@
                             :as element-type :in element-types
                             :as stobj-recognizer :in stobj-recognizers
                             :collect `(defthm ,(symbolicate package-witness recognizer "-RW")
-                                        (equal (,recognizer ,field)
-                                               ,(if stobj-recognizer
-                                                    `(,stobj-recognizer ,field)
-                                                    (typep$transform field element-type)))))
+                                        (iff (,recognizer ,field)
+                                             ,(if stobj-recognizer
+                                                  `(,stobj-recognizer ,field)
+                                                  (typep$transform field element-type)))))
 
                     ;; `FIXER'
                     (defun-inline ,fixer (,frame)

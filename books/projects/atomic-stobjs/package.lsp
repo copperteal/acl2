@@ -27,7 +27,7 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2") ; TODO: reset license headers
+(in-package "ACL2")
 
 (defpkg "ATOMIC-STOBJS"
   (set-difference-eq

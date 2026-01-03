@@ -113,7 +113,7 @@
               (element (or ',element
                            (symbolicate package-witness "V")))
               (%element (or ',%element
-                            (symbolicate element "%" element)))
+                            (symbolicate package-witness "%" element)))
               (world (w state))
               (stobj-property (getpropc element 'acl2::stobj))
               (absstobj-info (and stobj-property
@@ -328,8 +328,7 @@
                                    (theory ',vector-theorems)))
                  (in-theory
                    ;; Ensure `:USE' `VECTOR-EQUAL' automagically works.
-                   (enable ,equiv
-                           ,contents-equal))))
+                   (enable ,contents-equal))))
 
               ;; Functional Instantiation
               (fi-bindings
@@ -414,7 +413,12 @@
                              (defthm ,element-equiv-constraints
                                (equal (,element-equiv ,%element ,element)
                                       (equal (,element-fixer ,%element)
-                                             (,element-fixer ,element)))))))
+                                             (,element-fixer ,element)))
+                               :rule-classes
+                               ((:rewrite :match-free :all))
+                               :hints
+                               (("Goal"
+                                 :in-theory (enable ,element-equiv)))))))
 
                   (local
                     (deflabel end-of-prologue))
@@ -1586,7 +1590,8 @@
                                           (,accessor ,index ,vector)))
                                  (,contents-equal-witness ,%vector ,vector)
                                  ,vector ,%vector)))
-                     (:rewrite :corollary
+                     (:rewrite :match-free :all
+                               :corollary
                                (implies (,contents-equal ,%vector ,vector)
                                         (equal (,accessor ,index ,%vector)
                                                (,accessor ,index ,vector))))

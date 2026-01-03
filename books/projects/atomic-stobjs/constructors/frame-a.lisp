@@ -242,7 +242,7 @@
                                      (current-package state)))
                 (fields ',fields)
                 (%fields (loop$ :for field :in fields
-                               :collect (symbolicate field "%" field)))
+                               :collect (symbolicate package-witness "%" field)))
 
                 (stobjs ',stobjs)
                 (world (w state))
@@ -351,6 +351,8 @@
                    ,@defconst-forms))
 
                 ;; Theorem Names
+                (true-listp-of-cons (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-OF-CONS"))
+                (true-listp-of-update-nth (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-OF-UPDATE-NTH"))
                 (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
                 (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
@@ -370,6 +372,7 @@
 
                 (view-tp (symbolicate package-witness view "-TP"))
                 (view-elim (symbolicate package-witness view "-ELIM"))
+                (equal-of-view (symbolicate package-witness "EQUAL-OF-" view))
 
                 (%frame (symbolicate package-witness "%" frame))
                 (frame-equal (symbolicate package-witness frame "-EQUAL"))
@@ -411,13 +414,20 @@
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
-                                     (theory ',frame-theorems)))
-
-                   (in-theory
-                     (enable ,equiv))))
+                                     (theory ',frame-theorems)))))
 
                 (body
                  `(encapsulate ()
+
+                    (local
+                      (defthm ,true-listp-of-cons
+                        (equal (true-listp (cons a d))
+                               (true-listp d))))
+
+                    (local
+                      (defthm ,true-listp-of-update-nth
+                        (implies (force (true-listp list))
+                                 (true-listp (update-nth key val list)))))
 
                     (local
                       (defthm ,len-of-cons
@@ -457,10 +467,13 @@
                                        fixer)
                             :collect `(local
                                         (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
-                                          (equal (,fixer ,field)
-                                                 (if (,recognizer ,field)
-                                                     ,field
-                                                     ,initial-element)))))
+                                          (and (,recognizer (,fixer ,field))
+                                               (implies (,recognizer ,field)
+                                                        (equal (,fixer ,field)
+                                                               ,field))
+                                               (implies (not (,recognizer ,field))
+                                                        (equal (,fixer ,field)
+                                                               ,initial-element))))))
 
                     ,@(loop$ :for i :from 1 :to (len fields)
                             :as equiv :in equivs
@@ -472,7 +485,10 @@
                                         (defthm ,(symbolicate "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
                                           (equal (,equiv ,%field ,field)
                                                  (equal (,fixer ,%field)
-                                                        (,fixer ,field))))))
+                                                        (,fixer ,field)))
+                                          :hints
+                                          (("Goal"
+                                            :in-theory (enable ,equiv))))))
 
                     (local
                       (deflabel end-of-prologue))
@@ -489,6 +505,20 @@
                                         (set-difference-theories
                                          (universal-theory 'end-of-prologue)
                                          (universal-theory ',frame-begin)))))
+
+                    ,@(loop$ :for stobj-property :in stobj-property-list
+                            :as recognizer :in recognizers
+                            :as fixer :in fixers
+                            :as equiv :in equivs
+                            :when (and (not stobj-property)
+                                       recognizer
+                                       fixer
+                                       equiv)
+                            :collect `(local
+                                        (in-theory
+                                          (disable ,recognizer
+                                                   ,fixer
+                                                   ,equiv))))
 
                     ,@(loop$ :for absstobj-info :in absstobj-info-list
                             :when absstobj-info
@@ -691,6 +721,17 @@
                                :hints
                                ((acl2::equal-by-nths-hint)))))
 
+                    ,@(and (consp fields)
+                           `((defthm ,equal-of-view
+                               (equal (equal (,view ,@fields) (,view ,@%fields))
+                                      ,(let ((body (loop$ :for equiv :in equivs
+                                                         :as field :in fields
+                                                         :as %field :in %fields
+                                                         :collect `(,equiv ,field ,%field))))
+                                         (if (consp (cdr body))
+                                             (cons 'and body)
+                                             (car body)))))))
+
                     ;; `ACCESSORS'
                     ,@(loop$ :for recognizer :in recognizers
                             :as accessor :in accessors
@@ -728,7 +769,7 @@
 
                     ;; `UPDATERS'
                     ,@(let ((arguments (loop$ :for accessor :in accessors
-                                             :collect `(,accessor ,frame))))
+                                             :collect `(,accessor (double-rewrite ,frame)))))
                         (loop$ :for i :from 0 :to (1- (len fields))
                               :as field :in fields
                               :as updater :in updaters
