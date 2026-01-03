@@ -578,8 +578,7 @@
 
                  (in-theory
                    ;; Ensure `:USE' `HASH-TABLE-EQUAL' automagically works.
-                   (enable ,equiv
-                           ,keys-equal
+                   (enable ,keys-equal
                            ,vals-equal))))
 
               ;; Functional Instantiation
@@ -685,7 +684,10 @@
                              (defthm ,key-equiv-constraints
                                (equal (,key-equiv ,%key ,key)
                                       (equal (,key-fixer ,%key)
-                                             (,key-fixer ,key)))))))
+                                             (,key-fixer ,key)))
+                               :hints
+                               (("Goal"
+                                 :in-theory (enable ,key-equiv)))))))
 
                   ,@(and val-fixer
                          val-recognizer
@@ -712,7 +714,10 @@
                              (defthm ,val-equiv-constraints
                                (equal (,val-equiv ,%val ,val)
                                       (equal (,val-fixer ,%val)
-                                             (,val-fixer ,val)))))))
+                                             (,val-fixer ,val)))
+                               :hints
+                               (("Goal"
+                                 :in-theory (enable ,val-equiv)))))))
 
                   (local
                     (deflabel end-of-prologue))
@@ -1173,6 +1178,10 @@
                                       `(,key-fixer ,key)
                                       key)
                                  (,contents-fixer ,contents)))
+                         ,@(and copyable
+                                val-recognizer
+                                val-fixer
+                                `((,val-recognizer (,contents-accessor ,key ,contents))))
                          (equal (,contents-updater ,key ,val ,contents)
                                 ((lambda (,key ,val ,contents)
                                    (if (endp ,contents)
@@ -1420,6 +1429,11 @@
                                       `(,key-fixer ,key)
                                       key)
                                  (,contents-fixer ,contents))))
+                     ,@(and copyable
+                            val-recognizer
+                            val-fixer
+                            `((:rewrite :corollary
+                                        (,val-recognizer (,contents-accessor ,key ,contents)))))
                      (:definition :corollary
                          (equal (,contents-updater ,key ,val ,contents)
                                 ((lambda (,key ,val ,contents)
@@ -1603,7 +1617,6 @@
                                           (,fixer hash-table)))))))
                     :hints
                     (("Goal"
-                      :do-not-induct t
                       :in-theory (e/d (,@(and (eq keysp 'set::setp)
                                               `(set::setp
                                                 set::sfix
@@ -3381,7 +3394,8 @@
                                           (,boundp ,key ,hash-table)))
                                  (,keys-equal-witness ,%hash-table ,hash-table)
                                  ,hash-table ,%hash-table)))
-                     (:rewrite :corollary
+                     (:rewrite :match-free :all
+                               :corollary
                                (implies (,keys-equal ,%hash-table ,hash-table)
                                         (equal (,boundp ,key ,%hash-table)
                                                (,boundp ,key ,hash-table))))
@@ -3392,7 +3406,8 @@
                                           (,accessor ,key ,hash-table)))
                                  (,vals-equal-witness ,%hash-table ,hash-table)
                                  ,hash-table ,%hash-table)))
-                     (:rewrite :corollary
+                     (:rewrite :match-free :all
+                               :corollary
                                (implies (,vals-equal ,%hash-table ,hash-table)
                                         (equal (,accessor ,key ,%hash-table)
                                                (,accessor ,key ,hash-table))))

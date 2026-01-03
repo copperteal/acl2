@@ -1960,6 +1960,19 @@
   (defcong equiv/resizable equal (export-acc/resizable index acc vector) 3))
 
 (local
+  (defthm export-acc/resizable-when-not-recognizer/resizable
+    (implies (not (recognizer/resizable vector))
+             (equal (export-acc/resizable index acc vector)
+                    (export-acc/resizable index acc (creator))))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (syntaxp (not (and (consp vector)
+                                                (eq (car vector) 'creator))))
+                             (not (recognizer/resizable vector)))
+                        (equal (export-acc/resizable index acc vector)
+                               (export-acc/resizable index acc (creator))))))))
+
+(local
   (defthm len-of-export-acc/resizable
     (equal (len (export-acc/resizable index acc vector))
            (+ (nfix index) (len acc)))
@@ -2005,6 +2018,18 @@
 
 (local
   (defcong equiv/resizable equal (export/resizable vector) 1))
+
+(defthm export/resizable-when-not-recognizer/resizable
+  (implies (not (recognizer/resizable vector))
+           (equal (export/resizable vector)
+                  (export/resizable (creator))))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (and (syntaxp (not (and (consp vector)
+                                              (eq (car vector) 'creator))))
+                           (not (recognizer/resizable vector)))
+                      (equal (export/resizable vector)
+                             (export/resizable (creator)))))))
 
 (local
   (defthm len-of-export/resizable
@@ -2312,6 +2337,19 @@
   (defcong equiv/fixed equal (export-acc/fixed index acc vector) 3))
 
 (local
+  (defthm export-acc/fixed-when-not-recognizer/fixed
+    (implies (not (recognizer/fixed vector))
+             (equal (export-acc/fixed index acc vector)
+                    (export-acc/fixed index acc (creator))))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (syntaxp (not (and (consp vector)
+                                                (eq (car vector) 'creator))))
+                             (not (recognizer/fixed vector)))
+                        (equal (export-acc/fixed index acc vector)
+                               (export-acc/fixed index acc (creator))))))))
+
+(local
   (defthm len-of-export-acc/fixed
     (equal (len (export-acc/fixed index acc vector))
            (+ (nfix index) (len acc)))
@@ -2357,6 +2395,18 @@
 
 (local
   (defcong equiv/fixed equal (export/fixed vector) 1))
+
+(defthm export/fixed-when-not-recognizer/fixed
+  (implies (not (recognizer/fixed vector))
+           (equal (export/fixed vector)
+                  (export/fixed (creator))))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (and (syntaxp (not (and (consp vector)
+                                              (eq (car vector) 'creator))))
+                           (not (recognizer/fixed vector)))
+                      (equal (export/fixed vector)
+                             (export/fixed (creator)))))))
 
 (local
   (defthm len-of-export/fixed
