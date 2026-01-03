@@ -365,11 +365,11 @@
               (forms (cdr forms)))
            (cond
              (stobj-bindings
-              `(stobj-let ,stobj-bindings
-                          ,values
-                          (let ,scalar-bindings
-                            ,@forms)
-                 ,rest-expr))
+              `(let ,scalar-bindings
+                 (stobj-let ,stobj-bindings
+                            ,values
+                            ,@forms
+                   ,rest-expr)))
              ((consp (cdr values))
               `(mv-let ,values
                        (let ,scalar-bindings
