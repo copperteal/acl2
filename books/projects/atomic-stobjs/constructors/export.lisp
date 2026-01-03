@@ -70,6 +70,9 @@
          (world (w state))
          (coupledp (cdr (assoc vector (table-alist 'coupledp world))))
 
+         (copy (cdr (assoc vector (table-alist 'copy world))))
+         (copy-theory (symbolicate copy copy "-THEORY"))
+
          (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
          (vector$a (first stobj$a-property))
          (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
@@ -87,7 +90,7 @@
          (index (symbolicate package-witness "I"))
          (resizable (first (second (third stobj$a-property))))
          (element (first (first (third stobj$a-property))))
-         (%element (symbolicate element "%" element))
+         (%element (symbolicate package-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
          (initial-element-name (third (first (third stobj$a-property))))
@@ -102,6 +105,20 @@
          (exportp-rec (if element-recognizer
                           exportp-rec
                           'true-listp))
+
+         ;; Adjust for nested stobj interface shuffle
+         (length (if element-stobj-property
+                     (fourth (third stobj-property))
+                     length))
+         (resizer (if element-stobj-property
+                      (fifth (third stobj-property))
+                      resizer))
+         (accessor (if element-stobj-property
+                       (first (third stobj-property))
+                       accessor))
+         (updater (if element-stobj-property
+                      (second (third stobj-property))
+                      updater))
 
          (element-coupledp (cdr (assoc element (table-alist 'coupledp world))))
          (element-export-list (cdr (assoc element (table-alist 'export world))))
@@ -119,6 +136,7 @@
 
          (export-tp (symbolicate package-witness export "-TP"))
          (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
 
          (import-tp (symbolicate package-witness import "-TP"))
          (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
@@ -139,7 +157,7 @@
                                                    'identity))
                 `(lem-vector$a::element-equiv ,element-equiv)
                 `(lem-vector$a::initial-element ,(if element-stobj$a-property
-                                                     `(,element-creator)
+                                                     element-creator
                                                      `(lambda ()
                                                         ,initial-element-name)))
                 `(lem-vector$a::element-coupledp ,(or element-coupledp
@@ -152,11 +170,14 @@
                 `(lem-vector$a::element-export ,(or element-export
                                                     element-fixer
                                                     'identity))
-                `(lem-vector$a::element-import ,(or element-import
-                                                    `(lambda (export element)
-                                                       (,element-fixer export))
-                                                    `(lambda (export element)
-                                                       export)))
+                `(lem-vector$a::element-import ,(cond
+                                                  (element-import)
+                                                  (element-fixer
+                                                   `(lambda (export element)
+                                                      (,element-fixer export)))
+                                                  (t
+                                                   `(lambda (export element)
+                                                      export))))
 
                 `(lem-vector$a::name (lambda ()
                                        ',vector))
@@ -253,7 +274,10 @@
                     (defthm ,element-equiv-constraints
                       (equal (,element-equiv ,%element ,element)
                              (equal (,element-fixer ,%element)
-                                    (,element-fixer ,element)))))))
+                                    (,element-fixer ,element)))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,element-equiv)))))))
 
          (local
            (deflabel prologue-end))
@@ -293,6 +317,16 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
+
+         ,@(and coupledp
+                `((local
+                    (in-theory
+                      (enable ,copy-theory)))))
+
+         ,@(and element-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,(symbolicate element element "-EXPORT-THEORY"))))))
 
          ;; `EXPORTP-REC'
          ,@(and element-recognizer
@@ -391,6 +425,26 @@
                   ,(if resizable
                        'lem-vector$a::exportp/resizable-of-export/resizable
                        'lem-vector$a::exportp/fixed-of-export/fixed)
+                  ,@fi-bindings-post-export))))
+
+         (defthm ,export-when-not-recognizer$a
+           (implies (not (,recognizer$a ,vector))
+                    (equal (,export ,vector)
+                           (,export (,creator$a))))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (and (syntaxp (not (and (consp ,vector)
+                                                       (eq (car ,vector) ',creator$a))))
+                                    (not (,recognizer$a ,vector)))
+                               (equal (,export ,vector)
+                                      (,export (,creator$a))))))
+           :hints
+           (("Goal"
+             :in-theory (enable ,vector$a-aggressive)
+             :by (:functional-instance
+                  ,(if resizable
+                       'lem-vector$a::export/resizable-when-not-recognizer/resizable
+                       'lem-vector$a::export/fixed-when-not-recognizer/fixed)
                   ,@fi-bindings-post-export))))
 
          ;; `IMPORT-REC'
@@ -661,6 +715,7 @@
          (coupled-keys-p (symbolicate coupledp hash-table "-COUPLED-KEYS-P"))
          (coupled-keys-p-witness (symbolicate coupledp coupled-keys-p "-WITNESS"))
          (coupled-vals-p (symbolicate coupledp hash-table "-COUPLED-VALS-P"))
+         (coupled-vals-p-witness (symbolicate coupledp coupled-vals-p "-WITNESS"))
          (coupledp-constraints (symbolicate coupledp coupledp "-CONSTRAINTS"))
 
          (copy (cdr (assoc hash-table (table-alist 'copy world))))
@@ -669,6 +724,7 @@
          (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
          (hash-table$a (first stobj$a-property))
          (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
+         (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
          (hash-table$a-constraints (symbolicate hash-table$a hash-table$a "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
@@ -715,6 +771,14 @@
                           exportp-rec
                           'omap::mapp))
 
+         ;; Adjust for nested stobj interface shuffle
+         (accessor (if val-stobj-property
+                       (first (third stobj-property))
+                       accessor))
+         (updater (if val-stobj-property
+                      (second (third stobj-property))
+                      updater))
+
          (val-coupledp (cdr (assoc val (table-alist 'coupledp world))))
          (val-export-list (cdr (assoc val (table-alist 'export world))))
          (val-export-p (first val-export-list))
@@ -722,29 +786,31 @@
          (val-import (third val-export-list))
 
          ;; Theorem Names
-         (key-recognizer-constraints (symbolicate "ATOMIC-STOBJS" key-recognizer "-CONSTRAINTS"))
-         (key-fixer-constraints (symbolicate "ATOMIC-STOBJS" key-fixer "-CONSTRAINTS"))
-         (key-equiv-constraints (symbolicate "ATOMIC-STOBJS" key-equiv "-CONSTRAINTS"))
+         (key-recognizer-constraints (symbolicate "ATOMIC-STOBJS" key-recognizer "-CONSTRAINT-1"))
+         (key-fixer-constraints (symbolicate "ATOMIC-STOBJS" key-fixer "-CONSTRAINT-1"))
+         (key-equiv-constraints (symbolicate "ATOMIC-STOBJS" key-equiv "-CONSTRAINT-1"))
 
-         (val-recognizer-constraints (symbolicate "ATOMIC-STOBJS" val-recognizer "-CONSTRAINTS"))
-         (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINTS"))
-         (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINTS"))
+         (val-recognizer-constraints (symbolicate "ATOMIC-STOBJS" val-recognizer "-CONSTRAINT-2"))
+         (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINT-2"))
+         (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINT-2"))
 
          (exportp-tp (symbolicate package-witness exportp "-TP"))
          (exportp-cr (symbolicate package-witness exportp "-CR"))
          (mapp-when-exportp-rec (symbolicate "ATOMIC-STOBJS" "MAPP-WHEN-" exportp-rec))
-         (key-recognizer-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS" key-recognizer "-HEAD-WHEN-" exportp-rec))
+         (key-recognizer-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS" key-recognizer "-HEAD-WHEN-" exportp-rec "-1"))
          (val-export-p-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS"
                                                           (or val-export-p
                                                               val-recognizer)
                                                           "-HEAD-WHEN-"
-                                                          exportp-rec))
+                                                          exportp-rec
+                                                          "-2"))
          (exportp-rec-of-tail (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-TAIL"))
          (exportp-rec-of-update (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-UPDATE"))
          (keysp-of-keys-when-exportp-rec (symbolicate "ATOMIC-STOBJS" keys$ap "-OF-KEYS-WHEN-" exportp-rec))
 
          (export-tp (symbolicate package-witness export "-TP"))
          (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
 
          (import-tp (symbolicate package-witness import "-TP"))
          (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
@@ -775,7 +841,7 @@
                                                    'identity))
                 `(lem-hash-table$a::val-equiv ,val-equiv)
                 `(lem-hash-table$a::default-val ,(if val-stobj$a-property
-                                                     `(,val-creator)
+                                                     val-creator
                                                      `(lambda ()
                                                         ,default-val-name)))
 
@@ -784,16 +850,19 @@
                                                          t)))
                 `(lem-hash-table$a::val-export-p ,(or val-export-p
                                                       val-recognizer
-                                                      `(lambda ()
+                                                      `(lambda (val)
                                                          t)))
                 `(lem-hash-table$a::val-export ,(or val-export
                                                     val-fixer
                                                     'identity))
-                `(lem-hash-table$a::val-import ,(or val-import
-                                                    `(lambda (export val)
-                                                       (,val-fixer export))
-                                                    `(lambda (export val)
-                                                       export)))
+                `(lem-hash-table$a::val-import ,(cond
+                                                  (val-import)
+                                                  (val-fixer
+                                                   `(lambda (export val)
+                                                      (,val-fixer export)))
+                                                  (t
+                                                   `(lambda (export val)
+                                                      export))))
 
                 `(lem-hash-table$a::keysp ,keys$ap)
 
@@ -826,6 +895,10 @@
                                                          coupled-vals-p
                                                          `(lambda (x)
                                                             t)))
+                 `(lem-hash-table$a::coupled-vals-p-witness ,(if val-coupledp
+                                                                 coupled-vals-p-witness
+                                                                 `(lambda (x)
+                                                                    t)))
 
                  `(lem-hash-table$a::import-rec ,import-rec)
                  `(lem-hash-table$a::import ,import)
@@ -872,7 +945,10 @@
                     (defthm ,key-equiv-constraints
                       (equal (,key-equiv ,%key ,key)
                              (equal (,key-fixer ,%key)
-                                    (,key-fixer ,key)))))))
+                                    (,key-fixer ,key)))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,key-equiv)))))))
 
          ,@(and val-fixer
                 val-recognizer
@@ -886,7 +962,10 @@
                                  (booleanp (,val-recognizer ,val)))
                        ,@(and (not (equal default-val default-val-name))
                               `((:rewrite :corollary
-                                          (,val-recognizer ,default-val)))))))
+                                          (,val-recognizer ,default-val)))))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,val-equiv)))))
 
                   (local
                     (defthm ,val-fixer-constraints
@@ -899,7 +978,10 @@
                     (defthm ,val-equiv-constraints
                       (equal (,val-equiv ,%val ,val)
                              (equal (,val-fixer ,%val)
-                                    (,val-fixer ,val)))))))
+                                    (,val-fixer ,val)))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,val-equiv)))))))
 
          (local
            (deflabel prologue-end))
@@ -922,6 +1004,7 @@
                       (disable ,key-recognizer)))))
 
          ,@(and (not val-stobj-property)
+                val-recognizer
                 `((local
                     (in-theory
                       (disable ,val-recognizer)))))
@@ -956,6 +1039,16 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
+
+         ,@(and coupledp
+                `((local
+                    (in-theory
+                      (enable ,copy-theory)))))
+
+         ,@(and val-stobj-property
+                `((local
+                    (in-theory
+                      (enable ,(symbolicate val val "-EXPORT-THEORY"))))))
 
          ;; `EXPORTP-REC'
          ,@(and (or key-recognizer
@@ -1135,6 +1228,24 @@
                   lem-hash-table$a::exportp-of-export
                   ,@fi-bindings-post-export))))
 
+         (defthm ,export-when-not-recognizer$a
+           (implies (not (,recognizer$a ,hash-table))
+                    (equal (,export ,hash-table)
+                           (,export (,creator$a))))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (and (syntaxp (not (and (consp ,hash-table)
+                                                       (eq (car ,hash-table) ',creator$a))))
+                                    (not (,recognizer$a ,hash-table)))
+                               (equal (,export ,hash-table)
+                                      (,export (,creator$a))))))
+           :hints
+           (("Goal"
+             :in-theory (enable ,hash-table$a-aggressive)
+             :by (:functional-instance
+                  lem-hash-table$a::export-when-not-recognizer/copyable
+                  ,@fi-bindings-post-export))))
+
          ;; `IMPORT-REC'
          (defun ,import-rec (map ,hash-table)
            (declare (xargs :stobjs ,hash-table
@@ -1205,12 +1316,16 @@
            :hints
            (("Goal"
              :do-not-induct t
-             :in-theory (enable ,copy-theory)
              :by (:functional-instance
                   lem-hash-table$a::coupledp-of-import
                   ,@fi-bindings-post-import))
-            ("Subgoal 7"
-             :in-theory (enable ,coupledp))
+            (,(if val-coupledp
+                  "Subgoal 8"
+                  "Subgoal 7")
+              :in-theory (enable ,coupledp))
+            ,@(and val-coupledp
+                   `(("Subgoal 7"
+                      :in-theory (enable ,coupledp-constraints))))
             ("Subgoal 5"
              :in-theory (enable ,coupledp-constraints))
             ("Subgoal 4"
@@ -1378,13 +1493,14 @@
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
          (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
+         (frame$a-aggressive (symbolicate frame$a frame$a "-AGGRESSIVE"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
 
          (fields (first (third stobj$a-property)))
          (%fields (loop$ :for field :in fields
-                        :collect (symbolicate field "%" field)))
+                        :collect (symbolicate package-witness "%" field)))
          (stobjs (sixth (third stobj$a-property)))
          (stobj-property-list (loop$ :for stobj :in stobjs
                                     :collect (and (symbolp stobj)
@@ -1423,6 +1539,7 @@
          (stobj-count (len (remove nil stobjs)))
          (stobj-accessors-and-updaters (third stobj-property))
          (non-stobj-accessors-and-updaters (nthcdr (1+ (* 2 stobj-count)) stobj-accessors-and-updaters))
+         (stobj-accessors-and-updaters (take (* 2 stobj-count) stobj-accessors-and-updaters))
          (accessors (loop$ :with stobj-accessors-and-updaters := stobj-accessors-and-updaters
                           :with non-stobj-accessors-and-updaters := non-stobj-accessors-and-updaters
                           :with stobjs := stobjs
@@ -1467,6 +1584,9 @@
                                           (cdr (assoc stobj export-alist)))))
          (coupledp (cdr (assoc frame (table-alist 'coupledp world))))
 
+         (copy (cdr (assoc frame (table-alist 'copy world))))
+         (copy-theory (symbolicate copy copy "-THEORY"))
+
          ;; Theorem Names
          (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
          (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
@@ -1476,6 +1596,7 @@
 
          (export-tp (symbolicate package-witness export "-TP"))
          (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
 
          (import-tp (symbolicate package-witness import "-TP"))
          (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
@@ -1518,7 +1639,7 @@
                             recognizer$a
                             (not (eq equiv$a 'equal)))
                  :append `((local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer$a "-CONSTRAINTS-" i)
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer$a "-CONSTRAINT-" i)
                                (and (booleanp (,recognizer$a ,field))
                                     (,recognizer$a ,initial-element))
                                :rule-classes
@@ -1529,17 +1650,23 @@
                                                    (,recognizer$a ,initial-element)))))))
 
                            (local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "-CONSTRAINTS-" i)
-                               (equal (,fixer$a ,field)
-                                      (if (,recognizer$a ,field)
-                                          ,field
-                                          ,initial-element))))
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "-CONSTRAINT-" i)
+                               (and (,recognizer$a (,fixer$a ,field))
+                                    (implies (,recognizer$a ,field)
+                                             (equal (,fixer$a ,field)
+                                                    ,field))
+                                    (implies (not (,recognizer$a ,field))
+                                             (equal (,fixer$a ,field)
+                                                    ,initial-element)))))
 
                            (local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" equiv$a "-CONSTRAINTS-" i)
+                             (defthm ,(symbolicate "ATOMIC-STOBJS" equiv$a "-CONSTRAINT-" i)
                                (equal (,equiv$a ,%field ,field)
                                       (equal (,fixer$a ,%field)
-                                             (,fixer$a ,field)))))))
+                                             (,fixer$a ,field)))
+                               :hints
+                               (("Goal"
+                                 :in-theory (enable ,equiv$a)))))))
 
          (local
            (deflabel prologue-end))
@@ -1574,6 +1701,17 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc frame 'acl2::absstobj-info))))))
+
+         ,@(and coupledp
+                `((local
+                    (in-theory
+                      (enable ,copy-theory)))))
+
+         ,@(loop$ :for stobj :in stobjs
+                 :when stobj
+                 :collect `(local
+                             (in-theory
+                               (enable ,(symbolicate stobj stobj "-EXPORT-THEORY")))))
 
          ;; `EXPORTP'
          (defun ,exportp (export)
@@ -1625,6 +1763,21 @@
 
          (defthm ,exportp-of-export
            (,exportp (,export ,frame)))
+
+         (defthm ,export-when-not-recognizer$a
+           (implies (not (,recognizer$a ,frame))
+                    (equal (,export ,frame)
+                           (,export (,creator$a))))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (and (syntaxp (not (and (consp ,frame)
+                                                       (eq (car ,frame) ',creator$a))))
+                                    (not (,recognizer$a ,frame)))
+                               (equal (,export ,frame)
+                                      (,export (,creator$a))))))
+           :hints
+           (("Goal"
+             :in-theory (enable ,frame$a-aggressive))))
 
          ;; `IMPORT'
          (defun ,import (export ,frame)

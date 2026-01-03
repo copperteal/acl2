@@ -498,8 +498,13 @@
                                          (,recognizer$a ,(or initial-element-name
                                                              `(,creator)))
                                          (implies (,recognizer$a ,updater$c-field)
-                                                  (and ,updater$c-guard
-                                                       (,recognizer$c ,updater$c-field))))
+                                                  (,recognizer$c ,updater$c-field))
+                                         ;; This is an ugly hack for the
+                                         ;; situation that the field has
+                                         ;; concrete type `T'
+                                         ,@(and (not (eq updater$c-guard frame$c))
+                                                `((implies (,recognizer$a ,updater$c-field)
+                                                           ,updater$c-guard))))
                                     :rule-classes
                                     ((:rewrite :corollary
                                                (booleanp (,recognizer$a ,field)))
@@ -508,10 +513,11 @@
                                                         (,recognizer$a (,creator)))))
                                      (:rewrite :corollary
                                                (implies (,recognizer$a ,updater$c-field)
-                                                        ,updater$c-guard))
-                                     (:rewrite :corollary
-                                               (implies (,recognizer$a ,updater$c-field)
-                                                        (,recognizer$c ,updater$c-field)))))))
+                                                        (,recognizer$c ,updater$c-field)))
+                                     ,@(and (not (eq updater$c-guard frame$c))
+                                            `((:forward-chaining :corollary
+                                                                 (implies (,recognizer$a ,updater$c-field)
+                                                                          ,updater$c-guard))))))))
 
               ,@(loop$ :for i :from 1 :to (len fields)
                       :as field :in fields
@@ -539,7 +545,10 @@
                                     (defthm ,(symbolicate "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
                                       (equal (,equiv ,%field ,field)
                                              (equal (,fixer ,%field)
-                                                    (,fixer ,field)))))))
+                                                    (,fixer ,field)))
+                                      :hints
+                                      (("Goal"
+                                        :in-theory (enable ,equiv)))))))
 
               (local
                 (deflabel end-of-prologue))
@@ -554,6 +563,20 @@
                                    (theory ',frame$a-theorems))
                    (set-difference-theories (universal-theory 'end-of-prologue)
                                             (universal-theory 'start-of-prologue)))))
+
+              ,@(loop$ :for stobj-property :in stobj-property-list
+                      :as recognizer :in recognizers$a
+                      :as fixer :in fixers$a
+                      :as equiv :in equivs$a
+                      :when (and (not stobj-property)
+                                 recognizer
+                                 fixer
+                                 equiv)
+                      :collect `(local
+                                  (in-theory
+                                    (disable ,recognizer
+                                             ,fixer
+                                             ,equiv))))
 
               (local
                 (in-theory
@@ -579,7 +602,9 @@
                 (in-theory
                   (disable len
                            nth
-                           update-nth)))
+                           update-nth
+                           signed-byte-p
+                           unsigned-byte-p)))
 
               (local
                 (progn

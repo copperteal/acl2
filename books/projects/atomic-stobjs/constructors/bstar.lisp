@@ -162,7 +162,7 @@
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
          (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property (w state)))))
-         (element (first (first (third stobj$a-property))))
+         (element (first (second (third stobj$a-property))))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (accessor (if element-stobj-property
                        (first (third stobj-property))
@@ -402,15 +402,14 @@
                                  (package-witness-lookup)
                                  (t
                                   (current-package state))))
-              (debug ',debug)
               (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property world)))))
          (cond
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
-            (make-vector-b*-events stobj package-witness debug state))
+            (make-vector-b*-events stobj package-witness state))
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 5))
-            (make-hash-table-b*-events stobj package-witness debug state))
+            (make-hash-table-b*-events stobj package-witness state))
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 9))
-            (make-frame-b*-events stobj package-witness debug state)))))))
+            (make-frame-b*-events stobj package-witness state)))))))

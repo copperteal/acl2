@@ -114,7 +114,7 @@
          (updater$a (fourth (third (third stobj$a-property))))
 
          (element (first (first (third stobj$a-property))))
-         (%element (symbolicate element "%" element))
+         (%element (symbolicate package-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
          (element-recognizer (second (first (third stobj$a-property))))
@@ -290,7 +290,10 @@
                     (defthm ,element-equiv-constraints
                       (equal (,element-equiv ,%element ,element)
                              (equal (,element-fixer ,%element)
-                                    (,element-fixer ,element)))))))
+                                    (,element-fixer ,element)))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,element-equiv)))))))
 
          (local
            (deflabel prologue-end))
@@ -334,6 +337,10 @@
          (define-congruent ,vector
            :package-witness ,package-witness
            :debug ,debug)
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %vector 'acl2::absstobj-info))))))
 
          ;; `COUPLEDP'
          ,@(and element-coupledp
@@ -915,13 +922,13 @@
          (copy-theory (symbolicate package-witness copy "-THEORY"))
 
          ;; Theorem Names
-         (key-recognizer-constraints (symbolicate "ATOMIC-STOBJS" key-recognizer "-CONSTRAINTS"))
-         (key-fixer-constraints (symbolicate "ATOMIC-STOBJS" key-fixer "-CONSTRAINTS"))
-         (key-equiv-constraints (symbolicate "ATOMIC-STOBJS" key-equiv "-CONSTRAINTS"))
+         (key-recognizer-constraints (symbolicate "ATOMIC-STOBJS" key-recognizer "-CONSTRAINT-1"))
+         (key-fixer-constraints (symbolicate "ATOMIC-STOBJS" key-fixer "-CONSTRAINT-1"))
+         (key-equiv-constraints (symbolicate "ATOMIC-STOBJS" key-equiv "-CONSTRAINT-1"))
 
-         (val-recognizer-constraints (symbolicate "ATOMIC-STOBJS" val-recognizer "-CONSTRAINTS"))
-         (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINTS"))
-         (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINTS"))
+         (val-recognizer-constraints (symbolicate "ATOMIC-STOBJS" val-recognizer "-CONSTRAINT-2"))
+         (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINT-2"))
+         (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINT-2"))
 
          (coupledp-constraints (symbolicate package-witness coupledp "-CONSTRAINTS"))
          (coupledp-tp (symbolicate package-witness coupledp "-TP"))
@@ -1064,7 +1071,10 @@
                     (defthm ,key-equiv-constraints
                       (equal (,key-equiv ,%key ,key)
                              (equal (,key-fixer ,%key)
-                                    (,key-fixer ,key)))))))
+                                    (,key-fixer ,key)))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,key-equiv)))))))
 
          ,@(and val-fixer
                 val-recognizer
@@ -1091,7 +1101,10 @@
                     (defthm ,val-equiv-constraints
                       (equal (,val-equiv ,%val ,val)
                              (equal (,val-fixer ,%val)
-                                    (,val-fixer ,val)))))))
+                                    (,val-fixer ,val)))
+                      :hints
+                      (("Goal"
+                        :in-theory (enable ,val-equiv)))))))
 
          (local
            (deflabel prologue-end))
@@ -1145,6 +1158,10 @@
          (define-congruent ,hash-table
            :package-witness ,package-witness
            :debug ,debug)
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %hash-table 'acl2::absstobj-info))))))
 
          ;; `COUPLED-KEYS-P'
          (defun-sk ,coupled-keys-p (,hash-table)
@@ -1862,7 +1879,7 @@
 
          (fields (first (third stobj$a-property)))
          (%fields (loop$ :for field :in fields
-                        :collect (symbolicate field "%" field)))
+                        :collect (symbolicate package-witness "%" field)))
          (stobjs (sixth (third stobj$a-property)))
          (stobj-property-list (loop$ :for stobj :in stobjs
                                     :collect (and (symbolp stobj)
@@ -1903,6 +1920,7 @@
          (stobj-count (len (remove nil stobjs)))
          (stobj-accessors-and-updaters (third stobj-property))
          (non-stobj-accessors-and-updaters (nthcdr (1+ (* 2 stobj-count)) stobj-accessors-and-updaters))
+         (stobj-accessors-and-updaters (take (* 2 stobj-count) stobj-accessors-and-updaters))
          (accessors (loop$ :with stobj-accessors-and-updaters := stobj-accessors-and-updaters
                           :with non-stobj-accessors-and-updaters := non-stobj-accessors-and-updaters
                           :with stobjs := stobjs
@@ -1919,10 +1937,11 @@
                               (t
                                (progn
                                  (setq accessors (cons (car non-stobj-accessors-and-updaters) accessors))
-                                 (setq non-stobj-accessors-and-updaters (cddr non-stobj-accessors-and-updaters)))))
+                                 (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
                             (setq stobjs (cdr stobjs)))))
          (updaters (loop$ :with stobj-accessors-and-updaters := (cdr stobj-accessors-and-updaters)
-                         :with non-stobj-accessors-and-updaters := (cdr non-stobj-accessors-and-updaters)
+                         :with non-stobj-accessors-and-updaters := (nthcdr (- (len fields) stobj-count)
+                                                                           non-stobj-accessors-and-updaters)
                          :with stobjs := stobjs
                          :with updaters := ()
                          :do
@@ -1937,7 +1956,7 @@
                              (t
                               (progn
                                 (setq updaters (cons (car non-stobj-accessors-and-updaters) updaters))
-                                (setq non-stobj-accessors-and-updaters (cddr non-stobj-accessors-and-updaters)))))
+                                (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
                            (setq stobjs (cdr stobjs)))))
          (%accessors (loop$ :for accessor :in accessors
                            :collect (symbolicate package-witness "%" accessor)))
@@ -2011,16 +2030,22 @@
 
                           `(local
                              (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "-CONSTRAINT-" i)
-                               (equal (,fixer$a ,field)
-                                      (if (,recognizer$a ,field)
-                                          ,field
-                                          ,initial-element))))
+                               (and (,recognizer$a (,fixer$a ,field))
+                                    (implies (,recognizer$a ,field)
+                                             (equal (,fixer$a ,field)
+                                                    ,field))
+                                    (implies (not (,recognizer$a ,field))
+                                             (equal (,fixer$a ,field)
+                                                    ,initial-element)))))
 
                           `(local
                              (defthm ,(symbolicate "ATOMIC-STOBJS" equiv$a "-CONSTRAINT-" i)
                                (equal (,equiv$a ,%field ,field)
                                       (equal (,fixer$a ,%field)
-                                             (,fixer$a ,field)))))))
+                                             (,fixer$a ,field)))
+                               :hints
+                               (("Goal"
+                                 :in-theory (enable ,equiv$a)))))))
 
          (local
            (deflabel prologue-end))
@@ -2061,6 +2086,16 @@
          (define-congruent ,frame
            :package-witness ,package-witness
            :debug ,debug)
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %frame 'acl2::absstobj-info))))))
+
+         ,@(loop$ :for stobj$a-property :in stobj$a-property-list
+                 :when stobj$a-property
+                 :collect `(local
+                             (in-theory
+                               (enable ,(symbolicate (car stobj$a-property) (car stobj$a-property) "-THEOREMS")))))
 
          ;; `COUPLEDP'
          ,@(and (remove nil stobj-coupledp-list)
@@ -2183,12 +2218,11 @@
          ,@(loop$ :for accessor$a :in accessors$a
                  :as stobj-copy :in stobj-copy-list
                  :as initial-element :in initial-elements
-                 :collect `(local
-                             (defthm ,(symbolicate package-witness accessor$a "-OF-" copy)
-                               (equal (,accessor$a (,copy ,%frame ,frame))
-                                      ,(if stobj-copy
-                                           `(,stobj-copy ,initial-element (,accessor$a ,frame))
-                                           `(,accessor$a ,frame))))))
+                 :collect `(defthm ,(symbolicate package-witness accessor$a "-OF-" copy)
+                             (equal (,accessor$a (,copy ,%frame ,frame))
+                                    ,(if stobj-copy
+                                         `(,stobj-copy ,initial-element (,accessor$a ,frame))
+                                         `(,accessor$a ,frame)))))
 
          (defthm ,copy-of-view$a
            (equal (,copy ,frame (,view$a ,@fields))
