@@ -223,7 +223,12 @@
 (defun parse-kvl (kvl)
   (declare (xargs :guard (and (frame-body-p kvl)
                               (keyword-value-listp kvl))))
-  (let* ((inline (cadr (assoc-keyword :inline kvl)))
+  (let* ((inline-supplied-p (assoc-keyword :inline kvl))
+         (inline (if inline-supplied-p
+                     (cadr inline-supplied-p)
+                     t))
+         (inline-supplied-p (and inline-supplied-p
+                                 t))
          (memoizable (cadr (assoc-keyword :memoizable kvl)))
          (executable (cadr (assoc-keyword :executable kvl)))
          (recognizer (cadr (assoc-keyword :recognizer kvl)))
@@ -236,7 +241,7 @@
          (package-witness-supplied-p (and package-witness-supplied-p
                                           t))
          (debug (cadr (assoc-keyword :debug kvl))))
-    (mv inline memoizable executable
+    (mv inline inline-supplied-p memoizable executable
         recognizer creator fixer
         logic exec
         package-witness package-witness-supplied-p debug)))
@@ -251,7 +256,7 @@
                       initial-elements initial-element-supplies
                       accessors updaters)
               (parse-fds fds () () () () () () () () () ())
-        (mv-let (inline memoizable executable
+        (mv-let (inline inline-supplied-p memoizable executable
                         recognizer creator fixer
                         logic exec
                         package-witness package-witness-supplied-p debug)
@@ -260,7 +265,7 @@
               recognizers fixers equivs
               initial-elements initial-element-supplies
               accessors updaters
-              inline memoizable executable
+              inline inline-supplied-p memoizable executable
               recognizer creator fixer
               logic exec
               package-witness package-witness-supplied-p debug))))))
@@ -274,7 +279,7 @@
                   recognizers fixers equivs
                   initial-elements initial-element-supplies
                   accessors updaters
-                  inline memoizable executable
+                  inline inline-supplied-p memoizable executable
                   recognizer creator fixer
                   logic exec
                   package-witness package-witness-supplied-p debug)
@@ -342,7 +347,7 @@
                                                  `(:element-type ,element-type))
                                           ,@(and initial-element-supplied-p
                                                  `(:initial-element ,initial-element))))
-                ,@(and inline
+                ,@(and ,inline-supplied-p
                        `(:inline ,inline))
                 ,@(and memoizable
                        `(:memoizable ,memoizable))

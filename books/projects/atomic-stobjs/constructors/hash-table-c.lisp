@@ -47,7 +47,7 @@
        (default-value 'nil)
        (copyable 't)
 
-       (inline 'nil)
+       (inline 't)
        (memoizable 'nil)
        (executable 'nil)
 

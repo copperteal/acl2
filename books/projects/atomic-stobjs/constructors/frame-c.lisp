@@ -183,7 +183,10 @@
 (defun parse-kvl$c (kvl)
   (declare (xargs :guard (and (frame$c-body-p kvl)
                               (keyword-value-listp kvl))))
-  (let* ((inline (cadr (assoc-keyword :inline kvl)))
+  (let* ((inline-supplied-p (assoc-keyword :inline kvl))
+         (inline (if inline-supplied-p
+                     (cadr inline-supplied-p)
+                     t))
          (memoizable (cadr (assoc-keyword :memoizable kvl)))
          (executable (cadr (assoc-keyword :executable kvl)))
          (recognizer (cadr (assoc-keyword :recognizer kvl)))

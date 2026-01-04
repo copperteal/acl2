@@ -51,7 +51,7 @@
        (initial-element 'nil initial-element-supplied-p)
        (resizable 't resizable-supplied-p)
 
-       (inline 'nil inline-supplied-p)
+       (inline 't inline-supplied-p)
        (memoizable 'nil memoizable-supplied-p)
        (executable 'nil executable-supplied-p)
 
