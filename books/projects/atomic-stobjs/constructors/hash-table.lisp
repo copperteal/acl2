@@ -56,7 +56,7 @@
        (default-val 'nil default-val-supplied-p)
        (copyable 't copyable-supplied-p)
 
-       (inline 'nil inline-supplied-p)
+       (inline 't inline-supplied-p)
        (memoizable 'nil memoizable-supplied-p)
        (executable 'nil executable-supplied-p)
 
