@@ -47,7 +47,7 @@
        (initial-element 'nil)
        (resizable 't)
 
-       (inline 'nil)
+       (inline 't)
        (memoizable 'nil)
        (executable 'nil)
 
