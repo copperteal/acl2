@@ -4,4 +4,4 @@
 (ld "hash-table-c.acl2")
 (ld "hash-table-a.acl2")
 (set-verify-guards-eagerness 2)
-(set-warnings-as-errors t '("double-rewrite") state)
+(set-warnings-as-errors t '("double-rewrite" "free") state)
