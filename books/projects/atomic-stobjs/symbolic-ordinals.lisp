@@ -166,7 +166,11 @@ contains every theorem in this book.</p>"
                 (posp fco)
                 (o-p rst)
                 (o< (o-first-expt rst)
-                    fe)))))
+                    fe))))
+
+  (defthm o-finp-of-make-ord
+    (equal (o-finp (make-ord fe fco rst))
+           nil)))
 
 
 ;;;; `SYMBOLIC-ORDINALS'
