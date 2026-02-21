@@ -154,7 +154,9 @@ contains every theorem in this book.</p>"
                               (o-first-coeff ord)
                               (o-rst ord))
                     ord))
-    :rule-classes :elim)
+    :rule-classes
+    (:rewrite
+     :elim))
 
   (defthm o-p-of-make-ord
     (equal (o-p (make-ord fe fco rst))

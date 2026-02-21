@@ -717,7 +717,9 @@
                                         (equal (,view ,@(loop$ :for accessor :in accessors
                                                               :collect `(,accessor ,frame)))
                                                ,frame))
-                               :rule-classes :elim
+                               :rule-classes
+                               (:rewrite
+                                :elim)
                                :hints
                                ((acl2::equal-by-nths-hint)))))
 
