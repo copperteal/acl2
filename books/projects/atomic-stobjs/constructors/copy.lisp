@@ -80,14 +80,13 @@
          (copy (symbolicate package-witness vector "-COPY"))
          (copy-rec (symbolicate package-witness copy "-REC"))
          (index (symbolicate package-witness "I"))
+         (%index (symbolicate package-witness "%I"))
 
          (coupledp (symbolicate package-witness vector "-COUPLEDP"))
-         (coupledp-witness (symbolicate package-witness coupledp "-WITNESS"))
-         (coupledp-necc (symbolicate package-witness coupledp "-NECC"))
+         (coupledp-rec (symbolicate package-witness coupledp "-REC"))
 
          ;; `VECTOR'
          (stobj-property (getpropc vector 'acl2::stobj))
-         (recognizer (caadr stobj-property))
          (the-vector (symbolicate vector "THE-" vector))
          (length (second (third stobj-property)))
          (resizer (third (third stobj-property)))
@@ -112,6 +111,7 @@
          (resizer$a (second (third (third stobj$a-property))))
          (accessor$a (third (third (third stobj$a-property))))
          (updater$a (fourth (third (third stobj$a-property))))
+         (updater$a-of-accessor$a (symbolicate vector$a updater$a "-OF-" accessor$a))
 
          (element (first (first (third stobj$a-property))))
          (%element (symbolicate package-witness "%" element))
@@ -156,6 +156,17 @@
          (element-equiv-constraints (symbolicate "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
 
          (coupledp-constraints (symbolicate package-witness coupledp "-CONSTRAINTS"))
+
+         (coupledp-rec-tp (symbolicate package-witness coupledp-rec "-TP"))
+         (coupledp-rec-when-zp-1 (symbolicate package-witness coupledp-rec "-WHEN-ZP-1"))
+         (coupledp-rec-when-not-recognizer$a-1 (symbolicate package-witness coupledp-rec "-WHEN-NOT-" recognizer$a "-1"))
+         (coupledp-rec-of-creator$a (symbolicate package-witness coupledp-rec "-OF-" creator$a))
+         (coupledp-rec-is-decreasing (symbolicate package-witness coupledp-rec "-IS-DECREASING"))
+         (coupledp-rec-when-large (symbolicate package-witness coupledp-rec "-WHEN-LARGE"))
+         (coupledp-rec-of-resizer$a (symbolicate package-witness coupledp-rec "-OF-" resizer$a))
+         (element-coupledp-of-accessor$a-when-coupledp-rec (symbolicate package-witness element-coupledp "-OF-" accessor$a "-WHEN-" coupledp-rec))
+         (coupledp-rec-of-updater$a (symbolicate package-witness coupledp-rec "-OF-" updater$a))
+
          (coupledp-tp (symbolicate package-witness coupledp "-TP"))
          (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
@@ -166,7 +177,7 @@
          (copy-rec-of-fixer$a-2 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-2"))
          (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
 
-         (vector-copy-constraints (symbolicate package-witness copy "-CONSTRAINTS"))
+         (copy-constraints (symbolicate package-witness copy "-CONSTRAINTS"))
          (recognizer$a-of-copy (symbolicate package-witness recognizer$a "-OF-" copy))
          (copy-ignores-1 (symbolicate package-witness copy "-IGNORES-1"))
          (coupledp-of-copy (symbolicate package-witness coupledp "-OF-" copy))
@@ -179,15 +190,61 @@
          (copy-rw (symbolicate package-witness copy "-RW"))
 
          (fi-bindings
-          (append
-           (and element-coupledp
-                (list (if resizable
-                          `(lem-vector$a::coupledp/resizable-witness ,coupledp-witness)
-                          `(lem-vector$a::coupledp/fixed-witness ,coupledp-witness))))
+          (list `(lem-vector$a::default-length (lambda ()
+                                                 ,default-length-name))
+                `(lem-vector$a::element-recognizer ,(or element-recognizer
+                                                        '(lambda (element)
+                                                          t)))
+                `(lem-vector$a::initial-element ,(or element-creator
+                                                     `(lambda ()
+                                                        ,initial-element-name)))
+                `(lem-vector$a::element-fixer ,(or element-fixer
+                                                   '(lambda (element)
+                                                     element)))
+                `(lem-vector$a::element-equiv ,(or element-equiv
+                                                   'equal))
 
-           (list `(lem-vector$a::element-coupledp ,(or element-coupledp
+                `(lem-vector$a::recognizer-aux ,(if element-recognizer
+                                                    (if resizable
+                                                        recognizer$a
+                                                        recognizer$a-aux)
+                                                    'true-listp))
+                (if resizable
+                    `(lem-vector$a::recognizer/resizable ,recognizer$a)
+                    `(lem-vector$a::recognizer/fixed ,recognizer$a))
+                `(lem-vector$a::creator ,creator$a)
+                (if resizable
+                    `(lem-vector$a::fixer/resizable ,fixer$a)
+                    `(lem-vector$a::fixer/fixed ,fixer$a))
+                (if resizable
+                    `(lem-vector$a::equiv/resizable ,equiv$a)
+                    `(lem-vector$a::equiv/fixed ,equiv$a))
+                (if resizable
+                    `(lem-vector$a::length/resizable ,length$a)
+                    `(lem-vector$a::length/fixed ,length$a))
+                (if resizable
+                    `(lem-vector$a::resizer/resizable ,resizer$a)
+                    `(lem-vector$a::resizer/fixed ,resizer$a))
+                (if resizable
+                    `(lem-vector$a::accessor/resizable ,accessor$a)
+                    `(lem-vector$a::accessor/fixed ,accessor$a))
+                (if resizable
+                    `(lem-vector$a::updater/resizable ,updater$a)
+                    `(lem-vector$a::updater/fixed ,updater$a))))
+
+         (fi-bindings-with-coupledp
+          (list* `(lem-vector$a::element-coupledp ,(or element-coupledp
                                                        '(lambda (element)
                                                          t)))
+                 (if resizable
+                     `(lem-vector$a::coupledp-rec/resizable ,(if element-coupledp
+                                                                 coupledp-rec
+                                                                 '(lambda (index element)
+                                                                   t)))
+                     `(lem-vector$a::coupledp-rec/fixed ,(if element-coupledp
+                                                             coupledp-rec
+                                                             '(lambda (index element)
+                                                               t))))
                  (if resizable
                      `(lem-vector$a::coupledp/resizable ,(if element-coupledp
                                                              coupledp
@@ -197,48 +254,7 @@
                                                          coupledp
                                                          '(lambda (element)
                                                            t))))
-
-                 `(lem-vector$a::default-length (lambda ()
-                                                  ,default-length-name))
-                 `(lem-vector$a::element-recognizer ,(or element-recognizer
-                                                         '(lambda (element)
-                                                           t)))
-                 `(lem-vector$a::initial-element ,(or element-creator
-                                                      `(lambda ()
-                                                         ,initial-element-name)))
-                 `(lem-vector$a::element-fixer ,(or element-fixer
-                                                    '(lambda (element)
-                                                      element)))
-                 `(lem-vector$a::element-equiv ,(or element-equiv
-                                                    'equal))
-
-                 `(lem-vector$a::recognizer-aux ,(if element-recognizer
-                                                     (if resizable
-                                                         recognizer$a
-                                                         recognizer$a-aux)
-                                                     'true-listp))
-                 (if resizable
-                     `(lem-vector$a::recognizer/resizable ,recognizer$a)
-                     `(lem-vector$a::recognizer/fixed ,recognizer$a))
-                 `(lem-vector$a::creator ,creator$a)
-                 (if resizable
-                     `(lem-vector$a::fixer/resizable ,fixer$a)
-                     `(lem-vector$a::fixer/fixed ,fixer$a))
-                 (if resizable
-                     `(lem-vector$a::equiv/resizable ,equiv$a)
-                     `(lem-vector$a::equiv/fixed ,equiv$a))
-                 (if resizable
-                     `(lem-vector$a::length/resizable ,length$a)
-                     `(lem-vector$a::length/fixed ,length$a))
-                 (if resizable
-                     `(lem-vector$a::resizer/resizable ,resizer$a)
-                     `(lem-vector$a::resizer/fixed ,resizer$a))
-                 (if resizable
-                     `(lem-vector$a::accessor/resizable ,accessor$a)
-                     `(lem-vector$a::accessor/fixed ,accessor$a))
-                 (if resizable
-                     `(lem-vector$a::updater/resizable ,updater$a)
-                     `(lem-vector$a::updater/fixed ,updater$a)))))
+                 fi-bindings))
 
          (fi-bindings-with-copy
           (list* `(lem-vector$a::element-copy ,(cond
@@ -255,7 +271,7 @@
                  (if resizable
                      `(lem-vector$a::copy/resizable ,copy)
                      `(lem-vector$a::copy/fixed ,copy))
-                 fi-bindings)))
+                 fi-bindings-with-coupledp)))
 
     `(progn
        (deflabel ,copy-begin)
@@ -342,76 +358,308 @@
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc %vector 'acl2::absstobj-info))))))
 
-         ;; `COUPLEDP'
+         (local
+           (defthm ,vector$a-constraints
+             (and ,@(and (not resizable)
+                         element-recognizer
+                         `((equal (,recognizer$a-aux ,vector)
+                                  (if (consp ,vector)
+                                      (if (,element-recognizer (car ,vector))
+                                          (,recognizer$a-aux (cdr ,vector))
+                                          'nil)
+                                      (null ,vector)))))
+                  (equal (,creator$a)
+                         (make-list-ac ,default-length-name ,initial-element 'nil))
+                  (equal (,recognizer$a ,vector)
+                         ,(cond
+                            ((and (not resizable)
+                                  element-recognizer)
+                             `(if (equal (len ,vector) ,default-length-name)
+                                  (,recognizer$a-aux ,vector)
+                                  'nil))
+                            ((not resizable)
+                             `(if (equal (len ,vector) ,default-length-name)
+                                  (true-listp ,vector)
+                                  'nil))
+                            (element-recognizer
+                             `(if (consp ,vector)
+                                  (if (,element-recognizer (car ,vector))
+                                      (,recognizer$a (cdr ,vector))
+                                      'nil)
+                                  (null ,vector)))
+                            (t
+                             `(true-listp ,vector))))
+                  (equal (,fixer$a ,vector)
+                         (if (,recognizer$a ,vector)
+                             ,vector
+                             (,creator$a)))
+                  (equal (,equiv$a ,%vector ,vector)
+                         (equal (,fixer$a ,%vector)
+                                (,fixer$a ,vector)))
+                  (equal (,length$a ,vector)
+                         ,(if resizable
+                              `(len (,fixer$a ,vector))
+                              default-length-name))
+                  (equal (,resizer$a length ,vector)
+                         ,(if resizable
+                              `((lambda (length ,vector)
+                                  (resize-list ,vector length ,initial-element))
+                                (nfix length)
+                                (,fixer$a ,vector))
+                              `(,fixer$a ,vector)))
+                  (equal (,accessor$a ,index ,vector)
+                         ((lambda (,index ,vector)
+                            (if (< ,index ,(if resizable
+                                               `(,length$a ,vector)
+                                               default-length-name))
+                                ,(if element-fixer
+                                     `(,element-fixer (nth ,index ,vector))
+                                     `(nth ,index ,vector))
+                                ,initial-element))
+                          (nfix ,index)
+                          (,fixer$a ,vector)))
+                  (equal (,updater$a ,index ,element ,vector)
+                         ((lambda (,index ,element ,vector)
+                            (if (< ,index ,(if resizable
+                                               `(,length$a ,vector)
+                                               default-length-name))
+                                (update-nth ,index ,element ,vector)
+                                ,vector))
+                          (nfix ,index)
+                          ,(if element-fixer
+                               `(,element-fixer ,element)
+                               element)
+                          (,fixer$a ,vector))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable ,@(and (not resizable)
+                                         element-recognizer
+                                         `((:d ,recognizer$a-aux)))
+                                  (:d ,recognizer$a)
+                                  (:d ,creator$a)
+                                  (:d ,fixer$a)
+                                  (:d ,equiv$a)
+                                  (:d ,length$a)
+                                  (:d ,resizer$a)
+                                  (:d ,accessor$a)
+                                  (:d ,updater$a))
+               :use (:functional-instance
+                     ,(if resizable
+                          'lem-vector$a::vector-constraints/resizable
+                          'lem-vector$a::vector-constraints/fixed)
+                     ,@fi-bindings)))))
+
          ,@(and element-coupledp
-                `((defun-sk ,coupledp (,vector)
-                    (declare (xargs :guard (,recognizer ,vector)
-                                    :verify-guards nil))
-                    (forall ,index
-                      (,element-coupledp (,accessor$a ,index ,vector)))
-                    :rewrite :direct)
+                `((defun ,coupledp-rec (,index ,vector)
+                    (declare (xargs :stobjs ,vector
+                                    :guard (and (natp ,index)
+                                                (<= ,index (,length ,vector)))
+                                    :guard-hints
+                                    (("Goal"
+                                      :in-theory (enable ,vector$a-theorems)))))
+                    (or (zp ,index)
+                        ,(if element-copy
+                             `(let ((,index (1- ,index)))
+                                (stobj-let ((,element (,accessor ,index ,vector) ,updater))
+                                           (coupledp)
+                                           (,element-coupledp ,element)
+                                  (and coupledp
+                                       (,coupledp-rec ,index ,vector))))
+                             `(let ((,index (1- ,index)))
+                                (and (,element-coupledp (,accessor ,index ,vector))
+                                     (,coupledp-rec ,index ,vector))))))
+
+                  (defun ,coupledp (,vector)
+                    (declare (xargs :stobjs ,vector))
+                    (,coupledp-rec ,(if resizable
+                                        `(,length ,vector)
+                                        default-length-name)
+                                   ,vector))
 
                   (table coupledp ',vector ',coupledp)
 
-                  (defthm ,coupledp-constraints
-                    (and (equal (,coupledp ,vector)
-                                ((lambda (,index ,vector)
-                                   (,element-coupledp (,accessor$a ,index ,vector)))
-                                 (,coupledp-witness ,vector)
-                                 ,vector))
-                         (implies (,coupledp ,vector)
-                                  (,element-coupledp (,accessor$a ,index ,vector))))
-                    :rule-classes
-                    ((:definition :corollary
-                         (equal (,coupledp ,vector)
-                                ((lambda (,index ,vector)
-                                   (,element-coupledp (,accessor$a ,index ,vector)))
-                                 (,coupledp-witness ,vector)
-                                 ,vector)))
-                     (:rewrite :corollary
-                               (implies (,coupledp ,vector)
-                                        (,element-coupledp (,accessor$a ,index ,vector)))))
-                    :hints
-                    (("Goal"
-                      :in-theory (disable ,coupledp-necc)
-                      :use ((:instance ,coupledp-necc)))))
+                  (local
+                    (defthm ,coupledp-constraints
+                      (and (equal (,coupledp-rec ,index ,vector)
+                                  (if (zp ,index)
+                                      (zp ,index)
+                                      ((lambda (,index ,vector)
+                                         (if (,element-coupledp (,accessor$a ,index ,vector))
+                                             (,coupledp-rec ,index ,vector)
+                                             'nil))
+                                       (1- ,index)
+                                       ,vector)))
+                           (equal (,coupledp ,vector)
+                                  (,coupledp-rec ,(if resizable
+                                                      `(,length$a ,vector)
+                                                      default-length-name)
+                                                 ,vector)))
+                      :rule-classes ()
+                      :hints
+                      (("Goal"
+                        :use (:functional-instance
+                              ,(if resizable
+                                   'lem-vector$a::coupledp-constraints/resizable
+                                   'lem-vector$a::coupledp-constraints/fixed)
+                              ,@fi-bindings-with-coupledp)))))
 
                   (local
                     (in-theory
-                      (disable ,coupledp
-                               (:definition ,coupledp-constraints))))
+                      (disable ,coupledp-rec
+                               ,coupledp)))
 
+                  ;; `COUPLEDP-REC'
+                  (defthm ,coupledp-rec-tp
+                    (booleanp (,coupledp-rec ,index ,vector))
+                    :rule-classes :type-prescription
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-tp
+                                'lem-vector$a::coupledp-rec/fixed-tp)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defthm ,coupledp-rec-when-zp-1
+                    (implies (zp ,index)
+                             (equal (,coupledp-rec ,index ,vector)
+                                    t))
+                    :rule-classes
+                    ((:rewrite :corollary
+                               (implies (zp (double-rewrite ,index))
+                                        (equal (,coupledp-rec ,index ,vector)
+                                               t))))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-when-zp-1
+                                'lem-vector$a::coupledp-rec/fixed-when-zp-1)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defthm ,coupledp-rec-when-not-recognizer$a-1
+                    (implies (not (,recognizer$a ,vector))
+                             (,coupledp-rec ,index ,vector))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-when-not-recognizer/resizable-1
+                                'lem-vector$a::coupledp-rec/fixed-when-not-recognizer/fixed-1)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defthm ,coupledp-rec-of-creator$a
+                    (,coupledp-rec ,index (,creator$a))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-of-creator
+                                'lem-vector$a::coupledp-rec/fixed-of-creator)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defcong nat-equiv equal (,coupledp-rec ,index ,vector) 1
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::nat-equiv-implies-equal-coupledp-rec/resizable-1
+                                'lem-vector$a::nat-equiv-implies-equal-coupledp-rec/fixed-1)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defcong ,equiv$a equal (,coupledp-rec ,index ,vector) 2
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::equiv/resizable-implies-equal-coupledp-rec/resizable-2
+                                'lem-vector$a::equiv/fixed-implies-equal-coupledp-rec/fixed-2)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defthm ,coupledp-rec-is-decreasing
+                    (implies (and (,coupledp-rec ,%index ,vector)
+                                  (<= (nfix ,index) (nfix ,%index)))
+                             (,coupledp-rec ,index ,vector))
+                    :rule-classes ()
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-is-decreasing
+                                'lem-vector$a::coupledp-rec/fixed-is-decreasing)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defthm ,coupledp-rec-when-large
+                    (implies (< ,(if resizable
+                                     `(,length$a ,vector)
+                                     default-length-name)
+                                (nfix ,index))
+                             (equal (,coupledp-rec ,index ,vector)
+                                    (,coupledp-rec ,(if resizable
+                                                        `(,length$a ,vector)
+                                                        default-length-name)
+                                                   ,vector)))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-when-large
+                                'lem-vector$a::coupledp-rec/fixed-when-large)
+                           ,@fi-bindings-with-coupledp))))
+
+                  ,@(and resizable
+                         `((defthm ,coupledp-rec-of-resizer$a
+                             (implies (,coupledp-rec ,index ,vector)
+                                      (,coupledp-rec ,index (,resizer$a ,length ,vector)))
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-vector$a::coupledp-rec/resizable-of-resizer/resizable
+                                    ,@fi-bindings-with-coupledp))))))
+
+                  (defthm ,element-coupledp-of-accessor$a-when-coupledp-rec
+                    (implies (and (,coupledp-rec ,%index ,vector)
+                                  (< (nfix ,index) (nfix ,%index)))
+                             (,element-coupledp (,accessor$a ,index ,vector)))
+                    :rule-classes ()
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::element-coupledp-of-accessor/resizable-when-coupledp-rec/resizable
+                                'lem-vector$a::element-coupledp-of-accessor/fixed-when-coupledp-rec/fixed)
+                           ,@fi-bindings-with-coupledp))))
+
+                  (defthm ,coupledp-rec-of-updater$a
+                    (implies (,coupledp-rec ,%index ,vector)
+                             (equal (,coupledp-rec ,%index (,updater$a ,index ,element ,vector))
+                                    (if (and (< (nfix ,index) ,(if resizable
+                                                                   `(,length$a ,vector)
+                                                                   default-length-name))
+                                             (< (nfix ,index) (nfix ,%index)))
+                                        (,element-coupledp ,element)
+                                        t)))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           ,(if resizable
+                                'lem-vector$a::coupledp-rec/resizable-of-updater/resizable
+                                'lem-vector$a::coupledp-rec/fixed-of-updater/fixed)
+                           ,@fi-bindings-with-coupledp))))
+
+                  ;; `COUPLEDP'
                   (defthm ,coupledp-tp
                     (booleanp (,coupledp ,vector))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
-                      :in-theory (enable ,vector$a-theorems)
                       :by (:functional-instance
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-tp
                                 'lem-vector$a::coupledp/fixed-tp)
-                           ,@fi-bindings))
-                     ("Subgoal 7"
-                      :use ((:instance (:definition ,coupledp-constraints)
-                                       (,vector lem-vector$a::vector))))
-                     ,@(if resizable
-                           `(("Subgoal 6"
-                              :in-theory (enable ,vector$a-constraints))
-                             ("Subgoal 4"
-                              :in-theory (enable ,vector$a-constraints))
-                             ("Subgoal 3"
-                              :in-theory (enable ,vector$a-constraints))
-                             ("Subgoal 1"
-                              :in-theory (enable ,vector$a-constraints)))
-                           `(("Subgoal 6"
-                              :in-theory (enable ,vector$a-constraints))
-                             ("Subgoal 4"
-                              :in-theory (enable ,vector$a-constraints))
-                             ("Subgoal 3"
-                              :in-theory (enable ,vector$a-constraints))
-                             ("Subgoal 2"
-                              :in-theory (enable ,vector$a-constraints))))))
+                           ,@fi-bindings-with-coupledp))))
 
                   (defthm ,coupledp-when-not-recognizer$a
                     (implies (not (,recognizer$a ,vector))
@@ -422,7 +670,7 @@
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-when-not-recognizer/resizable
                                 'lem-vector$a::coupledp/fixed-when-not-recognizer/fixed)
-                           ,@fi-bindings))))
+                           ,@fi-bindings-with-coupledp))))
 
                   (defthm ,coupledp-of-creator$a
                     (,coupledp (,creator$a))
@@ -432,17 +680,16 @@
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-of-creator
                                 'lem-vector$a::coupledp/fixed-of-creator)
-                           ,@fi-bindings))))
+                           ,@fi-bindings-with-coupledp))))
 
                   (defcong ,equiv$a equal (,coupledp ,vector) 1
                     :hints
                     (("Goal"
-                      :in-theory (enable ,equiv$a)
                       :by (:functional-instance
                            ,(if resizable
                                 'lem-vector$a::equiv/resizable-implies-equal-coupledp/resizable-1
                                 'lem-vector$a::equiv/fixed-implies-equal-coupledp/fixed-1)
-                           ,@fi-bindings))))
+                           ,@fi-bindings-with-coupledp))))
 
                   ,@(and resizable
                          `((defthm ,coupledp-of-resizer$a
@@ -450,10 +697,9 @@
                                       (,coupledp (,resizer$a length ,vector)))
                              :hints
                              (("Goal"
-                               :in-theory (enable ,vector$a-constraints)
                                :by (:functional-instance
                                     lem-vector$a::coupledp/resizable-of-resizer/resizable
-                                    ,@fi-bindings))))))
+                                    ,@fi-bindings-with-coupledp))))))
 
                   (defthm ,element-coupledp-of-accessor$a
                     (implies (,coupledp ,vector)
@@ -464,7 +710,7 @@
                            ,(if resizable
                                 'lem-vector$a::element-coupledp-of-accessor/resizable
                                 'lem-vector$a::element-coupledp-of-accessor/fixed)
-                           ,@fi-bindings))))
+                           ,@fi-bindings-with-coupledp))))
 
                   (defthm ,coupledp-of-updater$a
                     (implies (,coupledp ,vector)
@@ -477,14 +723,12 @@
                                         t)))
                     :hints
                     (("Goal"
-                      :in-theory (enable ,vector$a-constraints)
                       :by (:functional-instance
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-of-updater/resizable
                                 'lem-vector$a::coupledp/fixed-of-updater/fixed)
-                           ,@fi-bindings))))))
+                           ,@fi-bindings-with-coupledp))))))
 
-         ;; `COPY-REC'
          (defun ,copy-rec (,index ,%vector ,vector)
            (declare (xargs :stobjs (,%vector ,vector)
                            :guard (and (= (,length ,%vector) (,length ,vector))
@@ -510,7 +754,6 @@
                             (,%vector (,updater ,index ,element ,%vector)))
                        (,copy-rec ,index ,%vector ,vector)))))
 
-         ;; `COPY'
          (defun ,copy (,%vector ,vector)
            (declare (xargs :stobjs (,%vector ,vector)
                            :guard-hints
@@ -546,113 +789,75 @@
                :in-theory (enable ,vector$a-theorems)
                :expand (,copy-rec ,index ,%vector (,fixer$a ,vector))))))
 
-         (defthm ,vector-copy-constraints
-           (and (equal (,copy-rec ,index ,%vector ,vector)
-                       (if (zp ,index)
-                           (,fixer$a ,%vector)
-                           ((lambda (,index ,%vector ,vector)
-                              ((lambda (,element ,vector ,%vector ,index)
-                                 ((lambda (,%element ,index ,%vector ,vector ,element)
-                                    (declare (ignorable ,%element))
-                                    ((lambda (,%element ,element ,vector ,%vector ,index)
-                                       ((lambda (,%vector ,vector ,element ,index)
-                                          ((lambda (,vector ,%vector ,index)
-                                             (,copy-rec ,index ,%vector ,vector))
-                                           (,updater$a ,index ,element ,vector)
-                                           ,%vector ,index))
-                                        (,updater$a ,index ,%element ,%vector)
-                                        ,vector ,element ,index))
-                                     ,(cond
-                                        (element-copy
-                                         `(,element-copy ,%element ,element))
-                                        (element-fixer
-                                         `(,element-fixer ,element))
-                                        (t
-                                         element))
-                                     ,element ,vector ,%vector ,index))
-                                  (,accessor$a ,index ,%vector)
-                                  ,index ,%vector ,vector ,element))
-                               (,accessor$a ,index ,vector)
-                               ,vector ,%vector ,index))
-                            (binary-+ '-1 ,index)
-                            ,%vector ,vector)))
-                (equal (,copy ,%vector ,vector)
-                       ((lambda (length ,vector ,%vector)
-                          ((lambda (,%vector ,vector length)
-                             (,copy-rec length ,%vector ,vector))
-                           ,(if resizable
-                                `(if (equal (,length$a ,%vector)
-                                            length)
-                                     ,%vector
-                                     (,resizer$a length ,%vector))
-                                %vector)
-                           ,vector length))
-                        (,length$a ,vector)
-                        ,vector ,%vector)))
-           :rule-classes
-           ((:definition :corollary
-                (equal (,copy-rec ,index ,%vector ,vector)
-                       (if (zp ,index)
-                           (,fixer$a ,%vector)
-                           ((lambda (,index ,%vector ,vector)
-                              ((lambda (,element ,vector ,%vector ,index)
-                                 ((lambda (,%element ,index ,%vector ,vector ,element)
-                                    (declare (ignorable ,%element))
-                                    ((lambda (,%element ,element ,vector ,%vector ,index)
-                                       ((lambda (,%vector ,vector ,element ,index)
-                                          ((lambda (,vector ,%vector ,index)
-                                             (,copy-rec ,index ,%vector ,vector))
-                                           (,updater$a ,index ,element ,vector)
-                                           ,%vector ,index))
-                                        (,updater$a ,index ,%element ,%vector)
-                                        ,vector ,element ,index))
-                                     ,(cond
-                                        (element-copy
-                                         `(,element-copy ,%element ,element))
-                                        (element-fixer
-                                         `(,element-fixer ,element))
-                                        (t
-                                         element))
-                                     ,element ,vector ,%vector ,index))
-                                  (,accessor$a ,index ,%vector)
-                                  ,index ,%vector ,vector ,element))
-                               (,accessor$a ,index ,vector)
-                               ,vector ,%vector ,index))
-                            (binary-+ '-1 ,index)
-                            ,%vector ,vector))))
-            (:definition :corollary
-                (equal (,copy ,%vector ,vector)
-                       ((lambda (length ,vector ,%vector)
-                          ((lambda (,%vector ,vector length)
-                             (,copy-rec length ,%vector ,vector))
-                           ,(if resizable
-                                `(if (equal (,length$a ,%vector)
-                                            length)
-                                     ,%vector
-                                     (,resizer$a length ,%vector))
-                                %vector)
-                           ,vector length))
-                        (,length$a ,vector)
-                        ,vector ,%vector))))
-           :hints
-           (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,vector$a-theorems
-                                ,vector$a-aggressive
-                                ,copy-rec-of-fixer$a-3
-                                ,copy-rec-of-fixer$a-2))))
+         (local
+           (defthm ,copy-constraints
+             (and (equal (,copy-rec ,index ,%vector ,vector)
+                         (if (zp ,index)
+                             (,fixer$a ,%vector)
+                             ((lambda (,index ,%vector ,vector)
+                                ((lambda (,element ,vector ,%vector ,index)
+                                   ((lambda (,%element ,index ,%vector ,vector ,element)
+                                      (declare (ignorable ,%element))
+                                      ((lambda (,%element ,element ,vector ,%vector ,index)
+                                         ((lambda (,%vector ,vector ,element ,index)
+                                            ((lambda (,vector ,%vector ,index)
+                                               (,copy-rec ,index ,%vector ,vector))
+                                             (,updater$a ,index ,element ,vector)
+                                             ,%vector ,index))
+                                          (,updater$a ,index ,%element ,%vector)
+                                          ,vector ,element ,index))
+                                       ,(cond
+                                          (element-copy
+                                           `(,element-copy ,%element ,element))
+                                          (element-fixer
+                                           `(,element-fixer ,element))
+                                          (t
+                                           element))
+                                       ,element ,vector ,%vector ,index))
+                                    (,accessor$a ,index ,%vector)
+                                    ,index ,%vector ,vector ,element))
+                                 (,accessor$a ,index ,vector)
+                                 ,vector ,%vector ,index))
+                              (1- ,index)
+                              ,%vector ,vector)))
+                  (equal (,copy ,%vector ,vector)
+                         ((lambda (length ,vector ,%vector)
+                            ((lambda (,%vector ,vector length)
+                               (,copy-rec length ,%vector ,vector))
+                             ,(if resizable
+                                  `(if (equal (,length$a ,%vector)
+                                              length)
+                                       ,%vector
+                                       (,resizer$a length ,%vector))
+                                  %vector)
+                             ,vector length))
+                          ,(if resizable
+                               `(,length$a ,vector)
+                               default-length-name)
+                          ,vector ,%vector)))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable ,updater$a-of-accessor$a
+                                  ,copy-rec-of-fixer$a-2
+                                  ,copy-rec-of-fixer$a-3)
+               :use (:functional-instance
+                     ,(if resizable
+                          'lem-vector$a::copy-constraints/resizable
+                          'lem-vector$a::copy-constraints/fixed)
+                     ,@fi-bindings-with-copy)))))
 
          (local
            (in-theory
              (disable ,copy-rec
                       ,copy)))
 
+         ;; `COPY'
          (defthm ,recognizer$a-of-copy
            (,recognizer$a (,copy ,%vector ,vector))
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,vector$a-constraints)
              :by (:functional-instance
                   ,(if resizable
                        'lem-vector$a::recognizer/resizable-of-copy/resizable
@@ -679,7 +884,6 @@
          (defcong ,equiv$a equal (,copy ,%vector ,vector) 2
            :hints
            (("Goal"
-             :in-theory (enable ,vector$a-constraints)
              :by (:functional-instance
                   ,(if resizable
                        'lem-vector$a::equiv/resizable-implies-equal-copy/resizable-2
@@ -717,7 +921,7 @@
                            ,@fi-bindings-with-copy))))))
 
          (local
-           (defthmd ,accessor$a-of-copy-lemma
+           (defthm ,accessor$a-of-copy-lemma
              (equal (,accessor$a ,index (,copy ,%vector ,vector))
                     ,(cond
                        (element-copy
@@ -726,6 +930,7 @@
                         `(,element-fixer (,accessor$a ,index ,vector)))
                        (t
                         `((lambda (x) x) (,accessor$a ,index ,vector)))))
+             :rule-classes ()
              :hints
              (("Goal"
                :by (:functional-instance
@@ -744,7 +949,7 @@
              :use ,accessor$a-of-copy-lemma)))
 
          (local
-           (defthmd ,copy-of-updater$a-lemma
+           (defthm ,copy-of-updater$a-lemma
              (equal (,copy ,%vector (,updater$a ,index ,element ,vector))
                     (if (< (nfix ,index) ,(if resizable
                                               `(,length$a ,vector)
@@ -759,6 +964,7 @@
                                         `((lambda (x) x) ,element)))
                                     (,copy ,%vector ,vector))
                         (,copy ,%vector ,vector)))
+             :rule-classes ()
              :hints
              (("Goal"
                :by (:functional-instance
@@ -780,7 +986,8 @@
                       (,copy ,%vector ,vector)))
            :hints
            (("Goal"
-             :in-theory (enable ,vector$a-aggressive)
+             :in-theory (enable ,vector$a-theorems
+                                ,vector$a-aggressive)
              :use ,copy-of-updater$a-lemma)))
 
          (defthm ,copy-rw
@@ -805,11 +1012,9 @@
           (set-difference-theories (current-theory ',copy-end)
                                    (current-theory ',copy-begin))
           '(,@(and element-coupledp
-                   `(,coupledp
-                     ,coupledp-constraints))
+                   `(,coupledp))
             ,copy-rec
-            ,copy
-            ,vector-copy-constraints)))
+            ,copy)))
 
        (in-theory
          (union-theories (current-theory ',copy-begin)
@@ -1165,29 +1370,28 @@
 
          ;; `COUPLED-KEYS-P'
          (defun-sk ,coupled-keys-p (,hash-table)
-           (declare (xargs :guard (,recognizer ,hash-table)
-                           :verify-guards nil))
+           (declare (xargs :guard (,recognizer ,hash-table)))
            (forall ,key
              (equal (set::in ,key (,keys$a ,hash-table))
-                    ,(if key-recognizer
-                         `(and (,key-recognizer ,key)
-                               (,boundp$a ,key ,hash-table))
-                         `(,boundp$a ,key ,hash-table))))
+                    (with-guard-checking nil
+                      ,(if key-recognizer
+                           `(and (,key-recognizer ,key)
+                                 (ec-call (,boundp$a ,key ,hash-table)))
+                           `(ec-call (,boundp$a ,key ,hash-table))))))
            :rewrite :direct)
 
          ;; `COUPLED-VALS-P'
          ,@(and val-coupledp
                 `((defun-sk ,coupled-vals-p (,hash-table)
-                    (declare (xargs :guard (,recognizer ,hash-table)
-                                    :verify-guards nil))
+                    (declare (xargs :guard (,recognizer ,hash-table)))
                     (forall ,key
-                      (,val-coupledp (,accessor$a ,key ,hash-table)))
+                      (with-guard-checking nil
+                        (,val-coupledp (ec-call (,accessor$a ,key ,hash-table)))))
                     :rewrite :direct)))
 
          ;; `COUPLEDP'
          (defun-nx ,coupledp (,hash-table)
-           (declare (xargs :guard (,recognizer ,hash-table)
-                           :verify-guards nil))
+           (declare (xargs :guard (,recognizer ,hash-table)))
            (and (= (set::cardinality (,keys$a ,hash-table))
                    (,count$a ,hash-table))
                 (,coupled-keys-p ,hash-table)
@@ -1248,7 +1452,7 @@
                                (equal (set::in ,key (,keys$a ,hash-table))
                                       ,(if key-recognizer
                                            `(if (,key-recognizer ,key)
-                                                (,boundp$a ,key ,hash-table)
+                                                (,boundp$a (double-rewrite ,key) ,hash-table)
                                                 'nil)
                                            `(,boundp$a ,key ,hash-table)))))
             ,@(and val-coupledp
@@ -2100,8 +2304,7 @@
          ;; `COUPLEDP'
          ,@(and (remove nil stobj-coupledp-list)
                 `((defun-nx ,coupledp (,frame)
-                    (declare (xargs :guard (,recognizer ,frame)
-                                    :verify-guards nil))
+                    (declare (xargs :guard (,recognizer ,frame)))
                     ,(let ((body (loop$ :for stobj-coupledp :in stobj-coupledp-list
                                        :as accessor$a :in accessors$a
                                        :when stobj-coupledp

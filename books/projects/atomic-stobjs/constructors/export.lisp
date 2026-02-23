@@ -69,6 +69,8 @@
 
          (world (w state))
          (coupledp (cdr (assoc vector (table-alist 'coupledp world))))
+         (coupledp-rec (and coupledp
+                            (symbolicate coupledp coupledp "-REC")))
 
          (copy (cdr (assoc vector (table-alist 'copy world))))
          (copy-theory (symbolicate copy copy "-THEORY"))
@@ -79,9 +81,13 @@
          (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
          (vector$a-constraints (symbolicate vector$a vector$a "-CONSTRAINTS"))
+         (exportp-constraints (symbolicate package-witness exportp "-CONSTRAINTS"))
+         (export-constraints (symbolicate package-witness export "-CONSTRAINTS"))
+         (import-constraints (symbolicate package-witness import "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
+         (equiv$a (fourth (second stobj$a-property)))
          (length$a (first (third (third stobj$a-property))))
          (resizer$a (second (third (third stobj$a-property))))
          (accessor$a (third (third (third stobj$a-property))))
@@ -163,10 +169,6 @@
                 `(lem-vector$a::element-coupledp ,(or element-coupledp
                                                       `(lambda (element)
                                                          t)))
-                `(lem-vector$a::element-export-p ,(or element-export-p
-                                                      element-recognizer
-                                                      `(lambda ()
-                                                         t)))
                 `(lem-vector$a::element-export ,(or element-export
                                                     element-fixer
                                                     'identity))
@@ -178,68 +180,83 @@
                                                   (t
                                                    `(lambda (export element)
                                                       export))))
-
-                `(lem-vector$a::name (lambda ()
-                                       ',vector))
-                `(lem-vector$a::exportp-rec ,exportp-rec)
-                (if resizable
-                    `(lem-vector$a::exportp/resizable ,exportp)
-                    `(lem-vector$a::exportp/fixed ,exportp))
-
                 `(lem-vector$a::default-length (lambda ()
-                                                 ,default-length-name))))
+                                                 ,default-length-name))
+                `(lem-vector$a::recognizer-aux ,(if element-recognizer
+                                                    (if resizable
+                                                        recognizer$a
+                                                        recognizer$a-aux)
+                                                    'true-listp))
+                (if resizable
+                    `(lem-vector$a::recognizer/resizable ,recognizer$a)
+                    `(lem-vector$a::recognizer/fixed ,recognizer$a))
+                `(lem-vector$a::creator ,creator$a)
+                (if resizable
+                    `(lem-vector$a::fixer/resizable ,fixer$a)
+                    `(lem-vector$a::fixer/fixed ,fixer$a))
+                (if resizable
+                    `(lem-vector$a::equiv/resizable ,equiv$a)
+                    `(lem-vector$a::equiv/fixed ,equiv$a))
+                (if resizable
+                    `(lem-vector$a::length/resizable ,length$a)
+                    `(lem-vector$a::length/fixed ,length$a))
+                (if resizable
+                    `(lem-vector$a::resizer/resizable ,resizer$a)
+                    `(lem-vector$a::resizer/fixed ,resizer$a))
+                (if resizable
+                    `(lem-vector$a::accessor/resizable ,accessor$a)
+                    `(lem-vector$a::accessor/fixed ,accessor$a))
+                (if resizable
+                    `(lem-vector$a::updater/resizable ,updater$a)
+                    `(lem-vector$a::updater/fixed ,updater$a))))
 
-         (fi-bindings-post-export
-          (append
-           (and resizable
-                (list `(lem-vector$a::length/resizable ,length$a)
-                      `(lem-vector$a::resizer/resizable ,resizer$a)))
-           (list* (if resizable
-                      `(lem-vector$a::export-acc/resizable ,export-acc)
-                      `(lem-vector$a::export-acc/fixed ,export-acc))
-                  (if resizable
-                      `(lem-vector$a::export/resizable ,export)
-                      `(lem-vector$a::export/fixed ,export))
+         (fi-bindings-with-exportp
+          (list* `(lem-vector$a::element-export-p ,(or element-export-p
+                                                       element-recognizer
+                                                       `(lambda ()
+                                                          t)))
+                 `(lem-vector$a::name (lambda ()
+                                        ',vector))
+                 `(lem-vector$a::exportp-rec ,exportp-rec)
+                 (if resizable
+                     `(lem-vector$a::exportp/resizable ,exportp)
+                     `(lem-vector$a::exportp/fixed ,exportp))
+                 fi-bindings))
 
-                  `(lem-vector$a::recognizer-aux ,(if element-recognizer
-                                                      (if resizable
-                                                          recognizer$a
-                                                          recognizer$a-aux)
-                                                      'true-listp))
-                  (if resizable
-                      `(lem-vector$a::recognizer/resizable ,recognizer$a)
-                      `(lem-vector$a::recognizer/fixed ,recognizer$a))
-                  `(lem-vector$a::creator ,creator$a)
-                  (if resizable
-                      `(lem-vector$a::fixer/resizable ,fixer$a)
-                      `(lem-vector$a::fixer/fixed ,fixer$a))
-                  (if resizable
-                      `(lem-vector$a::accessor/resizable ,accessor$a)
-                      `(lem-vector$a::accessor/fixed ,accessor$a))
-
-                  fi-bindings)))
-
-         (fi-bindings-post-import
+         (fi-bindings-with-export
           (list* (if resizable
+                     `(lem-vector$a::export-acc/resizable ,export-acc)
+                     `(lem-vector$a::export-acc/fixed ,export-acc))
+                 (if resizable
+                     `(lem-vector$a::export/resizable ,export)
+                     `(lem-vector$a::export/fixed ,export))
+                 fi-bindings-with-exportp))
+
+         (fi-bindings-with-import
+          (list* (if resizable
+                     `(lem-vector$a::import-rec/resizable ,import-rec)
+                     `(lem-vector$a::import-rec/fixed ,import-rec))
+                 (if resizable
+                     `(lem-vector$a::import/resizable ,import)
+                     `(lem-vector$a::import/fixed ,import))
+                 fi-bindings-with-export))
+
+         (fi-bindings-with-coupledp
+          (list* (if resizable
+                     `(lem-vector$a::coupledp-rec/resizable ,(or coupledp-rec
+                                                             `(lambda (index vector)
+                                                                t)))
+                     `(lem-vector$a::coupledp-rec/fixed ,(or coupledp-rec
+                                                         `(lambda (index vector)
+                                                            t))))
+                 (if resizable
                      `(lem-vector$a::coupledp/resizable ,(or coupledp
                                                              `(lambda (vector)
                                                                 t)))
                      `(lem-vector$a::coupledp/fixed ,(or coupledp
                                                          `(lambda (vector)
                                                             t))))
-
-                 (if resizable
-                     `(lem-vector$a::updater/resizable ,updater$a)
-                     `(lem-vector$a::updater/fixed ,updater$a))
-
-                 (if resizable
-                     `(lem-vector$a::import-rec/resizable ,import-rec)
-                     `(lem-vector$a::import-rec/fixed ,import-rec))
-                 (if resizable
-                     `(lem-vector$a::import/resizable ,import)
-                     `(lem-vector$a::import/fixed ,import))
-
-                 fi-bindings-post-export)))
+                 fi-bindings-with-import)))
 
     `(progn
        (deflabel ,export-begin)
@@ -328,6 +345,99 @@
                     (in-theory
                       (enable ,(symbolicate element element "-EXPORT-THEORY"))))))
 
+         (local
+           (defthm ,vector$a-constraints
+             (and ,@(and (not resizable)
+                         element-recognizer
+                         `((equal (,recognizer$a-aux ,vector)
+                                  (if (consp ,vector)
+                                      (if (,element-recognizer (car ,vector))
+                                          (,recognizer$a-aux (cdr ,vector))
+                                          'nil)
+                                      (null ,vector)))))
+                  (equal (,creator$a)
+                         (make-list-ac ,default-length-name ,initial-element 'nil))
+                  (equal (,recognizer$a ,vector)
+                         ,(cond
+                            ((and (not resizable)
+                                  element-recognizer)
+                             `(if (equal (len ,vector) ,default-length-name)
+                                  (,recognizer$a-aux ,vector)
+                                  'nil))
+                            ((not resizable)
+                             `(if (equal (len ,vector) ,default-length-name)
+                                  (true-listp ,vector)
+                                  'nil))
+                            (element-recognizer
+                             `(if (consp ,vector)
+                                  (if (,element-recognizer (car ,vector))
+                                      (,recognizer$a (cdr ,vector))
+                                      'nil)
+                                  (null ,vector)))
+                            (t
+                             `(true-listp ,vector))))
+                  (equal (,fixer$a ,vector)
+                         (if (,recognizer$a ,vector)
+                             ,vector
+                             (,creator$a)))
+                  (equal (,equiv$a ,%vector ,vector)
+                         (equal (,fixer$a ,%vector)
+                                (,fixer$a ,vector)))
+                  (equal (,length$a ,vector)
+                         ,(if resizable
+                              `(len (,fixer$a ,vector))
+                              default-length-name))
+                  (equal (,resizer$a length ,vector)
+                         ,(if resizable
+                              `((lambda (length ,vector)
+                                  (resize-list ,vector length ,initial-element))
+                                (nfix length)
+                                (,fixer$a ,vector))
+                              `(,fixer$a ,vector)))
+                  (equal (,accessor$a ,index ,vector)
+                         ((lambda (,index ,vector)
+                            (if (< ,index ,(if resizable
+                                               `(,length$a ,vector)
+                                               default-length-name))
+                                ,(if element-fixer
+                                     `(,element-fixer (nth ,index ,vector))
+                                     `(nth ,index ,vector))
+                                ,initial-element))
+                          (nfix ,index)
+                          (,fixer$a ,vector)))
+                  (equal (,updater$a ,index ,element ,vector)
+                         ((lambda (,index ,element ,vector)
+                            (if (< ,index ,(if resizable
+                                               `(,length$a ,vector)
+                                               default-length-name))
+                                (update-nth ,index ,element ,vector)
+                                ,vector))
+                          (nfix ,index)
+                          ,(if element-fixer
+                               `(,element-fixer ,element)
+                               element)
+                          (,fixer$a ,vector))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable ,@(and (not resizable)
+                                         element-recognizer
+                                         `((:d ,recognizer$a-aux)))
+                                  (:d ,recognizer$a)
+                                  (:d ,creator$a)
+                                  (:d ,fixer$a)
+                                  (:d ,equiv$a)
+                                  (:d ,length$a)
+                                  (:d ,resizer$a)
+                                  (:d ,accessor$a)
+                                  (:d ,updater$a))
+               :use (:functional-instance
+                     ,(if resizable
+                          'lem-vector$a::vector-constraints/resizable
+                          'lem-vector$a::vector-constraints/fixed)
+                     ,@fi-bindings)))))
+
          ;; `EXPORTP-REC'
          ,@(and element-recognizer
                 `((defun ,exportp-rec (list)
@@ -348,6 +458,42 @@
                 ,@(and (not resizable)
                        `((= (len (cdr export)) ,default-length-name)))))
 
+         (local
+           (defthm ,exportp-constraints
+             (and (equal (,exportp-rec list)
+                         (if (consp list)
+                             (if (,(or element-export-p
+                                       element-recognizer)
+                                   (car list))
+                                 (,exportp-rec (cdr list))
+                                 'nil)
+                             (null list)))
+                  (equal (,exportp export)
+                         (if (consp export)
+                             (if (equal (car export) ',vector)
+                                 ,(if resizable
+                                      `(,exportp-rec (cdr export))
+                                      `(if (,exportp-rec (cdr export))
+                                           (equal (len (cdr export))
+                                                  ,default-length-name)
+                                           'nil))
+                                 'nil)
+                             'nil)))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :use (:functional-instance
+                     ,(if resizable
+                          'lem-vector$a::exportp-constraints/resizable
+                          'lem-vector$a::exportp-constraints/fixed)
+                     ,@fi-bindings-with-exportp)))))
+
+         (local
+           (in-theory
+             (disable ,@(and element-recognizer
+                             `(,exportp-rec))
+                      ,exportp)))
+
          (defthm ,exportp-tp
            (booleanp (,exportp export))
            :rule-classes :type-prescription
@@ -357,7 +503,7 @@
                   ,(if resizable
                        'lem-vector$a::exportp/resizable-tp
                        'lem-vector$a::exportp/fixed-tp)
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-exportp))))
 
          (defthm ,exportp-cr
            (implies (,exportp export)
@@ -370,7 +516,7 @@
                   ,(if resizable
                        'lem-vector$a::exportp/resizable-cr
                        'lem-vector$a::exportp/fixed-cr)
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-exportp))))
 
          ;; `EXPORT-ACC'
          (defun ,export-acc (,index acc ,vector)
@@ -379,7 +525,10 @@
                                        (,exportp-rec acc)
                                        (<= ,index ,(if resizable
                                                        `(,length ,vector)
-                                                       default-length-name)))))
+                                                       default-length-name)))
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable ,exportp-rec)))))
            (if (zp ,index)
                (mbe :logic (true-list-fix acc)
                     :exec acc)
@@ -403,19 +552,57 @@
                               ()
                               ,vector)))
 
+         (local
+           (defthm ,export-constraints
+             (and (equal (,export-acc ,index acc ,vector)
+                         (if (zp ,index)
+                             (true-list-fix acc)
+                             ((lambda (,index acc ,vector)
+                                ((lambda (,element ,index acc ,vector)
+                                   ((lambda (export ,vector acc ,index)
+                                      (,export-acc ,index (cons export acc)
+                                                   ,vector))
+                                    (,(or element-export
+                                          element-fixer
+                                          'identity)
+                                      ,element)
+                                    ,vector acc ,index))
+                                 (,accessor$a ,index ,vector)
+                                 ,index acc ,vector))
+                              (1- ,index)
+                              acc ,vector)))
+                  (equal (,export ,vector)
+                         (cons ',vector
+                               (,export-acc ,(if resizable
+                                                 `(,length$a ,vector)
+                                                 default-length-name)
+                                            'nil
+                                            ,vector))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :use (:functional-instance
+                     ,(if resizable
+                          'lem-vector$a::export-constraints/resizable
+                          'lem-vector$a::export-constraints/fixed)
+                     ,@fi-bindings-with-export)))))
+
+         (local
+           (in-theory
+             (disable ,export-acc
+                      ,export)))
+
          (defthm ,export-tp
            (and (consp (,export ,vector))
                 (true-listp (,export ,vector)))
            :rule-classes :type-prescription
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,vector$a-constraints)
              :by (:functional-instance
                   ,(if resizable
                        'lem-vector$a::export/resizable-tp
                        'lem-vector$a::export/fixed-tp)
-                  ,@fi-bindings-post-export))))
+                  ,@fi-bindings-with-export))))
 
          (defthm ,exportp-of-export
            (,exportp (,export ,vector))
@@ -425,7 +612,7 @@
                   ,(if resizable
                        'lem-vector$a::exportp/resizable-of-export/resizable
                        'lem-vector$a::exportp/fixed-of-export/fixed)
-                  ,@fi-bindings-post-export))))
+                  ,@fi-bindings-with-export))))
 
          (defthm ,export-when-not-recognizer$a
            (implies (not (,recognizer$a ,vector))
@@ -440,12 +627,11 @@
                                       (,export (,creator$a))))))
            :hints
            (("Goal"
-             :in-theory (enable ,vector$a-aggressive)
              :by (:functional-instance
                   ,(if resizable
                        'lem-vector$a::export/resizable-when-not-recognizer/resizable
                        'lem-vector$a::export/fixed-when-not-recognizer/fixed)
-                  ,@fi-bindings-post-export))))
+                  ,@fi-bindings-with-export))))
 
          ;; `IMPORT-REC'
          (defun ,import-rec (list ,index ,vector)
@@ -457,7 +643,8 @@
                                                                       default-length-name)))
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,vector$a-theorems)))))
+                             :in-theory (enable ,exportp-rec
+                                                ,vector$a-theorems)))))
            (if (consp list)
                ,(if element-import
                     `(stobj-let ((,element (,accessor ,index ,vector) ,updater))
@@ -480,7 +667,8 @@
                            :guard (,exportp export)
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,vector$a-theorems)))))
+                             :in-theory (enable ,exportp
+                                                ,vector$a-theorems)))))
            (if (mbt (,exportp export))
                (let* ((list (cdr export))
                       ,@(and resizable
@@ -490,27 +678,71 @@
                (let ((,vector (,creator)))
                  ,vector)))
 
+         (local
+           (defthm ,import-constraints
+             (and (equal (,import-rec list ,index ,vector)
+                         (if (consp list)
+                             ((lambda (,index list ,vector)
+                                ((lambda (,element ,index ,vector list)
+                                   ((lambda (,element list ,vector ,index)
+                                      ((lambda (,vector ,index list)
+                                         (,import-rec (cdr list)
+                                                      (1+ ,index)
+                                                      ,vector))
+                                       (,updater$a ,index ,element ,vector)
+                                       ,index list))
+                                    (,(cond
+                                        (element-import)
+                                        (element-fixer
+                                         `(lambda (export element)
+                                            (declare (ignorable element))
+                                            (,element-fixer export)))
+                                        (t
+                                         `(lambda (export element)
+                                            (declare (ignorable element))
+                                            export)))
+                                      (car list) ,element)
+                                    list ,vector ,index))
+                                 (,accessor$a ,index ,vector)
+                                 ,index ,vector list))
+                              (nfix ,index)
+                              list ,vector)
+                             (,fixer$a ,vector)))
+                  (equal (,import export ,vector)
+                         (if (,exportp export)
+                             (,import-rec (cdr export)
+                                          0
+                                          ,(if resizable
+                                               `(,resizer$a (len (cdr export)) ,vector)
+                                               vector))
+                             (,creator))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable ,vector$a-theorems
+                                  ,vector$a-aggressive)
+               :use (:functional-instance
+                     ,(if resizable
+                          'lem-vector$a::import-constraints/resizable
+                          'lem-vector$a::import-constraints/fixed)
+                     ,@fi-bindings-with-import)))))
+
+         (local
+           (in-theory
+             (disable ,import-rec
+                      ,import)))
+
          (defthm ,import-tp
            (true-listp (,import export ,vector))
            :rule-classes :type-prescription
            :hints
            (("Goal"
-             :do-not-induct t
              :by (:functional-instance
                   ,(if resizable
                        'lem-vector$a::import/resizable-tp
                        'lem-vector$a::import/fixed-tp)
-                  ,@fi-bindings-post-import))
-            ,@(and resizable
-                   `(("Subgoal 3"
-                      :in-theory (enable ,vector$a-constraints))))
-            ("Subgoal 2"
-             :in-theory (enable ,vector$a-aggressive)
-             :expand (,import-rec lem-vector$a::list
-                                  lem-vector$a::index
-                                  lem-vector$a::vector))
-            ("Subgoal 1"
-             :in-theory (enable ,vector$a-constraints))))
+                  ,@fi-bindings-with-import))))
 
          (defthm ,recognizer$a-of-import
            (,recognizer$a (,import export ,vector))
@@ -520,7 +752,7 @@
                   ,(if resizable
                        'lem-vector$a::recognizer/resizable-of-import/resizable
                        'lem-vector$a::recognizer/fixed-of-import/fixed)
-                  ,@fi-bindings-post-import))))
+                  ,@fi-bindings-with-import))))
 
          ,@(and coupledp
                 `((defthm ,coupledp-of-import
@@ -531,7 +763,7 @@
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-of-import/resizable
                                 'lem-vector$a::coupledp/fixed-of-import/fixed)
-                           ,@fi-bindings-post-import))))))
+                           ,@fi-bindings-with-import))))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
@@ -543,7 +775,7 @@
                   ,(if resizable
                        'lem-vector$a::import/resizable-when-not-exportp/resizable
                        'lem-vector$a::import/fixed-when-not-exportp/fixed)
-                  ,@fi-bindings-post-import))))
+                  ,@fi-bindings-with-import))))
 
          (defthm ,import-ignores-2
            (equal (,import export ,vector)
@@ -560,7 +792,7 @@
                   ,(if resizable
                        'lem-vector$a::import/resizable-ignores-2
                        'lem-vector$a::import/fixed-ignores-2)
-                  ,@fi-bindings-post-import))))
+                  ,@fi-bindings-with-import))))
 
          ,@(and resizable
                 `((defthm ,length$a-of-import
@@ -578,7 +810,7 @@
                     (("Goal"
                       :by (:functional-instance
                            lem-vector$a::length/resizable-of-import/resizable
-                           ,@fi-bindings-post-import))))))
+                           ,@fi-bindings-with-import))))))
 
          (defthm ,accessor$a-of-import
            (equal (,accessor$a ,index (,import export ,vector))
@@ -621,7 +853,7 @@
                   ,(if resizable
                        'lem-vector$a::accessor/resizable-of-import/resizable
                        'lem-vector$a::accessor/fixed-of-import/fixed)
-                  ,@fi-bindings-post-import))))
+                  ,@fi-bindings-with-import))))
 
          ;; Composition Theorems
          (defthm ,export-of-import
@@ -634,7 +866,7 @@
                   ,(if resizable
                        'lem-vector$a::export/resizable-of-import/resizable
                        'lem-vector$a::export/fixed-of-import/fixed)
-                  ,@fi-bindings-post-import))))
+                  ,@fi-bindings-with-import))))
 
          (defthm ,import-of-export
            ;; TODO: Remove hypothesis and rewrite to copy of `%VECTOR'
@@ -658,7 +890,7 @@
                   ,(if resizable
                        'lem-vector$a::import/resizable-of-export/resizable
                        'lem-vector$a::import/fixed-of-export/fixed)
-                  ,@fi-bindings-post-import)))))
+                  ,@fi-bindings-with-coupledp)))))
 
        (deflabel ,export-end)
 

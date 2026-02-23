@@ -772,6 +772,50 @@
   (("Goal"
     :in-theory (disable updater/resizable))))
 
+
+;;;; `VECTOR-CONSTRAINTS/RESIZABLE'
+(defthm vector-constraints/resizable
+  (and (equal (recognizer-aux vector)
+              (if (consp vector)
+                  (if (element-recognizer (car vector))
+                      (recognizer-aux (cdr vector))
+                      nil)
+                  (null vector)))
+       (equal (creator)
+              (make-list-ac (default-length) (initial-element) nil))
+       (equal (recognizer/resizable vector)
+              (recognizer-aux vector))
+       (equal (fixer/resizable vector)
+              (if (recognizer/resizable vector)
+                  vector
+                  (creator)))
+       (equal (equiv/resizable %vector vector)
+              (equal (fixer/resizable %vector)
+                     (fixer/resizable vector)))
+       (equal (length/resizable vector)
+              (len (fixer/resizable vector)))
+       (equal (resizer/resizable length vector)
+              ((lambda (length vector)
+                 (resize-list vector length (initial-element)))
+               (nfix length)
+               (fixer/resizable vector)))
+       (equal (accessor/resizable index vector)
+              ((lambda (index vector)
+                 (if (< index (length/resizable vector))
+                     (element-fixer (nth index vector))
+                     (initial-element)))
+               (nfix index)
+               (fixer/resizable vector)))
+       (equal (updater/resizable index value vector)
+              ((lambda (index value vector)
+                 (if (< index (length/resizable vector))
+                     (update-nth index value vector)
+                     vector))
+               (nfix index)
+               (element-fixer value)
+               (fixer/resizable vector))))
+  :rule-classes ())
+
 (local
   (in-theory
     (disable recognizer/resizable
@@ -1102,6 +1146,49 @@
   (("Goal"
     :in-theory (disable updater/fixed))))
 
+
+;;;; `VECTOR-CONSTRAINTS/FIXED'
+(defthm vector-constraints/fixed
+  (and (equal (recognizer-aux vector)
+              (if (consp vector)
+                  (if (element-recognizer (car vector))
+                      (recognizer-aux (cdr vector))
+                      nil)
+                  (null vector)))
+       (equal (creator)
+              (make-list-ac (default-length) (initial-element) nil))
+       (equal (recognizer/fixed vector)
+              (if (equal (len vector) (default-length))
+                  (recognizer-aux vector)
+                  nil))
+       (equal (fixer/fixed vector)
+              (if (recognizer/fixed vector)
+                  vector
+                  (creator)))
+       (equal (equiv/fixed %vector vector)
+              (equal (fixer/fixed %vector)
+                     (fixer/fixed vector)))
+       (equal (length/fixed vector)
+              (default-length))
+       (equal (resizer/fixed length vector)
+              (fixer/fixed vector))
+       (equal (accessor/fixed index vector)
+              ((lambda (index vector)
+                 (if (< index (default-length))
+                     (element-fixer (nth index vector))
+                     (initial-element)))
+               (nfix index)
+               (fixer/fixed vector)))
+       (equal (updater/fixed index value vector)
+              ((lambda (index value vector)
+                 (if (< index (default-length))
+                     (update-nth index value vector)
+                     vector))
+               (nfix index)
+               (element-fixer value)
+               (fixer/fixed vector))))
+  :rule-classes ())
+
 (local
   (in-theory
     (disable recognizer/fixed
@@ -1194,6 +1281,32 @@
      ("Subgoal 1"
       :use equal/resizable-fc-lemma-1))))
 
+(defthm equal-constraints/resizable
+  (and (equal (contents-equal/resizable %vector vector)
+              ((lambda (index vector %vector)
+                 (equal (accessor/resizable index %vector)
+                        (accessor/resizable index vector)))
+               (contents-equal/resizable-witness %vector vector)
+               vector %vector))
+       (implies (contents-equal/resizable %vector vector)
+                (equal (accessor/resizable index %vector)
+                       (accessor/resizable index vector)))
+       (equal (equal/resizable %vector vector)
+              (if (recognizer/resizable %vector)
+                  (if (recognizer/resizable vector)
+                      (if (equal (length/resizable %vector)
+                                 (length/resizable vector))
+                          (contents-equal/resizable %vector vector)
+                          nil)
+                      nil)
+                  nil)))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable contents-equal/resizable))
+   ("Subgoal 3"
+    :in-theory (enable contents-equal/resizable))))
+
 (local
   (in-theory
     (disable equal/resizable)))
@@ -1266,6 +1379,32 @@
       :do-not-induct t)
      ("Subgoal 1"
       :use equal/fixed-fc-lemma-1))))
+
+(defthm equal-constraints/fixed
+  (and (equal (contents-equal/fixed %vector vector)
+              ((lambda (index vector %vector)
+                 (equal (accessor/fixed index %vector)
+                        (accessor/fixed index vector)))
+               (contents-equal/fixed-witness %vector vector)
+               vector %vector))
+       (implies (contents-equal/fixed %vector vector)
+                (equal (accessor/fixed index %vector)
+                       (accessor/fixed index vector)))
+       (equal (equal/fixed %vector vector)
+              (if (recognizer/fixed %vector)
+                  (if (recognizer/fixed vector)
+                      (if (equal (length/fixed %vector)
+                                 (length/fixed vector))
+                          (contents-equal/fixed %vector vector)
+                          nil)
+                      nil)
+                  nil)))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable contents-equal/fixed))
+   ("Subgoal 3"
+    :in-theory (enable contents-equal/fixed))))
 
 (local
   (in-theory
@@ -1340,13 +1479,85 @@
       :in-theory (enable element-fixer)))))
 
 
+;;;; `COUPLEDP-REC/RESIZABLE'
+(defun coupledp-rec/resizable (index vector)
+  (declare (xargs :guard (and (natp index)
+                              (recognizer/resizable vector)
+                              (<= index (length/resizable vector)))))
+  (or (zp index)
+      (let ((index (1- index)))
+        (and (element-coupledp (accessor/resizable index vector))
+             (coupledp-rec/resizable index vector)))))
+
+(defthm coupledp-rec/resizable-tp
+  (booleanp (coupledp-rec/resizable index vector))
+  :rule-classes :type-prescription)
+
+(defthm coupledp-rec/resizable-when-zp-1
+  (implies (zp index)
+           (equal (coupledp-rec/resizable index vector)
+                  t))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (zp (double-rewrite index))
+                      (equal (coupledp-rec/resizable index vector)
+                             t)))))
+
+(defthm coupledp-rec/resizable-when-not-recognizer/resizable-2
+  (implies (not (recognizer/resizable vector))
+           (coupledp-rec/resizable index vector)))
+
+(defthm coupledp-rec/resizable-of-creator
+  (coupledp-rec/resizable index (creator)))
+
+(defcong nat-equiv equal (coupledp-rec/resizable index vector) 1)
+
+(defcong equiv/resizable equal (coupledp-rec/resizable index vector) 2)
+
+(defthm coupledp-rec/resizable-is-decreasing
+  (implies (and (coupledp-rec/resizable %index vector)
+                (<= (nfix index) (nfix %index)))
+           (coupledp-rec/resizable index vector))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :induct (coupledp-rec/resizable index vector))))
+
+(defthm coupledp-rec/resizable-when-large
+  (implies (< (length/resizable vector) (nfix index))
+           (equal (coupledp-rec/resizable index vector)
+                  (coupledp-rec/resizable (length/resizable vector) vector))))
+
+(defthm coupledp-rec/resizable-of-resizer/resizable
+  (implies (coupledp-rec/resizable index vector)
+           (coupledp-rec/resizable index (resizer/resizable length vector)))
+  :hints
+  (("Goal"
+    :induct (coupledp-rec/resizable index vector))))
+
+(defthm element-coupledp-of-accessor/resizable-when-coupledp-rec/resizable
+  (implies (and (coupledp-rec/resizable %index vector)
+                (< (nfix index) (nfix %index)))
+           (element-coupledp (accessor/resizable index vector)))
+  :rule-classes ())
+
+(defthm coupledp-rec/resizable-of-updater/resizable
+  (implies (coupledp-rec/resizable %index vector)
+           (equal (coupledp-rec/resizable %index (updater/resizable index value vector))
+                  (if (and (< (nfix index) (length/resizable vector))
+                           (< (nfix index) (nfix %index)))
+                      (element-coupledp value)
+                      t))))
+
+(local
+  (in-theory
+    (disable coupledp-rec/resizable)))
+
+
 ;;;; `COUPLEDP/RESIZABLE'
-(defun-sk coupledp/resizable (vector)
-  (declare (xargs :guard (recognizer/resizable vector)
-                  :verify-guards nil))
-  (forall index
-    (element-coupledp (accessor/resizable index vector)))
-  :rewrite :direct)
+(defun coupledp/resizable (vector)
+  (declare (xargs :guard (recognizer/resizable vector)))
+  (coupledp-rec/resizable (length/resizable vector) vector))
 
 (defthm coupledp/resizable-tp
   (booleanp (coupledp/resizable vector))
@@ -1359,54 +1570,55 @@
 (defthm coupledp/resizable-of-creator
   (coupledp/resizable (creator)))
 
-(local
-  (in-theory
-    (disable coupledp/resizable)))
-
-(defcong equiv/resizable equal (coupledp/resizable vector) 1
-  :hints
-  (("Goal"
-    :in-theory (enable fixer/resizable
-                       equiv/resizable))))
+(defcong equiv/resizable equal (coupledp/resizable vector) 1)
 
 (defthm coupledp/resizable-of-resizer/resizable
   (implies (coupledp/resizable vector)
            (coupledp/resizable (resizer/resizable length vector)))
   :hints
   (("Goal"
-    :expand (coupledp/resizable (resizer/resizable length vector)))))
+    :use ((:instance coupledp-rec/resizable-is-decreasing
+                     (%index (length/resizable vector))
+                     (index (nfix length)))))))
 
 (defthm element-coupledp-of-accessor/resizable
   (implies (coupledp/resizable vector)
-           (element-coupledp (accessor/resizable index vector))))
+           (element-coupledp (accessor/resizable index vector)))
+  :hints
+  (("Goal"
+    :use ((:instance element-coupledp-of-accessor/resizable-when-coupledp-rec/resizable
+                     (%index (length/resizable vector)))))))
 
 (defthm coupledp/resizable-of-updater/resizable
   (implies (coupledp/resizable vector)
            (equal (coupledp/resizable (updater/resizable index value vector))
                   (if (< (nfix index) (length/resizable vector))
                       (element-coupledp value)
-                      t)))
+                      t))))
+
+(defthm coupledp-constraints/resizable
+  (and (equal (coupledp-rec/resizable index vector)
+              (if (zp index)
+                  (zp index)
+                  ((lambda (index vector)
+                     (if (element-coupledp (accessor/resizable index vector))
+                         (coupledp-rec/resizable index vector)
+                         nil))
+                   (1- index)
+                   vector)))
+       (equal (coupledp/resizable vector)
+              (coupledp-rec/resizable (length/resizable vector)
+                                      vector)))
+  :rule-classes ()
   :hints
   (("Goal"
-    :cases ((< (nfix index) (length/resizable vector)))
-    :in-theory (disable coupledp/resizable-necc))
-   ("Subgoal 1.3"
-    :use ((:instance coupledp/resizable-necc
-                     (index 0)
-                     (vector (updater/resizable 0 value vector))))
-    :expand (:free (index)
-                   (coupledp/resizable (updater/resizable index value vector))))
-   ("Subgoal 1.2"
-    :use ((:instance coupledp/resizable-necc
-                     (vector (updater/resizable index value vector))))
-    :expand (:free (index)
-                   (coupledp/resizable (updater/resizable index value vector))))
-   ("Subgoal 1.1"
-    :use ((:instance coupledp/resizable-necc
-                     (index 0)
-                     (vector (updater/resizable 0 value vector))))
-    :expand (:free (index)
-                   (coupledp/resizable (updater/resizable index value vector))))))
+    :in-theory (disable coupledp-rec/resizable))
+   ("Subgoal 2"
+    :in-theory (enable coupledp-rec/resizable))))
+
+(local
+  (in-theory
+    (disable coupledp/resizable)))
 
 
 ;;;; `COPY/RESIZABLE-REC'
@@ -1477,7 +1689,24 @@
               (< (nfix %index) (nfix index)))))))
 
 (local
+  (defthm copy/resizable-rec-of-updater/resizable-2
+    (equal (copy/resizable-rec %index (updater/resizable index value %vector) vector)
+           (if (<= (nfix %index) (nfix index))
+               (updater/resizable index value (copy/resizable-rec %index %vector vector))
+               (copy/resizable-rec %index %vector vector)))))
+
+(local
+  (defthm coupledp-rec/resizable-of-copy/resizable-rec
+    (implies (<= (nfix %index) (nfix index))
+             (coupledp-rec/resizable %index (copy/resizable-rec index %vector vector)))
+    :hints
+    (("Goal"
+      :induct (acl2::dec-dec-induct %index index)
+      :in-theory (enable coupledp-rec/resizable)))))
+
+(local
   (in-theory
+    ;; TODO: Rename to `COPY-REC/RESIZABLE'
     (disable copy/resizable-rec)))
 
 
@@ -1565,6 +1794,48 @@
                                                     (copy/resizable %vector vector))
                                  (copy/resizable %vector vector))))))))
 
+(defthm copy-constraints/resizable
+  (and (equal (copy/resizable-rec index %vector vector)
+              (if (zp index)
+                  (fixer/resizable %vector)
+                  ((lambda (index %vector vector)
+                     ((lambda (value vector %vector index)
+                        ((lambda (%value index %vector vector value)
+                           ((lambda (%value value vector %vector index)
+                              ((lambda (%vector vector value index)
+                                 ((lambda (vector %vector index)
+                                    (copy/resizable-rec index %vector vector))
+                                  (updater/resizable index value vector)
+                                  %vector index))
+                               (updater/resizable index %value %vector)
+                               vector value index))
+                            (element-copy %value value)
+                            value vector %vector index))
+                         (accessor/resizable index %vector)
+                         index %vector vector value))
+                      (accessor/resizable index vector)
+                      vector %vector index))
+                   (1- index)
+                   %vector vector)))
+       (equal (copy/resizable %vector vector)
+              ((lambda (length vector %vector)
+                 ((lambda (%vector vector length)
+                    (copy/resizable-rec length %vector vector))
+                  (if (equal (length/resizable %vector)
+                             length)
+                      %vector
+                      (resizer/resizable length %vector))
+                  vector length))
+               (length/resizable vector)
+               vector %vector)))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable copy/resizable-ignores-1))
+   ("Subgoal 2"
+    :in-theory (e/d (copy/resizable-rec)
+                    (copy/resizable-ignores-1)))))
+
 (local
   (in-theory
     (disable copy/resizable)))
@@ -1580,13 +1851,78 @@
                      (vector (fixer/resizable vector)))))))
 
 
+;;;; `COUPLEDP-REC/FIXED'
+(defun coupledp-rec/fixed (index vector)
+  (declare (xargs :guard (and (natp index)
+                              (recognizer/fixed vector)
+                              (<= index (default-length)))))
+  (or (zp index)
+      (let ((index (1- index)))
+        (and (element-coupledp (accessor/fixed index vector))
+             (coupledp-rec/fixed index vector)))))
+
+(defthm coupledp-rec/fixed-tp
+  (booleanp (coupledp-rec/fixed index vector))
+  :rule-classes :type-prescription)
+
+(defthm coupledp-rec/fixed-when-zp-1
+  (implies (zp index)
+           (equal (coupledp-rec/fixed index vector)
+                  t))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (zp (double-rewrite index))
+                      (equal (coupledp-rec/fixed index vector)
+                             t)))))
+
+(defthm coupledp-rec/fixed-when-not-recognizer/fixed-1
+  (implies (not (recognizer/fixed vector))
+           (coupledp-rec/fixed index vector)))
+
+(defthm coupledp-rec/fixed-of-creator
+  (coupledp-rec/fixed index (creator)))
+
+(defcong nat-equiv equal (coupledp-rec/fixed index vector) 1)
+
+(defcong equiv/fixed equal (coupledp-rec/fixed index vector) 2)
+
+(defthm coupledp-rec/fixed-is-decreasing
+  (implies (and (coupledp-rec/fixed %index vector)
+                (<= (nfix index) (nfix %index)))
+           (coupledp-rec/fixed index vector))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :induct (coupledp-rec/fixed index vector))))
+
+(defthm coupledp-rec/fixed-when-large
+  (implies (< (default-length) (nfix index))
+           (equal (coupledp-rec/fixed index vector)
+                  (coupledp-rec/fixed (default-length) vector))))
+
+(defthm element-coupledp-of-accessor/fixed-when-coupledp-rec/fixed
+  (implies (and (coupledp-rec/fixed %index vector)
+                (< (nfix index) (nfix %index)))
+           (element-coupledp (accessor/fixed index vector)))
+  :rule-classes ())
+
+(defthm coupledp-rec/fixed-of-updater/fixed
+  (implies (coupledp-rec/fixed %index vector)
+           (equal (coupledp-rec/fixed %index (updater/fixed index value vector))
+                  (if (and (< (nfix index) (default-length))
+                           (< (nfix index) (nfix %index)))
+                      (element-coupledp value)
+                      t))))
+
+(local
+  (in-theory
+    (disable coupledp-rec/fixed)))
+
+
 ;;;; `COUPLEDP/FIXED'
-(defun-sk coupledp/fixed (vector)
-  (declare (xargs :guard (recognizer/fixed vector)
-                  :verify-guards nil))
-  (forall index
-    (element-coupledp (accessor/fixed index vector)))
-  :rewrite :direct)
+(defun coupledp/fixed (vector)
+  (declare (xargs :guard (recognizer/fixed vector)))
+  (coupledp-rec/fixed (default-length) vector))
 
 (defthm coupledp/fixed-tp
   (booleanp (coupledp/fixed vector))
@@ -1599,47 +1935,48 @@
 (defthm coupledp/fixed-of-creator
   (coupledp/fixed (creator)))
 
-(local
-  (in-theory
-    (disable coupledp/fixed)))
-
-(defcong equiv/fixed equal (coupledp/fixed vector) 1
-  :hints
-  (("Goal"
-    :in-theory (enable fixer/fixed
-                       equiv/fixed))))
+(defcong equiv/fixed equal (coupledp/fixed vector) 1)
 
 (defthm element-coupledp-of-accessor/fixed
   (implies (coupledp/fixed vector)
-           (element-coupledp (accessor/fixed index vector))))
+           (element-coupledp (accessor/fixed index vector)))
+  :hints
+  (("Goal"
+    :use ((:instance element-coupledp-of-accessor/fixed-when-coupledp-rec/fixed
+                     (%index (default-length)))))))
 
 (defthm coupledp/fixed-of-updater/fixed
   (implies (coupledp/fixed vector)
            (equal (coupledp/fixed (updater/fixed index value vector))
                   (if (< (nfix index) (default-length))
                       (element-coupledp value)
-                      t)))
+                      t))))
+
+(defthm coupledp-constraints/fixed
+  (and (equal (coupledp-rec/fixed index vector)
+              (if (zp index)
+                  (zp index)
+                  ((lambda (index vector)
+                     (if (element-coupledp (accessor/fixed index vector))
+                         (coupledp-rec/fixed index vector)
+                         nil))
+                   (1- index)
+                   vector)))
+       (equal (coupledp/fixed vector)
+              (coupledp-rec/fixed (default-length)
+                                  vector)))
+  :rule-classes ()
   :hints
   (("Goal"
-    :cases ((< (nfix index) (default-length)))
-    :in-theory (disable coupledp/fixed-necc))
-   ("Subgoal 1.3"
-    :use ((:instance coupledp/fixed-necc
-                     (index 0)
-                     (vector (updater/fixed 0 value vector))))
-    :expand (:free (index)
-                   (coupledp/fixed (updater/fixed index value vector))))
-   ("Subgoal 1.2"
-    :use ((:instance coupledp/fixed-necc
-                     (vector (updater/fixed index value vector))))
-    :expand (:free (index)
-                   (coupledp/fixed (updater/fixed index value vector))))
-   ("Subgoal 1.1"
-    :use ((:instance coupledp/fixed-necc
-                     (index 0)
-                     (vector (updater/fixed 0 value vector))))
-    :expand (:free (index)
-                   (coupledp/fixed (updater/fixed index value vector))))))
+    :in-theory (disable coupledp-rec/fixed))
+   ("Subgoal 2"
+    :in-theory (enable coupledp-rec/fixed))
+   ("Subgoal 1"
+    :in-theory (enable coupledp-rec/fixed))))
+
+(local
+  (in-theory
+    (disable coupledp/fixed)))
 
 
 ;;;; `COPY/FIXED-REC'
@@ -1699,7 +2036,24 @@
               (< (nfix %index) (nfix index)))))))
 
 (local
+  (defthm copy/fixed-rec-of-updater/fixed-2
+    (equal (copy/fixed-rec %index (updater/fixed index value %vector) vector)
+           (if (<= (nfix %index) (nfix index))
+               (updater/fixed index value (copy/fixed-rec %index %vector vector))
+               (copy/fixed-rec %index %vector vector)))))
+
+(local
+  (defthm coupledp-rec/fixed-of-copy/fixed-rec
+    (implies (<= (nfix %index) (nfix index))
+             (coupledp-rec/fixed %index (copy/fixed-rec index %vector vector)))
+    :hints
+    (("Goal"
+      :induct (acl2::dec-dec-induct %index index)
+      :in-theory (enable coupledp-rec/fixed)))))
+
+(local
   (in-theory
+    ;; TODO: Rename to `COPY-REC/FIXED'
     (disable copy/fixed-rec)))
 
 
@@ -1764,6 +2118,43 @@
                                                 (element-copy (initial-element) element)
                                                 (copy/fixed %vector vector))
                                  (copy/fixed %vector vector))))))))
+
+(defthm copy-constraints/fixed
+  (and (equal (copy/fixed-rec index %vector vector)
+              (if (zp index)
+                  (fixer/fixed %vector)
+                  ((lambda (index %vector vector)
+                     ((lambda (value vector %vector index)
+                        ((lambda (%value index %vector vector value)
+                           ((lambda (%value value vector %vector index)
+                              ((lambda (%vector vector value index)
+                                 ((lambda (vector %vector index)
+                                    (copy/fixed-rec index %vector vector))
+                                  (updater/fixed index value vector)
+                                  %vector index))
+                               (updater/fixed index %value %vector)
+                               vector value index))
+                            (element-copy %value value)
+                            value vector %vector index))
+                         (accessor/fixed index %vector)
+                         index %vector vector value))
+                      (accessor/fixed index vector)
+                      vector %vector index))
+                   (1- index)
+                   %vector vector)))
+       (equal (copy/fixed %vector vector)
+              (copy/fixed-rec (default-length)
+                              %vector vector)))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable copy/fixed-ignores-1))
+   ("Subgoal 3"
+    :expand (copy/fixed-rec index %vector vector))
+   ("Subgoal 2"
+    :in-theory (e/d (copy/fixed-rec)
+                    (copy/fixed-ignores-1))
+    :expand (copy/fixed-rec index %vector vector))))
 
 (local
   (in-theory
@@ -1921,6 +2312,21 @@
                   (< n (len export)))
              (element-export-p (nth n export)))))
 
+(defthm exportp-constraints/resizable
+  (and (equal (exportp-rec list)
+              (if (consp list)
+                  (if (element-export-p (car list))
+                      (exportp-rec (cdr list))
+                      nil)
+                  (null list)))
+       (equal (exportp/resizable export)
+              (if (consp export)
+                  (if (equal (car export) (name))
+                      (exportp-rec (cdr export))
+                      nil)
+                  nil)))
+  :rule-classes ())
+
 (local
   (in-theory
     (disable exportp/resizable)))
@@ -2053,6 +2459,33 @@
                         ((<= index (length/resizable vector))
                          (element-export (accessor/resizable (1- index) vector)))))))))
 
+(defthm export-constraints/resizable
+  (and (equal (export-acc/resizable index acc vector)
+              (if (zp index)
+                  (true-list-fix acc)
+                  ((lambda (index acc vector)
+                     ((lambda (value index acc vector)
+                        ((lambda (export vector acc index)
+                           (export-acc/resizable index (cons export acc)
+                                                 vector))
+                         (element-export value)
+                         vector acc index))
+                      (accessor/resizable index vector)
+                      index acc vector))
+                   (1- index)
+                   acc vector)))
+       (equal (export/resizable vector)
+              (cons (name)
+                    (export-acc/resizable (length/resizable vector)
+                                          nil
+                                          vector))))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable export-acc/resizable))
+   ("Subgoal 2"
+    :in-theory (enable export-acc/resizable))))
+
 (local
   (in-theory
     (disable export/resizable)))
@@ -2161,6 +2594,21 @@
                        (vector (import-rec/resizable list index vector-equiv))))))))
 
 (local
+  (defthm coupledp-rec/resizable-of-import-rec/resizable
+    (implies (and (coupledp-rec/resizable index vector)
+                  (<= (length/resizable vector) (+ (len list) (nfix index)))
+                  (<= (+ (len list) (nfix index)) (nfix %index)))
+             (coupledp-rec/resizable %index (import-rec/resizable list index vector)))
+    :hints
+    (("Goal"
+      :induct (import-rec/resizable list index vector)
+      :in-theory (enable coupledp-rec/resizable))
+     ("Subgoal *1/2.3"
+      :induct (coupledp-rec/resizable %index vector))
+     ("Subgoal *1/2.2"
+      :cases ((equal (length/resizable vector) (nfix %index)))))))
+
+(local
   (in-theory
     (disable import-rec/resizable)))
 
@@ -2241,6 +2689,44 @@
                                         (initial-element))
                         (initial-element))))))
 
+(defthm import-constraints/resizable
+  (and (equal (import-rec/resizable list index vector)
+              (if (consp list)
+                  ((lambda (index list vector)
+                     ((lambda (value index vector list)
+                        ((lambda (value list vector index)
+                           ((lambda (vector index list)
+                              (import-rec/resizable (cdr list)
+                                                    (1+ index)
+                                                    vector))
+                            (updater/resizable index value vector)
+                            index list))
+                         (element-import (car list) value)
+                         list vector index))
+                      (accessor/resizable index vector)
+                      index vector list))
+                   (nfix index)
+                   list vector)
+                  (fixer/resizable vector)))
+       (equal (import/resizable export vector)
+              (if (exportp/resizable export)
+                  ((lambda (list vector)
+                     ((lambda (vector list)
+                        ((lambda (vector) vector)
+                         (import-rec/resizable list 0 vector)))
+                      (resizer/resizable (len list) vector)
+                      list))
+                   (cdr export)
+                   vector)
+                  (creator))))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable import-rec/resizable
+                        import/resizable-ignores-2))
+   ("Subgoal 2"
+    :in-theory (enable import-rec/resizable))))
+
 (local
   (in-theory
     (disable import/resizable)))
@@ -2297,6 +2783,24 @@
                   (posp n)
                   (<= n (default-length)))
              (element-export-p (nth n export)))))
+
+(defthm exportp-constraints/fixed
+  (and (equal (exportp-rec list)
+              (if (consp list)
+                  (if (element-export-p (car list))
+                      (exportp-rec (cdr list))
+                      nil)
+                  (null list)))
+       (equal (exportp/fixed export)
+              (if (consp export)
+                  (if (equal (car export) (name))
+                      (if (exportp-rec (cdr export))
+                          (equal (len (cdr export))
+                                 (default-length))
+                          nil)
+                      nil)
+                  nil)))
+  :rule-classes ())
 
 (local
   (in-theory
@@ -2430,6 +2934,35 @@
                         ((<= index (default-length))
                          (element-export (accessor/fixed (1- index) vector)))))))))
 
+(defthm export-constraints/fixed
+  (and (equal (export-acc/fixed index acc vector)
+              (if (zp index)
+                  (true-list-fix acc)
+                  ((lambda (index acc vector)
+                     ((lambda (value index acc vector)
+                        ((lambda (export vector acc index)
+                           (export-acc/fixed index (cons export acc)
+                                             vector))
+                         (element-export value)
+                         vector acc index))
+                      (accessor/fixed index vector)
+                      index acc vector))
+                   (1- index)
+                   acc vector)))
+       (equal (export/fixed vector)
+              (cons (name)
+                    (export-acc/fixed (default-length)
+                                      nil
+                                      vector))))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable export-acc/fixed))
+   ("Subgoal 2"
+    :in-theory (enable export-acc/fixed))
+   ("Subgoal 1"
+    :in-theory (enable export-acc/fixed))))
+
 (local
   (in-theory
     (disable export/fixed)))
@@ -2529,6 +3062,23 @@
                        (vector (import-rec/fixed list index vector-equiv))))))))
 
 (local
+  (defthm coupledp-rec/fixed-of-import-rec/fixed
+    (implies (and (coupledp-rec/fixed index vector)
+                  (<= (default-length) (+ (len list) (nfix index)))
+                  (<= (+ (len list) (nfix index)) (nfix %index)))
+             (coupledp-rec/fixed %index (import-rec/fixed list index vector)))
+    :hints
+    (("Goal"
+      :induct (import-rec/fixed list index vector)
+      :in-theory (enable coupledp-rec/fixed))
+     ("Subgoal *1/2.3"
+      :induct (coupledp-rec/fixed %index vector))
+     ("Subgoal *1/2.2"
+      :cases ((equal (default-length) (nfix %index))))
+     ("Subgoal *1/2.1"
+      :induct (coupledp-rec/fixed %index vector)))))
+
+(local
   (in-theory
     (disable import-rec/fixed)))
 
@@ -2599,6 +3149,41 @@
   :hints
   (("Goal"
     :in-theory (enable exportp/fixed))))
+
+(defthm import-constraints/fixed
+  (and (equal (import-rec/fixed list index vector)
+              (if (consp list)
+                  ((lambda (index list vector)
+                     ((lambda (value index vector list)
+                        ((lambda (value list vector index)
+                           ((lambda (vector index list)
+                              (import-rec/fixed (cdr list)
+                                                (1+ index)
+                                                vector))
+                            (updater/fixed index value vector)
+                            index list))
+                         (element-import (car list) value)
+                         list vector index))
+                      (accessor/fixed index vector)
+                      index vector list))
+                   (nfix index)
+                   list vector)
+                  (fixer/fixed vector)))
+       (equal (import/fixed export vector)
+              (if (exportp/fixed export)
+                  ((lambda (list vector)
+                     ((lambda (vector) vector)
+                      (import-rec/fixed list 0 vector)))
+                   (cdr export)
+                   vector)
+                  (creator))))
+  :rule-classes ()
+  :hints
+  (("Goal"
+    :in-theory (disable import-rec/fixed
+                        import/fixed-ignores-2))
+   ("Subgoal 2"
+    :in-theory (enable import-rec/fixed))))
 
 (local
   (in-theory
