@@ -100,7 +100,7 @@
          (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
          (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
-         (vector$a-constraints (symbolicate vector$a vector$a "-CONSTRAINTS"))
+         (vector$a-constraints (symbolicate "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -155,7 +155,7 @@
          (element-fixer-constraints (symbolicate "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
          (element-equiv-constraints (symbolicate "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
 
-         (coupledp-constraints (symbolicate package-witness coupledp "-CONSTRAINTS"))
+         (coupledp-constraints (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINTS"))
 
          (coupledp-rec-tp (symbolicate package-witness coupledp-rec "-TP"))
          (coupledp-rec-when-zp-1 (symbolicate package-witness coupledp-rec "-WHEN-ZP-1"))
@@ -177,7 +177,7 @@
          (copy-rec-of-fixer$a-2 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-2"))
          (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
 
-         (copy-constraints (symbolicate package-witness copy "-CONSTRAINTS"))
+         (copy-constraints (symbolicate "ATOMIC-STOBJS" copy "-CONSTRAINTS"))
          (recognizer$a-of-copy (symbolicate package-witness recognizer$a "-OF-" copy))
          (copy-ignores-1 (symbolicate package-witness copy "-IGNORES-1"))
          (coupledp-of-copy (symbolicate package-witness coupledp "-OF-" copy))
@@ -546,8 +546,8 @@
                     (("Goal"
                       :by (:functional-instance
                            ,(if resizable
-                                'lem-vector$a::coupledp-rec/resizable-when-not-recognizer/resizable-1
-                                'lem-vector$a::coupledp-rec/fixed-when-not-recognizer/fixed-1)
+                                'lem-vector$a::coupledp-rec/resizable-when-not-recognizer/resizable-2
+                                'lem-vector$a::coupledp-rec/fixed-when-not-recognizer/fixed-2)
                            ,@fi-bindings-with-coupledp))))
 
                   (defthm ,coupledp-rec-of-creator$a
@@ -1029,23 +1029,21 @@
                               (booleanp debug))
                   :verify-guards nil))
   (let* ((%hash-table (symbolicate package-witness "%" hash-table))
+         (contents (symbolicate hash-table hash-table "-CONTENTS"))
          (copy (symbolicate package-witness hash-table "-COPY"))
          (copy-rec (symbolicate package-witness copy "-REC"))
+         (set (symbolicate package-witness "SET"))
+         (%set (symbolicate package-witness "%SET"))
 
          (coupledp (symbolicate package-witness hash-table "-COUPLEDP"))
-         (coupled-keys-p (symbolicate package-witness hash-table "-COUPLED-KEYS-P"))
-         (coupled-keys-p-witness (symbolicate package-witness coupled-keys-p "-WITNESS"))
-         (coupled-keys-p-necc (symbolicate package-witness coupled-keys-p "-NECC"))
-         (coupled-vals-p (symbolicate package-witness hash-table "-COUPLED-VALS-P"))
-         (coupled-vals-p-witness (symbolicate package-witness coupled-vals-p "-WITNESS"))
-         (coupled-vals-p-necc (symbolicate package-witness coupled-vals-p "-NECC"))
+         (coupledp-rec (symbolicate package-witness coupledp "-REC"))
 
          ;; `HASH-TABLE'
          (stobj-property (getpropc hash-table 'acl2::stobj))
-         (recognizer (caadr stobj-property))
          (the-hash-table (symbolicate hash-table "THE-" hash-table))
          (accessor (second (third stobj-property)))
          (updater (third (third stobj-property)))
+         (boundp (fourth (third stobj-property)))
          (count (seventh (third stobj-property)))
          (init (ninth (third stobj-property)))
          (keys (tenth (third stobj-property)))
@@ -1057,7 +1055,6 @@
          (hash-table$a (first stobj$a-property))
          (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
          (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
-         (hash-table$a-constraints (symbolicate hash-table$a hash-table$a "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -1074,6 +1071,7 @@
          (keys$a-set (second (fifth (third stobj$a-property))))
          (keys$ap (third (fifth (third stobj$a-property))))
          (keys$a-fix (fourth (fifth (third stobj$a-property))))
+         (keys$a-equiv (fifth (fifth (third stobj$a-property))))
 
          (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
          (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
@@ -1135,103 +1133,116 @@
          (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINT-2"))
          (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINT-2"))
 
-         (coupledp-constraints (symbolicate package-witness coupledp "-CONSTRAINTS"))
+         (hash-table$a-constraints/unique (symbolicate "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/UNIQUE"))
+         (hash-table$a-constraints/copyable (symbolicate "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/COPYABLE"))
+
+         (coupledp-constraints (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINTS"))
+
+         (coupledp-rec-tp (symbolicate package-witness coupledp-rec "-TP"))
+         (coupledp-rec-when-not-keys$ap-1 (symbolicate package-witness coupledp-rec "-WHEN-NOT-" keys$ap "-1"))
+         (coupledp-rec-when-not-recognizer$a-2 (symbolicate package-witness coupledp-rec "-WHEN-NOT-" recognizer$a "-2"))
+         (coupledp-rec-of-creator$a (symbolicate package-witness coupledp-rec "-OF-" creator$a))
+         (coupledp-rec-when-subset (symbolicate package-witness coupledp-rec "-WHEN-SUBSET"))
+         (boundp$a-when-coupledp-rec (symbolicate package-witness boundp$a "-WHEN-" coupledp-rec))
+         (val-coupledp-of-accessor$a-when-coupledp-rec (symbolicate package-witness val-coupledp "-OF-" accessor$a "-WHEN-" coupledp-rec))
+         (coupledp-rec-of-updater$a-when-not-in (symbolicate package-witness coupledp-rec "-OF-" updater$a "-WHEN-NOT-IN"))
+         (coupledp-rec-of-remover$a-when-not-in (symbolicate package-witness coupledp-rec "-OF-" remover$a "-WHEN-NOT-IN"))
+         (coupledp-rec-of-keys$a-set (symbolicate package-witness coupledp-rec "-OF-" keys$a-set))
+         (in-when-coupledp-rec (symbolicate package-witness "IN-WHEN-" coupledp-rec))
+         (coupledp-rec-when-large (symbolicate package-witness coupledp-rec "-WHEN-LARGE"))
+         (coupledp-rec-of-insert (symbolicate package-witness coupledp-rec "-OF-INSERT"))
+         (coupledp-rec-of-delete (symbolicate package-witness coupledp-rec "-OF-DELETE"))
+         (coupledp-rec-of-updater$a (symbolicate package-witness coupledp-rec "-OF-" updater$a))
+         (coupledp-rec-of-remover$a (symbolicate package-witness coupledp-rec "-OF-" remover$a))
+
          (coupledp-tp (symbolicate package-witness coupledp "-TP"))
          (coupledp-when-not-recognizer$a (symbolicate package-witness coupledp "-WHEN-NOT-" recognizer$a))
          (coupledp-of-creator$a (symbolicate package-witness coupledp "-OF-" creator$a))
-         (val-coupledp-of-accessor$a (symbolicate package-witness val-coupledp "-OF-" accessor$a))
-         (coupledp-of-updater$a-when-boundp$a (symbolicate package-witness coupledp "-OF-" updater$a "-WHEN-" boundp$a))
-         (coupledp-of-updater$a-when-not-boundp$a (symbolicate package-witness coupledp "-OF-" updater$a "-WHEN-NOT-" boundp$a))
-         (in-of-keys$a-when-coupledp (symbolicate package-witness "IN-OF-" keys$a "-WHEN-" coupledp))
-         (coupledp-of-remover$a-when-boundp$a (symbolicate package-witness coupledp "-OF-" remover$a "-WHEN-" boundp$a))
-         (coupledp-of-remover$a-when-not-boundp$a (symbolicate package-witness coupledp "-OF-" remover$a "-WHEN-NOT-" boundp$a))
          (cardinality-of-keys$a-when-coupledp (symbolicate package-witness "CARDINALITY-OF-" keys$a "-WHEN-" coupledp))
          (emptyp-of-keys$a-when-coupledp (symbolicate package-witness "EMPTYP-OF-" keys$a "-WHEN-" coupledp))
+         (in-of-keys$a-when-coupledp (symbolicate package-witness "IN-OF-" keys$a "-WHEN-" coupledp))
+         (val-coupledp-of-accessor$a (symbolicate package-witness val-coupledp "-OF-" accessor$a))
+         (coupledp-of-updater$a (symbolicate package-witness coupledp "-OF-" updater$a))
 
          (copy-rec-of-updater$a-2 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" updater$a "-2"))
          (copy-rec-of-updater$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" updater$a "-3"))
-         (copy-rec-of-fixer$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" fixer$a "-3"))
+         (hash-table-copy-constraints (symbolicate "ATOMIC-STOBJS" copy "-CONSTRAINTS"))
 
-         (hash-table-copy-constraints (symbolicate package-witness copy "-CONSTRAINTS"))
          (recognizer$a-of-copy (symbolicate package-witness recognizer$a "-OF-" copy))
          (copy-ignores-1 (symbolicate package-witness copy "-IGNORES-1"))
-         (coupledp-of-copy (symbolicate package-witness coupledp "-OF-" copy))
-         (accessor$a-of-copy (symbolicate package-witness accessor$a "-OF-" copy))
-         (accessor$a-of-copy-lemma (symbolicate "ATOMIC-STOBJS" accessor$a-of-copy "-LEMMA"))
-         (copy-of-updater$a (symbolicate package-witness copy "-OF-" updater$a))
-         (copy-of-updater$a-lemma (symbolicate "ATOMIC-STOBJS" copy-of-updater$a "-LEMMA"))
-         (boundp$a-of-copy (symbolicate package-witness boundp$a "-OF-" copy))
-         (copy-of-remover$a (symbolicate package-witness copy "-OF-" remover$a))
          (count$a-of-copy (symbolicate package-witness count$a "-OF-" copy))
+         (accessor$a-of-copy (symbolicate package-witness accessor$a "-OF-" copy))
+         (boundp$a-of-copy (symbolicate package-witness boundp$a "-OF-" copy))
          (keys$a-of-copy (symbolicate package-witness keys$a "-OF-" copy))
+         (coupledp-of-copy (symbolicate package-witness coupledp "-OF-" copy))
+         (copy-of-updater$a (symbolicate package-witness copy "-OF-" updater$a))
+         (copy-of-remover$a (symbolicate package-witness copy "-OF-" remover$a))
          (copy-rw (symbolicate package-witness copy "-RW"))
 
          (fi-bindings
-          (append
-           (and val-coupledp
-                (list `(lem-hash-table$a::coupled-vals-p-witness ,coupled-vals-p-witness)))
-           (list `(lem-hash-table$a::val-coupledp ,(or val-coupledp
+          (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
+                                                        '(lambda (key)
+                                                          t)))
+                `(lem-hash-table$a::default-key (lambda ()
+                                                  ,default-key-name))
+                `(lem-hash-table$a::key-fixer ,(or key-fixer
+                                                   '(lambda (key)
+                                                     key)))
+                `(lem-hash-table$a::key-equiv ,(or key-equiv
+                                                   'equal))
+
+                `(lem-hash-table$a::val-recognizer ,(or val-recognizer
+                                                        '(lambda (val)
+                                                          t)))
+                `(lem-hash-table$a::default-val ,(or val-creator
+                                                     `(lambda ()
+                                                        ,default-val-name)))
+                `(lem-hash-table$a::val-fixer ,(or val-fixer
+                                                   '(lambda (val)
+                                                     val)))
+                `(lem-hash-table$a::val-equiv ,(or val-equiv
+                                                   'equal))
+
+                `(lem-hash-table$a::keysp ,keys$ap)
+                `(lem-hash-table$a::keys-fix ,keys$a-fix)
+                `(lem-hash-table$a::keys-equiv ,keys$a-equiv)
+                `(lem-hash-table$a::recognizer/unique ,contents-recognizer$a)
+                `(lem-hash-table$a::creator/unique ,contents-creator$a)
+                `(lem-hash-table$a::fixer/unique ,contents-fixer$a)
+                `(lem-hash-table$a::equiv/unique (lambda (%c c)
+                                                   (equal (,contents-fixer$a %c)
+                                                          (,contents-fixer$a c))))
+                `(lem-hash-table$a::accessor/unique ,contents-accessor$a)
+                `(lem-hash-table$a::updater/unique ,contents-updater$a)
+                `(lem-hash-table$a::boundp/unique ,contents-boundp$a)
+                `(lem-hash-table$a::getp/unique ,contents-getp$a)
+                `(lem-hash-table$a::remover/unique ,contents-remover$a)
+                `(lem-hash-table$a::count/unique ,contents-count$a)
+                `(lem-hash-table$a::clear/unique ,contents-clear$a)
+                `(lem-hash-table$a::init/unique ,contents-init$a)
+
+                `(lem-hash-table$a::recognizer/copyable ,recognizer$a)
+                `(lem-hash-table$a::creator/copyable ,creator$a)
+                `(lem-hash-table$a::fixer/copyable ,fixer$a)
+                `(lem-hash-table$a::equiv/copyable ,equiv$a)
+                `(lem-hash-table$a::accessor/copyable ,accessor$a)
+                `(lem-hash-table$a::updater/copyable ,updater$a)
+                `(lem-hash-table$a::boundp/copyable ,boundp$a)
+                `(lem-hash-table$a::getp/copyable ,getp$a)
+                `(lem-hash-table$a::remover/copyable ,remover$a)
+                `(lem-hash-table$a::count/copyable ,count$a)
+                `(lem-hash-table$a::clear/copyable ,clear$a)
+                `(lem-hash-table$a::init/copyable ,init$a)
+                `(lem-hash-table$a::keys ,keys$a)
+                `(lem-hash-table$a::keys-set ,keys$a-set)))
+
+         (fi-bindings-with-coupledp
+          (list* `(lem-hash-table$a::val-coupledp ,(or val-coupledp
                                                        '(lambda (val)
                                                          t)))
-                 `(lem-hash-table$a::coupled-keys-p ,coupled-keys-p)
-                 `(lem-hash-table$a::coupled-keys-p-witness ,coupled-keys-p-witness)
-                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupledp
-                                                         coupled-vals-p
-                                                         '(lambda (hash-table)
-                                                           t)))
+                 `(lem-hash-table$a::coupledp-rec ,coupledp-rec)
                  `(lem-hash-table$a::coupledp ,coupledp)
-
-                 `(lem-hash-table$a::key-recognizer ,(or key-recognizer
-                                                         '(lambda (key)
-                                                           t)))
-                 `(lem-hash-table$a::default-key (lambda ()
-                                                   ,default-key-name))
-                 `(lem-hash-table$a::key-fixer ,(or key-fixer
-                                                    '(lambda (key)
-                                                      key)))
-                 `(lem-hash-table$a::key-equiv ,(or key-equiv
-                                                    'equal))
-
-                 `(lem-hash-table$a::val-recognizer ,(or val-recognizer
-                                                         '(lambda (val)
-                                                           t)))
-                 `(lem-hash-table$a::default-val ,(or val-creator
-                                                      `(lambda ()
-                                                         ,default-val-name)))
-                 `(lem-hash-table$a::val-fixer ,(or val-fixer
-                                                    '(lambda (val)
-                                                      val)))
-                 `(lem-hash-table$a::val-equiv ,(or val-equiv
-                                                    'equal))
-
-                 `(lem-hash-table$a::keysp ,keys$ap)
-                 `(lem-hash-table$a::keys-fix ,keys$a-fix)
-                 `(lem-hash-table$a::recognizer/unique ,contents-recognizer$a)
-                 `(lem-hash-table$a::creator/unique ,contents-creator$a)
-                 `(lem-hash-table$a::fixer/unique ,contents-fixer$a)
-                 `(lem-hash-table$a::accessor/unique ,contents-accessor$a)
-                 `(lem-hash-table$a::updater/unique ,contents-updater$a)
-                 `(lem-hash-table$a::boundp/unique ,contents-boundp$a)
-                 `(lem-hash-table$a::getp/unique ,contents-getp$a)
-                 `(lem-hash-table$a::remover/unique ,contents-remover$a)
-                 `(lem-hash-table$a::count/unique ,contents-count$a)
-                 `(lem-hash-table$a::clear/unique ,contents-clear$a)
-                 `(lem-hash-table$a::init/unique ,contents-init$a)
-
-                 `(lem-hash-table$a::recognizer/copyable ,recognizer$a)
-                 `(lem-hash-table$a::creator/copyable ,creator$a)
-                 `(lem-hash-table$a::fixer/copyable ,fixer$a)
-                 `(lem-hash-table$a::equiv/copyable ,equiv$a)
-                 `(lem-hash-table$a::accessor/copyable ,accessor$a)
-                 `(lem-hash-table$a::updater/copyable ,updater$a)
-                 `(lem-hash-table$a::boundp/copyable ,boundp$a)
-                 `(lem-hash-table$a::getp/copyable ,getp$a)
-                 `(lem-hash-table$a::remover/copyable ,remover$a)
-                 `(lem-hash-table$a::count/copyable ,count$a)
-                 `(lem-hash-table$a::clear/copyable ,clear$a)
-                 `(lem-hash-table$a::init/copyable ,init$a)
-                 `(lem-hash-table$a::keys ,keys$a)
-                 `(lem-hash-table$a::keys-set ,keys$a-set))))
+                 fi-bindings))
 
          (fi-bindings-with-copy
           (list* `(lem-hash-table$a::val-copy ,(cond
@@ -1244,7 +1255,7 @@
                                                      val))))
                  `(lem-hash-table$a::copy-rec ,copy-rec)
                  `(lem-hash-table$a::copy ,copy)
-                 fi-bindings)))
+                 fi-bindings-with-coupledp)))
 
     `(progn
        (deflabel ,copy-begin)
@@ -1368,181 +1379,647 @@
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc %hash-table 'acl2::absstobj-info))))))
 
-         ;; `COUPLED-KEYS-P'
-         (defun-sk ,coupled-keys-p (,hash-table)
-           (declare (xargs :guard (,recognizer ,hash-table)))
-           (forall ,key
-             (equal (set::in ,key (,keys$a ,hash-table))
-                    (with-guard-checking nil
-                      ,(if key-recognizer
-                           `(and (,key-recognizer ,key)
-                                 (ec-call (,boundp$a ,key ,hash-table)))
-                           `(ec-call (,boundp$a ,key ,hash-table))))))
-           :rewrite :direct)
+         (local
+           (defthm ,hash-table$a-constraints/unique
+             (and (equal (,contents-recognizer$a ,contents)
+                         (if (consp ,contents)
+                             (if (consp (car ,contents))
+                                 ,(cond
+                                    ((and key-recognizer
+                                          val-recognizer)
+                                     `(if (,key-recognizer (car (car ,contents)))
+                                          (if (,val-recognizer (cdr (car ,contents)))
+                                              (if (null (cdr ,contents))
+                                                  (null (cdr ,contents))
+                                                  (if (consp (cdr ,contents))
+                                                      (if (consp (car (cdr ,contents)))
+                                                          (if (<< (car (car ,contents))
+                                                                  (car (car (cdr ,contents))))
+                                                              (,contents-recognizer$a (cdr ,contents))
+                                                              nil)
+                                                          nil)
+                                                      nil))
+                                              nil)
+                                          nil))
+                                    (key-recognizer
+                                     `(if (,key-recognizer (car (car ,contents)))
+                                          (if (null (cdr ,contents))
+                                              (null (cdr ,contents))
+                                              (if (consp (cdr ,contents))
+                                                  (if (consp (car (cdr ,contents)))
+                                                      (if (<< (car (car ,contents))
+                                                              (car (car (cdr ,contents))))
+                                                          (,contents-recognizer$a (cdr ,contents))
+                                                          nil)
+                                                      nil)
+                                                  nil))
+                                          nil))
+                                    (val-recognizer
+                                     `(if (,val-recognizer (cdr (car ,contents)))
+                                          (if (null (cdr ,contents))
+                                              (null (cdr ,contents))
+                                              (if (consp (cdr ,contents))
+                                                  (if (consp (car (cdr ,contents)))
+                                                      (if (<< (car (car ,contents))
+                                                              (car (car (cdr ,contents))))
+                                                          (,contents-recognizer$a (cdr ,contents))
+                                                          nil)
+                                                      nil)
+                                                  nil))
+                                          nil))
+                                    (t
+                                     `(if (null (cdr ,contents))
+                                          (null (cdr ,contents))
+                                          (if (consp (cdr ,contents))
+                                              (if (consp (car (cdr ,contents)))
+                                                  (if (<< (car (car ,contents))
+                                                          (car (car (cdr ,contents))))
+                                                      (,contents-recognizer$a (cdr ,contents))
+                                                      nil)
+                                                  nil)
+                                              nil))))
+                                 nil)
+                             (null ,contents)))
+                  (equal (,contents-creator$a)
+                         nil)
+                  (equal (,contents-fixer$a ,contents)
+                         (if (,contents-recognizer$a ,contents)
+                             ,contents
+                             (,contents-creator$a)))
+                  (equal (,contents-accessor$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (if (if (endp ,contents)
+                                    (endp ,contents)
+                                    (<< ,key (car (car ,contents))))
+                                ,default-val
+                                (if (equal ,key (car (car ,contents)))
+                                    ,(if val-fixer
+                                         `(,val-fixer (cdr (car ,contents)))
+                                         `(cdr (car ,contents)))
+                                    (,contents-accessor$a ,key (cdr ,contents)))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-updater$a ,key ,val ,contents)
+                         ((lambda (,key ,val ,contents)
+                            (if (endp ,contents)
+                                (cons (cons ,key ,val) nil)
+                                (if (<< ,key (car (car ,contents)))
+                                    (cons (cons ,key ,val) ,contents)
+                                    (if (equal ,key (car (car ,contents)))
+                                        (cons (cons ,key ,val) (cdr ,contents))
+                                        (cons (car ,contents)
+                                              (,contents-updater$a ,key ,val (cdr ,contents)))))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          ,(if val-fixer
+                               `(,val-fixer ,val)
+                               val)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-boundp$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (if (if (endp ,contents)
+                                    (endp ,contents)
+                                    (<< ,key (car (car ,contents))))
+                                nil
+                                (if (equal ,key (car (car ,contents)))
+                                    t
+                                    (,contents-boundp$a ,key (cdr ,contents)))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-getp$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (cons (,contents-accessor$a ,key ,contents)
+                                  (cons (,contents-boundp$a ,key ,contents)
+                                        nil)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-remover$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (if (endp ,contents)
+                                nil
+                                (if (<< ,key (car (car ,contents)))
+                                    ,contents
+                                    (if (equal ,key (car (car ,contents)))
+                                        (cdr ,contents)
+                                        (cons (car ,contents)
+                                              (,contents-remover$a ,key (cdr ,contents)))))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-count$a ,contents)
+                         ((lambda (,contents)
+                            (if (consp ,contents)
+                                (1+ (,contents-count$a (cdr ,contents)))
+                                0))
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-clear$a ,contents)
+                         (,contents-creator$a))
+                  (equal (,contents-init$a ht-size rehash-size rehash-threshold ,contents)
+                         (,contents-creator$a)))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable (:d ,contents-recognizer$a)
+                                  (:d ,contents-creator$a)
+                                  (:d ,contents-fixer$a)
+                                  (:d ,equiv$a)
+                                  (:d ,contents-accessor$a)
+                                  (:d ,contents-updater$a)
+                                  (:d ,contents-boundp$a)
+                                  (:d ,contents-getp$a)
+                                  (:d ,contents-remover$a)
+                                  (:d ,contents-count$a)
+                                  (:d ,contents-clear$a)
+                                  (:d ,contents-init$a))
+               :use (:instance (:functional-instance
+                                lem-hash-table$a::hash-table-constraints/unique
+                                ,@fi-bindings)
+                               (lem-hash-table$a::hash-table ,contents)
+                               (lem-hash-table$a::key ,key)
+                               (lem-hash-table$a::val ,val))))))
 
-         ;; `COUPLED-VALS-P'
-         ,@(and val-coupledp
-                `((defun-sk ,coupled-vals-p (,hash-table)
-                    (declare (xargs :guard (,recognizer ,hash-table)))
-                    (forall ,key
-                      (with-guard-checking nil
-                        (,val-coupledp (ec-call (,accessor$a ,key ,hash-table)))))
-                    :rewrite :direct)))
+         (local
+           (defthm ,hash-table$a-constraints/copyable
+             (and (equal (,keys$ap ,set)
+                         (if (consp ,set)
+                             ,(if key-recognizer
+                                  `(if (,key-recognizer (car ,set))
+                                       (if (null (cdr ,set))
+                                           (null (cdr ,set))
+                                           (if (consp (cdr ,set))
+                                               (if (<< (car ,set) (car (cdr ,set)))
+                                                   (,keys$ap (cdr ,set))
+                                                   'nil)
+                                               'nil))
+                                       'nil)
+                                  `(if (null (cdr ,set))
+                                       (null (cdr ,set))
+                                       (if (consp (cdr ,set))
+                                           (if (<< (car ,set) (car (cdr ,set)))
+                                               (,keys$ap (cdr ,set))
+                                               'nil)
+                                           'nil)))
+                             (null ,set)))
+                  (equal (,keys$a-fix ,set)
+                         (if (,keys$ap ,set) ,set 'nil))
+                  (equal (,keys$a-equiv ,%set ,set)
+                         (equal (,keys$a-fix ,%set) (,keys$a-fix ,set)))
+                  (equal (,recognizer$a ,hash-table)
+                         (if (consp ,hash-table)
+                             (if (,keys$ap (car ,hash-table))
+                                 (,contents-recognizer$a (cdr ,hash-table))
+                                 'nil)
+                             'nil))
+                  (equal (,creator$a)
+                         (cons 'nil (,contents-creator$a)))
+                  (equal (,fixer$a ,hash-table)
+                         (if (,recognizer$a ,hash-table)
+                             ,hash-table
+                             (,creator$a)))
+                  (equal (,equiv$a ,%hash-table ,hash-table)
+                         (equal (,fixer$a ,%hash-table)
+                                (,fixer$a ,hash-table)))
+                  (equal (,accessor$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (,contents-accessor$a ,key (cdr ,hash-table)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,updater$a ,key ,val ,hash-table)
+                         ((lambda (,key ,val ,hash-table)
+                            (cons (car ,hash-table)
+                                  (,contents-updater$a ,key ,val (cdr ,hash-table))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          ,(if val-fixer
+                               `(,val-fixer ,val)
+                               val)
+                          (,fixer$a ,hash-table)))
+                  (equal (,boundp$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (,contents-boundp$a ,key (cdr ,hash-table)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,getp$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (,contents-getp$a ,key (cdr ,hash-table)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,remover$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (cons (car ,hash-table)
+                                  (,contents-remover$a ,key (cdr ,hash-table))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,count$a ,hash-table)
+                         ((lambda (,hash-table)
+                            (,contents-count$a (cdr ,hash-table)))
+                          (,fixer$a ,hash-table)))
+                  (equal (,clear$a ,hash-table)
+                         (,creator$a))
+                  (equal (,init$a ht-size rehash-size rehash-threshold ,hash-table)
+                         (,creator$a))
+                  (equal (,keys$a ,hash-table)
+                         ((lambda (,hash-table) (car ,hash-table))
+                          (,fixer$a ,hash-table)))
+                  (equal (,keys$a-set ,set ,hash-table)
+                         ((lambda (,set ,hash-table)
+                            (cons ,set (cdr ,hash-table)))
+                          (,keys$a-fix ,set)
+                          (,fixer$a ,hash-table))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable set::equiv
+                                  set::sets-are-true-lists-compound-recognizer
+                                  (:e set::setp)
+                                  (:d ,recognizer$a)
+                                  (:d ,creator$a)
+                                  (:d ,fixer$a)
+                                  (:d ,equiv$a)
+                                  (:d ,accessor$a)
+                                  (:d ,updater$a)
+                                  (:d ,boundp$a)
+                                  (:d ,getp$a)
+                                  (:d ,remover$a)
+                                  (:d ,count$a)
+                                  (:d ,clear$a)
+                                  (:d ,init$a)
+                                  (:d ,keys$ap)
+                                  (:d ,keys$a-fix)
+                                  (:d ,keys$a-equiv)
+                                  (:d ,keys$a)
+                                  (:d ,keys$a-set)
+                                  acl2::fast-<<-is-<<
+                                  set::emptyp)
+               :use (:instance (:functional-instance
+                                lem-hash-table$a::hash-table-constraints/copyable
+                                ,@fi-bindings)
+                               (lem-hash-table$a::%hash-table ,%hash-table)
+                               (lem-hash-table$a::hash-table ,hash-table)
+                               (lem-hash-table$a::key ,key)
+                               (lem-hash-table$a::val ,val)
+                               (lem-hash-table$a::set ,set)
+                               (lem-hash-table$a::%set ,%set))))))
 
-         ;; `COUPLEDP'
-         (defun-nx ,coupledp (,hash-table)
-           (declare (xargs :guard (,recognizer ,hash-table)))
-           (and (= (set::cardinality (,keys$a ,hash-table))
-                   (,count$a ,hash-table))
-                (,coupled-keys-p ,hash-table)
-                ,@(and val-coupledp
-                       `((,coupled-vals-p ,hash-table)))))
+         (defun ,coupledp-rec (,set ,hash-table)
+           (declare (xargs :stobjs ,hash-table
+                           :guard (and (,keys$ap ,set)
+                                       (set::subset ,set (,keys ,hash-table)))
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable set::subset
+                                                ,@(and (not (eq keys$ap 'set::setp))
+                                                       (list (symbolicate keys$ap keys$ap "-DEF")))
+                                                set::sets-are-true-lists-compound-recognizer
+                                                set::emptyp)))
+                           :measure (set::cardinality ,set)
+                           :hints
+                           (("Goal"
+                             :in-theory (enable set::cardinality)))))
+           (if (mbe :logic (or (set::emptyp ,set)
+                               (not (,keys$ap ,set)))
+                    :exec (endp ,set))
+               t
+               (let ((,key (set::head ,set)))
+                 (and (,boundp ,key ,hash-table)
+                      ,@(and val-coupledp
+                             `((stobj-let ((,val (,accessor ,key ,hash-table) ,updater))
+                                          (,val-coupledp)
+                                          (,val-coupledp ,val)
+                                 ,val-coupledp)))
+                      (,coupledp-rec (set::tail ,set) ,hash-table)))))
+
+         (defun ,coupledp (,hash-table)
+           (declare (xargs :stobjs ,hash-table))
+           (and (equal (set::cardinality (,keys ,hash-table))
+                       (,count ,hash-table))
+                (,coupledp-rec (,keys ,hash-table) ,hash-table)))
 
          (table coupledp ',hash-table ',coupledp)
 
-         (defthm ,coupledp-constraints
-           (and (equal (,coupled-keys-p ,hash-table)
-                       ((lambda (,key ,hash-table)
-                          (equal (set::in ,key (,keys$a ,hash-table))
-                                 ,(if key-recognizer
-                                      `(if (,key-recognizer ,key)
-                                           (,boundp$a ,key ,hash-table)
-                                           'nil)
-                                      `(,boundp$a ,key ,hash-table))))
-                        (,coupled-keys-p-witness ,hash-table)
-                        ,hash-table))
-                (implies (,coupled-keys-p ,hash-table)
-                         (equal (set::in ,key (,keys$a ,hash-table))
-                                ,(if key-recognizer
-                                     `(if (,key-recognizer ,key)
-                                          (,boundp$a ,key ,hash-table)
-                                          'nil)
-                                     `(,boundp$a ,key ,hash-table))))
-                ,@(and val-coupledp
-                       `((equal (,coupled-vals-p ,hash-table)
-                                ((lambda (,key ,hash-table)
-                                   (,val-coupledp (,accessor$a ,key ,hash-table)))
-                                 (,coupled-vals-p-witness ,hash-table)
-                                 ,hash-table))
-                         (implies (,coupled-vals-p ,hash-table)
-                                  (,val-coupledp (,accessor$a ,key ,hash-table)))))
-                (equal (,coupledp ,hash-table)
-                       (if (equal (set::cardinality (,keys$a ,hash-table))
-                                  (,count$a ,hash-table))
-                           ,(if val-coupledp
-                                `(if (,coupled-keys-p ,hash-table)
-                                     (,coupled-vals-p ,hash-table)
-                                     'nil)
-                                `(,coupled-keys-p ,hash-table))
-                           'nil)))
-           :rule-classes
-           ((:definition :corollary
-                (equal (,coupled-keys-p ,hash-table)
-                       ((lambda (,key ,hash-table)
-                          (equal (set::in ,key (,keys$a ,hash-table))
-                                 ,(if key-recognizer
-                                      `(if (,key-recognizer ,key)
-                                           (,boundp$a ,key ,hash-table)
-                                           'nil)
-                                      `(,boundp$a ,key ,hash-table))))
-                        (,coupled-keys-p-witness ,hash-table)
-                        ,hash-table)))
-            (:rewrite :corollary
-                      (implies (,coupled-keys-p ,hash-table)
-                               (equal (set::in ,key (,keys$a ,hash-table))
-                                      ,(if key-recognizer
-                                           `(if (,key-recognizer ,key)
-                                                (,boundp$a (double-rewrite ,key) ,hash-table)
-                                                'nil)
-                                           `(,boundp$a ,key ,hash-table)))))
-            ,@(and val-coupledp
-                   `((:definition :corollary
-                         (equal (,coupled-vals-p ,hash-table)
-                                ((lambda (,key ,hash-table)
-                                   (,val-coupledp (,accessor$a ,key ,hash-table)))
-                                 (,coupled-vals-p-witness ,hash-table)
-                                 ,hash-table)))
-                     (:rewrite :corollary
-                               (implies (,coupled-vals-p ,hash-table)
-                                        (,val-coupledp (,accessor$a ,key ,hash-table))))))
-            (:definition :corollary
-                (equal (,coupledp ,hash-table)
-                       (if (equal (set::cardinality (,keys$a ,hash-table))
-                                  (,count$a ,hash-table))
-                           ,(if val-coupledp
-                                `(if (,coupled-keys-p ,hash-table)
-                                     (,coupled-vals-p ,hash-table)
-                                     'nil)
-                                `(,coupled-keys-p ,hash-table))
-                           'nil))))
-           :hints
-           (("Goal"
-             :in-theory (disable ,coupled-keys-p-necc
-                                 ,@(and val-coupledp
-                                        `(,coupled-vals-p-necc)))
-             :use ((:instance ,coupled-keys-p-necc)
-                   ,@(and val-coupledp
-                          `((:instance ,coupled-vals-p-necc)))))))
+         (local
+           (defthm ,coupledp-constraints
+             (and (equal (,coupledp-rec ,set ,hash-table)
+                         (if (set::emptyp ,set)
+                             (set::emptyp ,set)
+                             (if (not (,keys$ap ,set))
+                                 (not (,keys$ap ,set))
+                                 ((lambda (,key ,set ,hash-table)
+                                    (if (,boundp$a ,key ,hash-table)
+                                        (if ,(if val-coupledp
+                                                 `(,val-coupledp (,accessor$a ,key ,hash-table))
+                                                 t)
+                                            (,coupledp-rec (set::tail ,set)
+                                                           ,hash-table)
+                                            nil)
+                                        nil))
+                                  (set::head ,set)
+                                  ,set ,hash-table))))
+                  (equal (,coupledp ,hash-table)
+                         (if (equal (set::cardinality (,keys$a ,hash-table))
+                                    (,count$a ,hash-table))
+                             (,coupledp-rec (,keys$a ,hash-table)
+                                            ,hash-table)
+                             nil)))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :use (:instance (:functional-instance
+                                lem-hash-table$a::coupledp-constraints
+                                ,@fi-bindings-with-coupledp)
+                               (lem-hash-table$a::hash-table ,hash-table)
+                               (lem-hash-table$a::set ,set))))))
 
          (local
            (in-theory
-             (disable ,coupledp
-                      ,coupled-keys-p
-                      (:definition ,coupledp-constraints . 1)
-                      ,@(and val-coupledp
-                             `(,coupled-vals-p
-                               (:definition ,coupledp-constraints . 2))))))
+             (disable ,coupledp-rec
+                      ,coupledp)))
 
+         ;; `COUPLEDP-REC'
+         (defthm ,coupledp-rec-tp
+           (booleanp (,coupledp-rec ,set ,hash-table))
+           :rule-classes :type-prescription
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-tp
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-when-not-keys$ap-1
+           (implies (not (,keys$ap ,set))
+                    (,coupledp-rec ,set ,hash-table))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-when-not-keysp-1
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-when-not-recognizer$a-2
+           (implies (not (,recognizer$a ,hash-table))
+                    (equal (,coupledp-rec ,set ,hash-table)
+                           (or (set::emptyp ,set)
+                               (not (,keys$ap ,set)))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-when-not-recognizer/copyable-2
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-of-creator$a
+           (equal (,coupledp-rec ,set (,creator$a))
+                  (or (set::emptyp ,set)
+                      (not (,keys$ap ,set))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-of-creator/copyable
+                  ,@fi-bindings-with-coupledp))))
+
+         (defcong ,keys$a-equiv equal (,coupledp-rec ,set ,hash-table) 1
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::keys-equiv-implies-equal-coupledp-rec-1
+                  ,@fi-bindings-with-coupledp))))
+
+         (defcong ,equiv$a equal (,coupledp-rec ,set ,hash-table) 2
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::equiv/copyable-implies-equal-coupledp-rec-2
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-when-subset
+           (implies (and (,keys$ap ,set)
+                         (set::subset ,%set ,set)
+                         (,coupledp-rec ,set ,hash-table))
+                    (,coupledp-rec ,%set ,hash-table))
+           :rule-classes ()
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-when-subset
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,boundp$a-when-coupledp-rec
+           (implies (and (,coupledp-rec ,set ,hash-table)
+                         (set::in ,(if key-fixer
+                                       `(,key-fixer ,key)
+                                       key)
+                                  (,keys$a-fix ,set)))
+                    (,boundp$a ,key ,hash-table))
+           :rule-classes ()
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::boundp/copyable-when-coupledp-rec
+                  ,@fi-bindings-with-coupledp))))
+
+         ,@(and val-coupledp
+                `((defthm ,val-coupledp-of-accessor$a-when-coupledp-rec
+                    (implies (and (,coupledp-rec ,set ,hash-table)
+                                  (set::in ,(if key-fixer
+                                                `(,key-fixer ,key)
+                                                key)
+                                           (,keys$a-fix ,set)))
+                             (,val-coupledp (,accessor$a ,key ,hash-table)))
+                    :rule-classes ()
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           lem-hash-table$a::val-coupledp-of-accessor/copyable-when-coupledp-rec
+                           ,@fi-bindings-with-coupledp))))))
+
+         (defthm ,coupledp-rec-of-updater$a-when-not-in
+           (implies (not (set::in ,(if key-fixer
+                                       `(,key-fixer ,key)
+                                       key)
+                                  (,keys$a-fix ,set)))
+                    (equal (,coupledp-rec ,set (,updater$a ,key ,val ,hash-table))
+                           (,coupledp-rec ,set ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-of-updater/copyable-when-not-in
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-of-remover$a-when-not-in
+           (implies (not (set::in ,(if key-fixer
+                                       `(,key-fixer ,key)
+                                       key)
+                                  (,keys$a-fix ,set)))
+                    (equal (,coupledp-rec ,set (,remover$a ,key ,hash-table))
+                           (,coupledp-rec ,set ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-of-remover/copyable-when-not-in
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-of-keys$a-set
+           (equal (,coupledp-rec ,%set (,keys$a-set ,set ,hash-table))
+                  (,coupledp-rec ,%set ,hash-table))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-of-keys-set
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,in-when-coupledp-rec
+           (implies (and (,coupledp-rec ,set ,hash-table)
+                         (,keys$ap ,set)
+                         (equal (set::cardinality ,set)
+                                (,count$a ,hash-table)))
+                    (equal (set::in ,key ,set)
+                           (and ,@(and key-recognizer
+                                       `((,key-recognizer ,key)))
+                                (,boundp$a ,key ,hash-table))))
+           :rule-classes ()
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::in-when-coupledp-rec
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-when-large
+           (implies (> (set::cardinality (,keys$a-fix ,set))
+                       (,count$a ,hash-table))
+                    (not (,coupledp-rec ,set ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-when-large
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-of-insert
+           (implies (and ,@(and key-recognizer
+                                `((,key-recognizer ,key)))
+                         (,keys$ap ,set)
+                         (not (set::in ,key ,set)))
+                    (equal (,coupledp-rec (set::insert ,key ,set) ,hash-table)
+                           (and (,coupledp-rec ,set ,hash-table)
+                                (,boundp$a ,key ,hash-table)
+                                ,@(and val-coupledp
+                                       `((,val-coupledp (,accessor$a ,key ,hash-table)))))))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (and ,@(and key-recognizer
+                                           `((,key-recognizer ,key)))
+                                    (,keys$ap ,set)
+                                    (not (set::in ,key ,set)))
+                               (equal (,coupledp-rec (set::insert ,key ,set) ,hash-table)
+                                      (and (,coupledp-rec (double-rewrite ,set) ,hash-table)
+                                           (,boundp$a (double-rewrite ,key) ,hash-table)
+                                           ,@(and val-coupledp
+                                                  `((,val-coupledp (,accessor$a (double-rewrite ,key) ,hash-table)))))))))
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :use (:instance (:functional-instance
+                              lem-hash-table$a::coupledp-rec-of-insert
+                              ,@fi-bindings-with-coupledp)
+                             (lem-hash-table$a::hash-table ,hash-table)
+                             (lem-hash-table$a::key ,key)
+                             (lem-hash-table$a::set ,set)))))
+
+         (defthm ,coupledp-rec-of-delete
+           (implies (and ,@(and key-recognizer
+                                `((,key-recognizer ,key)))
+                         (,keys$ap ,set)
+                         (set::in ,key ,set))
+                    (equal (,coupledp-rec ,set ,hash-table)
+                           (and (,coupledp-rec (set::delete ,key ,set) ,hash-table)
+                                (,boundp$a ,key ,hash-table)
+                                ,@(and val-coupledp
+                                       `((,val-coupledp (,accessor$a ,key ,hash-table)))))))
+           :rule-classes ()
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :use (:instance (:functional-instance
+                              lem-hash-table$a::coupledp-rec-of-delete
+                              ,@fi-bindings-with-coupledp)
+                             (lem-hash-table$a::hash-table ,hash-table)
+                             (lem-hash-table$a::key ,key)
+                             (lem-hash-table$a::set ,set)))))
+
+         (defthm ,coupledp-rec-of-updater$a
+           (equal (,coupledp-rec ,set (,updater$a ,key ,val ,hash-table))
+                  (if (set::in ,(if key-fixer
+                                    `(,key-fixer ,key)
+                                    key)
+                               (,keys$a-fix ,set))
+                      ,(if val-coupledp
+                           `(and (,val-coupledp ,val)
+                                 (,coupledp-rec (set::delete ,(if key-fixer
+                                                                  `(,key-fixer ,key)
+                                                                  key)
+                                                             (,keys$a-fix ,set))
+                                                ,hash-table))
+                           `(,coupledp-rec (set::delete ,(if key-fixer
+                                                             `(,key-fixer ,key)
+                                                             key)
+                                                        (,keys$a-fix ,set))
+                                           ,hash-table))
+                      (,coupledp-rec ,set ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-of-updater/copyable
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-rec-of-remover$a
+           (equal (,coupledp-rec ,set (,remover$a ,key ,hash-table))
+                  (if (set::in ,(if key-fixer
+                                    `(,key-fixer ,key)
+                                    key)
+                               (,keys$a-fix ,set))
+                      nil
+                      (,coupledp-rec ,set ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-rec-of-remover/copyable
+                  ,@fi-bindings-with-coupledp))))
+
+         ;; `COUPLEDP'
          (defthm ,coupledp-tp
            (booleanp (,coupledp ,hash-table))
            :rule-classes :type-prescription
            :hints
            (("Goal"
-             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
                   lem-hash-table$a::coupledp-tp
-                  ,@fi-bindings))
-            ,@(and val-coupledp
-                   key-recognizer
-                   `(("Subgoal 14"
-                      :in-theory (e/d (,hash-table$a-constraints)
-                                      (,coupled-vals-p-necc))
-                      :use ((:instance ,coupled-vals-p-necc
-                                       (,hash-table lem-hash-table$a::hash-table)
-                                       (,key lem-hash-table$a::key))))
-                     ("Subgoal 13"
-                      :use ((:instance (:definition ,coupledp-constraints . 2)
-                                       (,hash-table lem-hash-table$a::hash-table))))))
-            ,@(and val-coupledp
-                   (not key-recognizer)
-                   `(("Subgoal 13"
-                      :in-theory (e/d (,hash-table$a-constraints)
-                                      (,coupled-vals-p-necc))
-                      :use ((:instance ,coupled-vals-p-necc
-                                       (,hash-table lem-hash-table$a::hash-table)
-                                       (,key lem-hash-table$a::key))))
-                     ("Subgoal 12"
-                      :use ((:instance (:definition ,coupledp-constraints . 2)
-                                       (,hash-table lem-hash-table$a::hash-table))))))
-            ("Subgoal 4"
-             :in-theory (e/d (,hash-table$a-constraints)
-                             (,coupled-keys-p-necc))
-             :use ((:instance ,coupled-keys-p-necc
-                              (,hash-table lem-hash-table$a::hash-table)
-                              (,key lem-hash-table$a::key))))
-            ("Subgoal 3"
-             :use ((:instance (:definition ,coupledp-constraints . 1)
-                              (,hash-table lem-hash-table$a::hash-table))))))
+                  ,@fi-bindings-with-coupledp))))
 
          (defthm ,coupledp-when-not-recognizer$a
            (implies (not (,recognizer$a ,hash-table))
                     (,coupledp ,hash-table))
            :hints
            (("Goal"
-             :do-not-induct t
              :by (:functional-instance
                   lem-hash-table$a::coupledp-when-not-recognizer/copyable
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-coupledp))))
 
          (defthm ,coupledp-of-creator$a
            (,coupledp (,creator$a))
@@ -1550,58 +2027,34 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::coupledp-of-creator/copyable
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-coupledp))))
 
          (defcong ,equiv$a equal (,coupledp ,hash-table) 1
            :hints
            (("Goal"
-             :in-theory (enable ,equiv$a)
              :by (:functional-instance
                   lem-hash-table$a::equiv/copyable-implies-equal-coupledp-1
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-coupledp))))
 
-         ,@(and val-coupledp
-                `((defthm ,val-coupledp-of-accessor$a
-                    (implies (,coupledp ,hash-table)
-                             (,val-coupledp (,accessor$a ,key ,hash-table)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-hash-table$a::val-coupledp-of-accessor/copyable
-                           ,@fi-bindings))))))
-
-         (defthm ,coupledp-of-updater$a-when-boundp$a
-           (implies (and (,boundp$a ,key ,hash-table)
-                         (,coupledp ,hash-table))
-                    (equal (,coupledp (,updater$a ,key ,val ,hash-table))
-                           ,(if val-coupledp
-                                `(,val-coupledp ,val)
-                                't)))
+         (defthm ,cardinality-of-keys$a-when-coupledp
+           (implies (,coupledp ,hash-table)
+                    (equal (set::cardinality (,keys$a ,hash-table))
+                           (,count$a ,hash-table)))
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-updater/copyable-when-boundp/copyable
-                  ,@fi-bindings))))
+                  lem-hash-table$a::cardinality-of-keys-when-coupledp
+                  ,@fi-bindings-with-coupledp))))
 
-         (defthm ,coupledp-of-updater$a-when-not-boundp$a
-           (implies (let* ((,keys$a (,keys$a ,hash-table))
-                           (trimmed (set::delete ,(if key-fixer `(,key-fixer ,key) key) ,keys$a)))
-                      (and (not (,boundp$a ,key ,hash-table))
-                           (set::in ,(if key-fixer `(,key-fixer ,key) key) ,keys$a)
-                           (,coupledp (,keys$a-set trimmed ,hash-table))))
-                    (equal (,coupledp (,updater$a ,key ,val ,hash-table))
-                           ,(if val-coupledp
-                                `(,val-coupledp ,val)
-                                't)))
+         (defthm ,emptyp-of-keys$a-when-coupledp
+           (implies (,coupledp ,hash-table)
+                    (equal (set::emptyp (,keys$a ,hash-table))
+                           (,equiv$a ,hash-table (,creator$a))))
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-updater/copyable-when-not-boundp/copyable
-                  ,@fi-bindings))))
+                  lem-hash-table$a::emptyp-of-keys-when-coupledp
+                  ,@fi-bindings-with-coupledp))))
 
          (defthm ,in-of-keys$a-when-coupledp
            (implies (,coupledp ,hash-table)
@@ -1622,54 +2075,38 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::in-of-keys-when-coupledp
-                  ,@fi-bindings))))
+                  ,@fi-bindings-with-coupledp))))
 
-         (defthm ,coupledp-of-remover$a-when-boundp$a
-           (implies (let* ((,keys$a (,keys$a ,hash-table))
-                           (inserted (set::insert ,(if key-fixer `(,key-fixer ,key) key) ,keys$a)))
-                      (and (,boundp$a ,key ,hash-table)
-                           (not (set::in ,(if key-fixer `(,key-fixer ,key) key) ,keys$a))
-                           (,coupledp (,keys$a-set inserted ,hash-table))))
-                    (,coupledp (,remover$a ,key ,hash-table)))
-           :hints
-           (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-constraints)
-             :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-remover/copyable-when-boundp/copyable
-                  ,@fi-bindings))))
+         ,@(and val-coupledp
+                `((defthm ,val-coupledp-of-accessor$a
+                    (implies (,coupledp ,hash-table)
+                             (,val-coupledp (,accessor$a ,key ,hash-table)))
+                    :hints
+                    (("Goal"
+                      :by (:functional-instance
+                           lem-hash-table$a::val-coupledp-of-accessor/copyable
+                           ,@fi-bindings-with-coupledp))))))
 
-         (defthm ,coupledp-of-remover$a-when-not-boundp$a
-           (implies (and (not (,boundp$a ,key ,hash-table))
-                         (,coupledp ,hash-table))
-                    (,coupledp (,remover$a ,key ,hash-table)))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-remover/copyable-when-not-boundp/copyable
-                  ,@fi-bindings))))
-
-         (defthm ,cardinality-of-keys$a-when-coupledp
-           (implies (,coupledp ,hash-table)
-                    (equal (set::cardinality (,keys$a ,hash-table))
-                           (,count$a ,hash-table)))
+         (defthm ,coupledp-of-updater$a
+           (equal (,coupledp (,updater$a ,key ,val ,hash-table))
+                  (and (set::in ,(if key-fixer
+                                     `(,key-fixer ,key)
+                                     key)
+                                (,keys$a ,hash-table))
+                       ,@(and val-coupledp
+                              `((,val-coupledp ,val)))
+                       (,coupledp (,remover$a ,key
+                                              (,keys$a-set (set::delete ,(if key-fixer
+                                                                             `(,key-fixer ,key)
+                                                                             key)
+                                                                        (,keys$a ,hash-table))
+                                                           ,hash-table)))))
            :hints
            (("Goal"
              :by (:functional-instance
-                  lem-hash-table$a::cardinality-of-keys-when-coupledp
-                  ,@fi-bindings))))
+                  lem-hash-table$a::coupledp-of-updater/copyable
+                  ,@fi-bindings-with-coupledp))))
 
-         (defthm ,emptyp-of-keys$a-when-coupledp
-           (implies (,coupledp ,hash-table)
-                    (equal (set::emptyp (,keys$a ,hash-table))
-                           (,equiv$a ,hash-table (,creator$a))))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::emptyp-of-keys-when-coupledp
-                  ,@fi-bindings))))
-
-         ;; `COPY-REC'
          (defun ,copy-rec (set ,%hash-table ,hash-table)
            (declare (xargs :stobjs (,%hash-table ,hash-table)
                            :guard (and (,keys$ap set)
@@ -1703,7 +2140,6 @@
                             (,%hash-table (,updater ,key ,val ,%hash-table)))
                        (,copy-rec (set::tail set) ,%hash-table ,hash-table)))))
 
-         ;; `COPY'
          (defun ,copy (,%hash-table ,hash-table)
            (declare (xargs :stobjs (,%hash-table ,hash-table)
                            :guard-hints
@@ -1753,140 +2189,73 @@
                               (,copy-rec set ,%hash-table (,updater$a ,key ,val ,hash-table)))))))
 
          (local
-           (defthmd ,copy-rec-of-fixer$a-3
-             (equal (,copy-rec set ,%hash-table (,fixer$a ,hash-table))
-                    (,copy-rec set ,%hash-table ,hash-table))
+           (defthm ,hash-table-copy-constraints
+             (and (equal (,copy-rec ,set ,%hash-table ,hash-table)
+                         (if (if (set::emptyp ,set)
+                                 (set::emptyp ,set)
+                                 (not (,keys$ap ,set)))
+                             (,fixer$a ,%hash-table)
+                             ((lambda (,key ,%hash-table ,set ,hash-table)
+                                ((lambda (,val ,hash-table ,set ,%hash-table ,key)
+                                   ((lambda (,%val ,key ,%hash-table ,set ,hash-table ,val)
+                                      (declare (ignorable ,%val))
+                                      ((lambda (,%val ,val ,hash-table ,set ,%hash-table ,key)
+                                         ((lambda (,%hash-table ,set ,hash-table ,val ,key)
+                                            ((lambda (,hash-table ,%hash-table ,set)
+                                               (,copy-rec (set::tail ,set)
+                                                          ,%hash-table ,hash-table))
+                                             (,updater$a ,key ,val ,hash-table)
+                                             ,%hash-table ,set))
+                                          (,updater$a ,key ,%val ,%hash-table)
+                                          ,set ,hash-table ,val ,key))
+                                       ,(if val-copy
+                                            `(,val-copy ,%val ,val)
+                                            val)
+                                       ,val ,hash-table ,set ,%hash-table ,key))
+                                    (,accessor$a ,key ,%hash-table)
+                                    ,key ,%hash-table ,set ,hash-table ,val))
+                                 (,accessor$a ,key ,hash-table)
+                                 ,hash-table ,set ,%hash-table ,key))
+                              (set::head ,set)
+                              ,%hash-table ,set ,hash-table)))
+                  (equal (,copy ,%hash-table ,hash-table)
+                         ((lambda (,keys$a ,%hash-table ,hash-table)
+                            (,copy-rec ,keys$a
+                                       (,keys$a-set ,keys$a (,init$a (,count$a ,hash-table)
+                                                                     nil nil ,%hash-table))
+                                       ,hash-table))
+                          (,keys$a ,hash-table)
+                          ,%hash-table ,hash-table)))
+             :rule-classes ()
              :hints
              (("Goal"
-               :induct (,copy-rec set ,%hash-table ,hash-table)
-               :in-theory (enable ,hash-table$a-theorems
-                                  ,hash-table$a-aggressive)
-               :expand (,copy-rec set ,%hash-table (,fixer$a ,hash-table))))))
-
-         (defthm ,hash-table-copy-constraints
-           (and (equal (,copy-rec set ,%hash-table ,hash-table)
-                       (if (if (set::emptyp set)
-                               (set::emptyp set)
-                               (not (,keys$ap set)))
-                           (,fixer$a ,%hash-table)
-                           ((lambda (,key ,%hash-table set ,hash-table)
-                              ((lambda (,val ,hash-table set ,%hash-table ,key)
-                                 ((lambda (,%val ,key ,%hash-table set ,hash-table ,val)
-                                    (declare (ignorable ,%val))
-                                    ((lambda (,%val ,val ,hash-table set ,%hash-table ,key)
-                                       ((lambda (,%hash-table set ,hash-table ,val ,key)
-                                          ((lambda (,hash-table ,%hash-table set)
-                                             (,copy-rec (set::tail set) ,%hash-table ,hash-table))
-                                           (,updater$a ,key ,val ,hash-table)
-                                           ,%hash-table set))
-                                        (,updater$a ,key ,%val ,%hash-table)
-                                        set ,hash-table ,val ,key))
-                                     ,(cond
-                                        (val-copy
-                                         `(,val-copy ,%val ,val))
-                                        (val-fixer
-                                         `(,val-fixer ,val))
-                                        (t
-                                         val))
-                                     ,val ,hash-table set ,%hash-table ,key))
-                                  (,accessor$a ,key ,%hash-table)
-                                  ,key ,%hash-table set ,hash-table ,val))
-                               (,accessor$a ,key ,hash-table)
-                               ,hash-table set ,%hash-table ,key))
-                            (set::head set)
-                            ,%hash-table set ,hash-table)))
-                (equal (,copy ,%hash-table ,hash-table)
-                       ((lambda (,keys$a ,%hash-table ,hash-table)
-                          ((lambda (count ,keys$a ,hash-table ,%hash-table)
-                             ((lambda (,%hash-table ,hash-table ,keys$a)
-                                ((lambda (,%hash-table ,hash-table ,keys$a)
-                                   (,copy-rec ,keys$a ,%hash-table ,hash-table))
-                                 (,keys$a-set ,keys$a ,%hash-table)
-                                 ,hash-table ,keys$a))
-                              (,init$a count 'nil 'nil ,%hash-table)
-                              ,hash-table ,keys$a))
-                           (,count$a ,hash-table)
-                           ,keys$a
-                           ,hash-table ,%hash-table))
-                        (,keys$a ,hash-table)
-                        ,%hash-table ,hash-table)))
-           :rule-classes
-           ((:definition :corollary
-                (equal (,copy-rec set ,%hash-table ,hash-table)
-                       (if (if (set::emptyp set)
-                               (set::emptyp set)
-                               (not (,keys$ap set)))
-                           (,fixer$a ,%hash-table)
-                           ((lambda (,key ,%hash-table set ,hash-table)
-                              ((lambda (,val ,hash-table set ,%hash-table ,key)
-                                 ((lambda (,%val ,key ,%hash-table set ,hash-table ,val)
-                                    (declare (ignorable ,%val))
-                                    ((lambda (,%val ,val ,hash-table set ,%hash-table ,key)
-                                       ((lambda (,%hash-table set ,hash-table ,val ,key)
-                                          ((lambda (,hash-table ,%hash-table set)
-                                             (,copy-rec (set::tail set) ,%hash-table ,hash-table))
-                                           (,updater$a ,key ,val ,hash-table)
-                                           ,%hash-table set))
-                                        (,updater$a ,key ,%val ,%hash-table)
-                                        set ,hash-table ,val ,key))
-                                     ,(cond
-                                        (val-copy
-                                         `(,val-copy ,%val ,val))
-                                        (val-fixer
-                                         `(,val-fixer ,val))
-                                        (t
-                                         val))
-                                     ,val ,hash-table set ,%hash-table ,key))
-                                  (,accessor$a ,key ,%hash-table)
-                                  ,key ,%hash-table set ,hash-table ,val))
-                               (,accessor$a ,key ,hash-table)
-                               ,hash-table set ,%hash-table ,key))
-                            (set::head set)
-                            ,%hash-table set ,hash-table)))
-              )
-            (:definition :corollary
-                (equal (,copy ,%hash-table ,hash-table)
-                       ((lambda (,keys$a ,%hash-table ,hash-table)
-                          ((lambda (count ,keys$a ,hash-table ,%hash-table)
-                             ((lambda (,%hash-table ,hash-table ,keys$a)
-                                ((lambda (,%hash-table ,hash-table ,keys$a)
-                                   (,copy-rec ,keys$a ,%hash-table ,hash-table))
-                                 (,keys$a-set ,keys$a ,%hash-table)
-                                 ,hash-table ,keys$a))
-                              (,init$a count 'nil 'nil ,%hash-table)
-                              ,hash-table ,keys$a))
-                           (,count$a ,hash-table)
-                           ,keys$a
-                           ,hash-table ,%hash-table))
-                        (,keys$a ,hash-table)
-                        ,%hash-table ,hash-table))))
-           :hints
-           (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-theorems
-                                ,hash-table$a-aggressive
-                                ,copy-rec-of-fixer$a-3
-                                ,copy-rec-of-updater$a-3
-                                ,copy-rec-of-updater$a-2)
-             :expand (,copy-rec set ,%hash-table ,hash-table))))
+               :do-not-induct t
+               :in-theory (enable ,copy-rec-of-updater$a-2
+                                  ,copy-rec-of-updater$a-3
+                                  ,hash-table$a-theorems)
+               :use (:instance (:functional-instance
+                                lem-hash-table$a::copy-constraints
+                                ,@fi-bindings-with-copy)
+                               (lem-hash-table$a::hash-table ,hash-table)
+                               (lem-hash-table$a::%hash-table ,%hash-table)
+                               (lem-hash-table$a::set ,set))
+               :expand (,copy-rec lem-hash-table$a::set
+                                  lem-hash-table$a::%hash-table
+                                  lem-hash-table$a::hash-table)))))
 
          (local
            (in-theory
              (disable ,copy-rec
                       ,copy)))
 
+         ;; `COPY'
          (defthm ,recognizer$a-of-copy
            (,recognizer$a (,copy ,%hash-table ,hash-table))
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-theorems)
              :by (:functional-instance
                   lem-hash-table$a::recognizer/copyable-of-copy
-                  ,@fi-bindings-with-copy)
-             :expand ((,copy-rec lem-hash-table$a::set
-                                 lem-hash-table$a::%hash-table
-                                 lem-hash-table$a::hash-table)))))
+                  ,@fi-bindings-with-copy))))
 
          (defthm ,copy-ignores-1
            (equal (,copy ,%hash-table ,hash-table)
@@ -1910,99 +2279,6 @@
                   lem-hash-table$a::equiv/copyable-implies-equal-copy-2
                   ,@fi-bindings-with-copy))))
 
-         (defthm ,coupledp-of-copy
-           (,coupledp (,copy ,%hash-table ,hash-table))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::coupledp-of-copy
-                  ,@fi-bindings-with-copy))))
-
-         (local
-           (defthmd ,accessor$a-of-copy-lemma
-             (equal (,accessor$a ,key (,copy ,%hash-table ,hash-table))
-                    (if (set::in ,(if key-fixer `(,key-fixer ,key) key) (,keys$a ,hash-table))
-                        ,(cond
-                           (val-copy
-                            `(,val-copy ,default-val (,accessor$a ,key ,hash-table)))
-                           (val-fixer
-                            `(,val-fixer (,accessor$a ,key ,hash-table)))
-                           (t
-                            `(,accessor$a ,key ,hash-table)))
-                        ,default-val))
-             :hints
-             (("Goal"
-               :by (:functional-instance
-                    lem-hash-table$a::accessor/copyable-of-copy
-                    ,@fi-bindings-with-copy)))))
-
-         (defthm ,accessor$a-of-copy
-           (equal (,accessor$a ,key (,copy ,%hash-table ,hash-table))
-                  (if (set::in ,(if key-fixer `(,key-fixer ,key) key) (,keys$a ,hash-table))
-                      ,(if val-copy
-                           `(,val-copy ,default-val (,accessor$a ,key ,hash-table))
-                           `(,accessor$a ,key ,hash-table))
-                      ,default-val))
-           :hints
-           (("Goal"
-             :use ,accessor$a-of-copy-lemma)))
-
-         (local
-           (defthmd ,copy-of-updater$a-lemma
-             (equal (,copy ,%hash-table (,updater$a ,key ,val ,hash-table))
-                    (if (set::in ,(if key-fixer `(,key-fixer ,key) key) (,keys$a ,hash-table))
-                        (,updater$a ,key
-                                    ,(cond
-                                       (val-copy
-                                        `(,val-copy ,default-val ,val))
-                                       (val-fixer
-                                        `(,val-fixer ,val))
-                                       (t
-                                        val))
-                                    (,copy ,%hash-table ,hash-table))
-                        (,copy ,%hash-table ,hash-table)))
-             :hints
-             (("Goal"
-               :by (:functional-instance
-                    lem-hash-table$a::copy-of-updater/copyable
-                    ,@fi-bindings-with-copy)))))
-
-         (defthm ,copy-of-updater$a
-           (equal (,copy ,%hash-table (,updater$a ,key ,val ,hash-table))
-                  (if (set::in ,(if key-fixer `(,key-fixer ,key) key) (,keys$a ,hash-table))
-                      (,updater$a ,key
-                                  ,(if val-copy
-                                       `(,val-copy ,default-val ,val)
-                                       val)
-                                  (,copy ,%hash-table ,hash-table))
-                      (,copy ,%hash-table ,hash-table)))
-           :hints
-           (("Goal"
-             :in-theory (enable ,hash-table$a-aggressive)
-             :use ,copy-of-updater$a-lemma)))
-
-         (defthm ,boundp$a-of-copy
-           (equal (,boundp$a ,key (,copy ,%hash-table ,hash-table))
-                  (set::in ,(if key-fixer `(,key-fixer ,key) key) (,keys$a ,hash-table)))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::boundp/copyable-of-copy
-                  ,@fi-bindings-with-copy))))
-
-         (defthm ,copy-of-remover$a
-           (equal (,copy ,%hash-table (,remover$a ,key ,hash-table))
-                  (if (set::in ,(if key-fixer `(,key-fixer ,key) key) (,keys$a ,hash-table))
-                      (,updater$a ,key
-                                  ,default-val
-                                  (,copy ,%hash-table ,hash-table))
-                      (,copy ,%hash-table ,hash-table)))
-           :hints
-           (("Goal"
-             :by (:functional-instance
-                  lem-hash-table$a::copy-of-remover/copyable
-                  ,@fi-bindings-with-copy))))
-
          (defthm ,count$a-of-copy
            (equal (,count$a (,copy ,%hash-table ,hash-table))
                   (set::cardinality (,keys$a ,hash-table)))
@@ -2012,6 +2288,38 @@
                   lem-hash-table$a::count/copyable-of-copy
                   ,@fi-bindings-with-copy))))
 
+         (defthm ,accessor$a-of-copy
+           (equal (,accessor$a ,key (,copy ,%hash-table ,hash-table))
+                  (if (set::in ,(if key-fixer
+                                    `(,key-fixer ,key)
+                                    key)
+                               (,keys$a ,hash-table))
+                      ,(if val-copy
+                           `(,val-copy ,default-val (,accessor$a ,key ,hash-table))
+                           `(,accessor$a ,key ,hash-table))
+                      ,default-val))
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :use (:instance (:functional-instance
+                              lem-hash-table$a::accessor/copyable-of-copy
+                              ,@fi-bindings-with-copy)
+                             (lem-hash-table$a::%hash-table ,%hash-table)
+                             (lem-hash-table$a::hash-table ,hash-table)
+                             (lem-hash-table$a::key ,key)))))
+
+         (defthm ,boundp$a-of-copy
+           (equal (,boundp$a ,key (,copy ,%hash-table ,hash-table))
+                  (set::in ,(if key-fixer
+                                `(,key-fixer ,key)
+                                key)
+                           (,keys$a ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::boundp/copyable-of-copy
+                  ,@fi-bindings-with-copy))))
+
          (defthm ,keys$a-of-copy
            (equal (,keys$a (,copy ,%hash-table ,hash-table))
                   (,keys$a ,hash-table))
@@ -2019,6 +2327,54 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::keys-of-copy
+                  ,@fi-bindings-with-copy))))
+
+         (defthm ,coupledp-of-copy
+           (,coupledp (,copy ,%hash-table ,hash-table))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-of-copy
+                  ,@fi-bindings-with-copy))))
+
+         (defthm ,copy-of-updater$a
+           (equal (,copy ,%hash-table (,updater$a ,key ,val ,hash-table))
+                  (if (set::in ,(if key-fixer
+                                    `(,key-fixer ,key)
+                                    key)
+                               (,keys$a ,hash-table))
+                      (,updater$a ,key
+                                  ,(if val-copy
+                                       `(,val-copy ,default-val ,val)
+                                       val)
+                                  (,copy ,%hash-table ,hash-table))
+                      (,copy ,%hash-table ,hash-table)))
+           :hints
+           (("Goal"
+             :do-not-induct t
+             :in-theory (enable ,hash-table$a-aggressive)
+             :use (:instance (:functional-instance
+                              lem-hash-table$a::copy-of-updater/copyable
+                              ,@fi-bindings-with-copy)
+                             (lem-hash-table$a::%hash-table ,%hash-table)
+                             (lem-hash-table$a::hash-table ,hash-table)
+                             (lem-hash-table$a::key ,key)
+                             (lem-hash-table$a::val ,val)))))
+
+         (defthm ,copy-of-remover$a
+           (equal (,copy ,%hash-table (,remover$a ,key ,hash-table))
+                  (if (set::in ,(if key-fixer
+                                    `(,key-fixer ,key)
+                                    key)
+                               (,keys$a ,hash-table))
+                      (,updater$a ,key
+                                  ,default-val
+                                  (,copy ,%hash-table ,hash-table))
+                      (,copy ,%hash-table ,hash-table)))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::copy-of-remover/copyable
                   ,@fi-bindings-with-copy))))
 
          (defthm ,copy-rw
@@ -2037,14 +2393,9 @@
          (set-difference-theories
           (set-difference-theories (current-theory ',copy-end)
                                    (current-theory ',copy-begin))
-          '(,@(and val-coupledp
-                   `(,coupled-vals-p))
-            ,coupled-keys-p
-            ,coupledp
-            ,coupledp-constraints
+          '(,coupledp
             ,copy-rec
-            ,copy
-            ,hash-table-copy-constraints)))
+            ,copy)))
 
        (in-theory
          (union-theories (current-theory ',copy-begin)
@@ -2065,7 +2416,6 @@
 
          ;; `FRAME'
          (stobj-property (getpropc frame 'acl2::stobj))
-         (recognizer (caadr stobj-property))
          (the-frame (symbolicate frame "THE-" frame))
 
          ;; `FRAME$A'
@@ -2303,12 +2653,17 @@
 
          ;; `COUPLEDP'
          ,@(and (remove nil stobj-coupledp-list)
-                `((defun-nx ,coupledp (,frame)
-                    (declare (xargs :guard (,recognizer ,frame)))
+                `((defun ,coupledp (,frame)
+                    (declare (xargs :stobjs ,frame))
                     ,(let ((body (loop$ :for stobj-coupledp :in stobj-coupledp-list
-                                       :as accessor$a :in accessors$a
+                                       :as stobj :in stobjs
+                                       :as accessor :in accessors
+                                       :as updater :in updaters
                                        :when stobj-coupledp
-                                       :collect `(,stobj-coupledp (,accessor$a ,frame)))))
+                                       :collect `(stobj-let ((,stobj (,accessor ,frame) ,updater))
+                                                            (,stobj-coupledp)
+                                                            (,stobj-coupledp ,stobj)
+                                                   ,stobj-coupledp))))
                        (if (consp (cdr body))
                            (cons 'and body)
                            (car body))))

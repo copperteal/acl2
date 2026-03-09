@@ -276,6 +276,7 @@
                             (or contents
                                 (symbolicate package-witness hash-table "-CONTENTS"))
                             hash-table))
+              (%contents (symbolicate package-witness "%" contents))
               (contents-recognizer (if copyable
                                        (symbolicate package-witness contents "-P")
                                        recognizer))
@@ -329,7 +330,8 @@
               (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINTS-2"))
               (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINTS-2"))
 
-              (hash-table-constraints (symbolicate package-witness hash-table "-CONSTRAINTS"))
+              (hash-table-constraints/unique (symbolicate package-witness hash-table "-CONSTRAINTS/UNIQUE"))
+              (hash-table-constraints/copyable (symbolicate package-witness hash-table "-CONSTRAINTS/COPYABLE"))
 
               (keysp-tp (symbolicate package-witness keysp "-TP"))
               (keysp-cr (symbolicate package-witness keysp "-CR"))
@@ -474,10 +476,10 @@
 
               (%hash-table (symbolicate package-witness "%" hash-table))
               (keys-equal (symbolicate package-witness hash-table "-KEYS-EQUAL"))
-              (keys-equal-necc (symbolicate package-witness keys-equal "-NECC"))
+              ;; (keys-equal-necc (symbolicate package-witness keys-equal "-NECC"))
               (keys-equal-witness (symbolicate package-witness keys-equal "-WITNESS"))
               (vals-equal (symbolicate package-witness hash-table "-VALS-EQUAL"))
-              (vals-equal-necc (symbolicate package-witness vals-equal "-NECC"))
+              ;; (vals-equal-necc (symbolicate package-witness vals-equal "-NECC"))
               (vals-equal-witness (symbolicate package-witness vals-equal "-WITNESS"))
               (hash-table-equal (symbolicate package-witness hash-table "-EQUAL"))
               (hash-table-equal-constraints (symbolicate package-witness hash-table-equal "-CONSTRAINTS"))
@@ -494,41 +496,39 @@
                     (set-difference-theories
                      (current-theory ',hash-table-end)
                      (current-theory ',hash-table-begin))
-                    (union-theories ',(append
-                                       (list contents-recognizer
-                                             contents-creator
-                                             contents-fixer
-                                             equiv
-                                             contents-accessor
-                                             contents-updater
-                                             contents-boundp
-                                             contents-getp
-                                             contents-remover
-                                             contents-count
-                                             contents-clear
-                                             contents-init
-                                             hash-table-equal)
-                                       (and copyable
-                                            (list recognizer
-                                                  creator
-                                                  fixer
-                                                  accessor
-                                                  updater
-                                                  boundp
-                                                  getp
-                                                  remover
-                                                  count
-                                                  clear
-                                                  init
-                                                  keys
-                                                  keys-set))
-                                       (and copyable
-                                            key-recognizer
-                                            (list keysp
-                                                  keys-fix
-                                                  keys-equiv)))
-                                    '(,hash-table-constraints
-                                      ,hash-table-equal-constraints))))
+                    ',(append
+                       (list contents-recognizer
+                             contents-creator
+                             contents-fixer
+                             equiv
+                             contents-accessor
+                             contents-updater
+                             contents-boundp
+                             contents-getp
+                             contents-remover
+                             contents-count
+                             contents-clear
+                             contents-init
+                             hash-table-equal)
+                       (and copyable
+                            (list recognizer
+                                  creator
+                                  fixer
+                                  accessor
+                                  updater
+                                  boundp
+                                  getp
+                                  remover
+                                  count
+                                  clear
+                                  init
+                                  keys
+                                  keys-set))
+                       (and copyable
+                            key-recognizer
+                            (list keysp
+                                  keys-fix
+                                  keys-equiv)))))
 
                  (deftheory-static ,hash-table-aggressive
                    ',(append
@@ -552,7 +552,7 @@
                             remover-when-count-is-zero
                             count-when-not-recognizer
                             count-of-updater
-                            count-when-boundp
+                            ;; count-when-boundp
                             count-of-remover)
                       (and key-recognizer
                            (list accessor-when-not-key-recognizer
@@ -612,9 +612,11 @@
                       `(lem-hash-table$a::recognizer/unique ,contents-recognizer)
                       `(lem-hash-table$a::creator/unique ,contents-creator)
                       `(lem-hash-table$a::fixer/unique ,contents-fixer)
-                      (if copyable
-                          `(lem-hash-table$a::equiv/copyable ,equiv)
-                          `(lem-hash-table$a::equiv/unique ,equiv))
+                      `(lem-hash-table$a::equiv/unique ,(if copyable
+                                                            `(lambda (%c c)
+                                                               (equal (,contents-fixer %c)
+                                                                      (,contents-fixer c)))
+                                                            equiv))
                       `(lem-hash-table$a::accessor/unique ,contents-accessor)
                       `(lem-hash-table$a::updater/unique ,contents-updater)
                       `(lem-hash-table$a::boundp/unique ,contents-boundp)
@@ -628,6 +630,7 @@
                      (list `(lem-hash-table$a::recognizer/copyable ,recognizer)
                            `(lem-hash-table$a::creator/copyable ,creator)
                            `(lem-hash-table$a::fixer/copyable ,fixer)
+                           `(lem-hash-table$a::equiv/copyable ,equiv)
                            `(lem-hash-table$a::accessor/copyable ,accessor)
                            `(lem-hash-table$a::updater/copyable ,updater)
                            `(lem-hash-table$a::boundp/copyable ,boundp)
@@ -685,6 +688,11 @@
                                (equal (,key-equiv ,%key ,key)
                                       (equal (,key-fixer ,%key)
                                              (,key-fixer ,key)))
+                               :rule-classes
+                               ((:rewrite :corollary
+                                          (equal (,key-equiv ,%key ,key)
+                                                 (equal (,key-fixer (double-rewrite ,%key))
+                                                        (,key-fixer (double-rewrite ,key))))))
                                :hints
                                (("Goal"
                                  :in-theory (enable ,key-equiv)))))))
@@ -1070,570 +1078,199 @@
                                    (,hash-table (,fixer ,hash-table)))
                                (cons ,set (cdr ,hash-table))))))
 
-                  (local
-                    ;; This is a hack.
-                    (defthm null-contents
-                      (and (not (,contents-remover ,key nil))
-                           (equal (,contents-accessor ,key nil)
-                                  ,default-val)
-                           ,@(and key-recognizer
-                                  `((implies (and (consp ,contents)
-                                                  (not (cdr ,contents))
-                                                  (not (<< ,default-key (caar ,contents)))
-                                                  (not (equal ,default-key (caar ,contents)))
-                                                  (not (,key-recognizer ,key)))
-                                             (equal (,contents-accessor ,key ,contents)
-                                                    ,default-val)))))
-                      :hints
-                      (,@(and key-recognizer
-                              `(("Goal"
-                                 :expand (,contents-accessor ,key ,contents)))))))
+                  ;; (local
+                  ;;   ;; This is a hack.
+                  ;;   (defthm null-contents
+                  ;;     (and (not (,contents-remover ,key nil))
+                  ;;          (equal (,contents-accessor ,key nil)
+                  ;;                 ,default-val)
+                  ;;          ,@(and key-recognizer
+                  ;;                 `((implies (and (consp ,contents)
+                  ;;                                 (not (cdr ,contents))
+                  ;;                                 (not (<< ,default-key (caar ,contents)))
+                  ;;                                 (not (equal ,default-key (caar ,contents)))
+                  ;;                                 (not (,key-recognizer ,key)))
+                  ;;                            (equal (,contents-accessor ,key ,contents)
+                  ;;                                   ,default-val)))))
+                  ;;     :hints
+                  ;;     (,@(and key-recognizer
+                  ;;             `(("Goal"
+                  ;;                :expand (,contents-accessor ,key ,contents)))))))
 
                   (local
                     (in-theory
                       (disable (:e ,contents-accessor)
                                (:e ,contents-remover))))
 
-                  (defthm ,hash-table-constraints
-                    (and (equal (,contents-recognizer ,contents)
-                                (if (consp ,contents)
-                                    (if (consp (car ,contents))
-                                        ,(cond
-                                           ((and key-recognizer
-                                                 val-recognizer)
-                                            `(if (,key-recognizer (car (car ,contents)))
-                                                 (if (,val-recognizer (cdr (car ,contents)))
-                                                     (if (null (cdr ,contents))
-                                                         (null (cdr ,contents))
-                                                         (if (consp (cdr ,contents))
-                                                             (if (consp (car (cdr ,contents)))
-                                                                 (if (<< (car (car ,contents))
-                                                                         (car (car (cdr ,contents))))
-                                                                     (,contents-recognizer (cdr ,contents))
-                                                                     'nil)
-                                                                 'nil)
-                                                             'nil))
-                                                     'nil)
-                                                 'nil))
-                                           (key-recognizer
-                                            `(if (,key-recognizer (car (car ,contents)))
-                                                 (if (null (cdr ,contents))
-                                                     (null (cdr ,contents))
-                                                     (if (consp (cdr ,contents))
-                                                         (if (consp (car (cdr ,contents)))
-                                                             (if (<< (car (car ,contents))
-                                                                     (car (car (cdr ,contents))))
-                                                                 (,contents-recognizer (cdr ,contents))
-                                                                 'nil)
-                                                             'nil)
-                                                         'nil))
-                                                 'nil))
-                                           (val-recognizer
-                                            `(if (,val-recognizer (cdr (car ,contents)))
-                                                 (if (null (cdr ,contents))
-                                                     (null (cdr ,contents))
-                                                     (if (consp (cdr ,contents))
-                                                         (if (consp (car (cdr ,contents)))
-                                                             (if (<< (car (car ,contents))
-                                                                     (car (car (cdr ,contents))))
-                                                                 (,contents-recognizer (cdr ,contents))
-                                                                 'nil)
-                                                             'nil)
-                                                         'nil))
-                                                 'nil))
-                                           (t
-                                            `(if (null (cdr ,contents))
-                                                 (null (cdr ,contents))
-                                                 (if (consp (cdr ,contents))
-                                                     (if (consp (car (cdr ,contents)))
-                                                         (if (<< (car (car ,contents))
-                                                                 (car (car (cdr ,contents))))
-                                                             (,contents-recognizer (cdr ,contents))
-                                                             'nil)
-                                                         'nil)
-                                                     'nil))))
-                                        'nil)
-                                    (null ,contents)))
-                         (equal (,contents-creator)
-                                'nil)
-                         (equal (,contents-fixer ,contents)
-                                (if (,contents-recognizer ,contents)
-                                    ,contents
-                                    (,contents-creator)))
-                         (equal (,equiv ,%hash-table ,hash-table)
-                                (equal (,fixer ,%hash-table)
-                                       (,fixer ,hash-table)))
-                         (equal (,contents-accessor ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (if (if (endp ,contents)
-                                           (endp ,contents)
-                                           (<< ,key (car (car ,contents))))
-                                       ,default-val
-                                       (if (equal ,key (car (car ,contents)))
-                                           ,(if val-fixer
-                                                `(,val-fixer (cdr (car ,contents)))
-                                                `(cdr (car ,contents)))
-                                           (,contents-accessor ,key (cdr ,contents)))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents)))
-                         ,@(and copyable
-                                val-recognizer
-                                val-fixer
-                                `((,val-recognizer (,contents-accessor ,key ,contents))))
-                         (equal (,contents-updater ,key ,val ,contents)
-                                ((lambda (,key ,val ,contents)
-                                   (if (endp ,contents)
-                                       (cons (cons ,key ,val) 'nil)
-                                       (if (<< ,key (car (car ,contents)))
-                                           (cons (cons ,key ,val) ,contents)
-                                           (if (equal ,key (car (car ,contents)))
-                                               (cons (cons ,key ,val) (cdr ,contents))
-                                               (cons (car ,contents)
-                                                     (,contents-updater ,key ,val (cdr ,contents)))))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 ,(if val-fixer
-                                      `(,val-fixer ,val)
-                                      val)
-                                 (,contents-fixer ,contents)))
-                         (equal (,contents-boundp ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (if (if (endp ,contents)
-                                           (endp ,contents)
-                                           (<< ,key (car (car ,contents))))
-                                       'nil
-                                       (if (equal ,key (car (car ,contents)))
-                                           't
-                                           (,contents-boundp ,key (cdr ,contents)))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents)))
-                         (equal (,contents-getp ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (cons (,contents-accessor ,key ,contents)
-                                         (cons (,contents-boundp ,key ,contents)
-                                               'nil)))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents)))
-                         (equal (,contents-remover ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (if (endp ,contents)
-                                       'nil
-                                       (if (<< ,key (car (car ,contents)))
-                                           ,contents
-                                           (if (equal ,key (car (car ,contents)))
-                                               (cdr ,contents)
-                                               (cons (car ,contents)
-                                                     (,contents-remover ,key (cdr ,contents)))))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents)))
-                         (equal (,contents-count ,contents)
-                                ((lambda (,contents)
-                                   (if (consp ,contents)
-                                       (binary-+ '1
-                                                 (,contents-count (cdr ,contents)))
-                                       '0))
-                                 (,contents-fixer ,contents)))
-                         (equal (,contents-clear ,contents)
-                                (,contents-creator))
-                         (equal (,contents-init ht-size rehash-size rehash-threshold ,contents)
-                                (,contents-creator))
-                         ,@(and copyable
-                                `((equal (,keysp ,set)
-                                         (if (consp ,set)
-                                             ,(if key-recognizer
-                                                  `(if (,key-recognizer (car ,set))
-                                                       (if (null (cdr ,set))
-                                                           (null (cdr ,set))
-                                                           (if (consp (cdr ,set))
-                                                               (if (<< (car ,set) (car (cdr ,set)))
-                                                                   (,keysp (cdr ,set))
-                                                                   'nil)
-                                                               'nil))
-                                                       'nil)
-                                                  `(if (null (cdr ,set))
-                                                       (null (cdr ,set))
-                                                       (if (consp (cdr ,set))
-                                                           (if (<< (car ,set) (car (cdr ,set)))
-                                                               (,keysp (cdr ,set))
-                                                               'nil)
-                                                           'nil)))
-                                             (null ,set)))
-                                  (equal (,keys-fix ,set)
-                                         (if (,keysp ,set) ,set 'nil))
-                                  (equal (,keys-equiv ,%set ,set)
-                                         (equal (,keys-fix ,%set) (,keys-fix ,set)))
-                                  (equal (,recognizer hash-table)
-                                         (if (consp hash-table)
-                                             (if (,keysp (car hash-table))
-                                                 (,contents-recognizer (cdr hash-table))
-                                                 'nil)
-                                             'nil))
-                                  (equal (,creator)
-                                         (cons 'nil (,contents-creator)))
-                                  (equal (,fixer hash-table)
-                                         (if (,recognizer hash-table)
-                                             hash-table
-                                             (,creator)))
-                                  (equal (,accessor ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (,contents-accessor ,key (cdr hash-table)))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table)))
-                                  (equal (,updater ,key ,val hash-table)
-                                         ((lambda (,key ,val hash-table)
-                                            (cons (car hash-table)
-                                                  (,contents-updater ,key ,val (cdr hash-table))))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          ,(if val-fixer
-                                               `(,val-fixer ,val)
-                                               val)
-                                          (,fixer hash-table)))
-                                  (equal (,boundp ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (,contents-boundp ,key (cdr hash-table)))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table)))
-                                  (equal (,getp ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (,contents-getp ,key (cdr hash-table)))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table)))
-                                  (equal (,remover ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (cons (car hash-table)
-                                                  (,contents-remover ,key (cdr hash-table))))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table)))
-                                  (equal (,count hash-table)
-                                         ((lambda (hash-table)
-                                            (,contents-count (cdr hash-table)))
-                                          (,fixer hash-table)))
-                                  (equal (,clear hash-table)
-                                         (,creator))
-                                  (equal (,init ht-size
-                                                rehash-size rehash-threshold hash-table)
-                                         (,creator))
-                                  (equal (,keys hash-table)
-                                         ((lambda (hash-table) (car hash-table))
-                                          (,fixer hash-table)))
-                                  (equal (,keys-set ,set hash-table)
-                                         ((lambda (,set hash-table)
-                                            (cons ,set (cdr hash-table)))
-                                          (,keys-fix ,set)
-                                          (,fixer hash-table))))))
-                    :rule-classes
-                    ((:definition :corollary
-                         (equal (,contents-recognizer ,contents)
-                                (if (consp ,contents)
-                                    (if (consp (car ,contents))
-                                        ,(cond
-                                           ((and key-recognizer
-                                                 val-recognizer)
-                                            `(if (,key-recognizer (car (car ,contents)))
-                                                 (if (,val-recognizer (cdr (car ,contents)))
-                                                     (if (null (cdr ,contents))
-                                                         (null (cdr ,contents))
-                                                         (if (consp (cdr ,contents))
-                                                             (if (consp (car (cdr ,contents)))
-                                                                 (if (<< (car (car ,contents))
-                                                                         (car (car (cdr ,contents))))
-                                                                     (,contents-recognizer (cdr ,contents))
-                                                                     'nil)
-                                                                 'nil)
-                                                             'nil))
-                                                     'nil)
-                                                 'nil))
-                                           (key-recognizer
-                                            `(if (,key-recognizer (car (car ,contents)))
-                                                 (if (null (cdr ,contents))
-                                                     (null (cdr ,contents))
-                                                     (if (consp (cdr ,contents))
-                                                         (if (consp (car (cdr ,contents)))
-                                                             (if (<< (car (car ,contents))
-                                                                     (car (car (cdr ,contents))))
-                                                                 (,contents-recognizer (cdr ,contents))
-                                                                 'nil)
-                                                             'nil)
-                                                         'nil))
-                                                 'nil))
-                                           (val-recognizer
-                                            `(if (,val-recognizer (cdr (car ,contents)))
-                                                 (if (null (cdr ,contents))
-                                                     (null (cdr ,contents))
-                                                     (if (consp (cdr ,contents))
-                                                         (if (consp (car (cdr ,contents)))
-                                                             (if (<< (car (car ,contents))
-                                                                     (car (car (cdr ,contents))))
-                                                                 (,contents-recognizer (cdr ,contents))
-                                                                 'nil)
-                                                             'nil)
-                                                         'nil))
-                                                 'nil))
-                                           (t
-                                            `(if (null (cdr ,contents))
-                                                 (null (cdr ,contents))
-                                                 (if (consp (cdr ,contents))
-                                                     (if (consp (car (cdr ,contents)))
-                                                         (if (<< (car (car ,contents))
-                                                                 (car (car (cdr ,contents))))
-                                                             (,contents-recognizer (cdr ,contents))
-                                                             'nil)
-                                                         'nil)
-                                                     'nil))))
-                                        'nil)
-                                    (null ,contents))))
-                     (:definition :corollary
-                         (equal (,contents-creator)
-                                'nil))
-                     (:definition :corollary
-                         (equal (,contents-fixer ,contents)
-                                (if (,contents-recognizer ,contents)
-                                    ,contents
-                                    (,contents-creator))))
-                     (:definition :corollary
-                         (equal (,equiv ,%hash-table ,hash-table)
-                                (equal (,fixer ,%hash-table)
-                                       (,fixer ,hash-table))))
-                     (:definition :corollary
-                         (equal (,contents-accessor ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (if (if (endp ,contents)
-                                           (endp ,contents)
-                                           (<< ,key (car (car ,contents))))
-                                       ,default-val
-                                       (if (equal ,key (car (car ,contents)))
-                                           ,(if val-fixer
-                                                `(,val-fixer (cdr (car ,contents)))
-                                                `(cdr (car ,contents)))
-                                           (,contents-accessor ,key (cdr ,contents)))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents))))
-                     ,@(and copyable
-                            val-recognizer
-                            val-fixer
-                            `((:rewrite :corollary
-                                        (,val-recognizer (,contents-accessor ,key ,contents)))))
-                     (:definition :corollary
-                         (equal (,contents-updater ,key ,val ,contents)
-                                ((lambda (,key ,val ,contents)
-                                   (if (endp ,contents)
-                                       (cons (cons ,key ,val) 'nil)
-                                       (if (<< ,key (car (car ,contents)))
-                                           (cons (cons ,key ,val) ,contents)
-                                           (if (equal ,key (car (car ,contents)))
-                                               (cons (cons ,key ,val) (cdr ,contents))
-                                               (cons (car ,contents)
-                                                     (,contents-updater ,key ,val (cdr ,contents)))))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 ,(if val-fixer
-                                      `(,val-fixer ,val)
-                                      val)
-                                 (,contents-fixer ,contents))))
-                     (:definition :corollary
-                         (equal (,contents-boundp ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (if (if (endp ,contents)
-                                           (endp ,contents)
-                                           (<< ,key (car (car ,contents))))
-                                       'nil
-                                       (if (equal ,key (car (car ,contents)))
-                                           't
-                                           (,contents-boundp ,key (cdr ,contents)))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents))))
-                     (:definition :corollary
-                         (equal (,contents-getp ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (cons (,contents-accessor ,key ,contents)
-                                         (cons (,contents-boundp ,key ,contents)
-                                               'nil)))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents))))
-                     (:definition :corollary
-                         (equal (,contents-remover ,key ,contents)
-                                ((lambda (,key ,contents)
-                                   (if (endp ,contents)
-                                       'nil
-                                       (if (<< ,key (car (car ,contents)))
-                                           ,contents
-                                           (if (equal ,key (car (car ,contents)))
-                                               (cdr ,contents)
-                                               (cons (car ,contents)
-                                                     (,contents-remover ,key (cdr ,contents)))))))
-                                 ,(if key-fixer
-                                      `(,key-fixer ,key)
-                                      key)
-                                 (,contents-fixer ,contents))))
-                     (:definition :corollary
-                         (equal (,contents-count ,contents)
-                                ((lambda (,contents)
-                                   (if (consp ,contents)
-                                       (binary-+ '1
-                                                 (,contents-count (cdr ,contents)))
-                                       '0))
-                                 (,contents-fixer ,contents))))
-                     (:definition :corollary
-                         (equal (,contents-clear ,contents)
-                                (,contents-creator)))
-                     (:definition :corollary
-                         (equal (,contents-init ht-size rehash-size rehash-threshold ,contents)
-                                (,contents-creator)))
-                     ,@(and copyable
-                            `((:definition :corollary
-                                  (equal (,keysp ,set)
-                                         (if (consp ,set)
-                                             ,(if key-recognizer
-                                                  `(if (,key-recognizer (car ,set))
-                                                       (if (null (cdr ,set))
-                                                           (null (cdr ,set))
-                                                           (if (consp (cdr ,set))
-                                                               (if (<< (car ,set) (car (cdr ,set)))
-                                                                   (,keysp (cdr ,set))
-                                                                   'nil)
-                                                               'nil))
-                                                       'nil)
-                                                  `(if (null (cdr ,set))
-                                                       (null (cdr ,set))
-                                                       (if (consp (cdr ,set))
-                                                           (if (<< (car ,set) (car (cdr ,set)))
-                                                               (,keysp (cdr ,set))
-                                                               'nil)
-                                                           'nil)))
-                                             (null ,set))))
-                              (:definition :corollary
-                                  (equal (,keys-fix ,set)
-                                         (if (,keysp ,set) ,set 'nil)))
-                              (:definition :corollary
-                                  (equal (,keys-equiv ,%set ,set)
-                                         (equal (,keys-fix ,%set) (,keys-fix ,set))))
-                              (:definition :corollary
-                                  (equal (,recognizer hash-table)
-                                         (if (consp hash-table)
-                                             (if (,keysp (car hash-table))
-                                                 (,contents-recognizer (cdr hash-table))
-                                                 'nil)
-                                             'nil)))
-                              (:definition :corollary
-                                  (equal (,creator)
-                                         (cons 'nil (,contents-creator))))
-                              (:definition :corollary
-                                  (equal (,fixer hash-table)
-                                         (if (,recognizer hash-table)
-                                             hash-table
-                                             (,creator))))
-                              (:definition :corollary
-                                  (equal (,accessor ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (,contents-accessor ,key (cdr hash-table)))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,updater ,key ,val hash-table)
-                                         ((lambda (,key ,val hash-table)
-                                            (cons (car hash-table)
-                                                  (,contents-updater ,key ,val (cdr hash-table))))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          ,(if val-fixer
-                                               `(,val-fixer ,val)
-                                               val)
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,boundp ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (,contents-boundp ,key (cdr hash-table)))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,getp ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (,contents-getp ,key (cdr hash-table)))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,remover ,key hash-table)
-                                         ((lambda (,key hash-table)
-                                            (cons (car hash-table)
-                                                  (,contents-remover ,key (cdr hash-table))))
-                                          ,(if key-fixer
-                                               `(,key-fixer ,key)
-                                               key)
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,count hash-table)
-                                         ((lambda (hash-table)
-                                            (,contents-count (cdr hash-table)))
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,clear hash-table)
-                                         (,creator)))
-                              (:definition :corollary
-                                  (equal (,init ht-size
-                                                rehash-size rehash-threshold hash-table)
-                                         (,creator)))
-                              (:definition :corollary
-                                  (equal (,keys hash-table)
-                                         ((lambda (hash-table) (car hash-table))
-                                          (,fixer hash-table))))
-                              (:definition :corollary
-                                  (equal (,keys-set ,set hash-table)
-                                         ((lambda (,set hash-table)
-                                            (cons ,set (cdr hash-table)))
-                                          (,keys-fix ,set)
-                                          (,fixer hash-table)))))))
-                    :hints
-                    (("Goal"
-                      :in-theory (e/d (,@(and (eq keysp 'set::setp)
-                                              `(set::setp
-                                                set::sfix
-                                                set::equiv
-                                                set::emptyp)))))))
+                  (local
+                    (defthm ,hash-table-constraints/unique
+                      (and (equal (,contents-recognizer ,contents)
+                                  (if (consp ,contents)
+                                      (if (consp (car ,contents))
+                                          ,(cond
+                                             ((and key-recognizer
+                                                   val-recognizer)
+                                              `(if (,key-recognizer (car (car ,contents)))
+                                                   (if (,val-recognizer (cdr (car ,contents)))
+                                                       (if (null (cdr ,contents))
+                                                           (null (cdr ,contents))
+                                                           (if (consp (cdr ,contents))
+                                                               (if (consp (car (cdr ,contents)))
+                                                                   (if (<< (car (car ,contents))
+                                                                           (car (car (cdr ,contents))))
+                                                                       (,contents-recognizer (cdr ,contents))
+                                                                       nil)
+                                                                   nil)
+                                                               nil))
+                                                       nil)
+                                                   nil))
+                                             (key-recognizer
+                                              `(if (,key-recognizer (car (car ,contents)))
+                                                   (if (null (cdr ,contents))
+                                                       (null (cdr ,contents))
+                                                       (if (consp (cdr ,contents))
+                                                           (if (consp (car (cdr ,contents)))
+                                                               (if (<< (car (car ,contents))
+                                                                       (car (car (cdr ,contents))))
+                                                                   (,contents-recognizer (cdr ,contents))
+                                                                   nil)
+                                                               nil)
+                                                           nil))
+                                                   nil))
+                                             (val-recognizer
+                                              `(if (,val-recognizer (cdr (car ,contents)))
+                                                   (if (null (cdr ,contents))
+                                                       (null (cdr ,contents))
+                                                       (if (consp (cdr ,contents))
+                                                           (if (consp (car (cdr ,contents)))
+                                                               (if (<< (car (car ,contents))
+                                                                       (car (car (cdr ,contents))))
+                                                                   (,contents-recognizer (cdr ,contents))
+                                                                   nil)
+                                                               nil)
+                                                           nil))
+                                                   nil))
+                                             (t
+                                              `(if (null (cdr ,contents))
+                                                   (null (cdr ,contents))
+                                                   (if (consp (cdr ,contents))
+                                                       (if (consp (car (cdr ,contents)))
+                                                           (if (<< (car (car ,contents))
+                                                                   (car (car (cdr ,contents))))
+                                                               (,contents-recognizer (cdr ,contents))
+                                                               nil)
+                                                           nil)
+                                                       nil))))
+                                          nil)
+                                      (null ,contents)))
+                           (equal (,contents-creator)
+                                  nil)
+                           (equal (,contents-fixer ,contents)
+                                  (if (,contents-recognizer ,contents)
+                                      ,contents
+                                      (,contents-creator)))
+                           ,@(and (not copyable)
+                                  `((equal (,equiv ,%contents ,contents)
+                                           (equal (,fixer ,%contents)
+                                                  (,fixer ,contents)))))
+                           (equal (,contents-accessor ,key ,contents)
+                                  ((lambda (,key ,contents)
+                                     (if (if (endp ,contents)
+                                             (endp ,contents)
+                                             (<< ,key (car (car ,contents))))
+                                         ,default-val
+                                         (if (equal ,key (car (car ,contents)))
+                                             ,(if val-fixer
+                                                  `(,val-fixer (cdr (car ,contents)))
+                                                  `(cdr (car ,contents)))
+                                             (,contents-accessor ,key (cdr ,contents)))))
+                                   ,(if key-fixer
+                                        `(,key-fixer ,key)
+                                        key)
+                                   (,contents-fixer ,contents)))
+                           (equal (,contents-updater ,key ,val ,contents)
+                                  ((lambda (,key ,val ,contents)
+                                     (if (endp ,contents)
+                                         (cons (cons ,key ,val) nil)
+                                         (if (<< ,key (car (car ,contents)))
+                                             (cons (cons ,key ,val) ,contents)
+                                             (if (equal ,key (car (car ,contents)))
+                                                 (cons (cons ,key ,val) (cdr ,contents))
+                                                 (cons (car ,contents)
+                                                       (,contents-updater ,key ,val (cdr ,contents)))))))
+                                   ,(if key-fixer
+                                        `(,key-fixer ,key)
+                                        key)
+                                   ,(if val-fixer
+                                        `(,val-fixer ,val)
+                                        val)
+                                   (,contents-fixer ,contents)))
+                           (equal (,contents-boundp ,key ,contents)
+                                  ((lambda (,key ,contents)
+                                     (if (if (endp ,contents)
+                                             (endp ,contents)
+                                             (<< ,key (car (car ,contents))))
+                                         nil
+                                         (if (equal ,key (car (car ,contents)))
+                                             t
+                                             (,contents-boundp ,key (cdr ,contents)))))
+                                   ,(if key-fixer
+                                        `(,key-fixer ,key)
+                                        key)
+                                   (,contents-fixer ,contents)))
+                           (equal (,contents-getp ,key ,contents)
+                                  ((lambda (,key ,contents)
+                                     (cons (,contents-accessor ,key ,contents)
+                                           (cons (,contents-boundp ,key ,contents)
+                                                 nil)))
+                                   ,(if key-fixer
+                                        `(,key-fixer ,key)
+                                        key)
+                                   (,contents-fixer ,contents)))
+                           (equal (,contents-remover ,key ,contents)
+                                  ((lambda (,key ,contents)
+                                     (if (endp ,contents)
+                                         nil
+                                         (if (<< ,key (car (car ,contents)))
+                                             ,contents
+                                             (if (equal ,key (car (car ,contents)))
+                                                 (cdr ,contents)
+                                                 (cons (car ,contents)
+                                                       (,contents-remover ,key (cdr ,contents)))))))
+                                   ,(if key-fixer
+                                        `(,key-fixer ,key)
+                                        key)
+                                   (,contents-fixer ,contents)))
+                           (equal (,contents-count ,contents)
+                                  ((lambda (,contents)
+                                     (if (consp ,contents)
+                                         (1+ (,contents-count (cdr ,contents)))
+                                         0))
+                                   (,contents-fixer ,contents)))
+                           (equal (,contents-clear ,contents)
+                                  (,contents-creator))
+                           (equal (,contents-init ht-size rehash-size rehash-threshold ,contents)
+                                  (,contents-creator)))
+                      :rule-classes ()
+                      :hints
+                      (("Goal"
+                        :do-not-induct t
+                        :use (:instance (:functional-instance
+                                         lem-hash-table$a::hash-table-constraints/unique
+                                         ,@fi-bindings)
+                                        (lem-hash-table$a::hash-table ,contents)
+                                        (lem-hash-table$a::key ,key)
+                                        (lem-hash-table$a::val ,val)
+                                        ,@(and (not copyable)
+                                               `((lem-hash-table$a::%hash-table ,%contents))))))))
 
                   (local
                     (in-theory
-                      (disable ,@(and copyable
-                                      key-recognizer
-                                      (list keysp
-                                            keys-fix
-                                            keys-equiv))
-                               ,contents-recognizer
+                      (disable ,contents-recognizer
                                ,contents-creator
                                ,contents-fixer
-                               ,equiv
+                               ,@(and (not copyable)
+                                      (list equiv))
                                ,contents-accessor
                                ,contents-updater
                                ,contents-boundp
@@ -1641,21 +1278,169 @@
                                ,contents-remover
                                ,contents-count
                                ,contents-clear
-                               ,contents-init
-                               ,@(and copyable
-                                      (list keys
-                                            keys-set
-                                            recognizer
-                                            creator
-                                            fixer
-                                            accessor
-                                            updater
-                                            boundp
-                                            getp
-                                            remover
-                                            count
-                                            clear
-                                            init)))))
+                               ,contents-init)))
+
+                  ,@(and copyable
+                         `((local
+                             (defthm set-lemmas
+                               (and (implies (and (consp set)
+                                                  (not (cdr set)))
+                                             (set::setp set))
+                                    (implies (and (cdr set)
+                                                  (not (<< (car set) (cadr set))))
+                                             (not (set::setp set)))
+                                    (implies (and (consp set)
+                                                  (cdr set)
+                                                  (consp (cdr set))
+                                                  (<< (car set) (cadr set)))
+                                             (equal (set::setp (cdr set))
+                                                    (set::setp set)))
+                                    (implies (set::setp set)
+                                             (equal (set::sfix set) set)))
+                               :hints
+                               (("Goal"
+                                 :do-not-induct t
+                                 :in-theory (enable set::setp
+                                                    acl2::fast-<<-is-<<
+                                                    set::sfix
+                                                    set::emptyp)))))))
+
+                  ,@(and copyable
+                         `((local
+                             (defthm ,hash-table-constraints/copyable
+                               (and (equal (,keysp ,set)
+                                           (if (consp ,set)
+                                               ,(if key-recognizer
+                                                    `(if (,key-recognizer (car ,set))
+                                                         (if (null (cdr ,set))
+                                                             (null (cdr ,set))
+                                                             (if (consp (cdr ,set))
+                                                                 (if (<< (car ,set) (car (cdr ,set)))
+                                                                     (,keysp (cdr ,set))
+                                                                     'nil)
+                                                                 'nil))
+                                                         'nil)
+                                                    `(if (null (cdr ,set))
+                                                         (null (cdr ,set))
+                                                         (if (consp (cdr ,set))
+                                                             (if (<< (car ,set) (car (cdr ,set)))
+                                                                 (,keysp (cdr ,set))
+                                                                 'nil)
+                                                             'nil)))
+                                               (null ,set)))
+                                    (equal (,keys-fix ,set)
+                                           (if (,keysp ,set) ,set 'nil))
+                                    (equal (,keys-equiv ,%set ,set)
+                                           (equal (,keys-fix ,%set) (,keys-fix ,set)))
+                                    (equal (,recognizer ,hash-table)
+                                           (if (consp ,hash-table)
+                                               (if (,keysp (car ,hash-table))
+                                                   (,contents-recognizer (cdr ,hash-table))
+                                                   'nil)
+                                               'nil))
+                                    (equal (,creator)
+                                           (cons 'nil (,contents-creator)))
+                                    (equal (,fixer ,hash-table)
+                                           (if (,recognizer ,hash-table)
+                                               ,hash-table
+                                               (,creator)))
+                                    (equal (,equiv ,%hash-table ,hash-table)
+                                           (equal (,fixer ,%hash-table)
+                                                  (,fixer ,hash-table)))
+                                    (equal (,accessor ,key ,hash-table)
+                                           ((lambda (,key ,hash-table)
+                                              (,contents-accessor ,key (cdr ,hash-table)))
+                                            ,(if key-fixer
+                                                 `(,key-fixer ,key)
+                                                 key)
+                                            (,fixer ,hash-table)))
+                                    (equal (,updater ,key ,val ,hash-table)
+                                           ((lambda (,key ,val ,hash-table)
+                                              (cons (car ,hash-table)
+                                                    (,contents-updater ,key ,val (cdr ,hash-table))))
+                                            ,(if key-fixer
+                                                 `(,key-fixer ,key)
+                                                 key)
+                                            ,(if val-fixer
+                                                 `(,val-fixer ,val)
+                                                 val)
+                                            (,fixer ,hash-table)))
+                                    (equal (,boundp ,key ,hash-table)
+                                           ((lambda (,key ,hash-table)
+                                              (,contents-boundp ,key (cdr ,hash-table)))
+                                            ,(if key-fixer
+                                                 `(,key-fixer ,key)
+                                                 key)
+                                            (,fixer ,hash-table)))
+                                    (equal (,getp ,key ,hash-table)
+                                           ((lambda (,key ,hash-table)
+                                              (,contents-getp ,key (cdr ,hash-table)))
+                                            ,(if key-fixer
+                                                 `(,key-fixer ,key)
+                                                 key)
+                                            (,fixer ,hash-table)))
+                                    (equal (,remover ,key ,hash-table)
+                                           ((lambda (,key ,hash-table)
+                                              (cons (car ,hash-table)
+                                                    (,contents-remover ,key (cdr ,hash-table))))
+                                            ,(if key-fixer
+                                                 `(,key-fixer ,key)
+                                                 key)
+                                            (,fixer ,hash-table)))
+                                    (equal (,count ,hash-table)
+                                           ((lambda (,hash-table)
+                                              (,contents-count (cdr ,hash-table)))
+                                            (,fixer ,hash-table)))
+                                    (equal (,clear ,hash-table)
+                                           (,creator))
+                                    (equal (,init ht-size rehash-size rehash-threshold ,hash-table)
+                                           (,creator))
+                                    (equal (,keys ,hash-table)
+                                           ((lambda (,hash-table) (car ,hash-table))
+                                            (,fixer ,hash-table)))
+                                    (equal (,keys-set ,set ,hash-table)
+                                           ((lambda (,set ,hash-table)
+                                              (cons ,set (cdr ,hash-table)))
+                                            (,keys-fix ,set)
+                                            (,fixer ,hash-table))))
+                               :rule-classes ()
+                               :hints
+                               (("Goal"
+                                 :do-not-induct t
+                                 :in-theory (enable set::equiv
+                                                    set::sets-are-true-lists-compound-recognizer
+                                                    (:e set::setp))
+                                 :use (:instance (:functional-instance
+                                                  lem-hash-table$a::hash-table-constraints/copyable
+                                                  ,@fi-bindings)
+                                                 (lem-hash-table$a::%hash-table ,%hash-table)
+                                                 (lem-hash-table$a::hash-table ,hash-table)
+                                                 (lem-hash-table$a::key ,key)
+                                                 (lem-hash-table$a::val ,val)
+                                                 (lem-hash-table$a::set ,set)
+                                                 (lem-hash-table$a::%set ,%set))))))))
+
+                  ,@(and copyable
+                         `((local
+                             (in-theory
+                               (disable ,@(and key-recognizer
+                                               (list keysp
+                                                     keys-fix
+                                                     keys-equiv))
+                                        ,keys
+                                        ,keys-set
+                                        ,recognizer
+                                        ,creator
+                                        ,fixer
+                                        ,equiv
+                                        ,accessor
+                                        ,updater
+                                        ,boundp
+                                        ,getp
+                                        ,remover
+                                        ,count
+                                        ,clear
+                                        ,init)))))
 
                   ;; `KEYSP'
                   ,@(and copyable
@@ -3005,10 +2790,10 @@
                                 'lem-hash-table$a::count/unique-of-updater/unique-when-not-boundp/unique)
                            ,@fi-bindings))))
 
-                  (defthmd ,count-when-boundp
+                  (defthm ,count-when-boundp
                     (implies (,boundp ,key ,hash-table)
                              (posp (,count ,hash-table)))
-                    :rule-classes :type-prescription
+                    :rule-classes ()
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -3205,9 +2990,7 @@
                              :rule-classes
                              ((:rewrite :corollary
                                         (equal (,keys (,keys-set ,set ,hash-table))
-                                               (,keys-fix ,(if (eq keysp 'set::setp)
-                                                               set
-                                                               `(double-rewrite ,set))))))
+                                               (,keys-fix (double-rewrite ,set)))))
                              :hints
                              (("Goal"
                                :by (:functional-instance
@@ -3227,9 +3010,19 @@
                                     ,@fi-bindings))))
 
                            ,@(and (not (eq keys-equiv 'equal))
-                                  `((defcong ,keys-equiv equal (,keys-set ,set ,hash-table) 1)))
+                                  `((defcong ,keys-equiv equal (,keys-set ,set ,hash-table) 1
+                                      :hints
+                                      (("Goal"
+                                        :by (:functional-instance
+                                             lem-hash-table$a::keys-equiv-implies-equal-keys-set-1
+                                             ,@fi-bindings))))))
 
-                           (defcong ,equiv equal (,keys-set ,set ,hash-table) 2)
+                           (defcong ,equiv equal (,keys-set ,set ,hash-table) 2
+                             :hints
+                             (("Goal"
+                               :by (:functional-instance
+                                    lem-hash-table$a::equiv/copyable-implies-equal-keys-set-2
+                                    ,@fi-bindings))))
 
                            (defthmd ,keys-set-when-not-keysp
                              (implies (not (,keysp ,set))
@@ -3343,110 +3136,69 @@
                   (table equality ',hash-table ',hash-table-equal)
 
                   (local
-                    (in-theory
-                      (disable ,hash-table-constraints)))
-
-                  (defthm ,hash-table-equal-constraints
-                    (and (equal (,keys-equal ,%hash-table ,hash-table)
-                                ((lambda (,key ,hash-table ,%hash-table)
-                                   (equal (,boundp ,key ,%hash-table)
-                                          (,boundp ,key ,hash-table)))
-                                 (,keys-equal-witness ,%hash-table ,hash-table)
-                                 ,hash-table ,%hash-table))
-                         (implies (,keys-equal ,%hash-table ,hash-table)
-                                  (equal (,boundp ,key ,%hash-table)
-                                         (,boundp ,key ,hash-table)))
-                         (equal (,vals-equal ,%hash-table ,hash-table)
-                                ((lambda (,key ,hash-table ,%hash-table)
-                                   (equal (,accessor ,key ,%hash-table)
-                                          (,accessor ,key ,hash-table)))
-                                 (,vals-equal-witness ,%hash-table ,hash-table)
-                                 ,hash-table ,%hash-table))
-                         (implies (,vals-equal ,%hash-table ,hash-table)
-                                  (equal (,accessor ,key ,%hash-table)
-                                         (,accessor ,key ,hash-table)))
-                         (equal (,hash-table-equal ,%hash-table ,hash-table)
-                                (if (,recognizer ,%hash-table)
-                                    (if (,recognizer ,hash-table)
-                                        ,(if copyable
-                                             `(if (equal (,keys ,%hash-table)
-                                                         (,keys ,hash-table))
-                                                  (if (equal (,count ,%hash-table)
-                                                             (,count ,hash-table))
-                                                      (if (,keys-equal ,%hash-table ,hash-table)
-                                                          (,vals-equal ,%hash-table ,hash-table)
-                                                          'nil)
-                                                      'nil)
-                                                  'nil)
-                                             `(if (equal (,count ,%hash-table)
-                                                         (,count ,hash-table))
-                                                  (if (,keys-equal ,%hash-table ,hash-table)
-                                                      (,vals-equal ,%hash-table ,hash-table)
-                                                      'nil)
-                                                  'nil))
-                                        'nil)
-                                    'nil)))
-                    :rule-classes
-                    ((:definition :corollary
-                         (equal (,keys-equal ,%hash-table ,hash-table)
-                                ((lambda (,key ,hash-table ,%hash-table)
-                                   (equal (,boundp ,key ,%hash-table)
-                                          (,boundp ,key ,hash-table)))
-                                 (,keys-equal-witness ,%hash-table ,hash-table)
-                                 ,hash-table ,%hash-table)))
-                     (:rewrite :match-free :all
-                               :corollary
-                               (implies (,keys-equal ,%hash-table ,hash-table)
-                                        (equal (,boundp ,key ,%hash-table)
-                                               (,boundp ,key ,hash-table))))
-                     (:definition :corollary
-                         (equal (,vals-equal ,%hash-table ,hash-table)
-                                ((lambda (,key ,hash-table ,%hash-table)
-                                   (equal (,accessor ,key ,%hash-table)
-                                          (,accessor ,key ,hash-table)))
-                                 (,vals-equal-witness ,%hash-table ,hash-table)
-                                 ,hash-table ,%hash-table)))
-                     (:rewrite :match-free :all
-                               :corollary
-                               (implies (,vals-equal ,%hash-table ,hash-table)
-                                        (equal (,accessor ,key ,%hash-table)
-                                               (,accessor ,key ,hash-table))))
-                     (:definition :corollary
-                         (equal (,hash-table-equal ,%hash-table ,hash-table)
-                                (if (,recognizer ,%hash-table)
-                                    (if (,recognizer ,hash-table)
-                                        ,(if copyable
-                                             `(if (equal (,keys ,%hash-table)
-                                                         (,keys ,hash-table))
-                                                  (if (equal (,count ,%hash-table)
-                                                             (,count ,hash-table))
-                                                      (if (,keys-equal ,%hash-table ,hash-table)
-                                                          (,vals-equal ,%hash-table ,hash-table)
-                                                          'nil)
-                                                      'nil)
-                                                  'nil)
-                                             `(if (equal (,count ,%hash-table)
-                                                         (,count ,hash-table))
-                                                  (if (,keys-equal ,%hash-table ,hash-table)
-                                                      (,vals-equal ,%hash-table ,hash-table)
-                                                      'nil)
-                                                  'nil))
-                                        'nil)
-                                    'nil))))
-                    :hints
-                    (("Goal"
-                      :in-theory (disable ,keys-equal-necc
-                                          ,vals-equal-necc)
-                      :use ((:instance ,keys-equal-necc)
-                            (:instance ,vals-equal-necc)))))
+                    (defthm ,hash-table-equal-constraints
+                      (and (equal (,keys-equal ,%hash-table ,hash-table)
+                                  ((lambda (,key ,hash-table ,%hash-table)
+                                     (equal (,boundp ,key ,%hash-table)
+                                            (,boundp ,key ,hash-table)))
+                                   (,keys-equal-witness ,%hash-table ,hash-table)
+                                   ,hash-table ,%hash-table))
+                           (implies (,keys-equal ,%hash-table ,hash-table)
+                                    (equal (,boundp ,key ,%hash-table)
+                                           (,boundp ,key ,hash-table)))
+                           (equal (,vals-equal ,%hash-table ,hash-table)
+                                  ((lambda (,key ,hash-table ,%hash-table)
+                                     (equal (,accessor ,key ,%hash-table)
+                                            (,accessor ,key ,hash-table)))
+                                   (,vals-equal-witness ,%hash-table ,hash-table)
+                                   ,hash-table ,%hash-table))
+                           (implies (,vals-equal ,%hash-table ,hash-table)
+                                    (equal (,accessor ,key ,%hash-table)
+                                           (,accessor ,key ,hash-table)))
+                           (equal (,hash-table-equal ,%hash-table ,hash-table)
+                                  (if (,recognizer ,%hash-table)
+                                      (if (,recognizer ,hash-table)
+                                          ,(if copyable
+                                               `(if (equal (,keys ,%hash-table)
+                                                           (,keys ,hash-table))
+                                                    (if (equal (,count ,%hash-table)
+                                                               (,count ,hash-table))
+                                                        (if (,keys-equal ,%hash-table ,hash-table)
+                                                            (,vals-equal ,%hash-table ,hash-table)
+                                                            'nil)
+                                                        'nil)
+                                                    'nil)
+                                               `(if (equal (,count ,%hash-table)
+                                                           (,count ,hash-table))
+                                                    (if (,keys-equal ,%hash-table ,hash-table)
+                                                        (,vals-equal ,%hash-table ,hash-table)
+                                                        'nil)
+                                                    'nil))
+                                          'nil)
+                                      'nil)))
+                      :rule-classes ()
+                      :hints
+                      (("Goal"
+                        :in-theory (disable ,keys-equal
+                                            ,vals-equal)
+                        :use (:instance (:functional-instance
+                                         ,(if copyable
+                                              'lem-hash-table$a::equal-constraints/copyable
+                                              'lem-hash-table$a::equal-constraints/unique)
+                                         ,@fi-bindings-with-skolem)
+                                        (lem-hash-table$a::key ,key)
+                                        (lem-hash-table$a::%hash-table ,%hash-table)
+                                        (lem-hash-table$a::hash-table ,hash-table)))
+                       ("Subgoal 3"
+                        :in-theory (enable ,vals-equal))
+                       ("Subgoal 1"
+                        :in-theory (enable ,keys-equal)))))
 
                   (local
                     (in-theory
                       (disable ,keys-equal
                                ,vals-equal
-                               ,hash-table-equal
-                               (:definition ,hash-table-equal-constraints . 1)
-                               (:definition ,hash-table-equal-constraints . 2))))
+                               ,hash-table-equal)))
 
                   (defthm ,hash-table-equal-fc
                     (implies (,hash-table-equal ,%hash-table ,hash-table)
@@ -3464,11 +3216,7 @@
                            ,(if copyable
                                 'lem-hash-table$a::equal/copyable-fc
                                 'lem-hash-table$a::equal/unique-fc)
-                           ,@fi-bindings-with-skolem))
-                     ("Subgoal 3"
-                      :in-theory (enable (:definition ,hash-table-equal-constraints . 2)))
-                     ("Subgoal 1"
-                      :in-theory (enable (:definition ,hash-table-equal-constraints . 1)))))))
+                           ,@fi-bindings-with-skolem))))))
 
               (stobj$a-property `(,hash-table (,recognizer
                                                ,creator

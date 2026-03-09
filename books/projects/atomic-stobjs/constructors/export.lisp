@@ -80,10 +80,10 @@
          (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
          (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
-         (vector$a-constraints (symbolicate vector$a vector$a "-CONSTRAINTS"))
-         (exportp-constraints (symbolicate package-witness exportp "-CONSTRAINTS"))
-         (export-constraints (symbolicate package-witness export "-CONSTRAINTS"))
-         (import-constraints (symbolicate package-witness import "-CONSTRAINTS"))
+         (vector$a-constraints (symbolicate "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
+         (exportp-constraints (symbolicate "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
+         (export-constraints (symbolicate "ATOMIC-STOBJS" export "-CONSTRAINTS"))
+         (import-constraints (symbolicate "ATOMIC-STOBJS" import "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
@@ -244,11 +244,11 @@
          (fi-bindings-with-coupledp
           (list* (if resizable
                      `(lem-vector$a::coupledp-rec/resizable ,(or coupledp-rec
-                                                             `(lambda (index vector)
-                                                                t)))
+                                                                 `(lambda (index vector)
+                                                                    t)))
                      `(lem-vector$a::coupledp-rec/fixed ,(or coupledp-rec
-                                                         `(lambda (index vector)
-                                                            t))))
+                                                             `(lambda (index vector)
+                                                                t))))
                  (if resizable
                      `(lem-vector$a::coupledp/resizable ,(or coupledp
                                                              `(lambda (vector)
@@ -438,7 +438,6 @@
                           'lem-vector$a::vector-constraints/fixed)
                      ,@fi-bindings)))))
 
-         ;; `EXPORTP-REC'
          ,@(and element-recognizer
                 `((defun ,exportp-rec (list)
                     (declare (xargs :guard t))
@@ -449,7 +448,6 @@
                              (,exportp-rec (cdr list)))
                         (null list)))))
 
-         ;; `EXPORTP'
          (defun ,exportp (export)
            (declare (xargs :guard t))
            (and (consp export)
@@ -490,8 +488,7 @@
 
          (local
            (in-theory
-             (disable ,@(and element-recognizer
-                             `(,exportp-rec))
+             (disable ,exportp-rec
                       ,exportp)))
 
          (defthm ,exportp-tp
@@ -518,7 +515,6 @@
                        'lem-vector$a::exportp/fixed-cr)
                   ,@fi-bindings-with-exportp))))
 
-         ;; `EXPORT-ACC'
          (defun ,export-acc (,index acc ,vector)
            (declare (xargs :stobjs ,vector
                            :guard (and (natp ,index)
@@ -542,7 +538,6 @@
                             (,element (,accessor ,index ,vector)))
                        (,export-acc ,index (cons ,element acc) ,vector)))))
 
-         ;; `EXPORT'
          (defun ,export (,vector)
            (declare (xargs :stobjs ,vector))
            (cons ',vector
@@ -633,7 +628,6 @@
                        'lem-vector$a::export/fixed-when-not-recognizer/fixed)
                   ,@fi-bindings-with-export))))
 
-         ;; `IMPORT-REC'
          (defun ,import-rec (list ,index ,vector)
            (declare (xargs :stobjs ,vector
                            :guard (and (,exportp-rec list)
@@ -661,7 +655,6 @@
                                     ,vector)))
                (,the-vector ,vector)))
 
-         ;; `IMPORT'
          (defun ,import (export ,vector)
            (declare (xargs :stobjs ,vector
                            :guard (,exportp export)
@@ -922,6 +915,9 @@
                               (package-witness-p package-witness))
                   :verify-guards nil))
   (let* ((%hash-table (symbolicate package-witness "%" hash-table))
+         (contents (symbolicate hash-table hash-table "-CONTENTS"))
+         (set (symbolicate package-witness "SET"))
+         (%set (symbolicate package-witness "%SET"))
 
          (export (symbolicate package-witness hash-table "-EXPORT"))
          (export-begin (symbolicate package-witness export "-BEGIN"))
@@ -944,11 +940,7 @@
 
          (world (w state))
          (coupledp (cdr (assoc hash-table (table-alist 'coupledp world))))
-         (coupled-keys-p (symbolicate coupledp hash-table "-COUPLED-KEYS-P"))
-         (coupled-keys-p-witness (symbolicate coupledp coupled-keys-p "-WITNESS"))
-         (coupled-vals-p (symbolicate coupledp hash-table "-COUPLED-VALS-P"))
-         (coupled-vals-p-witness (symbolicate coupledp coupled-vals-p "-WITNESS"))
-         (coupledp-constraints (symbolicate coupledp coupledp "-CONSTRAINTS"))
+         (coupledp-rec (symbolicate coupledp coupledp "-REC"))
 
          (copy (cdr (assoc hash-table (table-alist 'copy world))))
          (copy-theory (symbolicate copy copy "-THEORY"))
@@ -957,27 +949,36 @@
          (hash-table$a (first stobj$a-property))
          (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
          (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
-         (hash-table$a-constraints (symbolicate hash-table$a hash-table$a "-CONSTRAINTS"))
          (recognizer$a (first (second stobj$a-property)))
          (creator$a (second (second stobj$a-property)))
          (fixer$a (third (second stobj$a-property)))
+         (equiv$a (fourth (second stobj$a-property)))
          (accessor$a (first (fourth (third stobj$a-property))))
          (updater$a (second (fourth (third stobj$a-property))))
          (boundp$a (third (fourth (third stobj$a-property))))
+         (getp$a (fourth (fourth (third stobj$a-property))))
+         (remover$a (fifth (fourth (third stobj$a-property))))
          (count$a (sixth (fourth (third stobj$a-property))))
+         (clear$a (seventh (fourth (third stobj$a-property))))
          (init$a (eighth (fourth (third stobj$a-property))))
          (keys$a (first (fifth (third stobj$a-property))))
          (keys$a-set (second (fifth (third stobj$a-property))))
          (keys$ap (third (fifth (third stobj$a-property))))
          (keys$a-fix (fourth (fifth (third stobj$a-property))))
+         (keys$a-equiv (fifth (fifth (third stobj$a-property))))
 
          (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
          (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
+         (contents-creator$a (symbolicate hash-table$a "CREATE-" contents$a))
          (contents-fixer$a (symbolicate hash-table$a contents$a "-FIX"))
          (contents-accessor$a (symbolicate hash-table$a contents$a "-GET"))
          (contents-updater$a (symbolicate hash-table$a contents$a "-PUT"))
          (contents-boundp$a (symbolicate hash-table$a contents$a "-BNDP"))
+         (contents-getp$a (symbolicate hash-table$a contents$a "-GETP"))
+         (contents-remover$a (symbolicate hash-table$a contents$a "-REM"))
          (contents-count$a (symbolicate hash-table$a contents$a "-CNT"))
+         (contents-clear$a (symbolicate hash-table$a contents$a "-CLR"))
+         (contents-init$a (symbolicate hash-table$a contents$a "-INIT"))
 
          (key (first (first (third stobj$a-property))))
          (%key (symbolicate key "%" key))
@@ -1026,6 +1027,12 @@
          (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINT-2"))
          (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINT-2"))
 
+         (hash-table$a-constraints/unique (symbolicate "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/UNIQUE"))
+         (hash-table$a-constraints/copyable (symbolicate "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/COPYABLE"))
+
+         (exportp-constraints (symbolicate "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
+         (exportp-rec-tp (symbolicate "ATOMIC-STOBJS" exportp-rec "-TP"))
+         (exportp-rec-cr (symbolicate "ATOMIC-STOBJS" exportp-rec "-CR"))
          (exportp-tp (symbolicate package-witness exportp "-TP"))
          (exportp-cr (symbolicate package-witness exportp "-CR"))
          (mapp-when-exportp-rec (symbolicate "ATOMIC-STOBJS" "MAPP-WHEN-" exportp-rec))
@@ -1040,10 +1047,12 @@
          (exportp-rec-of-update (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-UPDATE"))
          (keysp-of-keys-when-exportp-rec (symbolicate "ATOMIC-STOBJS" keys$ap "-OF-KEYS-WHEN-" exportp-rec))
 
+         (export-constraints (symbolicate "ATOMIC-STOBJS" export "-CONSTRAINTS"))
          (export-tp (symbolicate package-witness export "-TP"))
          (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
          (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
 
+         (import-constraints (symbolicate "ATOMIC-STOBJS" import "-CONSTRAINTS"))
          (import-tp (symbolicate package-witness import "-TP"))
          (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
          (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
@@ -1061,89 +1070,94 @@
           (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
                                                         `(lambda (key)
                                                            t)))
-                `(lem-hash-table$a::key-fixer ,(or key-fixer
-                                                   'identity))
                 `(lem-hash-table$a::default-key (lambda ()
                                                   ,default-key-name))
+                `(lem-hash-table$a::key-fixer ,(or key-fixer
+                                                   'identity))
+                `(lem-hash-table$a::key-equiv ,(or key-equiv
+                                                   'equal))
 
                 `(lem-hash-table$a::val-recognizer ,(or val-recognizer
                                                         `(lambda (val)
                                                            t)))
-                `(lem-hash-table$a::val-fixer ,(or val-fixer
-                                                   'identity))
-                `(lem-hash-table$a::val-equiv ,val-equiv)
                 `(lem-hash-table$a::default-val ,(if val-stobj$a-property
                                                      val-creator
                                                      `(lambda ()
                                                         ,default-val-name)))
+                `(lem-hash-table$a::val-fixer ,(or val-fixer
+                                                   'identity))
+                `(lem-hash-table$a::val-equiv ,val-equiv)
 
                 `(lem-hash-table$a::val-coupledp ,(or val-coupledp
                                                       `(lambda (val)
                                                          t)))
-                `(lem-hash-table$a::val-export-p ,(or val-export-p
-                                                      val-recognizer
-                                                      `(lambda (val)
-                                                         t)))
-                `(lem-hash-table$a::val-export ,(or val-export
-                                                    val-fixer
-                                                    'identity))
-                `(lem-hash-table$a::val-import ,(cond
-                                                  (val-import)
-                                                  (val-fixer
-                                                   `(lambda (export val)
-                                                      (,val-fixer export)))
-                                                  (t
-                                                   `(lambda (export val)
-                                                      export))))
 
                 `(lem-hash-table$a::keysp ,keys$ap)
+                `(lem-hash-table$a::keys-fix ,keys$a-fix)
+                `(lem-hash-table$a::keys-equiv ,keys$a-equiv)
+                `(lem-hash-table$a::recognizer/unique ,contents-recognizer$a)
+                `(lem-hash-table$a::creator/unique ,contents-creator$a)
+                `(lem-hash-table$a::fixer/unique ,contents-fixer$a)
+                `(lem-hash-table$a::equiv/unique (lambda (%c c)
+                                                   (equal (,contents-fixer$a %c)
+                                                          (,contents-fixer$a c))))
+                `(lem-hash-table$a::accessor/unique ,contents-accessor$a)
+                `(lem-hash-table$a::updater/unique ,contents-updater$a)
+                `(lem-hash-table$a::boundp/unique ,contents-boundp$a)
+                `(lem-hash-table$a::getp/unique ,contents-getp$a)
+                `(lem-hash-table$a::remover/unique ,contents-remover$a)
+                `(lem-hash-table$a::count/unique ,contents-count$a)
+                `(lem-hash-table$a::clear/unique ,contents-clear$a)
+                `(lem-hash-table$a::init/unique ,contents-init$a)
 
-                `(lem-hash-table$a::name (lambda ()
-                                           ',hash-table))
-                `(lem-hash-table$a::exportp-rec ,exportp-rec)
-                `(lem-hash-table$a::exportp ,exportp)))
+                `(lem-hash-table$a::recognizer/copyable ,recognizer$a)
+                `(lem-hash-table$a::creator/copyable ,creator$a)
+                `(lem-hash-table$a::fixer/copyable ,fixer$a)
+                `(lem-hash-table$a::equiv/copyable ,equiv$a)
+                `(lem-hash-table$a::accessor/copyable ,accessor$a)
+                `(lem-hash-table$a::updater/copyable ,updater$a)
+                `(lem-hash-table$a::boundp/copyable ,boundp$a)
+                `(lem-hash-table$a::getp/copyable ,getp$a)
+                `(lem-hash-table$a::remover/copyable ,remover$a)
+                `(lem-hash-table$a::count/copyable ,count$a)
+                `(lem-hash-table$a::clear/copyable ,clear$a)
+                `(lem-hash-table$a::init/copyable ,init$a)
+                `(lem-hash-table$a::keys ,keys$a)
+                `(lem-hash-table$a::keys-set ,keys$a-set)))
+
+         (fi-bindings-post-exportp
+          (list* `(lem-hash-table$a::val-export-p ,(or val-export-p
+                                                       val-recognizer
+                                                       `(lambda (val)
+                                                          t)))
+                 `(lem-hash-table$a::val-export ,(or val-export
+                                                     val-fixer
+                                                     'identity))
+                 `(lem-hash-table$a::val-import ,(cond
+                                                   (val-import)
+                                                   (val-fixer
+                                                    `(lambda (export val)
+                                                       (,val-fixer export)))
+                                                   (t
+                                                    `(lambda (export val)
+                                                       export))))
+                 `(lem-hash-table$a::name (lambda ()
+                                            ',hash-table))
+                 `(lem-hash-table$a::exportp-rec ,exportp-rec)
+                 `(lem-hash-table$a::exportp ,exportp)
+                 fi-bindings))
 
          (fi-bindings-post-export
           (list* `(lem-hash-table$a::export-acc ,export-acc)
                  `(lem-hash-table$a::export ,export)
-
-                 `(lem-hash-table$a::recognizer/copyable ,recognizer$a)
-                 `(lem-hash-table$a::creator/copyable ,creator$a)
-                 `(lem-hash-table$a::fixer/copyable ,fixer$a)
-                 `(lem-hash-table$a::accessor/copyable ,accessor$a)
-                 `(lem-hash-table$a::keys ,keys$a)
-
-                 `(lem-hash-table$a::recognizer/unique ,contents-recognizer$a)
-                 `(lem-hash-table$a::fixer/unique ,contents-fixer$a)
-                 `(lem-hash-table$a::accessor/unique ,contents-accessor$a)
-
-                 fi-bindings))
+                 fi-bindings-post-exportp))
 
          (fi-bindings-post-import
-          (list* `(lem-hash-table$a::coupledp ,coupledp)
-                 `(lem-hash-table$a::coupled-keys-p ,coupled-keys-p)
-                 `(lem-hash-table$a::coupled-keys-p-witness ,coupled-keys-p-witness)
-                 `(lem-hash-table$a::coupled-vals-p ,(if val-coupledp
-                                                         coupled-vals-p
-                                                         `(lambda (x)
-                                                            t)))
-                 `(lem-hash-table$a::coupled-vals-p-witness ,(if val-coupledp
-                                                                 coupled-vals-p-witness
-                                                                 `(lambda (x)
-                                                                    t)))
+          (list* `(lem-hash-table$a::coupledp-rec ,coupledp-rec)
+                 `(lem-hash-table$a::coupledp ,coupledp)
 
                  `(lem-hash-table$a::import-rec ,import-rec)
                  `(lem-hash-table$a::import ,import)
-
-                 `(lem-hash-table$a::keys-set ,keys$a-set)
-                 `(lem-hash-table$a::keys-fix ,keys$a-fix)
-                 `(lem-hash-table$a::updater/copyable ,updater$a)
-                 `(lem-hash-table$a::updater/unique ,contents-updater$a)
-                 `(lem-hash-table$a::boundp/copyable ,boundp$a)
-                 `(lem-hash-table$a::boundp/unique ,contents-boundp$a)
-                 `(lem-hash-table$a::count/copyable ,count$a)
-                 `(lem-hash-table$a::count/unique ,contents-count$a)
-                 `(lem-hash-table$a::init/copyable ,init$a)
 
                  fi-bindings-post-export)))
 
@@ -1282,7 +1296,307 @@
                     (in-theory
                       (enable ,(symbolicate val val "-EXPORT-THEORY"))))))
 
-         ;; `EXPORTP-REC'
+         (local
+           (defthm ,hash-table$a-constraints/unique
+             (and (equal (,contents-recognizer$a ,contents)
+                         (if (consp ,contents)
+                             (if (consp (car ,contents))
+                                 ,(cond
+                                    ((and key-recognizer
+                                          val-recognizer)
+                                     `(if (,key-recognizer (car (car ,contents)))
+                                          (if (,val-recognizer (cdr (car ,contents)))
+                                              (if (null (cdr ,contents))
+                                                  (null (cdr ,contents))
+                                                  (if (consp (cdr ,contents))
+                                                      (if (consp (car (cdr ,contents)))
+                                                          (if (<< (car (car ,contents))
+                                                                  (car (car (cdr ,contents))))
+                                                              (,contents-recognizer$a (cdr ,contents))
+                                                              nil)
+                                                          nil)
+                                                      nil))
+                                              nil)
+                                          nil))
+                                    (key-recognizer
+                                     `(if (,key-recognizer (car (car ,contents)))
+                                          (if (null (cdr ,contents))
+                                              (null (cdr ,contents))
+                                              (if (consp (cdr ,contents))
+                                                  (if (consp (car (cdr ,contents)))
+                                                      (if (<< (car (car ,contents))
+                                                              (car (car (cdr ,contents))))
+                                                          (,contents-recognizer$a (cdr ,contents))
+                                                          nil)
+                                                      nil)
+                                                  nil))
+                                          nil))
+                                    (val-recognizer
+                                     `(if (,val-recognizer (cdr (car ,contents)))
+                                          (if (null (cdr ,contents))
+                                              (null (cdr ,contents))
+                                              (if (consp (cdr ,contents))
+                                                  (if (consp (car (cdr ,contents)))
+                                                      (if (<< (car (car ,contents))
+                                                              (car (car (cdr ,contents))))
+                                                          (,contents-recognizer$a (cdr ,contents))
+                                                          nil)
+                                                      nil)
+                                                  nil))
+                                          nil))
+                                    (t
+                                     `(if (null (cdr ,contents))
+                                          (null (cdr ,contents))
+                                          (if (consp (cdr ,contents))
+                                              (if (consp (car (cdr ,contents)))
+                                                  (if (<< (car (car ,contents))
+                                                          (car (car (cdr ,contents))))
+                                                      (,contents-recognizer$a (cdr ,contents))
+                                                      nil)
+                                                  nil)
+                                              nil))))
+                                 nil)
+                             (null ,contents)))
+                  (equal (,contents-creator$a)
+                         nil)
+                  (equal (,contents-fixer$a ,contents)
+                         (if (,contents-recognizer$a ,contents)
+                             ,contents
+                             (,contents-creator$a)))
+                  (equal (,contents-accessor$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (if (if (endp ,contents)
+                                    (endp ,contents)
+                                    (<< ,key (car (car ,contents))))
+                                ,default-val
+                                (if (equal ,key (car (car ,contents)))
+                                    ,(if val-fixer
+                                         `(,val-fixer (cdr (car ,contents)))
+                                         `(cdr (car ,contents)))
+                                    (,contents-accessor$a ,key (cdr ,contents)))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-updater$a ,key ,val ,contents)
+                         ((lambda (,key ,val ,contents)
+                            (if (endp ,contents)
+                                (cons (cons ,key ,val) nil)
+                                (if (<< ,key (car (car ,contents)))
+                                    (cons (cons ,key ,val) ,contents)
+                                    (if (equal ,key (car (car ,contents)))
+                                        (cons (cons ,key ,val) (cdr ,contents))
+                                        (cons (car ,contents)
+                                              (,contents-updater$a ,key ,val (cdr ,contents)))))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          ,(if val-fixer
+                               `(,val-fixer ,val)
+                               val)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-boundp$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (if (if (endp ,contents)
+                                    (endp ,contents)
+                                    (<< ,key (car (car ,contents))))
+                                nil
+                                (if (equal ,key (car (car ,contents)))
+                                    t
+                                    (,contents-boundp$a ,key (cdr ,contents)))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-getp$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (cons (,contents-accessor$a ,key ,contents)
+                                  (cons (,contents-boundp$a ,key ,contents)
+                                        nil)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-remover$a ,key ,contents)
+                         ((lambda (,key ,contents)
+                            (if (endp ,contents)
+                                nil
+                                (if (<< ,key (car (car ,contents)))
+                                    ,contents
+                                    (if (equal ,key (car (car ,contents)))
+                                        (cdr ,contents)
+                                        (cons (car ,contents)
+                                              (,contents-remover$a ,key (cdr ,contents)))))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-count$a ,contents)
+                         ((lambda (,contents)
+                            (if (consp ,contents)
+                                (1+ (,contents-count$a (cdr ,contents)))
+                                0))
+                          (,contents-fixer$a ,contents)))
+                  (equal (,contents-clear$a ,contents)
+                         (,contents-creator$a))
+                  (equal (,contents-init$a ht-size rehash-size rehash-threshold ,contents)
+                         (,contents-creator$a)))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable (:d ,contents-recognizer$a)
+                                  (:d ,contents-creator$a)
+                                  (:d ,contents-fixer$a)
+                                  (:d ,equiv$a)
+                                  (:d ,contents-accessor$a)
+                                  (:d ,contents-updater$a)
+                                  (:d ,contents-boundp$a)
+                                  (:d ,contents-getp$a)
+                                  (:d ,contents-remover$a)
+                                  (:d ,contents-count$a)
+                                  (:d ,contents-clear$a)
+                                  (:d ,contents-init$a))
+               :use (:instance (:functional-instance
+                                lem-hash-table$a::hash-table-constraints/unique
+                                ,@fi-bindings)
+                               (lem-hash-table$a::hash-table ,contents)
+                               (lem-hash-table$a::key ,key)
+                               (lem-hash-table$a::val ,val))))))
+
+         (local
+           (defthm ,hash-table$a-constraints/copyable
+             (and (equal (,keys$ap ,set)
+                         (if (consp ,set)
+                             ,(if key-recognizer
+                                  `(if (,key-recognizer (car ,set))
+                                       (if (null (cdr ,set))
+                                           (null (cdr ,set))
+                                           (if (consp (cdr ,set))
+                                               (if (<< (car ,set) (car (cdr ,set)))
+                                                   (,keys$ap (cdr ,set))
+                                                   'nil)
+                                               'nil))
+                                       'nil)
+                                  `(if (null (cdr ,set))
+                                       (null (cdr ,set))
+                                       (if (consp (cdr ,set))
+                                           (if (<< (car ,set) (car (cdr ,set)))
+                                               (,keys$ap (cdr ,set))
+                                               'nil)
+                                           'nil)))
+                             (null ,set)))
+                  (equal (,keys$a-fix ,set)
+                         (if (,keys$ap ,set) ,set 'nil))
+                  (equal (,keys$a-equiv ,%set ,set)
+                         (equal (,keys$a-fix ,%set) (,keys$a-fix ,set)))
+                  (equal (,recognizer$a ,hash-table)
+                         (if (consp ,hash-table)
+                             (if (,keys$ap (car ,hash-table))
+                                 (,contents-recognizer$a (cdr ,hash-table))
+                                 'nil)
+                             'nil))
+                  (equal (,creator$a)
+                         (cons 'nil (,contents-creator$a)))
+                  (equal (,fixer$a ,hash-table)
+                         (if (,recognizer$a ,hash-table)
+                             ,hash-table
+                             (,creator$a)))
+                  (equal (,equiv$a ,%hash-table ,hash-table)
+                         (equal (,fixer$a ,%hash-table)
+                                (,fixer$a ,hash-table)))
+                  (equal (,accessor$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (,contents-accessor$a ,key (cdr ,hash-table)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,updater$a ,key ,val ,hash-table)
+                         ((lambda (,key ,val ,hash-table)
+                            (cons (car ,hash-table)
+                                  (,contents-updater$a ,key ,val (cdr ,hash-table))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          ,(if val-fixer
+                               `(,val-fixer ,val)
+                               val)
+                          (,fixer$a ,hash-table)))
+                  (equal (,boundp$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (,contents-boundp$a ,key (cdr ,hash-table)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,getp$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (,contents-getp$a ,key (cdr ,hash-table)))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,remover$a ,key ,hash-table)
+                         ((lambda (,key ,hash-table)
+                            (cons (car ,hash-table)
+                                  (,contents-remover$a ,key (cdr ,hash-table))))
+                          ,(if key-fixer
+                               `(,key-fixer ,key)
+                               key)
+                          (,fixer$a ,hash-table)))
+                  (equal (,count$a ,hash-table)
+                         ((lambda (,hash-table)
+                            (,contents-count$a (cdr ,hash-table)))
+                          (,fixer$a ,hash-table)))
+                  (equal (,clear$a ,hash-table)
+                         (,creator$a))
+                  (equal (,init$a ht-size rehash-size rehash-threshold ,hash-table)
+                         (,creator$a))
+                  (equal (,keys$a ,hash-table)
+                         ((lambda (,hash-table) (car ,hash-table))
+                          (,fixer$a ,hash-table)))
+                  (equal (,keys$a-set ,set ,hash-table)
+                         ((lambda (,set ,hash-table)
+                            (cons ,set (cdr ,hash-table)))
+                          (,keys$a-fix ,set)
+                          (,fixer$a ,hash-table))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :in-theory (enable set::equiv
+                                  set::sets-are-true-lists-compound-recognizer
+                                  (:e set::setp)
+                                  (:d ,recognizer$a)
+                                  (:d ,creator$a)
+                                  (:d ,fixer$a)
+                                  (:d ,equiv$a)
+                                  (:d ,accessor$a)
+                                  (:d ,updater$a)
+                                  (:d ,boundp$a)
+                                  (:d ,getp$a)
+                                  (:d ,remover$a)
+                                  (:d ,count$a)
+                                  (:d ,clear$a)
+                                  (:d ,init$a)
+                                  (:d ,keys$ap)
+                                  (:d ,keys$a-fix)
+                                  (:d ,keys$a-equiv)
+                                  (:d ,keys$a)
+                                  (:d ,keys$a-set)
+                                  acl2::fast-<<-is-<<
+                                  set::emptyp)
+               :use (:instance (:functional-instance
+                                lem-hash-table$a::hash-table-constraints/copyable
+                                ,@fi-bindings)
+                               (lem-hash-table$a::%hash-table ,%hash-table)
+                               (lem-hash-table$a::hash-table ,hash-table)
+                               (lem-hash-table$a::key ,key)
+                               (lem-hash-table$a::val ,val)
+                               (lem-hash-table$a::set ,set)
+                               (lem-hash-table$a::%set ,%set))))))
+
          ,@(and (or key-recognizer
                     val-recognizer)
                 `((defun ,exportp-rec (map)
@@ -1303,12 +1617,116 @@
                                       (,exportp-rec (cdr map)))))
                         (null map)))))
 
-         ;; `EXPORTP'
          (defun ,exportp (export)
            (declare (xargs :guard t))
            (and (consp export)
                 (equal (car export) ',hash-table)
                 (,exportp-rec (cdr export))))
+
+         (local
+           (defthm ,exportp-constraints
+             (and (equal (,exportp-rec map)
+                         (if (consp map)
+                             (if (consp (car map))
+                                 ,(cond
+                                    ((and key-recognizer
+                                          val-recognizer)
+                                     `(if (,key-recognizer (car (car map)))
+                                          (if (,(or val-export-p
+                                                    val-recognizer)
+                                                (cdr (car map)))
+                                              (if (null (cdr map))
+                                                  (null (cdr map))
+                                                  (if (consp (cdr map))
+                                                      (if (consp (car (cdr map)))
+                                                          (if (<< (car (car map))
+                                                                  (car (car (cdr map))))
+                                                              (,exportp-rec (cdr map))
+                                                              nil)
+                                                          nil)
+                                                      nil))
+                                              nil)
+                                          nil))
+                                    (key-recognizer
+                                     `(if (,key-recognizer (car (car map)))
+                                          (if (null (cdr map))
+                                              (null (cdr map))
+                                              (if (consp (cdr map))
+                                                  (if (consp (car (cdr map)))
+                                                      (if (<< (car (car map))
+                                                              (car (car (cdr map))))
+                                                          (,exportp-rec (cdr map))
+                                                          nil)
+                                                      nil)
+                                                  nil))
+                                          nil))
+                                    (val-recognizer
+                                     `(if (,(or val-export-p
+                                                val-recognizer)
+                                            (cdr (car map)))
+                                          (if (null (cdr map))
+                                              (null (cdr map))
+                                              (if (consp (cdr map))
+                                                  (if (consp (car (cdr map)))
+                                                      (if (<< (car (car map))
+                                                              (car (car (cdr map))))
+                                                          (,exportp-rec (cdr map))
+                                                          nil)
+                                                      nil)
+                                                  nil))
+                                          nil))
+                                    (t
+                                     `(if (null (cdr map))
+                                          (null (cdr map))
+                                          (if (consp (cdr map))
+                                              (if (consp (car (cdr map)))
+                                                  (if (<< (car (car map))
+                                                          (car (car (cdr map))))
+                                                      (,exportp-rec (cdr map))
+                                                      nil)
+                                                  nil)
+                                              nil))))
+                                 nil)
+                             (null map)))
+                  (equal (,exportp export)
+                         (if (consp export)
+                             (if (equal (car export) ',hash-table)
+                                 (,exportp-rec (cdr export))
+                                 nil)
+                             nil)))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :use (:functional-instance
+                     lem-hash-table$a::exportp-constraints
+                     ,@fi-bindings-post-exportp)))))
+
+         (local
+           (in-theory
+             (disable ,exportp-rec
+                      ,exportp)))
+
+         (local
+           (defthm ,exportp-rec-tp
+             (booleanp (,exportp-rec map))
+             :rule-classes :type-prescription
+             :hints
+             (("Goal"
+               :by (:functional-instance
+                    lem-hash-table$a::exportp-rec-tp
+                    ,@fi-bindings-post-exportp)))))
+
+         (local
+           (defthm ,exportp-rec-cr
+             (implies (,exportp-rec map)
+                      (true-listp map))
+             :rule-classes :compound-recognizer
+             :hints
+             (("Goal"
+               :by (:functional-instance
+                    lem-hash-table$a::exportp-rec-cr
+                    ,@fi-bindings-post-exportp)))))
 
          (defthm ,exportp-tp
            (booleanp (,exportp export))
@@ -1317,7 +1735,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::exportp-tp
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-exportp))))
 
          (defthm ,exportp-cr
            (implies (,exportp export)
@@ -1328,7 +1746,7 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::exportp-cr
-                  ,@fi-bindings))))
+                  ,@fi-bindings-post-exportp))))
 
          (local
            (defthm ,mapp-when-exportp-rec
@@ -1338,7 +1756,7 @@
              (("Goal"
                :by (:functional-instance
                     lem-hash-table$a::mapp-when-exportp-rec
-                    ,@fi-bindings)))))
+                    ,@fi-bindings-post-exportp)))))
 
          ,@(and key-recognizer
                 `((local
@@ -1350,7 +1768,7 @@
                       (("Goal"
                         :by (:functional-instance
                              lem-hash-table$a::key-recognizer-head-when-exportp-rec
-                             ,@fi-bindings)))))))
+                             ,@fi-bindings-post-exportp)))))))
 
          ,@(and val-recognizer
                 `((local
@@ -1364,7 +1782,7 @@
                       (("Goal"
                         :by (:functional-instance
                              lem-hash-table$a::val-export-p-head-when-exportp-rec
-                             ,@fi-bindings)))))))
+                             ,@fi-bindings-post-exportp)))))))
 
          (local
            (defthm ,exportp-rec-of-tail
@@ -1374,7 +1792,7 @@
              (("Goal"
                :by (:functional-instance
                     lem-hash-table$a::exportp-rec-of-tail
-                    ,@fi-bindings)))))
+                    ,@fi-bindings-post-exportp)))))
 
          (local
            (defthm ,exportp-rec-of-update
@@ -1391,7 +1809,7 @@
              (("Goal"
                :by (:functional-instance
                     lem-hash-table$a::exportp-rec-of-update
-                    ,@fi-bindings)))))
+                    ,@fi-bindings-post-exportp)))))
 
          ,@(and key-recognizer
                 `((local
@@ -1400,13 +1818,10 @@
                                (,keys$ap (omap::keys map)))
                       :hints
                       (("Goal"
-                        :do-not-induct t
-                        :in-theory (enable ,hash-table$a-constraints)
                         :by (:functional-instance
                              lem-hash-table$a::keysp-of-keys-when-exportp-rec
-                             ,@fi-bindings)))))))
+                             ,@fi-bindings-post-exportp)))))))
 
-         ;; `EXPORT-ACC'
          (defun ,export-acc (set acc ,hash-table)
            (declare (xargs :stobjs ,hash-table
                            :guard (and (,keys$ap set)
@@ -1434,11 +1849,45 @@
                             (,val (,accessor ,key ,hash-table)))
                        (,export-acc (set::tail set) (omap::update ,key ,val acc) ,hash-table)))))
 
-         ;; `EXPORT'
          (defun ,export (,hash-table)
            (declare (xargs :stobjs ,hash-table))
            (cons ',hash-table
                  (,export-acc (,keys ,hash-table) () ,hash-table)))
+
+         (local
+           (defthm ,export-constraints
+             (and (equal (,export-acc ,set acc ,hash-table)
+                         (if (if (set::emptyp ,set)
+                                 (set::emptyp ,set)
+                                 (not (,keys$ap ,set)))
+                             (omap::mfix acc)
+                             ((lambda (,key acc ,set ,hash-table)
+                                ((lambda (,val ,set ,key acc ,hash-table)
+                                   ((lambda (,export ,hash-table acc ,key ,set)
+                                      (,export-acc (set::tail ,set)
+                                                   (omap::update ,key ,export acc)
+                                                   ,hash-table))
+                                    (,(or val-export
+                                          val-fixer
+                                          'identity)
+                                      ,val)
+                                    ,hash-table acc ,key ,set))
+                                 (,accessor$a ,key ,hash-table)
+                                 ,set ,key acc ,hash-table))
+                              (set::head ,set)
+                              acc ,set ,hash-table)))
+                  (equal (,export ,hash-table)
+                         (cons ',hash-table
+                               (,export-acc (,keys$a ,hash-table)
+                                            nil
+                                            ,hash-table))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :use (:functional-instance
+                     lem-hash-table$a::export-constraints
+                     ,@fi-bindings-post-export)))))
 
          (defthm ,export-tp
            (and (consp (,export ,hash-table))
@@ -1446,8 +1895,6 @@
            :rule-classes :type-prescription
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
                   lem-hash-table$a::export-tp
                   ,@fi-bindings-post-export))))
@@ -1478,13 +1925,13 @@
                   lem-hash-table$a::export-when-not-recognizer/copyable
                   ,@fi-bindings-post-export))))
 
-         ;; `IMPORT-REC'
          (defun ,import-rec (map ,hash-table)
            (declare (xargs :stobjs ,hash-table
                            :guard (,exportp-rec map)
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,hash-table$a-theorems)))
+                             :in-theory (enable ,hash-table$a-theorems
+                                                set::emptyp)))
                            :measure (omap::size map)
                            :hints
                            (("Goal"
@@ -1503,10 +1950,12 @@
                       `(let ((,hash-table (,updater ,key val-export ,hash-table)))
                          (,import-rec (omap::tail map) ,hash-table))))))
 
-         ;; `IMPORT'
          (defun ,import (export ,hash-table)
            (declare (xargs :stobjs ,hash-table
-                           :guard (,exportp export)))
+                           :guard (,exportp export)
+                           :guard-hints
+                           (("Goal"
+                             :in-theory (enable ,exportp)))))
            (if (mbt (,exportp export))
                (let* ((map (cdr export))
                       (count (omap::size map))
@@ -1517,23 +1966,75 @@
                (let ((,hash-table (,creator)))
                  ,hash-table)))
 
+         (local
+           (defthm ,import-constraints
+             (and (equal (,import-rec map ,hash-table)
+                         (if (if (omap::emptyp map)
+                                 (omap::emptyp map)
+                                 (not (,exportp-rec map)))
+                             (,fixer$a ,hash-table)
+                             ((lambda (mv map ,hash-table)
+                                ((lambda (,key val-export map ,hash-table)
+                                   ((lambda (,val ,key ,hash-table map val-export)
+                                      ((lambda (,val map ,hash-table ,key)
+                                         ((lambda (,hash-table map)
+                                            (,import-rec (omap::tail map)
+                                                         ,hash-table))
+                                          (,updater$a ,key ,val ,hash-table)
+                                          map))
+                                       (,(cond
+                                           (val-import)
+                                           (val-fixer
+                                            `(lambda (export val)
+                                               (declare (ignorable val))
+                                               (,val-fixer export)))
+                                           (t
+                                            `(lambda (export val)
+                                               (declare (ignorable val))
+                                               export)))
+                                         val-export ,val)
+                                       map ,hash-table ,key))
+                                    (,accessor$a ,key ,hash-table)
+                                    ,key ,hash-table map val-export))
+                                 (mv-nth 0 mv)
+                                 (mv-nth 1 mv)
+                                 map ,hash-table))
+                              (omap::head map)
+                              map ,hash-table)))
+                  (equal (,import ,export ,hash-table)
+                         (if (,exportp ,export)
+                             ((lambda (map ,hash-table)
+                                ((lambda (count map ,hash-table)
+                                   ((lambda (,hash-table map)
+                                      ((lambda (,hash-table map)
+                                         ((lambda (,hash-table) ,hash-table)
+                                          (,keys$a-set (omap::keys map) ,hash-table)))
+                                       (,import-rec map ,hash-table)
+                                       map))
+                                    (,init$a count nil nil ,hash-table)
+                                    map))
+                                 (omap::size map)
+                                 map ,hash-table))
+                              (cdr ,export)
+                              ,hash-table)
+                             (,creator$a))))
+             :rule-classes ()
+             :hints
+             (("Goal"
+               :do-not-induct t
+               :use (:functional-instance
+                     lem-hash-table$a::import-constraints
+                     ,@fi-bindings-post-import)))))
+
          (defthm ,import-tp
            (and (consp (,import export ,hash-table))
                 (true-listp (,import export ,hash-table)))
            :rule-classes :type-prescription
            :hints
            (("Goal"
-             :do-not-induct t
-             :in-theory (enable ,hash-table$a-theorems)
              :by (:functional-instance
                   lem-hash-table$a::import-tp
-                  ,@fi-bindings-post-import))
-            ("Subgoal 4"
-             :in-theory (enable ,hash-table$a-constraints))
-            ("Subgoal 3"
-             :in-theory (enable ,hash-table$a-constraints))
-            ("Subgoal 2"
-             :in-theory (enable ,hash-table$a-constraints))))
+                  ,@fi-bindings-post-import))))
 
          (defthm ,recognizer$a-of-import
            (,recognizer$a (,import export ,hash-table))
@@ -1550,24 +2051,8 @@
              :do-not-induct t
              :by (:functional-instance
                   lem-hash-table$a::coupledp-of-import
-                  ,@fi-bindings-post-import))
-            (,(if val-coupledp
-                  "Subgoal 8"
-                  "Subgoal 7")
-              :in-theory (enable ,coupledp))
-            ,@(and val-coupledp
-                   `(("Subgoal 7"
-                      :in-theory (enable ,coupledp-constraints))))
-            ("Subgoal 5"
-             :in-theory (enable ,coupledp-constraints))
-            ("Subgoal 4"
-             :in-theory (enable ,hash-table$a-constraints))
-            ("Subgoal 3"
-             :in-theory (enable ,hash-table$a-constraints))
-            ("Subgoal 2"
-             :in-theory (enable ,hash-table$a-constraints))
-            ("Subgoal 1"
-             :in-theory (enable ,hash-table$a-constraints))))
+                  ,@fi-bindings-post-import)
+             :expand (,coupledp lem-hash-table$a::hash-table))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
@@ -1612,7 +2097,6 @@
            :hints
            (("Goal"
              :do-not-induct t
-             :in-theory (enable ,hash-table$a-constraints)
              :by (:functional-instance
                   lem-hash-table$a::boundp/copyable-of-import
                   ,@fi-bindings-post-import))))
@@ -1670,6 +2154,11 @@
            (implies (,coupledp ,%hash-table)
                     (equal (,import (,export ,%hash-table) ,hash-table)
                            (,fixer$a ,%hash-table)))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (,coupledp (double-rewrite ,%hash-table))
+                               (equal (,import (,export ,%hash-table) ,hash-table)
+                                      (,fixer$a (double-rewrite ,%hash-table))))))
            :hints
            (("Goal"
              :by (:functional-instance
@@ -2126,6 +2615,14 @@
                                  (,fixer$a ,%frame)))
                 `(equal (,import (,export ,%frame) ,frame)
                         (,fixer$a ,%frame)))
+           :rule-classes
+           ((:rewrite :corollary
+                      ,(if coupledp
+                           `(implies (,coupledp (double-rewrite ,%frame))
+                                     (equal (,import (,export ,%frame) ,frame)
+                                            (,fixer$a (double-rewrite ,%frame))))
+                           `(equal (,import (,export ,%frame) ,frame)
+                                   (,fixer$a (double-rewrite ,%frame))))))
            :hints
            (("Goal"
              :use ((:instance ,frame$a-equal

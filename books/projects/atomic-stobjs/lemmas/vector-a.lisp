@@ -1875,7 +1875,7 @@
                       (equal (coupledp-rec/fixed index vector)
                              t)))))
 
-(defthm coupledp-rec/fixed-when-not-recognizer/fixed-1
+(defthm coupledp-rec/fixed-when-not-recognizer/fixed-2
   (implies (not (recognizer/fixed vector))
            (coupledp-rec/fixed index vector)))
 
