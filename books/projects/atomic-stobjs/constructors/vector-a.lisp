@@ -653,6 +653,7 @@
                       :rule-classes ()
                       :hints
                       (("Goal"
+                        :do-not-induct t
                         :use (:functional-instance
                               ,(if resizable
                                    'lem-vector$a::vector-constraints/resizable
