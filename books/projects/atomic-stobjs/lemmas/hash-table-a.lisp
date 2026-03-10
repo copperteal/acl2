@@ -3582,6 +3582,35 @@
   (("Goal"
     :in-theory (enable set::delete-cardinality))))
 
+(defthm coupledp-of-remover/copyable
+  (implies (coupledp hash-table)
+           (equal (coupledp (remover/copyable key hash-table))
+                  (not (boundp/copyable key hash-table)))))
+
+(defthm coupledp-of-remover/copyable-delete
+  (implies (and (coupledp hash-table)
+                (key-recognizer key)
+                (key-equiv %key key))
+           (coupledp (remover/copyable %key
+                                       (keys-set (set::delete key (keys hash-table))
+                                                 hash-table))))
+  :rule-classes
+  ((:rewrite :corollary
+             (implies (and (coupledp hash-table)
+                           (key-recognizer key)
+                           (key-equiv %key (double-rewrite key)))
+                      (coupledp (remover/copyable %key
+                                                  (keys-set (set::delete key (keys hash-table))
+                                                            hash-table))))))
+  :hints
+  (("Goal"
+    :cases ((boundp/copyable key hash-table)))
+   ("Subgoal 1"
+    :in-theory (enable set::delete-cardinality)
+    :use ((:instance coupledp-rec-of-delete
+                     (set (keys hash-table))
+                     (key (key-fixer %key)))))))
+
 (defthm coupledp-constraints
   (and (equal (coupledp-rec set hash-table)
               (if (set::emptyp set)
