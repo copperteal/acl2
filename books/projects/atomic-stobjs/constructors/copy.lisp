@@ -1163,6 +1163,8 @@
          (in-of-keys$a-when-coupledp (symbolicate package-witness "IN-OF-" keys$a "-WHEN-" coupledp))
          (val-coupledp-of-accessor$a (symbolicate package-witness val-coupledp "-OF-" accessor$a))
          (coupledp-of-updater$a (symbolicate package-witness coupledp "-OF-" updater$a))
+         (coupledp-of-remover$a (symbolicate package-witness coupledp "-OF-" remover$a))
+         (coupledp-of-remover$a-delete (symbolicate package-witness coupledp-of-remover$a "-DELETE"))
 
          (copy-rec-of-updater$a-2 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" updater$a "-2"))
          (copy-rec-of-updater$a-3 (symbolicate "ATOMIC-STOBJS" copy-rec "-OF-" updater$a "-3"))
@@ -2105,6 +2107,39 @@
            (("Goal"
              :by (:functional-instance
                   lem-hash-table$a::coupledp-of-updater/copyable
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-of-remover$a
+           (implies (,coupledp ,hash-table)
+                    (equal (,coupledp (,remover$a ,key ,hash-table))
+                           (not (,boundp$a ,key ,hash-table))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-of-remover/copyable
+                  ,@fi-bindings-with-coupledp))))
+
+         (defthm ,coupledp-of-remover$a-delete
+           (implies (and (,coupledp ,hash-table)
+                         ,@(and key-recognizer
+                                `((,key-recognizer ,key)))
+                         (,key-equiv ,%key ,key))
+                    (,coupledp (,remover$a ,%key
+                                           (,keys$a-set (set::delete ,key (,keys$a ,hash-table))
+                                                        ,hash-table))))
+           :rule-classes
+           ((:rewrite :corollary
+                      (implies (and (,coupledp ,hash-table)
+                                    ,@(and key-recognizer
+                                           `((,key-recognizer ,key)))
+                                    (,key-equiv ,%key (double-rewrite ,key)))
+                               (,coupledp (,remover$a ,%key
+                                                      (,keys$a-set (set::delete ,key (,keys$a ,hash-table))
+                                                                   ,hash-table))))))
+           :hints
+           (("Goal"
+             :by (:functional-instance
+                  lem-hash-table$a::coupledp-of-remover/copyable-delete
                   ,@fi-bindings-with-coupledp))))
 
          (defun ,copy-rec (set ,%hash-table ,hash-table)
