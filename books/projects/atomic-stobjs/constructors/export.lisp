@@ -146,6 +146,7 @@
 
          (import-tp (symbolicate package-witness import "-TP"))
          (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
+         (coupledp-constraints (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINTS"))
          (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
          (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
          (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
@@ -748,7 +749,35 @@
                   ,@fi-bindings-with-import))))
 
          ,@(and coupledp
-                `((defthm ,coupledp-of-import
+                `((local
+                    (defthm ,coupledp-constraints
+                      (and (equal (,coupledp-rec ,index ,vector)
+                                  (if (zp ,index)
+                                      (zp ,index)
+                                      ((lambda (,index ,vector)
+                                         (if (,element-coupledp (,accessor$a ,index ,vector))
+                                             (,coupledp-rec ,index ,vector)
+                                             'nil))
+                                       (1- ,index)
+                                       ,vector)))
+                           (equal (,coupledp ,vector)
+                                  (,coupledp-rec ,(if resizable
+                                                      `(,length$a ,vector)
+                                                      default-length-name)
+                                                 ,vector)))
+                      :rule-classes ()
+                      :hints
+                      (("Goal"
+                        :do-not-induct t
+                        :in-theory (enable ,coupledp
+                                           ,coupledp-rec)
+                        :use (:functional-instance
+                              ,(if resizable
+                                   'lem-vector$a::coupledp-constraints/resizable
+                                   'lem-vector$a::coupledp-constraints/fixed)
+                              ,@fi-bindings-with-coupledp)))))
+
+                  (defthm ,coupledp-of-import
                     (,coupledp (,import export ,vector))
                     :hints
                     (("Goal"
@@ -756,7 +785,7 @@
                            ,(if resizable
                                 'lem-vector$a::coupledp/resizable-of-import/resizable
                                 'lem-vector$a::coupledp/fixed-of-import/fixed)
-                           ,@fi-bindings-with-import))))))
+                           ,@fi-bindings-with-coupledp))))))
 
          (defthm ,import-when-not-exportp
            (implies (not (,exportp export))
