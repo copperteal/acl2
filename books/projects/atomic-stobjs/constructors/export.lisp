@@ -61,6 +61,7 @@
 
          (stobj-property (getpropc vector 'acl2::stobj))
          (creator (cdadr stobj-property))
+         (%creator (symbolicate %vector "%" creator))
          (the-vector (symbolicate vector "THE-" vector))
          (length (second (third stobj-property)))
          (resizer (third (third stobj-property)))
@@ -335,6 +336,10 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %vector 'acl2::absstobj-info))))))
 
          ,@(and coupledp
                 `((local
@@ -669,8 +674,11 @@
                              `((,vector (,resizer (len list) ,vector))))
                       (,vector (,import-rec list 0 ,vector)))
                  ,vector)
-               (let ((,vector (,creator)))
-                 ,vector)))
+               (with-local-stobj ,%vector
+                 (mv-let (,vector ,%vector)
+                         (swap-stobjs ,vector ,%vector)
+                   ,vector)
+                 ,%creator)))
 
          (local
            (defthm ,import-constraints
@@ -960,6 +968,7 @@
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
          (creator (cdadr stobj-property))
+         (%creator (symbolicate %hash-table "%" creator))
          (the-hash-table (symbolicate hash-table "THE-" hash-table))
          (accessor (second (third stobj-property)))
          (updater (third (third stobj-property)))
@@ -1314,6 +1323,10 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
+
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %hash-table 'acl2::absstobj-info))))))
 
          ,@(and coupledp
                 `((local
@@ -1992,8 +2005,11 @@
                       (,hash-table (,import-rec map ,hash-table))
                       (,hash-table (,keys-set (omap::keys map) ,hash-table)))
                  ,hash-table)
-               (let ((,hash-table (,creator)))
-                 ,hash-table)))
+               (with-local-stobj ,%hash-table
+                 (mv-let (,hash-table ,%hash-table)
+                         (swap-stobjs ,hash-table ,%hash-table)
+                   ,hash-table)
+                 ,%creator)))
 
          (local
            (defthm ,import-constraints
@@ -2235,6 +2251,7 @@
 
          (stobj-property (getpropc frame 'acl2::stobj))
          (creator (cdadr stobj-property))
+         (%creator (symbolicate %frame "%" creator))
          (the-frame (symbolicate frame "THE-" frame))
 
          (world (w state))
@@ -2452,6 +2469,10 @@
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc frame 'acl2::absstobj-info))))))
 
+         (local
+           (in-theory
+             (enable ,@(strip-cars (cdr (getpropc %frame 'acl2::absstobj-info))))))
+
          ,@(and coupledp
                 `((local
                     (in-theory
@@ -2565,8 +2586,11 @@
                         (setq accessors (cdr accessors))
                         (setq updaters (cdr updaters))
                         (setq i (- i 2))))
-               (let ((,frame (,creator)))
-                 ,frame)))
+               (with-local-stobj ,%frame
+                 (mv-let (,frame ,%frame)
+                         (swap-stobjs ,frame ,%frame)
+                   ,frame)
+                 ,%creator)))
 
          (defthm ,import-tp
            ,(if (consp fields)

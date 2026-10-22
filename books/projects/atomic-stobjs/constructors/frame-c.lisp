@@ -346,6 +346,12 @@
                                                        :type ,element-type
                                                        ,@(and (not stobj-property)
                                                               `(:initially ,initial-element)))))
+                (frame/fixer-hack (symbolicate package-witness frame "/FIXER-HACK"))
+                (defstobj-descriptors/fh (loop$ :for descriptor :in defstobj-descriptors
+                                               :collect (cons (symbolicate package-witness
+                                                                           (car descriptor)
+                                                                           "/FIXER-HACK")
+                                                              (cdr descriptor))))
                 (prologue
                  `((deflabel ,frame-begin)
 
@@ -356,7 +362,14 @@
                      :renaming ,doublets
                      :inline ,inline
                      :non-memoizable ,(not memoizable)
-                     :non-executable ,(not executable))))
+                     :non-executable ,(not executable))
+
+                   (defstobj ,frame/fixer-hack
+                     ,@defstobj-descriptors/fh
+                     :inline ,inline
+                     :congruent-to ,frame
+                     :non-memoizable ,(not memoizable)
+                     :non-executable t)))
 
                 ;; Theorem Names
                 (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
@@ -447,10 +460,23 @@
                       (declare (xargs :stobjs ,frame))
                       (mbe :logic (if (,recognizer ,frame)
                                       ,frame
-                                      (,creator))
+                                      (with-local-stobj ,frame/fixer-hack
+                                        (mv-let (,frame ,frame/fixer-hack)
+                                                (swap-stobjs ,frame ,frame/fixer-hack)
+                                          ,frame)))
                            :exec ,frame))
 
-                    (table fixer ',frame ',fixer))))
+                    (table fixer ',frame ',fixer)
+
+                    (defthm ,(symbolicate package-witness fixer "-DEF")
+                      (equal (,fixer ,frame)
+                             (if (,recognizer ,frame)
+                                 ,frame
+                                 (,creator)))
+                      :rule-classes :definition)
+
+                    (in-theory
+                      (disable ,fixer)))))
 
            `(progn
               ,@prologue

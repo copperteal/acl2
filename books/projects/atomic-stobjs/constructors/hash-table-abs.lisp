@@ -92,10 +92,10 @@
                              (fifth (third stobj-property))
                              (fourth (third stobj-property))))
               (count$c (if copyable
-                           (eighth (third stobj-property))
-                           (seventh (third stobj-property))))
+                           (ninth (third stobj-property))
+                           (eighth (third stobj-property))))
               (keys$c (and copyable
-                           (nth 10 (third stobj-property))))
+                           (nth 11 (third stobj-property))))
 
               (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a-property (w state)))))
               (recognizer$a (first (second stobj$a-property)))
@@ -295,24 +295,24 @@
                             (fifth (third stobj-property))
                             (fourth (third stobj-property))))
               (getp$c (if copyable
-                          (sixth (third stobj-property))
-                          (fifth (third stobj-property))))
+                          (seventh (third stobj-property))
+                          (sixth (third stobj-property))))
               (remover$c (if copyable
-                             (seventh (third stobj-property))
-                             (sixth (third stobj-property))))
+                             (eighth (third stobj-property))
+                             (seventh (third stobj-property))))
               (count$c (if copyable
-                           (eighth (third stobj-property))
-                           (seventh (third stobj-property))))
+                           (ninth (third stobj-property))
+                           (eighth (third stobj-property))))
               (clear$c (if copyable
                            (cdr (assoc hash-table$c (table-alist 'clear world)))
-                           (eighth (third stobj-property))))
+                           (ninth (third stobj-property))))
               (init$c (if copyable
                           (cdr (assoc hash-table$c (table-alist 'init world)))
-                          (ninth (third stobj-property))))
+                          (tenth (third stobj-property))))
               (keys$c (and copyable
-                           (nth 10 (third stobj-property))))
+                           (nth 11 (third stobj-property))))
               (keys-set$c (and copyable
-                               (nth 11 (third stobj-property))))
+                               (nth 12 (third stobj-property))))
 
               ;; `HASH-TABLE$A'
               (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a-property world))))

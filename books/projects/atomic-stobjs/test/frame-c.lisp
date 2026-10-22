@@ -44,7 +44,7 @@
   :non-memoizable t
   :non-executable t)
 
-(defun st/0-copy (%st/0 st/0)
+(defun-nx st/0-copy (%st/0 st/0)
   (declare (xargs :stobjs (%st/0 st/0)))
   (let ((%st/0 (if (st/0p %st/0)
                    %st/0
@@ -64,7 +64,7 @@
   :non-memoizable t
   :non-executable t)
 
-(defun st/1-copy (%st/1 st/1)
+(defun-nx st/1-copy (%st/1 st/1)
   (declare (xargs :stobjs (%st/1 st/1)))
   (let ((%st/1 (if (st/1p %st/1)
                    %st/1
@@ -84,7 +84,7 @@
   :non-memoizable t
   :non-executable t)
 
-(defun st/2-copy (%st/2 st/2)
+(defun-nx st/2-copy (%st/2 st/2)
   (declare (xargs :stobjs (%st/2 st/2)))
   (let ((%st/2 (if (st/2p %st/2)
                    %st/2

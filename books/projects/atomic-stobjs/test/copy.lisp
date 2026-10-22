@@ -34,6 +34,7 @@
 (include-book "../constructors/vector")
 (include-book "../constructors/hash-table")
 (include-book "../constructors/frame")
+(include-book "../constructors/congruent")
 (include-book "../constructors/copy")
 
 
@@ -70,6 +71,9 @@
   :initial-element 0
   :resizable nil)
 
+(atomic-stobjs::define-congruent vec0
+  :package-witness vec0)
+
 (atomic-stobjs::define-copy vec0)
 
 (defun string-fix (x)
@@ -94,11 +98,17 @@
   :initial-element ""
   :resizable nil)
 
+(atomic-stobjs::define-congruent vec1
+  :package-witness vec1)
+
 (atomic-stobjs::define-copy vec1)
 
 (atomic-stobjs::define-vector vec2 13
   :element-type vec0
   :resizable nil)
+
+(atomic-stobjs::define-congruent vec2
+  :package-witness vec2)
 
 (atomic-stobjs::define-copy vec2)
 
@@ -106,16 +116,25 @@
   :element-type vec2
   :resizable nil)
 
+(atomic-stobjs::define-congruent vec3
+  :package-witness vec3)
+
 (atomic-stobjs::define-copy vec3)
 
 (atomic-stobjs::define-vector vec4 10000
   :element-type vec3
   :resizable t)
 
+(atomic-stobjs::define-congruent vec4
+  :package-witness vec4)
+
 (atomic-stobjs::define-copy vec4)
 
 (atomic-stobjs::define-vector vec5 20000
   :resizable nil)
+
+(atomic-stobjs::define-congruent vec5
+  :package-witness vec5)
 
 (atomic-stobjs::define-copy vec5)
 
@@ -157,6 +176,9 @@
   :val-equiv nat-equiv
   :default-val 0)
 
+(atomic-stobjs::define-congruent ht0
+  :package-witness ht0)
+
 (atomic-stobjs::define-copy ht0)
 
 (atomic-stobjs::define-hash-table ht1 eql
@@ -166,15 +188,24 @@
   :key-equiv character-equiv
   :default-key #.acl2::*null-char*)
 
+(atomic-stobjs::define-congruent ht1
+  :package-witness ht1)
+
 (atomic-stobjs::define-copy ht1)
 
 (atomic-stobjs::define-hash-table ht2 equal
   :element-type ht1)
 
+(atomic-stobjs::define-congruent ht2
+  :package-witness ht2)
+
 (atomic-stobjs::define-copy ht2)
 
 (atomic-stobjs::define-hash-table ht3 equal
   :element-type ht2)
+
+(atomic-stobjs::define-congruent ht3
+  :package-witness ht3)
 
 (atomic-stobjs::define-copy ht3)
 
@@ -182,17 +213,26 @@
 (atomic-stobjs::define-hash-table ht-of-vec equal
   :element-type vec5)
 
+(atomic-stobjs::define-congruent ht-of-vec
+  :package-witness ht-of-vec)
+
 (atomic-stobjs::define-copy ht-of-vec)
 
 (atomic-stobjs::define-vector vec-of-ht 3000
   :element-type ht3
   :resizable nil)
 
+(atomic-stobjs::define-congruent vec-of-ht
+  :package-witness vec-of-ht)
+
 (atomic-stobjs::define-copy vec-of-ht)
 
 (atomic-stobjs::define-vector vec-of-ht/r 3000
   :element-type ht3
   :resizable t)
+
+(atomic-stobjs::define-congruent vec-of-ht/r
+  :package-witness vec-of-ht/r)
 
 (atomic-stobjs::define-copy vec-of-ht/r)
 
@@ -222,11 +262,17 @@
   :default-val ""
   :element-type string)
 
+(atomic-stobjs::define-congruent ht
+  :package-witness ht)
+
 (atomic-stobjs::define-copy ht)
 
 (atomic-stobjs::define-vector vec 17
   :element-type ht
   :resizable t)
+
+(atomic-stobjs::define-congruent vec
+  :package-witness vec)
 
 (atomic-stobjs::define-copy vec)
 
@@ -236,6 +282,9 @@
   :key-equiv int-equiv
   :default-key 0
   :element-type vec)
+
+(atomic-stobjs::define-congruent ht2$
+  :package-witness ht2$)
 
 (atomic-stobjs::define-copy ht2$)
 
@@ -249,16 +298,25 @@
       :equiv %symbol-equiv
       :initial-element ||))
 
+(atomic-stobjs::define-congruent fr
+  :package-witness fr)
+
 (atomic-stobjs::define-copy fr)
 
 (atomic-stobjs::define-vector vec2$ 3
   :element-type fr
   :resizable nil)
 
+(atomic-stobjs::define-congruent vec2$
+  :package-witness vec2$)
+
 (atomic-stobjs::define-copy vec2$)
 
 (atomic-stobjs::define-hash-table ht3$ equal
   :element-type fr)
+
+(atomic-stobjs::define-congruent ht3$
+  :package-witness ht3$)
 
 (atomic-stobjs::define-copy ht3$)
 
@@ -267,10 +325,16 @@
   (f1 :element-type vec2$)
   (f2 :element-type ht2$))
 
+(atomic-stobjs::define-congruent fr2
+  :package-witness fr2)
+
 (atomic-stobjs::define-copy fr2)
 
 (atomic-stobjs::define-frame fr3
   (f0 :element-type fr)
   (f1 :element-type fr))
+
+(atomic-stobjs::define-congruent fr3
+  :package-witness fr3)
 
 (atomic-stobjs::define-copy fr3)

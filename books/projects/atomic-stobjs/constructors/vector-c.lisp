@@ -187,6 +187,8 @@
               ;; Prologue
               (vector-begin (symbolicate package-witness vector "-BEGIN"))
               (vector-end (symbolicate package-witness vector "-END"))
+              (vector/fixer-hack (symbolicate package-witness vector "/FIXER-HACK"))
+              (contents/fh (symbolicate package-witness contents "/FIXER-HACK"))
               (prologue
                `((deflabel ,vector-begin)
 
@@ -207,7 +209,21 @@
                    :renaming ,doublets
                    :inline ,inline
                    :non-memoizable ,(not memoizable)
-                   :non-executable ,(not executable))))
+                   :non-executable ,(not executable))
+
+                 (defstobj ,vector/fixer-hack
+                   (,contents/fh :type (acl2::array ,element-type ,dimensions)
+                                 ,@(and (not stobj-property)
+                                        `(:element-type
+                                          ,(if specialize-element-type
+                                               element-type
+                                               t)
+                                          :initially ,initial-element))
+                                 :resizable ,resizable)
+                   :inline ,inline
+                   :congruent-to ,vector
+                   :non-memoizable ,(not memoizable)
+                   :non-executable t)))
 
               ;; Theorem Names
               (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
@@ -255,6 +271,7 @@
               (updater-of-updater-same (symbolicate package-witness updater-of-updater "-SAME"))
               (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
 
+              (fixer-def (symbolicate package-witness fixer "-DEF"))
               (fixer-tp (symbolicate package-witness fixer "-TP"))
               (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
               (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
@@ -761,10 +778,23 @@
                     (declare (xargs :stobjs ,vector))
                     (mbe :logic (if (,recognizer ,vector)
                                     ,vector
-                                    (,creator))
+                                    (with-local-stobj ,vector/fixer-hack
+                                      (mv-let (,vector ,vector/fixer-hack)
+                                              (swap-stobjs ,vector ,vector/fixer-hack)
+                                        ,vector)))
                          :exec ,vector))
 
                   (table fixer ',vector ',fixer)
+
+                  (defthm ,fixer-def
+                    (equal (,fixer ,vector)
+                           (if (,recognizer ,vector)
+                               ,vector
+                               (,creator)))
+                    :rule-classes :definition)
+
+                  (in-theory
+                    (disable ,fixer))
 
                   (defthm ,fixer-tp
                     (and (consp (,fixer ,vector))

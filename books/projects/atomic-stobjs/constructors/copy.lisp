@@ -37,7 +37,6 @@
 |#
 
 (include-book "../utilities/top")
-(include-book "congruent")
 
 
 ;;; `COUPLEDP'
@@ -75,7 +74,8 @@
                   :guard (and (symbolp vector)
                               (package-witness-p package-witness)
                               (booleanp debug))
-                  :verify-guards nil))
+                  :verify-guards nil)
+           (ignorable debug))
   (let* ((%vector (symbolicate package-witness "%" vector))
          (copy (symbolicate package-witness vector "-COPY"))
          (copy-rec (symbolicate package-witness copy "-REC"))
@@ -349,10 +349,6 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc vector 'acl2::absstobj-info))))))
-
-         (define-congruent ,vector
-           :package-witness ,package-witness
-           :debug ,debug)
 
          (local
            (in-theory
@@ -1027,7 +1023,8 @@
                   :guard (and (symbolp hash-table)
                               (package-witness-p package-witness)
                               (booleanp debug))
-                  :verify-guards nil))
+                  :verify-guards nil)
+           (ignorable debug))
   (let* ((%hash-table (symbolicate package-witness "%" hash-table))
          (contents (symbolicate hash-table hash-table "-CONTENTS"))
          (copy (symbolicate package-witness hash-table "-COPY"))
@@ -1372,10 +1369,6 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc hash-table 'acl2::absstobj-info))))))
-
-         (define-congruent ,hash-table
-           :package-witness ,package-witness
-           :debug ,debug)
 
          (local
            (in-theory
@@ -2443,7 +2436,8 @@
                   :guard (and (symbolp frame)
                               (package-witness-p package-witness)
                               (booleanp debug))
-                  :verify-guards nil))
+                  :verify-guards nil)
+           (ignorable debug))
   (let* ((%frame (symbolicate package-witness "%" frame))
          (copy (symbolicate package-witness frame "-COPY"))
 
@@ -2671,10 +2665,6 @@
          (local
            (in-theory
              (enable ,@(strip-cars (cdr (getpropc frame 'acl2::absstobj-info))))))
-
-         (define-congruent ,frame
-           :package-witness ,package-witness
-           :debug ,debug)
 
          (local
            (in-theory

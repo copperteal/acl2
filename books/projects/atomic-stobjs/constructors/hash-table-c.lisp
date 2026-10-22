@@ -236,6 +236,9 @@
               ;; Prologue
               (hash-table-begin (symbolicate package-witness hash-table "-BEGIN"))
               (hash-table-end (symbolicate package-witness hash-table "-END"))
+              (hash-table/fixer-hack (symbolicate package-witness hash-table "/FIXER-HACK"))
+              (contents/fh (symbolicate package-witness contents "/FIXER-HACK"))
+              (keys/fh (symbolicate package-witness keys "/FIXER-HACK"))
               (prologue
                `((deflabel ,hash-table-begin)
 
@@ -251,7 +254,18 @@
                    :renaming ,doublets
                    :inline ,inline
                    :non-memoizable ,(not memoizable)
-                   :non-executable ,(not executable))))
+                   :non-executable ,(not executable))
+
+                 (defstobj ,hash-table/fixer-hack
+                   (,contents/fh :type (acl2::hash-table ,test ,size ,element-type)
+                                 ,@(and (not stobj-property)
+                                        `(:initially ,default-value)))
+                   ,@(and ',copyable
+                          `((,keys/fh)))
+                   :inline ,inline
+                   :congruent-to ,hash-table
+                   :non-memoizable ,(not memoizable)
+                   :non-executable t)))
 
               ;; Theorem Names
               (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
@@ -327,6 +341,7 @@
               (keys-set-of-remover (symbolicate package-witness keys-set "-OF-" remover))
               (keys-set-of-keys-set (symbolicate package-witness keys-set "-OF-" keys-set))
 
+              (fixer-def (symbolicate package-witness fixer "-DEF"))
               (fixer-tp (symbolicate package-witness fixer "-TP"))
               (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
               (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
@@ -1018,10 +1033,23 @@
                     (declare (xargs :stobjs ,hash-table))
                     (mbe :logic (if (,recognizer ,hash-table)
                                     ,hash-table
-                                    (,creator))
+                                    (with-local-stobj ,hash-table/fixer-hack
+                                      (mv-let (,hash-table ,hash-table/fixer-hack)
+                                              (swap-stobjs ,hash-table ,hash-table/fixer-hack)
+                                        ,hash-table)))
                          :exec ,hash-table))
 
                   (table fixer ',hash-table ',fixer)
+
+                  (defthm ,fixer-def
+                    (equal (,fixer ,hash-table)
+                           (if (,recognizer ,hash-table)
+                               ,hash-table
+                               (,creator)))
+                    :rule-classes :definition)
+
+                  (in-theory
+                    (disable ,fixer))
 
                   (defthm ,fixer-tp
                     (and (consp (,fixer ,hash-table))
@@ -1073,8 +1101,7 @@
                   ,@(and copyable
                          `((defun ,clear (,hash-table)
                              (declare (xargs :stobjs ,hash-table))
-                             (let* ((,hash-table (mbe :logic (,fixer ,hash-table)
-                                                      :exec ,hash-table))
+                             (let* ((,hash-table (,fixer ,hash-table))
                                     (,hash-table (,keys-set '() ,hash-table)))
                                (,%clear ,hash-table)))
 
@@ -1114,8 +1141,7 @@
                                                                   (<= 0 rehash-threshold)
                                                                   (<= rehash-threshold 1))
                                                              (not rehash-threshold)))))
-                             (let* ((,hash-table (mbe :logic (,fixer ,hash-table)
-                                                      :exec ,hash-table))
+                             (let* ((,hash-table (,fixer ,hash-table))
                                     (,hash-table (,keys-set '() ,hash-table)))
                                (,%init ht-size rehash-size rehash-threshold ,hash-table)))
 

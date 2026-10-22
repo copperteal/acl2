@@ -34,6 +34,7 @@
 (include-book "../constructors/vector")
 (include-book "../constructors/hash-table")
 (include-book "../constructors/frame")
+(include-book "../constructors/congruent")
 (include-book "../constructors/copy")
 (include-book "../constructors/export")
 
@@ -71,6 +72,9 @@
   :initial-element 0
   :resizable nil)
 
+(atomic-stobjs::define-congruent vec0
+  :package-witness vec0)
+
 (atomic-stobjs::define-export vec0)
 
 (atomic-stobjs::define-vector vec1 1024
@@ -80,6 +84,9 @@
   :element-equiv byte-equiv
   :initial-element 0
   :resizable t)
+
+(atomic-stobjs::define-congruent vec1
+  :package-witness vec1)
 
 (atomic-stobjs::define-export vec1)
 
@@ -108,6 +115,9 @@
   :val-equiv nat-equiv
   :default-val 0)
 
+(atomic-stobjs::define-congruent ht0
+  :package-witness ht0)
+
 (atomic-stobjs::define-copy ht0)
 
 (atomic-stobjs::define-export ht0)
@@ -129,5 +139,8 @@
       :fixer nfix
       :equiv nat-equiv
       :initial-element 0))
+
+(atomic-stobjs::define-congruent fr0
+  :package-witness fr0)
 
 (atomic-stobjs::define-export fr0)
