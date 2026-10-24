@@ -1,4 +1,4 @@
-;;; Copyright 2025 J. David Taylor
+;;; Copyright 2026 J. David Taylor
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,7 @@
 
 ;;;; `DEFINE-VECTOR$C'
 (defmacro define-vector$c
-    (vector dimensions
+    (name dimensions
      &key
        (element-type 't)
        (specialize-element-type 'nil)
@@ -65,7 +65,7 @@
        (package-witness 'nil package-witness-supplied-p)
        (debug 'nil))
 
-  (declare (xargs :guard (and (symbolp vector)
+  (declare (xargs :guard (and (symbolp name)
                               (or (and (consp dimensions)
                                        (natp (car dimensions))
                                        (null (cdr dimensions)))
@@ -95,7 +95,7 @@
             *constructor-output*)
 
      (make-event
-       (let* ((vector ',vector)
+       (let* ((name ',name)
               (package-witness (if ',package-witness-supplied-p
                                    ',package-witness
                                    (current-package state)))
@@ -104,7 +104,7 @@
                               dimensions
                               (list dimensions)))
               (default-length (car dimensions))
-              (default-length-name (symbolicate package-witness "*" vector "-DEFAULT-LENGTH*"))
+              (default-length-name (symbolicate package-witness "*" name "-DEFAULT-LENGTH*"))
 
               (element-type ',element-type)
               (stobj-property (and (symbolp element-type)
@@ -125,7 +125,7 @@
                                 (cdadr stobj-property))))
               (specialize-element-type ',specialize-element-type)
               (initial-element ',initial-element)
-              (initial-element-name (symbolicate package-witness "*" vector "-INITIAL-ELEMENT*"))
+              (initial-element-name (symbolicate package-witness "*" name "-INITIAL-ELEMENT*"))
               (resizable ',resizable)
 
               (inline ',inline)
@@ -144,30 +144,30 @@
 
               ;; Interface Symbols
               (contents (or contents
-                            (symbolicate package-witness vector "-CONTENTS")))
+                            (symbolicate package-witness name "-CONTENTS")))
               (contents-recognizer-stobj-default (symbolicate package-witness contents "P"))
               (contents-recognizer (or contents-recognizer
                                        (symbolicate package-witness contents (make-predicate-suffix contents))))
-              (recognizer-stobj-default (symbolicate package-witness vector "P"))
+              (recognizer-stobj-default (symbolicate package-witness name "P"))
               (recognizer (or recognizer
-                              (symbolicate package-witness vector (make-predicate-suffix vector))))
-              (creator-stobj-default (symbolicate package-witness "CREATE-" vector))
+                              (symbolicate package-witness name (make-predicate-suffix name))))
+              (creator-stobj-default (symbolicate package-witness "CREATE-" name))
               (creator (or creator
-                           (symbolicate package-witness "CREATE-" vector)))
+                           (symbolicate package-witness "CREATE-" name)))
               (fixer (or fixer
-                         (symbolicate package-witness vector "-FIX")))
+                         (symbolicate package-witness name "-FIX")))
               (length-stobj-default (symbolicate package-witness contents "-LENGTH"))
               (length (or length
-                          (symbolicate package-witness vector "-LEN")))
+                          (symbolicate package-witness name "-LEN")))
               (resizer-stobj-default (symbolicate package-witness "RESIZE-" contents))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RSZ")))
+                           (symbolicate package-witness name "-RSZ")))
               (accessor-stobj-default (symbolicate package-witness contents "I"))
               (accessor (or accessor
-                            (symbolicate package-witness vector "-REF")))
+                            (symbolicate package-witness name "-REF")))
               (updater-stobj-default (symbolicate package-witness "UPDATE-" contents "I"))
               (updater (or updater
-                           (symbolicate package-witness vector "-SET")))
+                           (symbolicate package-witness name "-SET")))
 
               ;; Make Doublets
               (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
@@ -186,19 +186,19 @@
                                      `((,updater-stobj-default ,updater)))))
 
               ;; Prologue
-              (vector-begin (symbolicate package-witness vector "-BEGIN"))
-              (vector-end (symbolicate package-witness vector "-END"))
-              (vector/fixer-hack (symbolicate package-witness vector "/FIXER-HACK"))
+              (begin-label (symbolicate package-witness name "-BEGIN"))
+              (end-label (symbolicate package-witness name "-END"))
+              (fixer-hack (symbolicate package-witness name "/FIXER-HACK"))
               (contents/fh (symbolicate package-witness contents "/FIXER-HACK"))
               (prologue
-               `((deflabel ,vector-begin)
+               `((deflabel ,begin-label)
 
                  (defconst ,default-length-name ',default-length)
 
                  ,@(and (not stobj-property)
                         `((defconst ,initial-element-name ',initial-element)))
 
-                 (defstobj ,vector
+                 (defstobj ,name
                    (,contents :type (acl2::array ,element-type ,dimensions)
                               ,@(and (not stobj-property)
                                      `(:element-type
@@ -212,7 +212,7 @@
                    :non-memoizable ,(not memoizable)
                    :non-executable ,(not executable))
 
-                 (defstobj ,vector/fixer-hack
+                 (defstobj ,fixer-hack
                    (,contents/fh :type (acl2::array ,element-type ,dimensions)
                                  ,@(and (not stobj-property)
                                         `(:element-type
@@ -222,7 +222,7 @@
                                           :initially ,initial-element))
                                  :resizable ,resizable)
                    :inline ,inline
-                   :congruent-to ,vector
+                   :congruent-to ,name
                    :non-memoizable ,(not memoizable)
                    :non-executable t)))
 
@@ -279,15 +279,15 @@
               (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
 
               ;; Epilogue
-              (vector-theorems (symbolicate package-witness vector "-THEOREMS"))
+              (theorems (symbolicate package-witness name "-THEOREMS"))
               (epilogue
-               `((deflabel ,vector-end)
+               `((deflabel ,end-label)
 
-                 (deftheory-static ,vector-theorems
+                 (deftheory-static ,theorems
                    (set-difference-theories
                     (set-difference-theories
-                     (current-theory ',vector-end)
-                     (current-theory ',vector-begin))
+                     (current-theory ',end-label)
+                     (current-theory ',begin-label))
                     ',(list contents-recognizer
                             recognizer
                             creator
@@ -298,8 +298,8 @@
                             fixer)))
 
                  (in-theory
-                   (union-theories (current-theory ',vector-begin)
-                                   (theory ',vector-theorems)))))
+                   (union-theories (current-theory ',begin-label)
+                                   (theory ',theorems)))))
 
               ;; Functional Instantiation
               (fi-bindings
@@ -346,7 +346,7 @@
                       (union-theories (current-theory 'acl2::ground-zero)
                                       (set-difference-theories
                                        (universal-theory 'end-of-prologue)
-                                       (universal-theory ',vector-begin)))))
+                                       (universal-theory ',begin-label)))))
 
                   ,@(and absstobj-info
                          `((local
@@ -384,7 +384,7 @@
 
                   ;; `RECOGNIZER'
                   (defthm ,recognizer-tp
-                    (booleanp (,recognizer ,vector))
+                    (booleanp (,recognizer ,name))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
@@ -393,9 +393,9 @@
                            ,@fi-bindings))))
 
                   (defthm ,recognizer-cr
-                    (implies (,recognizer ,vector)
-                             (and (consp ,vector)
-                                  (true-listp ,vector)))
+                    (implies (,recognizer ,name)
+                             (and (consp ,name)
+                                  (true-listp ,name)))
                     :rule-classes :compound-recognizer
                     :hints
                     (("Goal"
@@ -413,8 +413,8 @@
 
                   ,@(and resizable
                          `((defthm ,recognizer-of-resizer
-                             (implies (,recognizer ,vector)
-                                      (,recognizer (,resizer length ,vector)))
+                             (implies (,recognizer ,name)
+                                      (,recognizer (,resizer length ,name)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
@@ -424,14 +424,14 @@
                   (defthm ,recognizer-of-updater
                     (implies (and (natp index)
                                   (< index ,(if resizable
-                                                `(,length ,vector)
+                                                `(,length ,name)
                                                 default-length-name))
                                   ,@(and (not (eq element-type t))
                                          (if stobj-recognizer
                                              `((,stobj-recognizer value))
                                              `(,(typep$transform 'value element-type))))
-                                  (,recognizer ,vector))
-                             (,recognizer (,updater index value ,vector)))
+                                  (,recognizer ,name))
+                             (,recognizer (,updater index value ,name)))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -440,7 +440,7 @@
 
                   ;; `LENGTH'
                   (defthm ,length-tp
-                    (natp (,length ,vector))
+                    (natp (,length ,name))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
@@ -460,7 +460,7 @@
 
                           (defthm ,length-of-resizer
                             (implies (natp length)
-                                     (equal (,length (,resizer length ,vector))
+                                     (equal (,length (,resizer length ,name))
                                             length))
                             :hints
                             (("Goal"
@@ -470,9 +470,9 @@
 
                           (defthm ,length-of-updater
                             (implies (and (natp index)
-                                          (< index (,length ,vector)))
-                                     (equal (,length (,updater index value ,vector))
-                                            (,length ,vector)))
+                                          (< index (,length ,name)))
+                                     (equal (,length (,updater index value ,name))
+                                            (,length ,name)))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -480,7 +480,7 @@
                                    ,@fi-bindings)))))
 
                         `((defthm ,length-rw
-                            (equal (,length ,vector)
+                            (equal (,length ,name)
                                    ,default-length-name)
                             :hints
                             (("Goal"
@@ -490,9 +490,9 @@
 
                   ;; `RESIZER'
                   (defthm ,resizer-tp
-                    (implies (,recognizer ,vector)
-                             (and (consp (,resizer length ,vector))
-                                  (true-listp (,resizer length ,vector))))
+                    (implies (,recognizer ,name)
+                             (and (consp (,resizer length ,name))
+                                  (true-listp (,resizer length ,name))))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
@@ -512,9 +512,9 @@
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-length
-                            (implies (,recognizer ,vector)
-                                     (equal (,resizer (,length ,vector) ,vector)
-                                            ,vector))
+                            (implies (,recognizer ,name)
+                                     (equal (,resizer (,length ,name) ,name)
+                                            ,name))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -525,10 +525,10 @@
                             (implies (and (natp %length)
                                           (natp length)
                                           (or (<= %length length)
-                                              (<= (,length ,vector) length))
-                                          (,recognizer ,vector))
-                                     (equal (,resizer %length (,resizer length ,vector))
-                                            (,resizer %length ,vector)))
+                                              (<= (,length ,name) length))
+                                          (,recognizer ,name))
+                                     (equal (,resizer %length (,resizer length ,name))
+                                            (,resizer %length ,name)))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -539,9 +539,9 @@
                             (implies (and (natp index)
                                           (natp length)
                                           (< index length)
-                                          (< index (,length ,vector)))
-                                     (equal (,resizer length (,updater index value ,vector))
-                                            (,updater index value (,resizer length ,vector))))
+                                          (< index (,length ,name)))
+                                     (equal (,resizer length (,updater index value ,name))
+                                            (,updater index value (,resizer length ,name))))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -552,9 +552,9 @@
                             (implies (and (natp index)
                                           (natp length)
                                           (<= length index)
-                                          (< index (,length ,vector)))
-                                     (equal (,resizer length (,updater index value ,vector))
-                                            (,resizer length ,vector)))
+                                          (< index (,length ,name)))
+                                     (equal (,resizer length (,updater index value ,name))
+                                            (,resizer length ,name)))
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -562,8 +562,8 @@
                                    ,@fi-bindings)))))
 
                         `((defthm ,resizer-rw
-                            (equal (,resizer length ,vector)
-                                   ,vector)
+                            (equal (,resizer length ,name)
+                                   ,name)
                             :hints
                             (("Goal"
                               :by (:functional-instance
@@ -575,12 +575,12 @@
                          `((defthm ,typep$-of-accessor
                              (implies (and (natp index)
                                            (< index ,(if resizable
-                                                         `(,length ,vector)
+                                                         `(,length ,name)
                                                          default-length-name))
-                                           (,recognizer ,vector))
+                                           (,recognizer ,name))
                                       ,(if stobj-recognizer
-                                           `(,stobj-recognizer (,accessor index ,vector))
-                                           (typep$transform `(,accessor index ,vector) element-type)))
+                                           `(,stobj-recognizer (,accessor index ,name))
+                                           (typep$transform `(,accessor index ,name) element-type)))
                              :rule-classes
                              (:rewrite
                               :type-prescription)
@@ -608,9 +608,9 @@
                              (implies (and (natp index)
                                            (natp length)
                                            (< index length)
-                                           (< index (,length ,vector)))
-                                      (equal (,accessor index (,resizer length ,vector))
-                                             (,accessor index ,vector)))
+                                           (< index (,length ,name)))
+                                      (equal (,accessor index (,resizer length ,name))
+                                             (,accessor index ,name)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
@@ -621,8 +621,8 @@
                              (implies (and (natp index)
                                            (natp length)
                                            (< index length)
-                                           (<= (,length ,vector) index))
-                                      (equal (,accessor index (,resizer length ,vector))
+                                           (<= (,length ,name) index))
+                                      (equal (,accessor index (,resizer length ,name))
                                              ,(if stobj-creator
                                                   `(,stobj-creator)
                                                   initial-element-name)))
@@ -634,7 +634,7 @@
 
                   (defthm ,accessor-of-updater-same
                     (implies (equal %index index)
-                             (equal (,accessor %index (,updater index value ,vector))
+                             (equal (,accessor %index (,updater index value ,name))
                                     value))
                     :hints
                     (("Goal"
@@ -646,8 +646,8 @@
                     (implies (and (not (equal %index index))
                                   (natp %index)
                                   (natp index))
-                             (equal (,accessor %index (,updater index value ,vector))
-                                    (,accessor %index ,vector)))
+                             (equal (,accessor %index (,updater index value ,name))
+                                    (,accessor %index ,name)))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -656,9 +656,9 @@
 
                   ;; `UPDATER'
                   (defthm ,updater-tp
-                    (implies (,recognizer ,vector)
-                             (and (consp (,updater index value ,vector))
-                                  (true-listp (,updater index value ,vector))))
+                    (implies (,recognizer ,name)
+                             (and (consp (,updater index value ,name))
+                                  (true-listp (,updater index value ,name))))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
@@ -682,13 +682,13 @@
 
                   ,@(and resizable
                          `((defthm ,updater-of-resizer-inner
-                             (implies (and (equal value (,accessor index ,vector))
+                             (implies (and (equal value (,accessor index ,name))
                                            (natp index)
                                            (natp length)
                                            (< index length)
-                                           (< index (,length ,vector)))
-                                      (equal (,updater index value (,resizer length ,vector))
-                                             (,resizer length ,vector)))
+                                           (< index (,length ,name)))
+                                      (equal (,updater index value (,resizer length ,name))
+                                             (,resizer length ,name)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
@@ -702,9 +702,9 @@
                                            (natp index)
                                            (natp length)
                                            (< index length)
-                                           (<= (,length ,vector) index))
-                                      (equal (,updater index value (,resizer length ,vector))
-                                             (,resizer length ,vector)))
+                                           (<= (,length ,name) index))
+                                      (equal (,updater index value (,resizer length ,name))
+                                             (,resizer length ,name)))
                              :hints
                              (("Goal"
                                :by (:functional-instance
@@ -715,11 +715,11 @@
                     (implies (and (equal %index index)
                                   (natp %index)
                                   (< %index ,(if resizable
-                                                 `(,length ,vector)
+                                                 `(,length ,name)
                                                  default-length-name))
-                                  (,recognizer ,vector))
-                             (equal (,updater %index (,accessor index ,vector) ,vector)
-                                    ,vector))
+                                  (,recognizer ,name))
+                             (equal (,updater %index (,accessor index ,name) ,name)
+                                    ,name))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -728,8 +728,8 @@
 
                   (defthm ,updater-of-updater-same
                     (implies (equal %index index)
-                             (equal (,updater %index %value (,updater index value ,vector))
-                                    (,updater %index %value ,vector)))
+                             (equal (,updater %index %value (,updater index value ,name))
+                                    (,updater %index %value ,name)))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -740,8 +740,8 @@
                     (implies (and (not (equal %index index))
                                   (natp %index)
                                   (natp index))
-                             (equal (,updater %index %value (,updater index value ,vector))
-                                    (,updater index value (,updater %index %value ,vector))))
+                             (equal (,updater %index %value (,updater index value ,name))
+                                    (,updater index value (,updater %index %value ,name))))
                     :rule-classes
                     ((:rewrite :loop-stopper ((%index index ,updater))))
                     :hints
@@ -751,22 +751,22 @@
                            ,@fi-bindings))))
 
                   ;; `FIXER'
-                  (defun-inline ,fixer (,vector)
-                    (declare (xargs :stobjs ,vector))
-                    (mbe :logic (if (,recognizer ,vector)
-                                    ,vector
-                                    (with-local-stobj ,vector/fixer-hack
-                                      (mv-let (,vector ,vector/fixer-hack)
-                                              (swap-stobjs ,vector ,vector/fixer-hack)
-                                        ,vector)))
-                         :exec ,vector))
+                  (defun-inline ,fixer (,name)
+                    (declare (xargs :stobjs ,name))
+                    (mbe :logic (if (,recognizer ,name)
+                                    ,name
+                                    (with-local-stobj ,fixer-hack
+                                      (mv-let (,name ,fixer-hack)
+                                              (swap-stobjs ,name ,fixer-hack)
+                                        ,name)))
+                         :exec ,name))
 
-                  (table fixer ',vector ',fixer)
+                  (table fixer ',name ',fixer)
 
                   (defthm ,fixer-def
-                    (equal (,fixer ,vector)
-                           (if (,recognizer ,vector)
-                               ,vector
+                    (equal (,fixer ,name)
+                           (if (,recognizer ,name)
+                               ,name
                                (,creator)))
                     :rule-classes :definition)
 
@@ -774,8 +774,8 @@
                     (disable ,fixer))
 
                   (defthm ,fixer-tp
-                    (and (consp (,fixer ,vector))
-                         (true-listp (,fixer ,vector)))
+                    (and (consp (,fixer ,name))
+                         (true-listp (,fixer ,name)))
                     :rule-classes :type-prescription
                     :hints
                     (("Goal"
@@ -784,7 +784,7 @@
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,recognizer-of-fixer
-                    (,recognizer (,fixer ,vector))
+                    (,recognizer (,fixer ,name))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -792,9 +792,9 @@
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,fixer-when-recognizer
-                    (implies (,recognizer ,vector)
-                             (equal (,fixer ,vector)
-                                    ,vector))
+                    (implies (,recognizer ,name)
+                             (equal (,fixer ,name)
+                                    ,name))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -802,8 +802,8 @@
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,fixer-when-not-recognizer
-                    (implies (not (,recognizer ,vector))
-                             (equal (,fixer ,vector) (,creator)))
+                    (implies (not (,recognizer ,name))
+                             (equal (,fixer ,name) (,creator)))
                     :hints
                     (("Goal"
                       :by (:functional-instance
@@ -817,4 +817,4 @@
 
             ,@epilogue
 
-            (table package-witness ',vector ',package-witness))))))
+            (table package-witness ',name ',package-witness))))))
