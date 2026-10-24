@@ -72,7 +72,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec0
-  :package-witness vec0)
+  :pkg-witness vec0)
 
 (atomic-stobjs::define-copy vec0)
 
@@ -99,7 +99,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec1
-  :package-witness vec1)
+  :pkg-witness vec1)
 
 (atomic-stobjs::define-copy vec1)
 
@@ -108,7 +108,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec2
-  :package-witness vec2)
+  :pkg-witness vec2)
 
 (atomic-stobjs::define-copy vec2)
 
@@ -117,7 +117,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec3
-  :package-witness vec3)
+  :pkg-witness vec3)
 
 (atomic-stobjs::define-copy vec3)
 
@@ -126,7 +126,7 @@
   :resizable t)
 
 (atomic-stobjs::define-congruent vec4
-  :package-witness vec4)
+  :pkg-witness vec4)
 
 (atomic-stobjs::define-copy vec4)
 
@@ -134,7 +134,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec5
-  :package-witness vec5)
+  :pkg-witness vec5)
 
 (atomic-stobjs::define-copy vec5)
 
@@ -177,7 +177,7 @@
   :default-val 0)
 
 (atomic-stobjs::define-congruent ht0
-  :package-witness ht0)
+  :pkg-witness ht0)
 
 (atomic-stobjs::define-copy ht0)
 
@@ -189,7 +189,7 @@
   :default-key #.acl2::*null-char*)
 
 (atomic-stobjs::define-congruent ht1
-  :package-witness ht1)
+  :pkg-witness ht1)
 
 (atomic-stobjs::define-copy ht1)
 
@@ -197,7 +197,7 @@
   :element-type ht1)
 
 (atomic-stobjs::define-congruent ht2
-  :package-witness ht2)
+  :pkg-witness ht2)
 
 (atomic-stobjs::define-copy ht2)
 
@@ -205,7 +205,7 @@
   :element-type ht2)
 
 (atomic-stobjs::define-congruent ht3
-  :package-witness ht3)
+  :pkg-witness ht3)
 
 (atomic-stobjs::define-copy ht3)
 
@@ -214,7 +214,7 @@
   :element-type vec5)
 
 (atomic-stobjs::define-congruent ht-of-vec
-  :package-witness ht-of-vec)
+  :pkg-witness ht-of-vec)
 
 (atomic-stobjs::define-copy ht-of-vec)
 
@@ -223,7 +223,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec-of-ht
-  :package-witness vec-of-ht)
+  :pkg-witness vec-of-ht)
 
 (atomic-stobjs::define-copy vec-of-ht)
 
@@ -232,7 +232,7 @@
   :resizable t)
 
 (atomic-stobjs::define-congruent vec-of-ht/r
-  :package-witness vec-of-ht/r)
+  :pkg-witness vec-of-ht/r)
 
 (atomic-stobjs::define-copy vec-of-ht/r)
 
@@ -263,7 +263,7 @@
   :element-type string)
 
 (atomic-stobjs::define-congruent ht
-  :package-witness ht)
+  :pkg-witness ht)
 
 (atomic-stobjs::define-copy ht)
 
@@ -272,7 +272,7 @@
   :resizable t)
 
 (atomic-stobjs::define-congruent vec
-  :package-witness vec)
+  :pkg-witness vec)
 
 (atomic-stobjs::define-copy vec)
 
@@ -284,7 +284,7 @@
   :element-type vec)
 
 (atomic-stobjs::define-congruent ht2$
-  :package-witness ht2$)
+  :pkg-witness ht2$)
 
 (atomic-stobjs::define-copy ht2$)
 
@@ -299,7 +299,7 @@
       :initial-element ||))
 
 (atomic-stobjs::define-congruent fr
-  :package-witness fr)
+  :pkg-witness fr)
 
 (atomic-stobjs::define-copy fr)
 
@@ -308,7 +308,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec2$
-  :package-witness vec2$)
+  :pkg-witness vec2$)
 
 (atomic-stobjs::define-copy vec2$)
 
@@ -316,7 +316,7 @@
   :element-type fr)
 
 (atomic-stobjs::define-congruent ht3$
-  :package-witness ht3$)
+  :pkg-witness ht3$)
 
 (atomic-stobjs::define-copy ht3$)
 
@@ -326,7 +326,7 @@
   (f2 :element-type ht2$))
 
 (atomic-stobjs::define-congruent fr2
-  :package-witness fr2)
+  :pkg-witness fr2)
 
 (atomic-stobjs::define-copy fr2)
 
@@ -335,6 +335,6 @@
   (f1 :element-type fr))
 
 (atomic-stobjs::define-congruent fr3
-  :package-witness fr3)
+  :pkg-witness fr3)
 
 (atomic-stobjs::define-copy fr3)

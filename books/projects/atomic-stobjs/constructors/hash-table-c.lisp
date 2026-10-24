@@ -67,7 +67,7 @@
        (keys 'nil)
        (keys-set 'nil)
 
-       (package-witness 'nil package-witness-supplied-p)
+       (pkg-witness 'nil pkg-witness-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
@@ -100,7 +100,7 @@
                               (or copyable
                                   (and (not keys)
                                        (not keys-set)))
-                              (package-witness-p package-witness)
+                              ;; (pkg-witness-p pkg-witness)
                               (booleanp debug))))
 
   `(with-output
@@ -109,9 +109,9 @@
 
      (make-event
        (let* ((hash-table ',hash-table)
-              (package-witness (if ',package-witness-supplied-p
-                                   ',package-witness
-                                   (current-package state)))
+              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                ',pkg-witness
+                                                (current-package state))))
               (test ',test)
               (size ',size)
 
@@ -133,7 +133,7 @@
                                (stobj-property
                                 (cdadr stobj-property))))
               (default-value ',default-value)
-              (default-value-name (symbolicate$ package-witness "*" hash-table "-DEFAULT-VALUE*"))
+              (default-value-name (symbolicate$ pkg-witness "*" hash-table "-DEFAULT-VALUE*"))
               (copyable ',copyable)
 
               (inline ',inline)
@@ -158,53 +158,53 @@
 
               ;; Interface Symbols
               (contents (or contents
-                            (symbolicate$ package-witness hash-table "-CONTENTS")))
-              (contents-recognizer-stobj-default (symbolicate$ package-witness contents "P"))
+                            (symbolicate$ pkg-witness hash-table "-CONTENTS")))
+              (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
               (contents-recognizer (or contents-recognizer
-                                       (symbolicate$ package-witness contents (make-predicate-suffix contents))))
-              (recognizer-stobj-default (symbolicate$ package-witness hash-table "P"))
+                                       (symbolicate$ pkg-witness contents (make-predicate-suffix contents))))
+              (recognizer-stobj-default (symbolicate$ pkg-witness hash-table "P"))
               (recognizer (or recognizer
-                              (symbolicate$ package-witness hash-table (make-predicate-suffix hash-table))))
-              (creator-stobj-default (symbolicate$ package-witness "CREATE-" hash-table))
+                              (symbolicate$ pkg-witness hash-table (make-predicate-suffix hash-table))))
+              (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" hash-table))
               (creator (or creator
-                           (symbolicate$ package-witness "CREATE-" hash-table)))
+                           (symbolicate$ pkg-witness "CREATE-" hash-table)))
               (fixer (or fixer
-                         (symbolicate$ package-witness hash-table "-FIX")))
-              (accessor-stobj-default (symbolicate$ package-witness contents "-GET"))
+                         (symbolicate$ pkg-witness hash-table "-FIX")))
+              (accessor-stobj-default (symbolicate$ pkg-witness contents "-GET"))
               (accessor (or accessor
-                            (symbolicate$ package-witness hash-table "-GET")))
-              (updater-stobj-default (symbolicate$ package-witness contents "-PUT"))
+                            (symbolicate$ pkg-witness hash-table "-GET")))
+              (updater-stobj-default (symbolicate$ pkg-witness contents "-PUT"))
               (updater (or updater
-                           (symbolicate$ package-witness hash-table "-PUT")))
-              (boundp-stobj-default (symbolicate$ package-witness contents "-BOUNDP"))
+                           (symbolicate$ pkg-witness hash-table "-PUT")))
+              (boundp-stobj-default (symbolicate$ pkg-witness contents "-BOUNDP"))
               (boundp (or boundp
-                          (symbolicate$ package-witness hash-table "-BNDP")))
-              (getp-stobj-default (symbolicate$ package-witness contents "-GET?"))
+                          (symbolicate$ pkg-witness hash-table "-BNDP")))
+              (getp-stobj-default (symbolicate$ pkg-witness contents "-GET?"))
               (getp (or getp
-                        (symbolicate$ package-witness hash-table "-GETP")))
-              (remover-stobj-default (symbolicate$ package-witness contents "-REM"))
+                        (symbolicate$ pkg-witness hash-table "-GETP")))
+              (remover-stobj-default (symbolicate$ pkg-witness contents "-REM"))
               (remover (or remover
-                           (symbolicate$ package-witness hash-table "-REM")))
-              (count-stobj-default (symbolicate$ package-witness contents "-COUNT"))
+                           (symbolicate$ pkg-witness hash-table "-REM")))
+              (count-stobj-default (symbolicate$ pkg-witness contents "-COUNT"))
               (count (or count
-                         (symbolicate$ package-witness hash-table "-CNT")))
-              (clear-stobj-default (symbolicate$ package-witness contents "-CLEAR"))
+                         (symbolicate$ pkg-witness hash-table "-CNT")))
+              (clear-stobj-default (symbolicate$ pkg-witness contents "-CLEAR"))
               (clear (or clear
-                         (symbolicate$ package-witness hash-table "-CLR")))
+                         (symbolicate$ pkg-witness hash-table "-CLR")))
               (%clear (if copyable
-                          (symbolicate$ package-witness hash-table "-%CLEAR")
+                          (symbolicate$ pkg-witness hash-table "-%CLEAR")
                           clear))
-              (init-stobj-default (symbolicate$ package-witness contents "-INIT"))
+              (init-stobj-default (symbolicate$ pkg-witness contents "-INIT"))
               (init (or init
-                        (symbolicate$ package-witness hash-table "-INIT")))
+                        (symbolicate$ pkg-witness hash-table "-INIT")))
               (%init (if copyable
-                         (symbolicate$ package-witness hash-table "-%INIT")
+                         (symbolicate$ pkg-witness hash-table "-%INIT")
                          init))
               (keys (or keys
-                        (symbolicate$ package-witness hash-table "-KEYS")))
-              (keys-set-stobj-default (symbolicate$ package-witness "UPDATE-" keys))
+                        (symbolicate$ pkg-witness hash-table "-KEYS")))
+              (keys-set-stobj-default (symbolicate$ pkg-witness "UPDATE-" keys))
               (keys-set (or keys-set
-                            (symbolicate$ package-witness keys "-SET")))
+                            (symbolicate$ pkg-witness keys "-SET")))
 
               ;; Make Doublets
               (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
@@ -234,11 +234,11 @@
                                      `((,keys-set-stobj-default ,keys-set)))))
 
               ;; Prologue
-              (hash-table-begin (symbolicate$ package-witness hash-table "-BEGIN"))
-              (hash-table-end (symbolicate$ package-witness hash-table "-END"))
-              (hash-table/fixer-hack (symbolicate$ package-witness hash-table "/FIXER-HACK"))
-              (contents/fh (symbolicate$ package-witness contents "/FIXER-HACK"))
-              (keys/fh (symbolicate$ package-witness keys "/FIXER-HACK"))
+              (hash-table-begin (symbolicate$ pkg-witness hash-table "-BEGIN"))
+              (hash-table-end (symbolicate$ pkg-witness hash-table "-END"))
+              (hash-table/fixer-hack (symbolicate$ pkg-witness hash-table "/FIXER-HACK"))
+              (contents/fh (symbolicate$ pkg-witness contents "/FIXER-HACK"))
+              (keys/fh (symbolicate$ pkg-witness keys "/FIXER-HACK"))
               (prologue
                `((deflabel ,hash-table-begin)
 
@@ -270,91 +270,91 @@
               ;; Theorem Names
               (stobj-recognizer-of-stobj-creator (symbolicate$ "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
 
-              (contents-recognizer-tp (symbolicate$ package-witness contents-recognizer "-TP"))
+              (contents-recognizer-tp (symbolicate$ pkg-witness contents-recognizer "-TP"))
 
-              (recognizer-tp (symbolicate$ package-witness recognizer "-TP"))
-              (recognizer-cr (symbolicate$ package-witness recognizer "-CR"))
-              (recognizer-of-creator (symbolicate$ package-witness recognizer "-OF-" creator))
-              (recognizer-of-updater (symbolicate$ package-witness recognizer "-OF-" updater))
-              (recognizer-of-remover (symbolicate$ package-witness recognizer "-OF-" remover))
-              (recognizer-of-%clear (symbolicate$ package-witness recognizer "-OF-" %clear))
-              (recognizer-of-%init (symbolicate$ package-witness recognizer "-OF-" %init))
-              (recognizer-of-keys-set (symbolicate$ package-witness recognizer "-OF-" keys-set))
+              (recognizer-tp (symbolicate$ pkg-witness recognizer "-TP"))
+              (recognizer-cr (symbolicate$ pkg-witness recognizer "-CR"))
+              (recognizer-of-creator (symbolicate$ pkg-witness recognizer "-OF-" creator))
+              (recognizer-of-updater (symbolicate$ pkg-witness recognizer "-OF-" updater))
+              (recognizer-of-remover (symbolicate$ pkg-witness recognizer "-OF-" remover))
+              (recognizer-of-%clear (symbolicate$ pkg-witness recognizer "-OF-" %clear))
+              (recognizer-of-%init (symbolicate$ pkg-witness recognizer "-OF-" %init))
+              (recognizer-of-keys-set (symbolicate$ pkg-witness recognizer "-OF-" keys-set))
 
-              (typep$-of-accessor (symbolicate$ package-witness "TYPEP$-OF-" accessor))
-              (accessor-of-creator (symbolicate$ package-witness accessor "-OF-" creator))
-              (accessor-of-updater (symbolicate$ package-witness accessor "-OF-" updater))
-              (accessor-of-updater-same (symbolicate$ package-witness accessor-of-updater "-SAME"))
-              (accessor-of-updater-diff (symbolicate$ package-witness accessor-of-updater "-DIFF"))
-              (accessor-of-remover (symbolicate$ package-witness accessor "-OF-" remover))
-              (accessor-of-remover-same (symbolicate$ package-witness accessor-of-remover "-SAME"))
-              (accessor-of-remover-diff (symbolicate$ package-witness accessor-of-remover "-DIFF"))
-              (accessor-of-keys-set (symbolicate$ package-witness accessor "-OF-" keys-set))
+              (typep$-of-accessor (symbolicate$ pkg-witness "TYPEP$-OF-" accessor))
+              (accessor-of-creator (symbolicate$ pkg-witness accessor "-OF-" creator))
+              (accessor-of-updater (symbolicate$ pkg-witness accessor "-OF-" updater))
+              (accessor-of-updater-same (symbolicate$ pkg-witness accessor-of-updater "-SAME"))
+              (accessor-of-updater-diff (symbolicate$ pkg-witness accessor-of-updater "-DIFF"))
+              (accessor-of-remover (symbolicate$ pkg-witness accessor "-OF-" remover))
+              (accessor-of-remover-same (symbolicate$ pkg-witness accessor-of-remover "-SAME"))
+              (accessor-of-remover-diff (symbolicate$ pkg-witness accessor-of-remover "-DIFF"))
+              (accessor-of-keys-set (symbolicate$ pkg-witness accessor "-OF-" keys-set))
 
-              (updater-tp (symbolicate$ package-witness updater "-TP"))
+              (updater-tp (symbolicate$ pkg-witness updater "-TP"))
 
-              (boundp-tp (symbolicate$ package-witness boundp "-TP"))
-              (boundp-of-creator (symbolicate$ package-witness boundp "-OF-" creator))
-              (boundp-of-updater (symbolicate$ package-witness boundp "-OF-" updater))
-              (boundp-of-updater-same (symbolicate$ package-witness boundp-of-updater "-SAME"))
-              (boundp-of-updater-diff (symbolicate$ package-witness boundp-of-updater "-DIFF"))
-              (boundp-of-remover (symbolicate$ package-witness boundp "-OF-" remover))
-              (boundp-of-remover-same (symbolicate$ package-witness boundp-of-remover "-SAME"))
-              (boundp-of-remover-diff (symbolicate$ package-witness boundp-of-remover "-DIFF"))
-              (boundp-of-keys-set (symbolicate$ package-witness boundp "-OF-" keys-set))
+              (boundp-tp (symbolicate$ pkg-witness boundp "-TP"))
+              (boundp-of-creator (symbolicate$ pkg-witness boundp "-OF-" creator))
+              (boundp-of-updater (symbolicate$ pkg-witness boundp "-OF-" updater))
+              (boundp-of-updater-same (symbolicate$ pkg-witness boundp-of-updater "-SAME"))
+              (boundp-of-updater-diff (symbolicate$ pkg-witness boundp-of-updater "-DIFF"))
+              (boundp-of-remover (symbolicate$ pkg-witness boundp "-OF-" remover))
+              (boundp-of-remover-same (symbolicate$ pkg-witness boundp-of-remover "-SAME"))
+              (boundp-of-remover-diff (symbolicate$ pkg-witness boundp-of-remover "-DIFF"))
+              (boundp-of-keys-set (symbolicate$ pkg-witness boundp "-OF-" keys-set))
 
-              (getp-tp (symbolicate$ package-witness getp "-TP"))
-              (getp-rw (symbolicate$ package-witness getp "-RW"))
+              (getp-tp (symbolicate$ pkg-witness getp "-TP"))
+              (getp-rw (symbolicate$ pkg-witness getp "-RW"))
 
-              (remover-tp (symbolicate$ package-witness remover "-TP"))
-              (remover-of-creator (symbolicate$ package-witness remover "-OF-" creator))
-              (remover-of-updater (symbolicate$ package-witness remover "-OF-" updater))
-              (remover-of-updater-same (symbolicate$ package-witness remover-of-updater "-SAME"))
-              (remover-of-updater-diff (symbolicate$ package-witness remover-of-updater "-DIFF"))
-              (remover-of-remover (symbolicate$ package-witness remover "-OF-" remover))
-              (remover-of-remover-same (symbolicate$ package-witness remover-of-remover "-SAME"))
-              (remover-of-remover-diff (symbolicate$ package-witness remover-of-remover "-DIFF"))
+              (remover-tp (symbolicate$ pkg-witness remover "-TP"))
+              (remover-of-creator (symbolicate$ pkg-witness remover "-OF-" creator))
+              (remover-of-updater (symbolicate$ pkg-witness remover "-OF-" updater))
+              (remover-of-updater-same (symbolicate$ pkg-witness remover-of-updater "-SAME"))
+              (remover-of-updater-diff (symbolicate$ pkg-witness remover-of-updater "-DIFF"))
+              (remover-of-remover (symbolicate$ pkg-witness remover "-OF-" remover))
+              (remover-of-remover-same (symbolicate$ pkg-witness remover-of-remover "-SAME"))
+              (remover-of-remover-diff (symbolicate$ pkg-witness remover-of-remover "-DIFF"))
 
-              (count-tp (symbolicate$ package-witness count "-TP"))
-              (count-of-creator (symbolicate$ package-witness count "-OF-" creator))
-              (count-of-updater (symbolicate$ package-witness count "-OF-" updater))
-              (count-of-updater-when-boundp (symbolicate$ package-witness count-of-updater "-WHEN-" boundp))
-              (count-of-updater-when-not-boundp (symbolicate$ package-witness count-of-updater "-WHEN-NOT-" boundp))
-              (count-of-remover (symbolicate$ package-witness count "-OF-" remover))
-              (count-of-remover-when-boundp (symbolicate$ package-witness count-of-remover "-WHEN-" boundp))
-              (count-of-remover-when-not-boundp (symbolicate$ package-witness count-of-remover "-WHEN-NOT-" boundp))
-              (count-of-keys-set (symbolicate$ package-witness count "-OF-" keys-set))
+              (count-tp (symbolicate$ pkg-witness count "-TP"))
+              (count-of-creator (symbolicate$ pkg-witness count "-OF-" creator))
+              (count-of-updater (symbolicate$ pkg-witness count "-OF-" updater))
+              (count-of-updater-when-boundp (symbolicate$ pkg-witness count-of-updater "-WHEN-" boundp))
+              (count-of-updater-when-not-boundp (symbolicate$ pkg-witness count-of-updater "-WHEN-NOT-" boundp))
+              (count-of-remover (symbolicate$ pkg-witness count "-OF-" remover))
+              (count-of-remover-when-boundp (symbolicate$ pkg-witness count-of-remover "-WHEN-" boundp))
+              (count-of-remover-when-not-boundp (symbolicate$ pkg-witness count-of-remover "-WHEN-NOT-" boundp))
+              (count-of-keys-set (symbolicate$ pkg-witness count "-OF-" keys-set))
 
-              (%clear-tp (symbolicate$ package-witness %clear "-TP"))
-              (%clear-rw (symbolicate$ package-witness %clear "-RW"))
+              (%clear-tp (symbolicate$ pkg-witness %clear "-TP"))
+              (%clear-rw (symbolicate$ pkg-witness %clear "-RW"))
 
-              (%init-tp (symbolicate$ package-witness %init "-TP"))
-              (%init-rw (symbolicate$ package-witness %init "-RW"))
+              (%init-tp (symbolicate$ pkg-witness %init "-TP"))
+              (%init-rw (symbolicate$ pkg-witness %init "-RW"))
 
-              (keys-of-creator (symbolicate$ package-witness keys "-OF-" creator))
-              (keys-of-updater (symbolicate$ package-witness keys "-OF-" updater))
-              (keys-of-remover (symbolicate$ package-witness keys "-OF-" remover))
-              (keys-of-keys-set (symbolicate$ package-witness keys "-OF-" keys-set))
+              (keys-of-creator (symbolicate$ pkg-witness keys "-OF-" creator))
+              (keys-of-updater (symbolicate$ pkg-witness keys "-OF-" updater))
+              (keys-of-remover (symbolicate$ pkg-witness keys "-OF-" remover))
+              (keys-of-keys-set (symbolicate$ pkg-witness keys "-OF-" keys-set))
 
-              (keys-set-tp (symbolicate$ package-witness keys-set "-TP"))
-              (keys-set-of-updater (symbolicate$ package-witness keys-set "-OF-" updater))
-              (keys-set-of-remover (symbolicate$ package-witness keys-set "-OF-" remover))
-              (keys-set-of-keys-set (symbolicate$ package-witness keys-set "-OF-" keys-set))
+              (keys-set-tp (symbolicate$ pkg-witness keys-set "-TP"))
+              (keys-set-of-updater (symbolicate$ pkg-witness keys-set "-OF-" updater))
+              (keys-set-of-remover (symbolicate$ pkg-witness keys-set "-OF-" remover))
+              (keys-set-of-keys-set (symbolicate$ pkg-witness keys-set "-OF-" keys-set))
 
-              (fixer-def (symbolicate$ package-witness fixer "-DEF"))
-              (fixer-tp (symbolicate$ package-witness fixer "-TP"))
-              (recognizer-of-fixer (symbolicate$ package-witness recognizer "-OF-" fixer))
-              (fixer-when-recognizer (symbolicate$ package-witness fixer "-WHEN-" recognizer))
-              (fixer-when-not-recognizer (symbolicate$ package-witness fixer "-WHEN-NOT-" recognizer))
+              (fixer-def (symbolicate$ pkg-witness fixer "-DEF"))
+              (fixer-tp (symbolicate$ pkg-witness fixer "-TP"))
+              (recognizer-of-fixer (symbolicate$ pkg-witness recognizer "-OF-" fixer))
+              (fixer-when-recognizer (symbolicate$ pkg-witness fixer "-WHEN-" recognizer))
+              (fixer-when-not-recognizer (symbolicate$ pkg-witness fixer "-WHEN-NOT-" recognizer))
 
-              (clear-tp (symbolicate$ package-witness clear "-TP"))
-              (clear-rw (symbolicate$ package-witness clear "-RW"))
+              (clear-tp (symbolicate$ pkg-witness clear "-TP"))
+              (clear-rw (symbolicate$ pkg-witness clear "-RW"))
 
-              (init-tp (symbolicate$ package-witness init "-TP"))
-              (init-rw (symbolicate$ package-witness init "-RW"))
+              (init-tp (symbolicate$ pkg-witness init "-TP"))
+              (init-rw (symbolicate$ pkg-witness init "-RW"))
 
               ;; Epilogue
-              (hash-table-theorems (symbolicate$ package-witness hash-table "-THEOREMS"))
+              (hash-table-theorems (symbolicate$ pkg-witness hash-table "-THEOREMS"))
               (epilogue
                `((deflabel ,hash-table-end)
 
@@ -1175,4 +1175,4 @@
 
             ,@epilogue
 
-            (table package-witness ',hash-table ',package-witness))))))
+            (table pkg-witness ',hash-table ',pkg-witness))))))

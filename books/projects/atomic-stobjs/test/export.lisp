@@ -73,7 +73,7 @@
   :resizable nil)
 
 (atomic-stobjs::define-congruent vec0
-  :package-witness vec0)
+  :pkg-witness vec0)
 
 (atomic-stobjs::define-export vec0)
 
@@ -86,7 +86,7 @@
   :resizable t)
 
 (atomic-stobjs::define-congruent vec1
-  :package-witness vec1)
+  :pkg-witness vec1)
 
 (atomic-stobjs::define-export vec1)
 
@@ -116,7 +116,7 @@
   :default-val 0)
 
 (atomic-stobjs::define-congruent ht0
-  :package-witness ht0)
+  :pkg-witness ht0)
 
 (atomic-stobjs::define-copy ht0)
 
@@ -141,6 +141,6 @@
       :initial-element 0))
 
 (atomic-stobjs::define-congruent fr0
-  :package-witness fr0)
+  :pkg-witness fr0)
 
 (atomic-stobjs::define-export fr0)

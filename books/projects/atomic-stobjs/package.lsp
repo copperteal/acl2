@@ -34,7 +34,8 @@
    (union-eq *common-lisp-symbols-from-main-lisp-package*
              *acl2-exports*
              *type-spec-exports*
-             '(package-witness-p
+             '(pkg-witness-p
+               pkg-witness-fix
                symbolicate$
                with-books
                make-predicate-suffix
@@ -112,7 +113,7 @@
      corr
      equality
      fixer
-     package-witness
+     pkg-witness
      stobj$a-property
      view
      )))

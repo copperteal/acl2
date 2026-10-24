@@ -31,6 +31,7 @@
 (set-verify-guards-eagerness 2)
 
 (include-book "macros")
+(include-book "pkg-witness")
 (include-book "symbolicate-dollar")
 (include-book "tables")
 (include-book "with-books")

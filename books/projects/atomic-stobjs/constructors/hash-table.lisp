@@ -77,7 +77,7 @@
        (logic 'nil)
        (exec 'nil)
 
-       (package-witness 'nil package-witness-supplied-p)
+       (pkg-witness 'nil pkg-witness-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
@@ -128,7 +128,7 @@
                                        (not keys-set)))
                               (symbolp logic)
                               (symbolp exec)
-                              (package-witness-p package-witness)
+                              ;; (pkg-witness-p pkg-witness)
                               (booleanp debug))))
 
   `(with-output
@@ -139,9 +139,9 @@
        (let* ((hash-table ',hash-table)
               (logic ',logic)
               (exec ',exec)
-              (package-witness (if ',package-witness-supplied-p
-                                   ',package-witness
-                                   (current-package state)))
+              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                ',pkg-witness
+                                                (current-package state))))
               (test ',test)
               (size ',size)
               (element-type ',element-type)
@@ -180,35 +180,35 @@
               (debug ',debug)
 
               (hash-table$a (or logic
-                                (symbolicate$ package-witness hash-table "$A")))
+                                (symbolicate$ pkg-witness hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate$ package-witness hash-table "$C")))
+                                (symbolicate$ pkg-witness hash-table "$C")))
               (recognizer (or recognizer
-                              (symbolicate$ package-witness hash-table (make-predicate-suffix hash-table))))
+                              (symbolicate$ pkg-witness hash-table (make-predicate-suffix hash-table))))
               (creator (or creator
-                           (symbolicate$ package-witness "CREATE-" hash-table)))
+                           (symbolicate$ pkg-witness "CREATE-" hash-table)))
               (fixer (or fixer
-                         (symbolicate$ package-witness hash-table "-FIX")))
+                         (symbolicate$ pkg-witness hash-table "-FIX")))
               (accessor (or accessor
-                            (symbolicate$ package-witness hash-table "-GET")))
+                            (symbolicate$ pkg-witness hash-table "-GET")))
               (updater (or updater
-                           (symbolicate$ package-witness hash-table "-PUT")))
+                           (symbolicate$ pkg-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate$ package-witness hash-table "-BNDP")))
+                          (symbolicate$ pkg-witness hash-table "-BNDP")))
               (getp (or getp
-                        (symbolicate$ package-witness hash-table "-GETP")))
+                        (symbolicate$ pkg-witness hash-table "-GETP")))
               (remover (or remover
-                           (symbolicate$ package-witness hash-table "-REM")))
+                           (symbolicate$ pkg-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate$ package-witness hash-table "-CNT")))
+                         (symbolicate$ pkg-witness hash-table "-CNT")))
               (clear (or clear
-                         (symbolicate$ package-witness hash-table "-CLR")))
+                         (symbolicate$ pkg-witness hash-table "-CLR")))
               (init (or init
-                        (symbolicate$ package-witness hash-table "-INIT")))
+                        (symbolicate$ pkg-witness hash-table "-INIT")))
               (keys (or keys
-                        (symbolicate$ package-witness hash-table "-KEYS")))
+                        (symbolicate$ pkg-witness hash-table "-KEYS")))
               (keys-set (or keys-set
-                            (symbolicate$ package-witness hash-table "-KEYS-SET"))))
+                            (symbolicate$ pkg-witness hash-table "-KEYS-SET"))))
 
          `(progn
             (define-hash-table$c ,hash-table$c ,test
@@ -226,8 +226,8 @@
                      `(:memoizable ,memoizable))
               ,@(and ,executable-supplied-p
                      `(:executable ,executable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
             (define-hash-table$a ,hash-table$a ,test
@@ -256,8 +256,8 @@
                      `(:default-val ,default-val))
               ,@(and ,copyable-supplied-p
                      `(:copyable ,copyable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
             (define-hash-table$corr ,hash-table
@@ -265,8 +265,8 @@
               :exec ,hash-table$c
               ,@(and ,copyable-supplied-p
                      `(:copyable ,copyable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
             (define-hash-table$abs ,hash-table
@@ -289,18 +289,18 @@
                              :keys-set ,keys-set))
               ,@(and ,executable-supplied-p
                      `(:executable ,executable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
-            (defmacro ,(symbolicate$ package-witness "THE-" hash-table) (,hash-table)
+            (defmacro ,(symbolicate$ pkg-witness "THE-" hash-table) (,hash-table)
               (declare (xargs :guard (symbolp ,hash-table)))
               `(mbe :logic ,(list ',fixer ,hash-table)
                     :exec ,,hash-table))
 
             (in-theory
-              (disable ,(symbolicate$ (if ,package-witness-supplied-p
-                                          package-witness
+              (disable ,(symbolicate$ (if ,pkg-witness-supplied-p
+                                          pkg-witness
                                           hash-table$c)
                                       hash-table$c
                                       "-THEOREMS"))))))))

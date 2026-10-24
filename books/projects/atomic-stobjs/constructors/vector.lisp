@@ -66,7 +66,7 @@
        (logic 'nil)
        (exec 'nil)
 
-       (package-witness 'nil package-witness-supplied-p)
+       (pkg-witness 'nil pkg-witness-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp vector)
@@ -95,7 +95,7 @@
                                                   updater))
                               (symbolp logic)
                               (symbolp exec)
-                              (package-witness-p package-witness)
+                              ;; (pkg-witness-p pkg-witness)
                               (booleanp debug))))
 
   `(with-output
@@ -106,9 +106,9 @@
        (let* ((vector ',vector)
               (logic ',logic)
               (exec ',exec)
-              (package-witness (if ',package-witness-supplied-p
-                                   ',package-witness
-                                   (current-package state)))
+              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                ',pkg-witness
+                                                (current-package state))))
               (dimensions ',dimensions)
               (element-type ',element-type)
               (stobj-property (and (symbolp element-type)
@@ -136,23 +136,23 @@
               (debug ',debug)
 
               (vector$a (or logic
-                            (symbolicate$ package-witness vector "$A")))
+                            (symbolicate$ pkg-witness vector "$A")))
               (vector$c (or exec
-                            (symbolicate$ package-witness vector "$C")))
+                            (symbolicate$ pkg-witness vector "$C")))
               (recognizer (or recognizer
-                              (symbolicate$ package-witness vector (make-predicate-suffix vector))))
+                              (symbolicate$ pkg-witness vector (make-predicate-suffix vector))))
               (creator (or creator
-                           (symbolicate$ package-witness "CREATE-" vector)))
+                           (symbolicate$ pkg-witness "CREATE-" vector)))
               (fixer (or fixer
-                         (symbolicate$ package-witness vector "-FIX")))
+                         (symbolicate$ pkg-witness vector "-FIX")))
               (length (or length
-                          (symbolicate$ package-witness vector "-LEN")))
+                          (symbolicate$ pkg-witness vector "-LEN")))
               (resizer (or resizer
-                           (symbolicate$ package-witness vector "-RSZ")))
+                           (symbolicate$ pkg-witness vector "-RSZ")))
               (accessor (or accessor
-                            (symbolicate$ package-witness vector "-REF")))
+                            (symbolicate$ pkg-witness vector "-REF")))
               (updater (or updater
-                           (symbolicate$ package-witness vector "-SET"))))
+                           (symbolicate$ pkg-witness vector "-SET"))))
 
          `(progn
             (define-vector$c ,vector$c ,dimensions
@@ -170,8 +170,8 @@
                      `(:memoizable ,memoizable))
               ,@(and ,executable-supplied-p
                      `(:executable ,executable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
             (define-vector$a ,vector$a ,dimensions
@@ -190,15 +190,15 @@
                      `(:initial-element ,initial-element))
               ,@(and ,resizable-supplied-p
                      `(:resizable ,resizable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
             (define-vector$corr ,vector
               :logic ,vector$a
               :exec ,vector$c
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
             (define-vector$abs ,vector
@@ -213,18 +213,18 @@
               :updater ,updater
               ,@(and ,executable-supplied-p
                      `(:executable ,executable))
-              ,@(and ,package-witness-supplied-p
-                     `(:package-witness ,package-witness))
+              ,@(and ,pkg-witness-supplied-p
+                     `(:pkg-witness ,pkg-witness))
               :debug ,debug)
 
-            (defmacro ,(symbolicate$ package-witness "THE-" vector) (,vector)
+            (defmacro ,(symbolicate$ pkg-witness "THE-" vector) (,vector)
               (declare (xargs :guard (symbolp ,vector)))
               `(mbe :logic ,(list ',fixer ,vector)
                     :exec ,,vector))
 
             (in-theory
-              (disable ,(symbolicate$ (if ,package-witness-supplied-p
-                                          package-witness
+              (disable ,(symbolicate$ (if ,pkg-witness-supplied-p
+                                          pkg-witness
                                           vector$c)
                                       vector$c
                                       "-THEOREMS"))))))))

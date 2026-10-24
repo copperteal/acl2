@@ -33,6 +33,8 @@
 ; We use property accessors in logic mode `LOOP$'s.
 (include-book "projects/apply/top" :dir :system)
 
+(include-book "pkg-witness")
+
 
 ;;;; `STOBJ$C' Table
 ; ACL2 system stobj-related properties are insufficient.
@@ -64,7 +66,7 @@
    (element element-type initial-element . default-length)
    (resizable . memoizable)
    (theory fi-bindings . fi-theorem)
-   package-witness)
+   pkg-witness)
   nil)
 
 (defun vector$c-property-p (x)
@@ -87,7 +89,7 @@
        (symbolp (access vector$c-property x :theory))
        (symbol-doublet-listp (access vector$c-property x :fi-bindings))
        (symbolp (access vector$c-property x :fi-theorem))
-       (symbolp (access vector$c-property x :package-witness))))
+       (pkg-witness-p (access vector$c-property x :pkg-witness))))
 
 (defrec hash-table$c-property
   (name
@@ -107,7 +109,7 @@
    (value element-type default-value . copyable)
    (test . memoizable)
    (theory fi-bindings . fi-theorem)
-   package-witness)
+   pkg-witness)
   nil)
 
 (defun hash-table$c-property-p (x)
@@ -139,7 +141,7 @@
        (symbolp (access hash-table$c-property x :theory))
        (symbol-doublet-listp (access hash-table$c-property x :fi-bindings))
        (symbolp (access hash-table$c-property x :fi-theorem))
-       (symbolp (access hash-table$c-property x :package-witness))))
+       (pkg-witness-p (access hash-table$c-property x :pkg-witness))))
 
 (defrec frame$c-property
   (name
@@ -150,7 +152,7 @@
    (fields element-types initial-elements)
    memoizable
    (theory fi-bindings . fi-theorem)
-   package-witness)
+   pkg-witness)
   nil)
 
 (defun frame$c-property-p (x)
@@ -167,7 +169,7 @@
        (symbolp (access frame$c-property x :theory))
        (symbol-doublet-listp (access frame$c-property x :fi-bindings))
        (symbolp (access frame$c-property x :fi-theorem))
-       (symbolp (access frame$c-property x :package-witness))
+       (pkg-witness-p (access frame$c-property x :pkg-witness))
        (let ((n (len (access frame$c-property x :fields))))
          (and (int= n (len (access frame$c-property x :recognizers)))
               (int= n (len (access frame$c-property x :accessors)))

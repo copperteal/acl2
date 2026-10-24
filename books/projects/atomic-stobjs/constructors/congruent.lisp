@@ -66,8 +66,8 @@
 (defmacro define-congruent (stobj &key
                                     (name 'nil name-supplied-p)
                                     (executable 'nil)
-                                    (debug 'nil)
-                                    (package-witness 'nil package-witness-supplied-p))
+                                    (pkg-witness 'nil pkg-witness-supplied-p)
+                                    (debug 'nil))
   (declare (xargs :guard (and (symbolp stobj)
                               stobj
                               (or (not name-supplied-p)
@@ -76,7 +76,8 @@
                                   (stringp name))
                               (booleanp executable)
                               (booleanp debug)
-                              (package-witness-p package-witness))))
+                              ;; (pkg-witness-p pkg-witness)
+                              )))
 
   `(with-output
      ,@(and (not debug)
@@ -85,34 +86,34 @@
      (make-event
        (let* ((stobj ',stobj)
               (executable ',executable)
-              (package-witness (if ',package-witness-supplied-p
-                                   ',package-witness
-                                   (current-package state)))
-              (%stobj (symbolicate$ package-witness "%" ,(cond
-                                                           ((not name-supplied-p)
-                                                            (symbol-name stobj))
-                                                           ((symbolp name)
-                                                            (symbol-name name))
-                                                           (t
-                                                            name))))
+              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                ',pkg-witness
+                                                (current-package state))))
+              (%stobj (symbolicate$ pkg-witness "%" ,(cond
+                                                       ((not name-supplied-p)
+                                                        (symbol-name stobj))
+                                                       ((symbolp name)
+                                                        (symbol-name name))
+                                                       (t
+                                                        name))))
               (stobj-property (getpropc stobj 'acl2::stobj))
               (absstobj-info (getpropc stobj 'acl2::absstobj-info))
               (recognizer-export (assoc (caadr stobj-property) (cdr absstobj-info)))
-              (recognizer-export (list (symbolicate$ package-witness "%" (first recognizer-export))
+              (recognizer-export (list (symbolicate$ pkg-witness "%" (first recognizer-export))
                                        :logic (second recognizer-export)
                                        :exec (third recognizer-export)))
               (creator-export (assoc (cdadr stobj-property) (cdr absstobj-info)))
-              (creator-export (list (symbolicate$ package-witness "%" (first creator-export))
+              (creator-export (list (symbolicate$ pkg-witness "%" (first creator-export))
                                     :logic (second creator-export)
                                     :exec (third creator-export)))
               (foundation (car absstobj-info))
               (exports (loop$ :for entry :in (cdddr absstobj-info)
-                             :collect (append (list (symbolicate$ package-witness "%" (first entry))
+                             :collect (append (list (symbolicate$ pkg-witness "%" (first entry))
                                                     :logic (second entry)
                                                     :exec (third entry))
                                               (let ((updater (cdr (last entry))))
                                                 (and updater
-                                                     (list :updater (symbolicate$ package-witness "%" updater)))))))
+                                                     (list :updater (symbolicate$ pkg-witness "%" updater)))))))
               (exports (protect-exports foundation exports () state)))
 
          `(defabsstobj ,%stobj

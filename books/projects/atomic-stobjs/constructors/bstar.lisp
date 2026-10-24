@@ -52,14 +52,15 @@
 
 
 ;;;; `MAKE-VECTOR-B*-EVENTS'
-(defun make-vector-b*-events (vector package-witness state)
+(defun make-vector-b*-events (vector pkg-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp vector)
-                              (package-witness-p package-witness))
+                              ;; (pkg-witness-p pkg-witness)
+                              )
                   :verify-guards nil))
 
-  (let* ((binder-pair (symbolicate$ package-witness "*" vector "-B*-PAIR*"))
-         (binder-parser (symbolicate$ package-witness vector "-B*-PARSER"))
+  (let* ((binder-pair (symbolicate$ pkg-witness "*" vector "-B*-PAIR*"))
+         (binder-parser (symbolicate$ pkg-witness vector "-B*-PARSER"))
 
          (stobj-property (getpropc vector 'acl2::stobj))
          (stobj$a-property (stobj$a-property vector (w state)))
@@ -92,13 +93,13 @@
              (let* ((index (first kvl))
                     (accessor (car ,binder-pair))
                     (updater (cdr ,binder-pair))
-                    (accessor (symbolicate$ ',package-witness
+                    (accessor (symbolicate$ ',pkg-witness
                                             (coerce (append %prefix
                                                             (coerce (symbol-name accessor)
                                                                     'list))
                                                     'string)))
                     (updater (and updater
-                                  (symbolicate$ ',package-witness
+                                  (symbolicate$ ',pkg-witness
                                                 (coerce (append %prefix
                                                                 (coerce (symbol-name updater)
                                                                         'list))
@@ -152,14 +153,15 @@
 
 
 ;;;; `MAKE-HASH-TABLE-B*-EVENTS'
-(defun make-hash-table-b*-events (hash-table package-witness state)
+(defun make-hash-table-b*-events (hash-table pkg-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
-                              (package-witness-p package-witness))
+                              ;; (pkg-witness-p pkg-witness)
+                              )
                   :verify-guards nil))
 
-  (let* ((binder-pair (symbolicate$ package-witness "*" hash-table "-B*-PAIR*"))
-         (binder-parser (symbolicate$ package-witness hash-table "-B*-PARSER"))
+  (let* ((binder-pair (symbolicate$ pkg-witness "*" hash-table "-B*-PAIR*"))
+         (binder-parser (symbolicate$ pkg-witness hash-table "-B*-PARSER"))
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
          (stobj$a-property (stobj$a-property hash-table (w state)))
@@ -191,13 +193,13 @@
              (let* ((index (first kvl))
                     (accessor (car ,binder-pair))
                     (updater (cdr ,binder-pair))
-                    (accessor (symbolicate$ ',package-witness
+                    (accessor (symbolicate$ ',pkg-witness
                                             (coerce (append %prefix
                                                             (coerce (symbol-name accessor)
                                                                     'list))
                                                     'string)))
                     (updater (and updater
-                                  (symbolicate$ ',package-witness
+                                  (symbolicate$ ',pkg-witness
                                                 (coerce (append %prefix
                                                                 (coerce (symbol-name updater)
                                                                         'list))
@@ -251,14 +253,15 @@
 
 
 ;;;; `MAKE-FRAME-B*-EVENTS'
-(defun make-frame-b*-events (frame package-witness state)
+(defun make-frame-b*-events (frame pkg-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp frame)
-                              (package-witness-p package-witness))
+                              ;; (pkg-witness-p pkg-witness)
+                              )
                   :verify-guards nil))
 
-  (let* ((binder-alist (symbolicate$ package-witness "*" frame "-B*-ALIST*"))
-         (binder-parser (symbolicate$ package-witness frame "-B*-PARSER"))
+  (let* ((binder-alist (symbolicate$ pkg-witness "*" frame "-B*-ALIST*"))
+         (binder-parser (symbolicate$ pkg-witness frame "-B*-PARSER"))
 
          (world (w state))
          (stobj$a-property (stobj$a-property frame world))
@@ -384,10 +387,10 @@
 
 ;;;; `DEFINE-B*'
 (defmacro define-b* (stobj &key
-                             (package-witness 'nil package-witness-supplied-p)
+                             (pkg-witness 'nil pkg-witness-supplied-p)
                              (debug 'nil))
   (declare (xargs :guard (and (symbolp stobj)
-                              (package-witness-p package-witness)
+                              ;; (pkg-witness-p pkg-witness)
                               (booleanp debug))))
   `(with-output
      ,@(and (not debug)
@@ -396,20 +399,20 @@
      (make-event
        (let* ((stobj ',stobj)
               (world (w state))
-              (package-witness-lookup (cdr (assoc stobj (table-alist 'package-witness world))))
-              (package-witness (cond
-                                 (',package-witness-supplied-p
-                                  ',package-witness)
-                                 (package-witness-lookup)
-                                 (t
-                                  (current-package state))))
+              (pkg-witness-lookup (cdr (assoc stobj (table-alist 'pkg-witness world))))
+              (pkg-witness (pkg-witness-fix (cond
+                                              (',pkg-witness-supplied-p
+                                               ',pkg-witness)
+                                              (pkg-witness-lookup)
+                                              (t
+                                               (current-package state)))))
               (stobj$a-property (stobj$a-property stobj world)))
          (case (access stobj$a-property stobj$a-property :type)
            (vector$a-property
-            (make-vector-b*-events stobj package-witness state))
+            (make-vector-b*-events stobj pkg-witness state))
            (hash-table$a-property
-            (make-hash-table-b*-events stobj package-witness state))
+            (make-hash-table-b*-events stobj pkg-witness state))
            (frame$a-property
-            (make-frame-b*-events stobj package-witness state))
+            (make-frame-b*-events stobj pkg-witness state))
            (t
             (er hard 'define-b* "Bad stobj$a-property: ~x0" stobj$a-property)))))))

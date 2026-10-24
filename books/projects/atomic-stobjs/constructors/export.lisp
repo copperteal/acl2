@@ -42,22 +42,23 @@
 
 
 ;;;; `MAKE-VECTOR-EXPORT-EVENTS'
-(defun make-vector-export-events (vector package-witness state)
+(defun make-vector-export-events (vector pkg-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp vector)
-                              (package-witness-p package-witness))
+                              ;; (pkg-witness-p pkg-witness)
+                              )
                   :verify-guards nil))
-  (let* ((%vector (symbolicate$ package-witness "%" vector))
+  (let* ((%vector (symbolicate$ pkg-witness "%" vector))
 
-         (export (symbolicate$ package-witness vector "-EXPORT"))
-         (export-begin (symbolicate$ package-witness export "-BEGIN"))
-         (export-end (symbolicate$ package-witness export "-END"))
-         (export-theory (symbolicate$ package-witness export "-THEORY"))
-         (exportp (symbolicate$ package-witness export (make-predicate-suffix export)))
-         (exportp-rec (symbolicate$ package-witness exportp "-REC"))
-         (export-acc (symbolicate$ package-witness export "-ACC"))
-         (import (symbolicate$ package-witness vector "-IMPORT"))
-         (import-rec (symbolicate$ package-witness import "-REC"))
+         (export (symbolicate$ pkg-witness vector "-EXPORT"))
+         (export-begin (symbolicate$ pkg-witness export "-BEGIN"))
+         (export-end (symbolicate$ pkg-witness export "-END"))
+         (export-theory (symbolicate$ pkg-witness export "-THEORY"))
+         (exportp (symbolicate$ pkg-witness export (make-predicate-suffix export)))
+         (exportp-rec (symbolicate$ pkg-witness exportp "-REC"))
+         (export-acc (symbolicate$ pkg-witness export "-ACC"))
+         (import (symbolicate$ pkg-witness vector "-IMPORT"))
+         (import-rec (symbolicate$ pkg-witness import "-REC"))
 
          (stobj-property (getpropc vector 'acl2::stobj))
          (creator (cdadr stobj-property))
@@ -94,10 +95,10 @@
          (accessor$a (access vector$a-property stobj$a-property :accessor))
          (updater$a (access vector$a-property stobj$a-property :updater))
 
-         (index (symbolicate$ package-witness "I"))
+         (index (symbolicate$ pkg-witness "I"))
          (resizable (access vector$a-property stobj$a-property :resizable))
          (element (access vector$a-property stobj$a-property :element))
-         (%element (symbolicate$ package-witness "%" element))
+         (%element (symbolicate$ pkg-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (stobj$a-property element world))
          (initial-element-name (access vector$a-property stobj$a-property :initial-element))
@@ -138,24 +139,24 @@
          (element-fixer-constraints (symbolicate$ "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
          (element-equiv-constraints (symbolicate$ "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
 
-         (exportp-tp (symbolicate$ package-witness exportp "-TP"))
-         (exportp-cr (symbolicate$ package-witness exportp "-CR"))
+         (exportp-tp (symbolicate$ pkg-witness exportp "-TP"))
+         (exportp-cr (symbolicate$ pkg-witness exportp "-CR"))
 
-         (export-tp (symbolicate$ package-witness export "-TP"))
-         (exportp-of-export (symbolicate$ package-witness exportp "-OF-" export))
-         (export-when-not-recognizer$a (symbolicate$ package-witness export "-WHEN-NOT-" recognizer$a))
+         (export-tp (symbolicate$ pkg-witness export "-TP"))
+         (exportp-of-export (symbolicate$ pkg-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate$ pkg-witness export "-WHEN-NOT-" recognizer$a))
 
-         (import-tp (symbolicate$ package-witness import "-TP"))
-         (recognizer$a-of-import (symbolicate$ package-witness recognizer$a "-OF-" import))
+         (import-tp (symbolicate$ pkg-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate$ pkg-witness recognizer$a "-OF-" import))
          (coupledp-constraints (symbolicate$ "ATOMIC-STOBJS" coupledp "-CONSTRAINTS"))
-         (coupledp-of-import (symbolicate$ package-witness coupledp "-OF-" import))
-         (import-when-not-exportp (symbolicate$ package-witness import "-WHEN-NOT-" exportp))
-         (import-ignores-2 (symbolicate$ package-witness import "-IGNORES-2"))
-         (length$a-of-import (symbolicate$ package-witness length$a "-OF-" import))
-         (accessor$a-of-import (symbolicate$ package-witness accessor$a "-OF-" import))
+         (coupledp-of-import (symbolicate$ pkg-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate$ pkg-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate$ pkg-witness import "-IGNORES-2"))
+         (length$a-of-import (symbolicate$ pkg-witness length$a "-OF-" import))
+         (accessor$a-of-import (symbolicate$ pkg-witness accessor$a "-OF-" import))
 
-         (export-of-import (symbolicate$ package-witness export "-OF-" import))
-         (import-of-export (symbolicate$ package-witness import "-OF-" export))
+         (export-of-import (symbolicate$ pkg-witness export "-OF-" import))
+         (import-of-export (symbolicate$ pkg-witness import "-OF-" export))
 
          (fi-bindings
           (list `(lem-vector$a::element-recognizer ,(or element-recognizer
@@ -946,25 +947,26 @@
 
 
 ;;;; `MAKE-HASH-TABLE-EXPORT-EVENTS'
-(defun make-hash-table-export-events (hash-table package-witness state)
+(defun make-hash-table-export-events (hash-table pkg-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp hash-table)
-                              (package-witness-p package-witness))
+                              ;; (pkg-witness-p pkg-witness)
+                              )
                   :verify-guards nil))
-  (let* ((%hash-table (symbolicate$ package-witness "%" hash-table))
+  (let* ((%hash-table (symbolicate$ pkg-witness "%" hash-table))
          (contents (symbolicate$ hash-table hash-table "-CONTENTS"))
-         (set (symbolicate$ package-witness "SET"))
-         (%set (symbolicate$ package-witness "%SET"))
+         (set (symbolicate$ pkg-witness "SET"))
+         (%set (symbolicate$ pkg-witness "%SET"))
 
-         (export (symbolicate$ package-witness hash-table "-EXPORT"))
-         (export-begin (symbolicate$ package-witness export "-BEGIN"))
-         (export-end (symbolicate$ package-witness export "-END"))
-         (export-theory (symbolicate$ package-witness export "-THEORY"))
-         (exportp (symbolicate$ package-witness export (make-predicate-suffix export)))
-         (exportp-rec (symbolicate$ package-witness exportp "-REC"))
-         (export-acc (symbolicate$ package-witness export "-ACC"))
-         (import (symbolicate$ package-witness hash-table "-IMPORT"))
-         (import-rec (symbolicate$ package-witness import "-REC"))
+         (export (symbolicate$ pkg-witness hash-table "-EXPORT"))
+         (export-begin (symbolicate$ pkg-witness export "-BEGIN"))
+         (export-end (symbolicate$ pkg-witness export "-END"))
+         (export-theory (symbolicate$ pkg-witness export "-THEORY"))
+         (exportp (symbolicate$ pkg-witness export (make-predicate-suffix export)))
+         (exportp-rec (symbolicate$ pkg-witness exportp "-REC"))
+         (export-acc (symbolicate$ pkg-witness export "-ACC"))
+         (import (symbolicate$ pkg-witness hash-table "-IMPORT"))
+         (import-rec (symbolicate$ pkg-witness import "-REC"))
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
          (creator (cdadr stobj-property))
@@ -1071,8 +1073,8 @@
          (exportp-constraints (symbolicate$ "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
          (exportp-rec-tp (symbolicate$ "ATOMIC-STOBJS" exportp-rec "-TP"))
          (exportp-rec-cr (symbolicate$ "ATOMIC-STOBJS" exportp-rec "-CR"))
-         (exportp-tp (symbolicate$ package-witness exportp "-TP"))
-         (exportp-cr (symbolicate$ package-witness exportp "-CR"))
+         (exportp-tp (symbolicate$ pkg-witness exportp "-TP"))
+         (exportp-cr (symbolicate$ pkg-witness exportp "-CR"))
          (mapp-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS" "MAPP-WHEN-" exportp-rec))
          (key-recognizer-head-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS" key-recognizer "-HEAD-WHEN-" exportp-rec "-1"))
          (val-export-p-head-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS"
@@ -1086,23 +1088,23 @@
          (keysp-of-keys-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS" keys$ap "-OF-KEYS-WHEN-" exportp-rec))
 
          (export-constraints (symbolicate$ "ATOMIC-STOBJS" export "-CONSTRAINTS"))
-         (export-tp (symbolicate$ package-witness export "-TP"))
-         (exportp-of-export (symbolicate$ package-witness exportp "-OF-" export))
-         (export-when-not-recognizer$a (symbolicate$ package-witness export "-WHEN-NOT-" recognizer$a))
+         (export-tp (symbolicate$ pkg-witness export "-TP"))
+         (exportp-of-export (symbolicate$ pkg-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate$ pkg-witness export "-WHEN-NOT-" recognizer$a))
 
          (import-constraints (symbolicate$ "ATOMIC-STOBJS" import "-CONSTRAINTS"))
-         (import-tp (symbolicate$ package-witness import "-TP"))
-         (recognizer$a-of-import (symbolicate$ package-witness recognizer$a "-OF-" import))
-         (coupledp-of-import (symbolicate$ package-witness coupledp "-OF-" import))
-         (import-when-not-exportp (symbolicate$ package-witness import "-WHEN-NOT-" exportp))
-         (import-ignores-2 (symbolicate$ package-witness import "-IGNORES-2"))
-         (keys$a-of-import (symbolicate$ package-witness keys$a "-OF-" import))
-         (boundp$a-of-import (symbolicate$ package-witness boundp$a "-OF-" import))
-         (accessor$a-of-import (symbolicate$ package-witness accessor$a "-OF-" import))
-         (count$a-of-import (symbolicate$ package-witness count$a "-OF-" import))
+         (import-tp (symbolicate$ pkg-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate$ pkg-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate$ pkg-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate$ pkg-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate$ pkg-witness import "-IGNORES-2"))
+         (keys$a-of-import (symbolicate$ pkg-witness keys$a "-OF-" import))
+         (boundp$a-of-import (symbolicate$ pkg-witness boundp$a "-OF-" import))
+         (accessor$a-of-import (symbolicate$ pkg-witness accessor$a "-OF-" import))
+         (count$a-of-import (symbolicate$ pkg-witness count$a "-OF-" import))
 
-         (export-of-import (symbolicate$ package-witness export "-OF-" import))
-         (import-of-export (symbolicate$ package-witness import "-OF-" export))
+         (export-of-import (symbolicate$ pkg-witness export "-OF-" import))
+         (import-of-export (symbolicate$ pkg-witness import "-OF-" export))
 
          (fi-bindings
           (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
@@ -2235,19 +2237,20 @@
 
 
 ;;;; `MAKE-FRAME-EXPORT-EVENTS'
-(defun make-frame-export-events (frame package-witness state)
+(defun make-frame-export-events (frame pkg-witness state)
   (declare (xargs :stobjs state
                   :guard (and (symbolp frame)
-                              (package-witness-p package-witness))
+                              ;; (pkg-witness-p pkg-witness)
+                              )
                   :verify-guards nil))
-  (let* ((%frame (symbolicate$ package-witness "%" frame))
+  (let* ((%frame (symbolicate$ pkg-witness "%" frame))
 
-         (export (symbolicate$ package-witness frame "-EXPORT"))
-         (export-begin (symbolicate$ package-witness export "-BEGIN"))
-         (export-end (symbolicate$ package-witness export "-END"))
-         (export-theory (symbolicate$ package-witness export "-THEORY"))
-         (exportp (symbolicate$ package-witness export (make-predicate-suffix export)))
-         (import (symbolicate$ package-witness frame "-IMPORT"))
+         (export (symbolicate$ pkg-witness frame "-EXPORT"))
+         (export-begin (symbolicate$ pkg-witness export "-BEGIN"))
+         (export-end (symbolicate$ pkg-witness export "-END"))
+         (export-theory (symbolicate$ pkg-witness export "-THEORY"))
+         (exportp (symbolicate$ pkg-witness export (make-predicate-suffix export)))
+         (import (symbolicate$ pkg-witness frame "-IMPORT"))
 
          (stobj-property (getpropc frame 'acl2::stobj))
          (creator (cdadr stobj-property))
@@ -2267,7 +2270,7 @@
 
          (fields (access frame$a-property stobj$a-property :fields))
          (%fields (loop$ :for field :in fields
-                        :collect (symbolicate$ package-witness "%" field)))
+                        :collect (symbolicate$ pkg-witness "%" field)))
          (stobjs (access frame$a-property stobj$a-property :stobjs))
          (stobj-property-list (loop$ :for stobj :in stobjs
                                     :collect (and (symbolp stobj)
@@ -2357,21 +2360,21 @@
          (len-of-cons (symbolicate$ "ATOMIC-STOBJS" "LEN-OF-CONS"))
          (nth-of-cons (symbolicate$ "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
-         (exportp-tp (symbolicate$ package-witness exportp "-TP"))
-         (exportp-cr (symbolicate$ package-witness exportp "-CR"))
+         (exportp-tp (symbolicate$ pkg-witness exportp "-TP"))
+         (exportp-cr (symbolicate$ pkg-witness exportp "-CR"))
 
-         (export-tp (symbolicate$ package-witness export "-TP"))
-         (exportp-of-export (symbolicate$ package-witness exportp "-OF-" export))
-         (export-when-not-recognizer$a (symbolicate$ package-witness export "-WHEN-NOT-" recognizer$a))
+         (export-tp (symbolicate$ pkg-witness export "-TP"))
+         (exportp-of-export (symbolicate$ pkg-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate$ pkg-witness export "-WHEN-NOT-" recognizer$a))
 
-         (import-tp (symbolicate$ package-witness import "-TP"))
-         (recognizer$a-of-import (symbolicate$ package-witness recognizer$a "-OF-" import))
-         (coupledp-of-import (symbolicate$ package-witness coupledp "-OF-" import))
-         (import-when-not-exportp (symbolicate$ package-witness import "-WHEN-NOT-" exportp))
-         (import-ignores-2 (symbolicate$ package-witness import "-IGNORES-2"))
+         (import-tp (symbolicate$ pkg-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate$ pkg-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate$ pkg-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate$ pkg-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate$ pkg-witness import "-IGNORES-2"))
 
-         (export-of-import (symbolicate$ package-witness export "-OF-" import))
-         (import-of-export (symbolicate$ package-witness import "-OF-" export)))
+         (export-of-import (symbolicate$ pkg-witness export "-OF-" import))
+         (import-of-export (symbolicate$ pkg-witness import "-OF-" export)))
 
     `(progn
        (deflabel ,export-begin)
@@ -2627,7 +2630,7 @@
                  :as accessor$a :in accessors$a
                  :as export :in export-list
                  :as stobj :in stobjs
-                 :collect `(defthm ,(symbolicate$ package-witness accessor$a "-OF-" import)
+                 :collect `(defthm ,(symbolicate$ pkg-witness accessor$a "-OF-" import)
                              (equal (,accessor$a (,import export ,frame))
                                     ,(if stobj
                                          `(if (,exportp export)
@@ -2702,11 +2705,12 @@
 
 ;;;; `DEFINE-EXPORT'
 (defmacro define-export (stobj &key
-                                 (debug 'nil)
-                                 (package-witness 'nil package-witness-supplied-p))
+                                 (pkg-witness 'nil pkg-witness-supplied-p)
+                                 (debug 'nil))
   (declare (xargs :guard (and (symbolp stobj)
                               (booleanp debug)
-                              (package-witness-p package-witness))))
+                              ;; (pkg-witness-p pkg-witness)
+                              )))
   `(with-output
      ,@(and (not debug)
             *constructor-output*)
@@ -2714,20 +2718,20 @@
      (make-event
        (let* ((stobj ',stobj)
               (world (w state))
-              (package-witness-lookup (cdr (assoc stobj (table-alist 'package-witness world))))
-              (package-witness (cond
-                                 (',package-witness-supplied-p
-                                  ',package-witness)
-                                 (package-witness-lookup)
-                                 (t
-                                  (current-package state))))
+              (pkg-witness-lookup (cdr (assoc stobj (table-alist 'pkg-witness world))))
+              (pkg-witness (pkg-witness-fix (cond
+                                              (',pkg-witness-supplied-p
+                                               ',pkg-witness)
+                                              (pkg-witness-lookup)
+                                              (t
+                                               (current-package state)))))
               (stobj$a-property (stobj$a-property stobj world)))
          (case (access stobj$a-property stobj$a-property :type)
            (vector$a-property
-            (make-vector-export-events stobj package-witness state))
+            (make-vector-export-events stobj pkg-witness state))
            (hash-table$a-property
-            (make-hash-table-export-events stobj package-witness state))
+            (make-hash-table-export-events stobj pkg-witness state))
            (frame$a-property
-            (make-frame-export-events stobj package-witness state))
+            (make-frame-export-events stobj pkg-witness state))
            (t
             (er hard 'define-export "Bad stobj$a-property: ~x0" stobj$a-property)))))))

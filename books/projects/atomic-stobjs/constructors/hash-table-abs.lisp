@@ -42,17 +42,17 @@
                                     (exec 'nil)
                                     (copyable 't)
 
-                                    (package-witness 'nil package-witness-supplied-p)
-                                    (package-witness$a 'nil package-witness$a-supplied-p)
-                                    (package-witness$c 'nil package-witness$c-supplied-p)
+                                    (pkg-witness 'nil pkg-witness-supplied-p)
+                                    (pkg-witness$a 'nil pkg-witness$a-supplied-p)
+                                    (pkg-witness$c 'nil pkg-witness$c-supplied-p)
                                     (debug 'nil))
   (declare (xargs :guard (and (symbolp hash-table)
                               (symbolp logic)
                               (symbolp exec)
                               (booleanp copyable)
-                              (package-witness-p package-witness)
-                              (package-witness-p package-witness$a)
-                              (package-witness-p package-witness$c)
+                              ;; (pkg-witness-p pkg-witness)
+                              ;; (pkg-witness-p pkg-witness$a)
+                              ;; (pkg-witness-p pkg-witness$c)
                               (booleanp debug))))
 
   `(with-output
@@ -63,25 +63,25 @@
        (let* ((hash-table ',hash-table)
               (logic ',logic)
               (exec ',exec)
-              (package-witness (if ',package-witness-supplied-p
-                                   ',package-witness
-                                   (current-package state)))
-              (package-witness$a (if ',package-witness$a-supplied-p
-                                     ',package-witness$a
-                                     package-witness))
-              (package-witness$c (if ',package-witness$c-supplied-p
-                                     ',package-witness$c
-                                     package-witness))
+              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                ',pkg-witness
+                                                (current-package state))))
+              (pkg-witness$a (pkg-witness-fix (if ',pkg-witness$a-supplied-p
+                                                  ',pkg-witness$a
+                                                  pkg-witness)))
+              (pkg-witness$c (pkg-witness-fix (if ',pkg-witness$c-supplied-p
+                                                  ',pkg-witness$c
+                                                  pkg-witness)))
 
               (copyable ',copyable)
-              (hash-table$corr (symbolicate$ package-witness hash-table "$CORR"))
-              (hash-table$corr-keys (symbolicate$ package-witness hash-table$corr "-KEYS"))
-              (hash-table$corr-vals (symbolicate$ package-witness hash-table$corr "-VALS"))
+              (hash-table$corr (symbolicate$ pkg-witness hash-table "$CORR"))
+              (hash-table$corr-keys (symbolicate$ pkg-witness hash-table$corr "-KEYS"))
+              (hash-table$corr-vals (symbolicate$ pkg-witness hash-table$corr "-VALS"))
 
               (hash-table$a (or logic
-                                (symbolicate$ package-witness$a hash-table "$A")))
+                                (symbolicate$ pkg-witness$a hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate$ package-witness$c hash-table "$C")))
+                                (symbolicate$ pkg-witness$c hash-table "$C")))
 
               (stobj-property (getpropc hash-table$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
@@ -176,9 +176,9 @@
 
        (executable 'nil)
 
-       (package-witness 'nil package-witness-supplied-p)
-       (package-witness$a 'nil package-witness$a-supplied-p)
-       (package-witness$c 'nil package-witness$c-supplied-p)
+       (pkg-witness 'nil pkg-witness-supplied-p)
+       (pkg-witness$a 'nil pkg-witness$a-supplied-p)
+       (pkg-witness$c 'nil pkg-witness$c-supplied-p)
        (debug 'nil))
 
   (declare (xargs :guard (and (symbolp hash-table)
@@ -202,9 +202,9 @@
                                   (and (not keys)
                                        (not keys-set)))
                               (booleanp executable)
-                              (package-witness-p package-witness)
-                              (package-witness-p package-witness$a)
-                              (package-witness-p package-witness$c)
+                              ;; (pkg-witness-p pkg-witness)
+                              ;; (pkg-witness-p pkg-witness$a)
+                              ;; (pkg-witness-p pkg-witness$c)
                               (booleanp debug))))
 
   `(with-output
@@ -230,47 +230,47 @@
               (keys ',keys)
               (keys-set ',keys-set)
               (executable ',executable)
-              (package-witness (if ',package-witness-supplied-p
-                                   ',package-witness
-                                   (current-package state)))
-              (package-witness$a (if ',package-witness$a-supplied-p
-                                     ',package-witness$a
-                                     package-witness))
-              (package-witness$c (if ',package-witness$c-supplied-p
-                                     ',package-witness$c
-                                     package-witness))
+              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                ',pkg-witness
+                                                (current-package state))))
+              (pkg-witness$a (pkg-witness-fix (if ',pkg-witness$a-supplied-p
+                                                  ',pkg-witness$a
+                                                  pkg-witness)))
+              (pkg-witness$c (pkg-witness-fix (if ',pkg-witness$c-supplied-p
+                                                  ',pkg-witness$c
+                                                  pkg-witness)))
 
               ;; Interface Symbols
               (hash-table$a (or logic
-                                (symbolicate$ package-witness$a hash-table "$A")))
+                                (symbolicate$ pkg-witness$a hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate$ package-witness$c hash-table "$C")))
+                                (symbolicate$ pkg-witness$c hash-table "$C")))
               (recognizer (or recognizer
-                              (symbolicate$ package-witness hash-table (make-predicate-suffix hash-table))))
+                              (symbolicate$ pkg-witness hash-table (make-predicate-suffix hash-table))))
               (creator (or creator
-                           (symbolicate$ package-witness "CREATE-" hash-table)))
+                           (symbolicate$ pkg-witness "CREATE-" hash-table)))
               (fixer (or fixer
-                         (symbolicate$ package-witness hash-table "-FIX")))
+                         (symbolicate$ pkg-witness hash-table "-FIX")))
               (accessor (or accessor
-                            (symbolicate$ package-witness hash-table "-GET")))
+                            (symbolicate$ pkg-witness hash-table "-GET")))
               (updater (or updater
-                           (symbolicate$ package-witness hash-table "-PUT")))
+                           (symbolicate$ pkg-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate$ package-witness hash-table "-BNDP")))
+                          (symbolicate$ pkg-witness hash-table "-BNDP")))
               (getp (or getp
-                        (symbolicate$ package-witness hash-table "-GETP")))
+                        (symbolicate$ pkg-witness hash-table "-GETP")))
               (remover (or remover
-                           (symbolicate$ package-witness hash-table "-REM")))
+                           (symbolicate$ pkg-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate$ package-witness hash-table "-CNT")))
+                         (symbolicate$ pkg-witness hash-table "-CNT")))
               (clear (or clear
-                         (symbolicate$ package-witness hash-table "-CLR")))
+                         (symbolicate$ pkg-witness hash-table "-CLR")))
               (init (or init
-                        (symbolicate$ package-witness hash-table "-INIT")))
+                        (symbolicate$ pkg-witness hash-table "-INIT")))
               (keys (or keys
-                        (symbolicate$ package-witness hash-table "-KEYS")))
+                        (symbolicate$ pkg-witness hash-table "-KEYS")))
               (keys-set (or keys-set
-                            (symbolicate$ package-witness hash-table "-KEYS-SET")))
+                            (symbolicate$ pkg-witness hash-table "-KEYS-SET")))
 
               (world (w state))
               (hash-table$corr-list (cdr (assoc hash-table (table-alist 'corr world))))
@@ -343,31 +343,31 @@
               (test (access hash-table$a-property stobj$a-property :test))
 
               ;; Theorem Names
-              (creator{correspondence} (symbolicate$ package-witness creator "{CORRESPONDENCE}"))
-              (creator{preserved} (symbolicate$ package-witness creator "{PRESERVED}"))
-              (fixer{correspondence} (symbolicate$ package-witness fixer "{CORRESPONDENCE}"))
-              (fixer{preserved} (symbolicate$ package-witness fixer "{PRESERVED}"))
-              (accessor{correspondence} (symbolicate$ package-witness accessor "{CORRESPONDENCE}"))
-              (accessor{guard-thm} (symbolicate$ package-witness accessor "{GUARD-THM}"))
-              (updater{correspondence} (symbolicate$ package-witness updater "{CORRESPONDENCE}"))
-              (updater{guard-thm} (symbolicate$ package-witness updater "{GUARD-THM}"))
-              (updater{preserved} (symbolicate$ package-witness updater "{PRESERVED}"))
-              (boundp{correspondence} (symbolicate$ package-witness boundp "{CORRESPONDENCE}"))
-              (boundp{guard-thm} (symbolicate$ package-witness boundp "{GUARD-THM}"))
-              (getp{correspondence} (symbolicate$ package-witness getp "{CORRESPONDENCE}"))
-              (getp{guard-thm} (symbolicate$ package-witness getp "{GUARD-THM}"))
-              (remover{correspondence} (symbolicate$ package-witness remover "{CORRESPONDENCE}"))
-              (remover{guard-thm} (symbolicate$ package-witness remover "{GUARD-THM}"))
-              (remover{preserved} (symbolicate$ package-witness remover "{PRESERVED}"))
-              (count{correspondence} (symbolicate$ package-witness count "{CORRESPONDENCE}"))
-              (clear{correspondence} (symbolicate$ package-witness clear "{CORRESPONDENCE}"))
-              (clear{preserved} (symbolicate$ package-witness clear "{PRESERVED}"))
-              (init{correspondence} (symbolicate$ package-witness init "{CORRESPONDENCE}"))
-              (init{guard-thm} (symbolicate$ package-witness init "{GUARD-THM}"))
-              (init{preserved} (symbolicate$ package-witness init "{PRESERVED}"))
-              (keys{correspondence} (symbolicate$ package-witness keys "{CORRESPONDENCE}"))
-              (keys-set{correspondence} (symbolicate$ package-witness keys-set "{CORRESPONDENCE}"))
-              (keys-set{preserved} (symbolicate$ package-witness keys-set "{PRESERVED}"))
+              (creator{correspondence} (symbolicate$ pkg-witness creator "{CORRESPONDENCE}"))
+              (creator{preserved} (symbolicate$ pkg-witness creator "{PRESERVED}"))
+              (fixer{correspondence} (symbolicate$ pkg-witness fixer "{CORRESPONDENCE}"))
+              (fixer{preserved} (symbolicate$ pkg-witness fixer "{PRESERVED}"))
+              (accessor{correspondence} (symbolicate$ pkg-witness accessor "{CORRESPONDENCE}"))
+              (accessor{guard-thm} (symbolicate$ pkg-witness accessor "{GUARD-THM}"))
+              (updater{correspondence} (symbolicate$ pkg-witness updater "{CORRESPONDENCE}"))
+              (updater{guard-thm} (symbolicate$ pkg-witness updater "{GUARD-THM}"))
+              (updater{preserved} (symbolicate$ pkg-witness updater "{PRESERVED}"))
+              (boundp{correspondence} (symbolicate$ pkg-witness boundp "{CORRESPONDENCE}"))
+              (boundp{guard-thm} (symbolicate$ pkg-witness boundp "{GUARD-THM}"))
+              (getp{correspondence} (symbolicate$ pkg-witness getp "{CORRESPONDENCE}"))
+              (getp{guard-thm} (symbolicate$ pkg-witness getp "{GUARD-THM}"))
+              (remover{correspondence} (symbolicate$ pkg-witness remover "{CORRESPONDENCE}"))
+              (remover{guard-thm} (symbolicate$ pkg-witness remover "{GUARD-THM}"))
+              (remover{preserved} (symbolicate$ pkg-witness remover "{PRESERVED}"))
+              (count{correspondence} (symbolicate$ pkg-witness count "{CORRESPONDENCE}"))
+              (clear{correspondence} (symbolicate$ pkg-witness clear "{CORRESPONDENCE}"))
+              (clear{preserved} (symbolicate$ pkg-witness clear "{PRESERVED}"))
+              (init{correspondence} (symbolicate$ pkg-witness init "{CORRESPONDENCE}"))
+              (init{guard-thm} (symbolicate$ pkg-witness init "{GUARD-THM}"))
+              (init{preserved} (symbolicate$ pkg-witness init "{PRESERVED}"))
+              (keys{correspondence} (symbolicate$ pkg-witness keys "{CORRESPONDENCE}"))
+              (keys-set{correspondence} (symbolicate$ pkg-witness keys-set "{CORRESPONDENCE}"))
+              (keys-set{preserved} (symbolicate$ pkg-witness keys-set "{PRESERVED}"))
 
               ;; Exports
               (exports `((,fixer :logic ,fixer$a
@@ -407,7 +407,7 @@
                                    (cddr updater$c-guard)
                                    (cdr updater$c-guard)))
 
-              (aggressive$a (symbolicate$ package-witness$a hash-table$a "-AGGRESSIVE"))
+              (aggressive$a (symbolicate$ pkg-witness$a hash-table$a "-AGGRESSIVE"))
               (accessor$c-key (car (getpropc accessor$c 'acl2::formals)))
               (updater$c-key (car (getpropc updater$c 'acl2::formals)))
               (updater$c-val (cadr (getpropc updater$c 'acl2::formals)))
@@ -718,4 +718,4 @@
 
             (table stobj$a ',hash-table ',stobj$a-property)
 
-            (table package-witness ',hash-table ',package-witness))))))
+            (table pkg-witness ',hash-table ',pkg-witness))))))

@@ -33,14 +33,10 @@
 (include-book "xdoc/top" :dir :system)
 (include-book "projects/apply/top" :dir :system)
 
-(defun package-witness-p (x)
-  (declare (xargs :guard t))
-  (if (stringp x)
-      (not (equal x ""))
-      (symbolp x)))
+(include-book "pkg-witness")
 
-(defwarrant package-witness-p)
-
+
+;;;; `SYMBOLICATE$'
 (encapsulate ()
   (local
     (defthm character-listp-of-explode-nonnegative-integer
@@ -86,57 +82,50 @@
 
 (defun symbolicate$-fn (witness exprs)
   (declare (xargs :guard (true-listp exprs)))
-  `(let ((witness ,witness)
+  `(let ((witness (pkg-witness-fix ,witness))
          (expansion ,(symbolicate$-expand exprs)))
-     (if (package-witness-p witness)
-         (intern$ expansion (fix-pkg
-                             (cond
-                               ((stringp witness)
-                                witness)
-                               ((symbolp witness)
-                                (symbol-package-name witness))
-                               (t
-                                (illegal 'symbolicate$-fn "GUARD VIOLATION" ())))))
-         (er hard 'symbolicate$ "Bad witness: ~x0" witness))))
+     (intern-in-package-of-symbol expansion witness)))
 
 (defmacro symbolicate$ (witness &rest exprs)
   (declare (xargs :guard t))
   (symbolicate$-fn witness exprs))
 
 
-(defxdoc symbolicate$
-  :parents (symbols)
-  :short "Concatenate strings and symbols to construct a symbol."
-  :long "@({
-Examples:
+;;;; TODO: rewrite once the codebase stabilizes
+;; (defxdoc symbolicate$
+;;   :parents (symbols)
+;;   :short "Concatenate strings and symbols to construct a symbol."
+;;   :long "@({
+;; Examples:
 
-ACL2 !>(symbolicate$ \"ACL2\" 'hello \" world\")
-|HELLO world|
+;; ACL2 !>(symbolicate$ \"ACL2\" 'hello \" world\")
+;; |HELLO world|
 
-ACL2 !>(defun foo () \"SOME-STRING\")
-...
+;; ACL2 !>(defun foo () \"SOME-STRING\")
+;; ...
 
-ACL2 !>(symbolicate$ 'str::witness (foo) \"-suffix\")
-STR::|SOME-STRING-suffix|
+;; ACL2 !>(symbolicate$ 'str::witness (foo) \"-suffix\")
+;; STR::|SOME-STRING-suffix|
 
-ACL2 !>(defun bar () \"STR\")
-...
+;; ACL2 !>(defun bar () \"STR\")
+;; ...
 
-ACL2 !>(symbolicate$ (bar) (foo) 2 '-baz)
-STR::SOME-STRING-BAZ
+;; ACL2 !>(symbolicate$ (bar) (foo) 2 '-baz)
+;; STR::SOME-STRING-BAZ
 
-General Form
-(symbolicate$ witness expr1 ... exprn)
-})
+;; General Form
+;; (symbolicate$ witness expr1 ... exprn)
+;; })
 
-<p>@('Symbolicate') evaluates each of its arguments.  @('witness') must evaluate
-to be a non-empty string or a symbol.  If that is a non-empty string, it is
-taken as a <see topic=\"@(url packages)\">package</see> name.  If that is a
-symbol, its package name is used.  In either case, @(tsee fix-pkg) is applied to
-the resulting string.  For each @('expri'), if @('expri') is a string, it is
-preserved; if @('expri') is a symbol, it is replaced by its @('symbol-name'); if
-@('expri') is a non-negative integer, it is converted to its base-10 string
-representation; otherwise, @('expri') is replaced with the empty string.  After
-these evaluations, @('symbolicate$') concatenates the strings from @('expr1
-... exprn') and interns a symbol with that name in the package derived from
-@('witness').  The @('symbolicate$') form expands to this symbol.</p>")
+;; <p>@('Symbolicate') evaluates each of its arguments.  @('witness') should
+;; evaluate to be a non-empty string or a symbol.  If that is a non-empty string,
+;; it is taken as a <see topic=\"@(url packages)\">package</see> name.  If that is
+;; a symbol, its package name is used.  In either case, @(tsee fix-pkg) is applied
+;; to the resulting string.  Otherwise, we use the \"ACL2\" package.  For each
+;; @('expri'), if @('expri') is a string, it is preserved; if @('expri') is a
+;; symbol, it is replaced by its @('symbol-name'); if @('expri') is a non-negative
+;; integer, it is converted to its base-10 string representation; otherwise,
+;; @('expri') is replaced with the empty string.  After these evaluations,
+;; @('symbolicate$') concatenates the strings from @('expr1 ... exprn') and interns
+;; a symbol with that name in the package derived from @('witness').  The
+;; @('symbolicate$') form expands to this symbol.</p>")

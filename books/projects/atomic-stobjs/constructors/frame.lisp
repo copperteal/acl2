@@ -50,7 +50,7 @@
 (defconst *body-keywords*
   '(:inline :memoizable :executable
     :recognizer :creator :fixer
-    :logic :exec :package-witness :debug))
+    :logic :exec :pkg-witness :debug))
 
 
 ;;;; `DEFINE-FRAME' Predicates
@@ -109,7 +109,7 @@
                       (fixer (cadr (assoc-keyword :fixer body)))
                       (logic (cadr (assoc-keyword :logic body)))
                       (exec (cadr (assoc-keyword :exec body)))
-                      (package-witness (cadr (assoc-keyword :package-witness body)))
+                      (pkg-witness (pkg-witness-fix (cadr (assoc-keyword :pkg-witness body))))
                       (debug (cadr (assoc-keyword :debug body))))
                   (and (booleanp inline)
                        (booleanp memoizable)
@@ -119,7 +119,7 @@
                        (symbolp fixer)
                        (symbolp logic)
                        (symbolp exec)
-                       (package-witness-p package-witness)
+                       (pkg-witness-p pkg-witness)
                        (booleanp debug)))))))
 
 (defthm frame-body-p-when-frame-descriptor-list-p
@@ -236,15 +236,15 @@
          (fixer (cadr (assoc-keyword :fixer kvl)))
          (logic (cadr (assoc-keyword :logic kvl)))
          (exec (cadr (assoc-keyword :exec kvl)))
-         (package-witness-supplied-p (assoc-keyword :package-witness kvl))
-         (package-witness (cadr package-witness-supplied-p))
-         (package-witness-supplied-p (and package-witness-supplied-p
-                                          t))
+         (pkg-witness-supplied-p (assoc-keyword :pkg-witness kvl))
+         (pkg-witness (cadr pkg-witness-supplied-p))
+         (pkg-witness-supplied-p (and pkg-witness-supplied-p
+                                      t))
          (debug (cadr (assoc-keyword :debug kvl))))
     (mv inline inline-supplied-p memoizable executable
         recognizer creator fixer
         logic exec
-        package-witness package-witness-supplied-p debug)))
+        pkg-witness pkg-witness-supplied-p debug)))
 
 (defun parse-form (form)
   (declare (xargs :guard (frame-form-p form)))
@@ -259,7 +259,7 @@
         (mv-let (inline inline-supplied-p memoizable executable
                         recognizer creator fixer
                         logic exec
-                        package-witness package-witness-supplied-p debug)
+                        pkg-witness pkg-witness-supplied-p debug)
                 (parse-kvl kvl)
           (mv fields element-types element-type-supplies
               recognizers fixers equivs
@@ -268,7 +268,7 @@
               inline inline-supplied-p memoizable executable
               recognizer creator fixer
               logic exec
-              package-witness package-witness-supplied-p debug))))))
+              pkg-witness pkg-witness-supplied-p debug))))))
 
 
 ;;;; `DEFINE-FRAME'
@@ -282,7 +282,7 @@
                   inline inline-supplied-p memoizable executable
                   recognizer creator fixer
                   logic exec
-                  package-witness package-witness-supplied-p debug)
+                  pkg-witness pkg-witness-supplied-p debug)
           (parse-form form)
 
     `(with-output
@@ -293,9 +293,9 @@
          (let* ((frame ',frame)
                 (logic ',logic)
                 (exec ',exec)
-                (package-witness (if ',package-witness-supplied-p
-                                     ',package-witness
-                                     (current-package state)))
+                (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
+                                                  ',pkg-witness
+                                                  (current-package state))))
                 (fields ',fields)
                 (element-types ',element-types)
                 (element-type-supplies ',element-type-supplies)
@@ -326,15 +326,15 @@
                 (debug ',debug)
 
                 (frame$a (or logic
-                             (symbolicate$ package-witness frame "$A")))
+                             (symbolicate$ pkg-witness frame "$A")))
                 (frame$c (or exec
-                             (symbolicate$ package-witness frame "$C")))
+                             (symbolicate$ pkg-witness frame "$C")))
                 (recognizer (or recognizer
-                                (symbolicate$ package-witness frame (make-predicate-suffix frame))))
+                                (symbolicate$ pkg-witness frame (make-predicate-suffix frame))))
                 (creator (or creator
-                             (symbolicate$ package-witness "CREATE-" frame)))
+                             (symbolicate$ pkg-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate$ package-witness frame "-FIX"))))
+                           (symbolicate$ pkg-witness frame "-FIX"))))
 
            `(progn
               (define-frame$c ,frame$c
@@ -353,8 +353,8 @@
                        `(:memoizable ,memoizable))
                 ,@(and executable
                        `(:executable ,executable))
-                ,@(and ,package-witness-supplied-p
-                       `(:package-witness ,package-witness))
+                ,@(and ,pkg-witness-supplied-p
+                       `(:pkg-witness ,pkg-witness))
                 :debug ,debug)
 
               (define-frame$a ,frame$a
@@ -376,15 +376,15 @@
                                                  `(:stobj ,element-type))
                                           ,@(and initial-element-supplied-p
                                                  `(:initial-element ,initial-element))))
-                ,@(and ,package-witness-supplied-p
-                       `(:package-witness ,package-witness))
+                ,@(and ,pkg-witness-supplied-p
+                       `(:pkg-witness ,pkg-witness))
                 :debug ,debug)
 
               (define-frame$corr ,frame
                 :logic ,frame$a
                 :exec ,frame$c
-                ,@(and ,package-witness-supplied-p
-                       `(:package-witness ,package-witness))
+                ,@(and ,pkg-witness-supplied-p
+                       `(:pkg-witness ,pkg-witness))
                 :debug ,debug)
 
               (define-frame$abs ,frame
@@ -406,18 +406,18 @@
                 :fixer ,fixer
                 ,@(and executable
                        `(:executable ,executable))
-                ,@(and ,package-witness-supplied-p
-                       `(:package-witness ,package-witness))
+                ,@(and ,pkg-witness-supplied-p
+                       `(:pkg-witness ,pkg-witness))
                 :debug ,debug)
 
-              (defmacro ,(symbolicate$ package-witness "THE-" frame) (,frame)
+              (defmacro ,(symbolicate$ pkg-witness "THE-" frame) (,frame)
                 (declare (xargs :guard (symbolp ,frame)))
                 `(mbe :logic ,(list ',fixer ,frame)
                       :exec ,,frame))
 
               (in-theory
-                (disable ,(symbolicate$ (if ,package-witness-supplied-p
-                                            package-witness
+                (disable ,(symbolicate$ (if ,pkg-witness-supplied-p
+                                            pkg-witness
                                             frame$c)
                                         frame$c
                                         "-THEOREMS")))))))))
