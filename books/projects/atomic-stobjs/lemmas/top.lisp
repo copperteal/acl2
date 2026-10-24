@@ -31,7 +31,8 @@
 (set-verify-guards-eagerness 2)
 
 #|
-(include-book "vector-c")
+(include-book "vector-c-fixed-length")
+(include-book "vector-c-resizable")
 (include-book "vector-a")
 (include-book "hash-table-c")
 (include-book "hash-table-a")

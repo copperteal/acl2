@@ -31,7 +31,8 @@
 (set-verify-guards-eagerness 2)
 
 #|
-(include-book "../lemmas/vector-c")
+(include-book "../lemmas/vector-c-fixed-length")
+(include-book "../lemmas/vector-c-resizable")
 |#
 
 (include-book "../type-spec")
@@ -311,22 +312,14 @@
                                                           `(lambda ()
                                                              ,initial-element-name)))
                      `(lem-vector$c::contents-recognizer ,contents-recognizer)
-                     (if resizable
-                         `(lem-vector$c::recognizer/resizable ,recognizer)
-                         `(lem-vector$c::recognizer/fixed ,recognizer))
+                     `(lem-vector$c::recognizer ,recognizer)
                      `(lem-vector$c::creator ,creator)
-                     (if resizable
-                         `(lem-vector$c::length/resizable ,length)
-                         `(lem-vector$c::length/fixed ,length))
-                     (if resizable
-                         `(lem-vector$c::resizer/resizable ,resizer)
-                         `(lem-vector$c::resizer/fixed ,resizer))
+                     `(lem-vector$c::length ,length)
+                     `(lem-vector$c::resizer ,resizer)
                      `(lem-vector$c::accessor ,accessor)
                      `(lem-vector$c::updater ,updater)))
               (fi-bindings-with-fixer
-               (cons (if resizable
-                         `(lem-vector$c::fixer/resizable ,fixer)
-                         `(lem-vector$c::fixer/fixed ,fixer))
+               (cons `(lem-vector$c::fixer ,fixer)
                      fi-bindings))
 
               (body
@@ -341,7 +334,9 @@
                     (deflabel end-of-prologue))
 
                   (local
-                    (include-book "projects/atomic-stobjs/lemmas/vector-c" :dir :system))
+                    ,(if resizable
+                         '(include-book "projects/atomic-stobjs/lemmas/vector-c-resizable" :dir :system)
+                         '(include-book "projects/atomic-stobjs/lemmas/vector-c-fixed-length" :dir :system)))
 
                   (local
                     (table acl2::theory-invariant-table nil nil :clear))
@@ -394,9 +389,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::recognizer/resizable-tp
-                                'lem-vector$c::recognizer/fixed-tp)
+                           lem-vector$c::recognizer-tp
                            ,@fi-bindings))))
 
                   (defthm ,recognizer-cr
@@ -407,9 +400,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::recognizer/resizable-cr
-                                'lem-vector$c::recognizer/fixed-cr)
+                           lem-vector$c::recognizer-cr
                            ,@fi-bindings))))
 
                   (defthm ,recognizer-of-creator
@@ -417,9 +408,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::recognizer/resizable-of-creator
-                                'lem-vector$c::recognizer/fixed-of-creator)
+                           lem-vector$c::recognizer-of-creator
                            ,@fi-bindings))))
 
                   ,@(and resizable
@@ -429,7 +418,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-vector$c::recognizer/resizable-of-resizer/resizable
+                                    lem-vector$c::recognizer-of-resizer
                                     ,@fi-bindings))))))
 
                   (defthm ,recognizer-of-updater
@@ -446,9 +435,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::recognizer/resizable-of-updater
-                                'lem-vector$c::recognizer/fixed-of-updater)
+                           lem-vector$c::recognizer-of-updater
                            ,@fi-bindings))))
 
                   ;; `LENGTH'
@@ -458,9 +445,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::length/resizable-tp
-                                'lem-vector$c::length/fixed-tp)
+                           lem-vector$c::length-tp
                            ,@fi-bindings))))
 
                   ,@(if resizable
@@ -470,7 +455,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::length/resizable-of-creator
+                                   lem-vector$c::length-of-creator
                                    ,@fi-bindings))))
 
                           (defthm ,length-of-resizer
@@ -480,7 +465,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::length/resizable-of-resizer/resizable
+                                   lem-vector$c::length-of-resizer
                                    ,@fi-bindings))))
 
                           (defthm ,length-of-updater
@@ -491,7 +476,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::length/resizable-of-updater
+                                   lem-vector$c::length-of-updater
                                    ,@fi-bindings)))))
 
                         `((defthm ,length-rw
@@ -500,7 +485,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::length/fixed-rw
+                                   lem-vector$c::length-rw
                                    ,@fi-bindings))))))
 
                   ;; `RESIZER'
@@ -512,9 +497,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::resizer/resizable-tp
-                                'lem-vector$c::resizer/fixed-tp)
+                           lem-vector$c::resizer-tp
                            ,@fi-bindings))))
 
                   ,@(if resizable
@@ -525,7 +508,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-creator
+                                   lem-vector$c::resizer-of-creator
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-length
@@ -535,7 +518,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-length/resizable
+                                   lem-vector$c::resizer-of-length
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-resizer
@@ -549,7 +532,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-resizer/resizable
+                                   lem-vector$c::resizer-of-resizer
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-updater-keep
@@ -562,7 +545,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-updater-keep
+                                   lem-vector$c::resizer-of-updater-keep
                                    ,@fi-bindings))))
 
                           (defthm ,resizer-of-updater-drop
@@ -575,7 +558,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/resizable-of-updater-drop
+                                   lem-vector$c::resizer-of-updater-drop
                                    ,@fi-bindings)))))
 
                         `((defthm ,resizer-rw
@@ -584,7 +567,7 @@
                             :hints
                             (("Goal"
                               :by (:functional-instance
-                                   lem-vector$c::resizer/fixed-rw
+                                   lem-vector$c::resizer-rw
                                    ,@fi-bindings))))))
 
                   ;; `ACCESSOR'
@@ -604,9 +587,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    ,(if resizable
-                                         'lem-vector$c::element-recognizer-of-accessor/resizable
-                                         'lem-vector$c::element-recognizer-of-accessor/fixed)
+                                    lem-vector$c::element-recognizer-of-accessor
                                     ,@fi-bindings))))))
 
                   (defthm ,accessor-of-creator
@@ -633,7 +614,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-vector$c::accessor-of-resizer/resizable-inner
+                                    lem-vector$c::accessor-of-resizer-inner
                                     ,@fi-bindings))))
 
                            (defthm ,accessor-of-resizer-outer
@@ -648,7 +629,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-vector$c::accessor-of-resizer/resizable-outer
+                                    lem-vector$c::accessor-of-resizer-outer
                                     ,@fi-bindings))))))
 
                   (defthm ,accessor-of-updater-same
@@ -682,9 +663,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::updater-tp/resizable
-                                'lem-vector$c::updater-tp/fixed)
+                           lem-vector$c::updater-tp
                            ,@fi-bindings))))
 
                   (defthm ,updater-of-creator
@@ -713,7 +692,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-vector$c::updater-of-resizer/resizable-inner
+                                    lem-vector$c::updater-of-resizer-inner
                                     ,@fi-bindings))))
 
                            (defthm ,updater-of-resizer-outer
@@ -729,7 +708,7 @@
                              :hints
                              (("Goal"
                                :by (:functional-instance
-                                    lem-vector$c::updater-of-resizer/resizable-outer
+                                    lem-vector$c::updater-of-resizer-outer
                                     ,@fi-bindings))))))
 
                   (defthm ,updater-of-accessor
@@ -744,9 +723,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::updater-of-accessor/resizable
-                                'lem-vector$c::updater-of-accessor/fixed)
+                           lem-vector$c::updater-of-accessor
                            ,@fi-bindings))))
 
                   (defthm ,updater-of-updater-same
@@ -803,9 +780,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::fixer/resizable-tp
-                                'lem-vector$c::fixer/fixed-tp)
+                           lem-vector$c::fixer-tp
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,recognizer-of-fixer
@@ -813,9 +788,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::recognizer/resizable-of-fixer/resizable
-                                'lem-vector$c::recognizer/fixed-of-fixer/fixed)
+                           lem-vector$c::recognizer-of-fixer
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,fixer-when-recognizer
@@ -825,9 +798,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::fixer/resizable-when-recognizer/resizable
-                                'lem-vector$c::fixer/fixed-when-recognizer/fixed)
+                           lem-vector$c::fixer-when-recognizer
                            ,@fi-bindings-with-fixer))))
 
                   (defthm ,fixer-when-not-recognizer
@@ -836,9 +807,7 @@
                     :hints
                     (("Goal"
                       :by (:functional-instance
-                           ,(if resizable
-                                'lem-vector$c::fixer/resizable-when-not-recognizer/resizable
-                                'lem-vector$c::fixer/fixed-when-not-recognizer/fixed)
+                           lem-vector$c::fixer-when-not-recognizer
                            ,@fi-bindings-with-fixer)))))))
 
          `(progn
