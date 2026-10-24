@@ -117,12 +117,12 @@
                                   (stobj$a-property
                                    (access stobj$a-property stobj$a-property :recognizer))
                                   (stobj-property
-                                   (caadr stobj-property))))
+                                   (access acl2::stobj-property stobj-property :recognizer))))
               (stobj-creator (cond
                                (stobj$a-property
                                 (access stobj$a-property stobj$a-property :creator))
                                (stobj-property
-                                (cdadr stobj-property))))
+                                (access acl2::stobj-property stobj-property :creator))))
               (specialize-element-type ',specialize-element-type)
               (initial-element ',initial-element)
               (initial-element-name (symbolicate$ package-witness "*" vector "-INITIAL-ELEMENT*"))

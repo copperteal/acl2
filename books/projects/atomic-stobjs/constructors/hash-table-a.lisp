@@ -3226,12 +3226,12 @@
                                       :equiv equiv
                                       :key key
                                       :key-recognizer key-recognizer
-                                      :default-key-name default-key-name
+                                      :default-key default-key-name
                                       :key-fixer key-fixer
                                       :key-equiv key-equiv
                                       :val val
                                       :val-recognizer val-recognizer
-                                      :default-val-name default-val-name
+                                      :default-val default-val-name
                                       :val-fixer val-fixer
                                       :val-equiv val-equiv
                                       :test test

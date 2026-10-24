@@ -30,12 +30,180 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
+; We use property accessors in logic mode `LOOP$'s.
 (include-book "projects/apply/top" :dir :system)
 
 
-;;;; Records
+;;;; `STOBJ$C' Table
+; ACL2 system stobj-related properties are insufficient.
+(defrec stobj$c-property
+; Generic property for the `STOBJ$C' table.
+  (type
+   name
+   (recognizer creator . fixer)
+   . extra)
+  t)
+
+(defun stobj$c-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-stobj$c-property-p x)
+       (symbolp (access stobj$c-property x :type))
+       (symbolp (access stobj$c-property x :name))
+       (symbolp (access stobj$c-property x :recognizer))
+       (symbolp (access stobj$c-property x :creator))
+       (symbolp (access stobj$c-property x :fixer))))
+
+(defrec vector$c-property
+  (name
+   (recognizer creator . fixer)
+   (length
+    resizer
+    accessor
+    updater)
+   (contents . contents-recognizer)
+   (element element-type initial-element . default-length)
+   (resizable . memoizable)
+   (theory fi-bindings . fi-theorem)
+   package-witness)
+  nil)
+
+(defun vector$c-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-vector$c-property-p x)
+       (stobj$c-property-p x)
+       (symbolp (access vector$c-property x :length))
+       (symbolp (access vector$c-property x :resizer))
+       (symbolp (access vector$c-property x :accessor))
+       (symbolp (access vector$c-property x :updater))
+       (symbolp (access vector$c-property x :contents))
+       (symbolp (access vector$c-property x :contents-recognizer))
+       (symbolp (access vector$c-property x :element))
+       ;; TODO: check it's a valid type-spec or a symbol
+       (access vector$c-property x :element-type)
+       (symbolp (access vector$c-property x :initial-element))
+       (symbolp (access vector$c-property x :default-length))
+       (booleanp (access vector$c-property x :resizable))
+       (booleanp (access vector$c-property x :memoizable))
+       (symbolp (access vector$c-property x :theory))
+       (symbol-doublet-listp (access vector$c-property x :fi-bindings))
+       (symbolp (access vector$c-property x :fi-theorem))
+       (symbolp (access vector$c-property x :package-witness))))
+
+(defrec hash-table$c-property
+  (name
+   (recognizer creator . fixer)
+   (accessor
+    updater
+    boundp
+    getp
+    remover
+    count
+    clear
+    init)
+   ;; TODO: drop this pair, move keys to previous list
+   (keys . keys-set)
+   (contents . contents-recognizer)
+   ;; TODO: drop copyable
+   (value element-type default-value . copyable)
+   (test . memoizable)
+   (theory fi-bindings . fi-theorem)
+   package-witness)
+  nil)
+
+(defun hash-table$c-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-hash-table$c-property-p x)
+       (stobj$c-property-p x)
+       (symbolp (access hash-table$c-property x :accessor))
+       (symbolp (access hash-table$c-property x :updater))
+       (symbolp (access hash-table$c-property x :boundp))
+       (symbolp (access hash-table$c-property x :getp))
+       (symbolp (access hash-table$c-property x :remover))
+       (symbolp (access hash-table$c-property x :count))
+       (symbolp (access hash-table$c-property x :clear))
+       (symbolp (access hash-table$c-property x :init))
+       (symbolp (access hash-table$c-property x :keys))
+       (symbolp (access hash-table$c-property x :keys-set))
+       (symbolp (access hash-table$c-property x :contents))
+       (symbolp (access hash-table$c-property x :contents-recognizer))
+       (symbolp (access hash-table$c-property x :value))
+       ;; TODO: check it's a valid type-spec or a symbol
+       (access hash-table$c-property x :element-type)
+       (symbolp (access hash-table$c-property x :default-value))
+       ;; TODO: drop copyable
+       (booleanp (access hash-table$c-property x :copyable))
+       (member (access hash-table$c-property x :test)
+               ;; TODO: replace with a defined constant
+               '(eq eql equal hons-equal))
+       (booleanp (access hash-table$c-property x :memoizable))
+       (symbolp (access hash-table$c-property x :theory))
+       (symbol-doublet-listp (access hash-table$c-property x :fi-bindings))
+       (symbolp (access hash-table$c-property x :fi-theorem))
+       (symbolp (access hash-table$c-property x :package-witness))))
+
+(defrec frame$c-property
+  (name
+   (recognizer creator . fixer)
+   (recognizers
+    accessors
+    updaters)
+   (fields element-types initial-elements)
+   memoizable
+   (theory fi-bindings . fi-theorem)
+   package-witness)
+  nil)
+
+(defun frame$c-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-frame$c-property-p x)
+       (stobj$c-property-p x)
+       (symbol-listp (access frame$c-property x :recognizers))
+       (symbol-listp (access frame$c-property x :accessors))
+       (symbol-listp (access frame$c-property x :updaters))
+       (symbol-listp (access frame$c-property x :fields))
+       (true-listp (access frame$c-property x :element-types))
+       (symbol-listp (access frame$c-property x :initial-elements))
+       (booleanp (access frame$c-property x :memoizable))
+       (symbolp (access frame$c-property x :theory))
+       (symbol-doublet-listp (access frame$c-property x :fi-bindings))
+       (symbolp (access frame$c-property x :fi-theorem))
+       (symbolp (access frame$c-property x :package-witness))
+       (let ((n (len (access frame$c-property x :fields))))
+         (and (int= n (len (access frame$c-property x :recognizers)))
+              (int= n (len (access frame$c-property x :accessors)))
+              (int= n (len (access frame$c-property x :updaters)))
+              (int= n (len (access frame$c-property x :element-types)))
+              (int= n (len (access frame$c-property x :initial-elements)))))))
+
+(local
+  (defthm stobj$c-property-generalizes
+    (implies (or (weak-vector$c-property-p property)
+                 (weak-hash-table$c-property-p property)
+                 (weak-frame$c-property-p property))
+             (weak-stobj$c-property-p property))))
+
+(table stobj$c nil nil :guard (and (symbolp acl2::key)
+                                   (or (vector$c-property-p acl2::val)
+                                       (hash-table$c-property-p acl2::val)
+                                       (frame$c-property-p acl2::val))))
+
+(table stobj$c nil nil :clear)
+
+(defun stobj$c-property (name wrld)
+  (declare (xargs :guard (and (symbolp name)
+                              (plist-worldp wrld))))
+  ;; TODO: How do I prove that table-alist always returns an alist?
+  (cdr (assoc name (let ((alist (table-alist 'stobj$c wrld)))
+                     (and (alistp alist)
+                          alist)))))
+
+(defwarrant stobj$c-property)
+
+
+;;;; `STOBJ$A' Table
 (defrec stobj$a-property
-  (type name
+  (type
+   name
    ((recognizer . creator)
     (fixer . equiv))
    . extra)
@@ -57,11 +225,10 @@
     (fixer . equiv))
    ((element
      element-recognizer
-     initial-element-name
+     initial-element
      element-fixer
      element-equiv)
-    (resizable
-     default-length-name)
+    (resizable . default-length)
     (length
      resizer
      accessor
@@ -74,11 +241,11 @@
        (stobj$a-property-p x)
        (symbolp (access vector$a-property x :element))
        (symbolp (access vector$a-property x :element-recognizer))
-       (symbolp (access vector$a-property x :initial-element-name))
+       (symbolp (access vector$a-property x :initial-element))
        (symbolp (access vector$a-property x :element-fixer))
        (symbolp (access vector$a-property x :element-equiv))
        (booleanp (access vector$a-property x :resizable))
-       (symbolp (access vector$a-property x :default-length-name))
+       (symbolp (access vector$a-property x :default-length))
        (symbolp (access vector$a-property x :length))
        (symbolp (access vector$a-property x :resizer))
        (symbolp (access vector$a-property x :accessor))
@@ -90,16 +257,16 @@
     (fixer . equiv))
    ((key
      key-recognizer
-     default-key-name
+     default-key
      key-fixer
      key-equiv)
     (val
      val-recognizer
-     default-val-name
+     default-val
      val-fixer
      val-equiv)
-    (test
-     copyable)
+    ;; TODO: drop copyable
+    (test . copyable)
     (accessor
      updater
      boundp
@@ -108,6 +275,7 @@
      count
      clear
      init)
+    ;; TODO: drop `KEYS' field
     keys))
   nil)
 
@@ -117,16 +285,18 @@
        (stobj$a-property-p x)
        (symbolp (access hash-table$a-property x :key))
        (symbolp (access hash-table$a-property x :key-recognizer))
-       (symbolp (access hash-table$a-property x :default-key-name))
+       (symbolp (access hash-table$a-property x :default-key))
        (symbolp (access hash-table$a-property x :key-fixer))
        (symbolp (access hash-table$a-property x :key-equiv))
        (symbolp (access hash-table$a-property x :val))
        (symbolp (access hash-table$a-property x :val-recognizer))
-       (symbolp (access hash-table$a-property x :default-val-name))
+       (symbolp (access hash-table$a-property x :default-val))
        (symbolp (access hash-table$a-property x :val-fixer))
        (symbolp (access hash-table$a-property x :val-equiv))
        (member (access hash-table$a-property x :test)
+               ;; TODO: replace with a defined constant
                '(eq eql equal hons-equal))
+       ;; TODO: drop copyable
        (booleanp (access hash-table$a-property x :copyable))
        (symbolp (access hash-table$a-property x :accessor))
        (symbolp (access hash-table$a-property x :updater))
@@ -148,7 +318,7 @@
     (fixer . equiv))
    (fields
     recognizers
-    initial-element-names
+    initial-elements
     fixers
     equivs
     stobjs
@@ -163,7 +333,7 @@
        (stobj$a-property-p x)
        (symbol-listp (access frame$a-property x :fields))
        (symbol-listp (access frame$a-property x :recognizers))
-       (symbol-listp (access frame$a-property x :initial-element-names))
+       (symbol-listp (access frame$a-property x :initial-elements))
        (symbol-listp (access frame$a-property x :fixers))
        (symbol-listp (access frame$a-property x :equivs))
        (symbol-listp (access frame$a-property x :stobjs))
@@ -172,7 +342,7 @@
        (symbolp (access frame$a-property x :view))
        (let ((n (len (access frame$a-property x :fields))))
          (and (int= n (len (access frame$a-property x :recognizers)))
-              (int= n (len (access frame$a-property x :initial-element-names)))
+              (int= n (len (access frame$a-property x :initial-elements)))
               (int= n (len (access frame$a-property x :fixers)))
               (int= n (len (access frame$a-property x :equivs)))
               (int= n (len (access frame$a-property x :stobjs)))

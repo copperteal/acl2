@@ -124,7 +124,7 @@
                                     (stobj$a-property
                                      (access stobj$a-property stobj$a-property :recognizer))))
               (guard-element-recognizer (if stobj-property
-                                            (caadr stobj-property)
+                                            (access acl2::stobj-property stobj-property :recognizer)
                                             element-recognizer))
               (element-creator (cond
                                  (stobj$a-property
@@ -1548,11 +1548,11 @@
                                       :equiv equiv
                                       :element element
                                       :element-recognizer element-recognizer
-                                      :initial-element-name initial-element-name
+                                      :initial-element initial-element-name
                                       :element-fixer element-fixer
                                       :element-equiv element-equiv
                                       :resizable resizable
-                                      :default-length-name default-length-name
+                                      :default-length default-length-name
                                       :length length
                                       :resizer resizer
                                       :accessor accessor

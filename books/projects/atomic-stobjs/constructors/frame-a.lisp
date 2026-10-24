@@ -828,7 +828,7 @@
                                         :equiv equiv
                                         :fields fields
                                         :recognizers recognizers
-                                        :initial-element-names initial-element-names
+                                        :initial-elements initial-element-names
                                         :fixers fixers
                                         :equivs equivs
                                         :stobjs stobjs

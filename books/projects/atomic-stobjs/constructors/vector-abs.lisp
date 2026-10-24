@@ -81,7 +81,7 @@
                             (symbolicate$ package-witness$c vector "$C")))
 
               (stobj-property (getpropc vector$c 'acl2::stobj))
-              (recognizer$c (caadr stobj-property))
+              (recognizer$c (access acl2::stobj-property stobj-property :recognizer))
               (length$c (second (third stobj-property)))
               (accessor$c (fourth (third stobj-property)))
 
@@ -235,7 +235,7 @@
                                       (caadr element-stobj-property)
                                       (access vector$a-property stobj$a-property :element-recognizer)))
               (resizable (access vector$a-property stobj$a-property :resizable))
-              (default-length-name (access vector$a-property stobj$a-property :default-length-name))
+              (default-length-name (access vector$a-property stobj$a-property :default-length))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate$ package-witness creator "{CORRESPONDENCE}"))

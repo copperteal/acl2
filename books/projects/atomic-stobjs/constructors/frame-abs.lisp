@@ -426,7 +426,7 @@
                 (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                                   :collect (and stobj$a-property
                                                 (access stobj$a-property stobj$a-property :creator))))
-                (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
+                (initial-element-names (access frame$a-property stobj$a-property :initial-elements))
                 (fixers$a (access frame$a-property stobj$a-property :fixers))
                 (equivs$a (access frame$a-property stobj$a-property :equivs))
                 (accessors$a (access frame$a-property stobj$a-property :accessors))

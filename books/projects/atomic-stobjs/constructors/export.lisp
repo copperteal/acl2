@@ -100,12 +100,12 @@
          (%element (symbolicate$ package-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (stobj$a-property element world))
-         (initial-element-name (access vector$a-property stobj$a-property :initial-element-name))
+         (initial-element-name (access vector$a-property stobj$a-property :initial-element))
          (element-creator (access stobj$a-property element-stobj$a-property :creator))
          (initial-element (if element-stobj-property
                               `(,element-creator)
                               initial-element-name))
-         (default-length-name (access vector$a-property stobj$a-property :default-length-name))
+         (default-length-name (access vector$a-property stobj$a-property :default-length))
          (element-recognizer (access vector$a-property stobj$a-property :element-recognizer))
          (element-fixer (access vector$a-property stobj$a-property :element-fixer))
          (element-equiv (access vector$a-property stobj$a-property :element-equiv))
@@ -1021,7 +1021,7 @@
          (key (access hash-table$a-property stobj$a-property :key))
          (%key (symbolicate$ key "%" key))
          (key-recognizer (access hash-table$a-property stobj$a-property :key-recognizer))
-         (default-key-name (access hash-table$a-property stobj$a-property :default-key-name))
+         (default-key-name (access hash-table$a-property stobj$a-property :default-key))
          (key-fixer (access hash-table$a-property stobj$a-property :key-fixer))
          (key-equiv (access hash-table$a-property stobj$a-property :key-equiv))
 
@@ -1031,7 +1031,7 @@
          (val-stobj$a-property (stobj$a-property val world))
          (val-creator (access stobj$a-property val-stobj$a-property :creator))
          (val-recognizer (access hash-table$a-property stobj$a-property :val-recognizer))
-         (default-val-name (access hash-table$a-property stobj$a-property :default-val-name))
+         (default-val-name (access hash-table$a-property stobj$a-property :default-val))
          (default-val (if val-stobj-property
                           `(,val-creator)
                           default-val-name))
@@ -2287,7 +2287,7 @@
                                       :collect (and (symbolp stobj)
                                                     (stobj$a-property stobj world))))
          (recognizers$a (access frame$a-property stobj$a-property :recognizers))
-         (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
+         (initial-element-names (access frame$a-property stobj$a-property :initial-elements))
          (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                            :collect (and stobj$a-property
                                          (access stobj$a-property stobj$a-property :creator))))
