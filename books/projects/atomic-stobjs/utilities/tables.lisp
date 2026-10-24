@@ -33,13 +33,10 @@
 (include-book "projects/apply/top" :dir :system)
 
 
-;; TODO: drop cheap flag
 (defrec vector$a-property
   (name
-   (recognizer
-    creator
-    fixer
-    equiv)
+   ((recognizer . creator)
+    (fixer . equiv))
    ((element
      element-recognizer
      initial-element-name
@@ -51,14 +48,12 @@
      resizer
      accessor
      updater)))
-  t)
+  nil)
 
 (defrec hash-table$a-property
   (name
-   (recognizer
-    creator
-    fixer
-    equiv)
+   ((recognizer . creator)
+    (fixer . equiv))
    ((key
      key-recognizer
      default-key-name
@@ -80,14 +75,12 @@
      clear
      init)
     keys))
-  t)
+  nil)
 
 (defrec frame$a-property
   (name
-   (recognizer
-    creator
-    fixer
-    equiv)
+   ((recognizer . creator)
+    (fixer . equiv))
    (fields
     recognizers
     initial-element-names
@@ -97,7 +90,22 @@
     accessors
     updaters
     (view)))
+  nil)
+
+(defrec stobj$a-property
+  (type
+   name
+   ((recognizer . creator)
+    (fixer . equiv))
+   . extra)
   t)
+
+(local
+  (defthm stobj$a-property-generalizes
+    (implies (or (weak-vector$a-property-p property)
+                 (weak-hash-table$a-property-p property)
+                 (weak-frame$a-property-p property))
+             (weak-stobj$a-property-p property))))
 
 ;; TODO: strengthen table guard
 (table stobj$a nil nil :guard (and (symbolp acl2::key)

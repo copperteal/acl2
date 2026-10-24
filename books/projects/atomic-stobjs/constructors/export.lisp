@@ -101,8 +101,7 @@
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (stobj$a-property element world))
          (initial-element-name (access vector$a-property stobj$a-property :initial-element-name))
-         ;; TODO: redo
-         (element-creator (second (second element-stobj$a-property)))
+         (element-creator (access stobj$a-property element-stobj$a-property :creator))
          (initial-element (if element-stobj-property
                               `(,element-creator)
                               initial-element-name))
@@ -1030,7 +1029,7 @@
          (%val (symbolicate val "%" val))
          (val-stobj-property (getpropc val 'acl2::stobj))
          (val-stobj$a-property (stobj$a-property val world))
-         (val-creator (second (second val-stobj$a-property)))
+         (val-creator (access stobj$a-property val-stobj$a-property :creator))
          (val-recognizer (access hash-table$a-property stobj$a-property :val-recognizer))
          (default-val-name (access hash-table$a-property stobj$a-property :default-val-name))
          (default-val (if val-stobj-property
@@ -2291,7 +2290,7 @@
          (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
          (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                            :collect (and stobj$a-property
-                                         (second (second stobj$a-property)))))
+                                         (access stobj$a-property stobj$a-property :creator))))
          (initial-elements (loop$ :for stobj-property :in stobj-property-list
                                  :as stobj$a-property :in stobj$a-property-list
                                  :as initial-element-name :in initial-element-names
@@ -2723,14 +2722,12 @@
                                  (t
                                   (current-package state))))
               (stobj$a-property (stobj$a-property stobj world)))
-         (cond
-           ;; TODO: redo
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 3))
+         (case (access stobj$a-property stobj$a-property :type)
+           (vector$a-property
             (make-vector-export-events stobj package-witness state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 5))
+           (hash-table$a-property
             (make-hash-table-export-events stobj package-witness state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 9))
-            (make-frame-export-events stobj package-witness state)))))))
+           (frame$a-property
+            (make-frame-export-events stobj package-witness state))
+           (t
+            (er hard 'define-export "Bad stobj$a-property: ~x0" stobj$a-property)))))))

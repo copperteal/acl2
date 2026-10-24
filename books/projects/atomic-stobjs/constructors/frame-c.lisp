@@ -265,7 +265,7 @@
                                          :as stobj$a-property :in stobj$a-property-list
                                          :collect (cond
                                                     (stobj$a-property
-                                                     (first (second stobj$a-property)))
+                                                     (access stobj$a-property stobj$a-property :recognizer))
                                                     (stobj-property
                                                      (caadr stobj-property)))))
                 (initial-elements ',initial-elements)

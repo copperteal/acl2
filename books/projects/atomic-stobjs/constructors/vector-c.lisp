@@ -115,12 +115,12 @@
                                      (stobj$a-property element-type (w state))))
               (stobj-recognizer (cond
                                   (stobj$a-property
-                                   (first (second stobj$a-property)))
+                                   (access stobj$a-property stobj$a-property :recognizer))
                                   (stobj-property
                                    (caadr stobj-property))))
               (stobj-creator (cond
                                (stobj$a-property
-                                (second (second stobj$a-property)))
+                                (access stobj$a-property stobj$a-property :creator))
                                (stobj-property
                                 (cdadr stobj-property))))
               (specialize-element-type ',specialize-element-type)

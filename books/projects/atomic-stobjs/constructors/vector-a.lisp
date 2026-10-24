@@ -122,23 +122,23 @@
               (element-recognizer (cond
                                     (',element-recognizer)
                                     (stobj$a-property
-                                     (first (second stobj$a-property)))))
+                                     (access stobj$a-property stobj$a-property :recognizer))))
               (guard-element-recognizer (if stobj-property
                                             (caadr stobj-property)
                                             element-recognizer))
               (element-creator (cond
                                  (stobj$a-property
-                                  (second (second stobj$a-property)))))
+                                  (access stobj$a-property stobj$a-property :creator))))
               (element-fixer (cond
                                (',element-fixer)
                                (stobj$a-property
-                                (third (second stobj$a-property)))
+                                (access stobj$a-property stobj$a-property :fixer))
                                (t
                                 (cdr (assoc element (table-alist 'fixer world))))))
               (element-equiv (cond
                                (',element-equiv)
                                (stobj$a-property
-                                (fourth (second stobj$a-property)))
+                                (access stobj$a-property stobj$a-property :equiv))
                                (t
                                 'equal)))
               (initial-element-name (and (not stobj-property)

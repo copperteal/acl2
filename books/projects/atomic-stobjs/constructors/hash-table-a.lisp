@@ -179,23 +179,23 @@
               (val-recognizer (cond
                                 (',val-recognizer)
                                 (stobj$a-property
-                                 (first (second stobj$a-property)))))
+                                 (access stobj$a-property stobj$a-property :recognizer))))
               (guard-val-recognizer (if stobj-property
                                         (caadr stobj-property)
                                         val-recognizer))
               (val-creator (cond
                              (stobj$a-property
-                              (second (second stobj$a-property)))))
+                              (access stobj$a-property stobj$a-property :creator))))
               (val-fixer (cond
                            (',val-fixer)
                            (stobj$a-property
-                            (third (second stobj$a-property)))
+                            (access stobj$a-property stobj$a-property :fixer))
                            (t
                             (cdr (assoc val (table-alist 'fixer world))))))
               (val-equiv (cond
                            (',val-equiv)
                            (stobj$a-property
-                            (fourth (second stobj$a-property)))
+                            (access stobj$a-property stobj$a-property :equiv))
                            (t
                             'equal)))
               (default-val-name (and (not stobj-property)

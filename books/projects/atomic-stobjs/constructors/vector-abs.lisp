@@ -233,7 +233,7 @@
               (element-stobj-property (getpropc element 'acl2::stobj))
               (element-recognizer (if element-stobj-property
                                       (caadr element-stobj-property)
-                                      (second (first (third stobj$a-property)))))
+                                      (access vector$a-property stobj$a-property :element-recognizer)))
               (resizable (access vector$a-property stobj$a-property :resizable))
               (default-length-name (access vector$a-property stobj$a-property :default-length-name))
 

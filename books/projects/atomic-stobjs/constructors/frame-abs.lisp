@@ -422,12 +422,10 @@
                 (recognizers$a (access frame$a-property stobj$a-property :recognizers))
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
                                              :collect (and stobj
-                                                           (cdr (assoc stobj
-                                                                       (table-alist 'stobj$a
-                                                                                    world))))))
+                                                           (stobj$a-property stobj world))))
                 (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                                   :collect (and stobj$a-property
-                                                (second (second stobj$a-property)))))
+                                                (access stobj$a-property stobj$a-property :creator))))
                 (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
                 (fixers$a (access frame$a-property stobj$a-property :fixers))
                 (equivs$a (access frame$a-property stobj$a-property :equivs))
@@ -589,7 +587,7 @@
                           ,frame$corr
                           ,@(loop$ :for stobj$a-property :in stobj$a-property-list
                                   :when stobj$a-property
-                                  :collect (let ((stobj$a (car stobj$a-property)))
+                                  :collect (let ((stobj$a (access stobj$a-property stobj$a-property :name)))
                                              (symbolicate stobj$a stobj$a "-THEOREMS"))))))
 
               ,@(loop$ :for absstobj-info :in absstobj-info-list

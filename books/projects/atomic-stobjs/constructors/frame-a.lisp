@@ -267,7 +267,7 @@
                                    :collect (cond
                                               (recognizer)
                                               (stobj$a-property
-                                               (first (second stobj$a-property))))))
+                                               (access stobj$a-property stobj$a-property :recognizer)))))
                 (guard-recognizers (loop$ :for stobj-property :in stobj-property-list
                                          :as recognizer :in recognizers
                                          :collect (if stobj-property
@@ -276,7 +276,7 @@
                 (creators (loop$ :for stobj$a-property :in stobj$a-property-list
                                 :collect (cond
                                            (stobj$a-property
-                                            (second (second stobj$a-property))))))
+                                            (access stobj$a-property stobj$a-property :creator)))))
                 (fixer-alist (table-alist 'fixer world))
                 (fixers ',fixers)
                 (fixers (loop$ :for fixer :in fixers
@@ -285,7 +285,7 @@
                               :collect (cond
                                          (fixer)
                                          (stobj$a-property
-                                          (third (second stobj$a-property)))
+                                          (access stobj$a-property stobj$a-property :fixer))
                                          (t
                                           (cdr (assoc stobj fixer-alist))))))
                 (equivs ',equivs)
@@ -295,7 +295,7 @@
                               :collect (cond
                                          (equiv)
                                          (stobj$a-property
-                                          (fourth (second stobj$a-property)))
+                                          (access stobj$a-property stobj$a-property :equiv))
                                          (t
                                           'equal))))
                 (initial-element-names (loop$ :for field :in fields

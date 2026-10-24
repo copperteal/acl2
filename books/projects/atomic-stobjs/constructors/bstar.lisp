@@ -404,15 +404,12 @@
                                  (t
                                   (current-package state))))
               (stobj$a-property (stobj$a-property stobj world)))
-         (cond
-           ;; TODO: Redo using defrec access and indicators, after removing
-           ;; cheap flag
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 3))
+         (case (access stobj$a-property stobj$a-property :type)
+           (vector$a-property
             (make-vector-b*-events stobj package-witness state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 5))
+           (hash-table$a-property
             (make-hash-table-b*-events stobj package-witness state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 9))
-            (make-frame-b*-events stobj package-witness state)))))))
+           (frame$a-property
+            (make-frame-b*-events stobj package-witness state))
+           (t
+            (er hard 'define-b* "Bad stobj$a-property: ~x0" stobj$a-property)))))))

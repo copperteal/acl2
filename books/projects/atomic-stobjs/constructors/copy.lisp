@@ -119,8 +119,7 @@
          (element-stobj$a-property (stobj$a-property element world))
          (element-recognizer (access vector$a-property stobj$a-property :element-recognizer))
          (initial-element-name (access vector$a-property stobj$a-property :initial-element-name))
-         ;; TODO: dispatch after cheap flag is removed
-         (element-creator (second (second element-stobj$a-property)))
+         (element-creator (access stobj$a-property element-stobj$a-property :creator))
          (initial-element (if element-stobj-property
                               `(,element-creator)
                               initial-element-name))
@@ -1098,8 +1097,7 @@
          (val-stobj$a-property (stobj$a-property val world))
          (val-recognizer (access hash-table$a-property stobj$a-property :val-recognizer))
          (default-val-name (access hash-table$a-property stobj$a-property :default-val-name))
-         ;; TODO: conditional dispatch
-         (val-creator (second (second val-stobj$a-property)))
+         (val-creator (access stobj$a-property val-stobj$a-property :creator))
          (default-val (if val-stobj-property
                           `(,val-creator)
                           default-val-name))
@@ -2488,7 +2486,7 @@
          (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
          (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                            :collect (and stobj$a-property
-                                         (second (second stobj$a-property)))))
+                                         (access stobj$a-property stobj$a-property :creator))))
          (initial-elements (loop$ :for stobj-property :in stobj-property-list
                                  :as stobj$a-property :in stobj$a-property-list
                                  :as initial-element-name :in initial-element-names
@@ -2676,7 +2674,8 @@
                  :when stobj$a-property
                  :collect `(local
                              (in-theory
-                               (enable ,(symbolicate (car stobj$a-property) (car stobj$a-property) "-THEOREMS")))))
+                               (enable ,(let ((stobj$a (access stobj$a-property stobj$a-property :name)))
+                                          (symbolicate stobj$a stobj$a "-THEOREMS"))))))
 
          ;; `COUPLEDP'
          ,@(and (remove nil stobj-coupledp-list)
@@ -2884,14 +2883,12 @@
                                   (current-package state))))
               (debug ',debug)
               (stobj$a-property (stobj$a-property stobj world)))
-         (cond
-           ;; TODO: rewrite
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 3))
+         (case (access stobj$a-property stobj$a-property :type)
+           (vector$a-property
             (make-vector-copy-events stobj package-witness debug state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 5))
+           (hash-table$a-property
             (make-hash-table-copy-events stobj package-witness debug state))
-           ((and (= (len stobj$a-property) 3)
-                 (= (len (third stobj$a-property)) 9))
-            (make-frame-copy-events stobj package-witness debug state)))))))
+           (frame$a-property
+            (make-frame-copy-events stobj package-witness debug state))
+           (t
+            (er hard 'define-copy "Bad stobj$a-property: ~x0" stobj$a-property)))))))
