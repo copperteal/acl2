@@ -33,6 +33,24 @@
 (include-book "projects/apply/top" :dir :system)
 
 
+;;;; Records
+(defrec stobj$a-property
+  (type name
+   ((recognizer . creator)
+    (fixer . equiv))
+   . extra)
+  t)
+
+(defun stobj$a-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-stobj$a-property-p x)
+       (symbolp (access stobj$a-property x :type))
+       (symbolp (access stobj$a-property x :name))
+       (symbolp (access stobj$a-property x :recognizer))
+       (symbolp (access stobj$a-property x :creator))
+       (symbolp (access stobj$a-property x :fixer))
+       (symbolp (access stobj$a-property x :equiv))))
+
 (defrec vector$a-property
   (name
    ((recognizer . creator)
@@ -49,6 +67,22 @@
      accessor
      updater)))
   nil)
+
+(defun vector$a-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-vector$a-property-p x)
+       (stobj$a-property-p x)
+       (symbolp (access vector$a-property x :element))
+       (symbolp (access vector$a-property x :element-recognizer))
+       (symbolp (access vector$a-property x :initial-element-name))
+       (symbolp (access vector$a-property x :element-fixer))
+       (symbolp (access vector$a-property x :element-equiv))
+       (booleanp (access vector$a-property x :resizable))
+       (symbolp (access vector$a-property x :default-length-name))
+       (symbolp (access vector$a-property x :length))
+       (symbolp (access vector$a-property x :resizer))
+       (symbolp (access vector$a-property x :accessor))
+       (symbolp (access vector$a-property x :updater))))
 
 (defrec hash-table$a-property
   (name
@@ -77,6 +111,37 @@
     keys))
   nil)
 
+(defun hash-table$a-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-hash-table$a-property-p x)
+       (stobj$a-property-p x)
+       (symbolp (access hash-table$a-property x :key))
+       (symbolp (access hash-table$a-property x :key-recognizer))
+       (symbolp (access hash-table$a-property x :default-key-name))
+       (symbolp (access hash-table$a-property x :key-fixer))
+       (symbolp (access hash-table$a-property x :key-equiv))
+       (symbolp (access hash-table$a-property x :val))
+       (symbolp (access hash-table$a-property x :val-recognizer))
+       (symbolp (access hash-table$a-property x :default-val-name))
+       (symbolp (access hash-table$a-property x :val-fixer))
+       (symbolp (access hash-table$a-property x :val-equiv))
+       (member (access hash-table$a-property x :test)
+               '(eq eql equal hons-equal))
+       (booleanp (access hash-table$a-property x :copyable))
+       (symbolp (access hash-table$a-property x :accessor))
+       (symbolp (access hash-table$a-property x :updater))
+       (symbolp (access hash-table$a-property x :boundp))
+       (symbolp (access hash-table$a-property x :getp))
+       (symbolp (access hash-table$a-property x :remover))
+       (symbolp (access hash-table$a-property x :count))
+       (symbolp (access hash-table$a-property x :clear))
+       (symbolp (access hash-table$a-property x :init))
+       (symbol-listp (access hash-table$a-property x :keys))
+       (int= (len (access hash-table$a-property x :keys))
+             (if (access hash-table$a-property x :copyable)
+                 5
+                 0))))
+
 (defrec frame$a-property
   (name
    ((recognizer . creator)
@@ -89,16 +154,30 @@
     stobjs
     accessors
     updaters
-    (view)))
+    view))
   nil)
 
-(defrec stobj$a-property
-  (type
-   name
-   ((recognizer . creator)
-    (fixer . equiv))
-   . extra)
-  t)
+(defun frame$a-property-p (x)
+  (declare (xargs :guard t))
+  (and (weak-frame$a-property-p x)
+       (stobj$a-property-p x)
+       (symbol-listp (access frame$a-property x :fields))
+       (symbol-listp (access frame$a-property x :recognizers))
+       (symbol-listp (access frame$a-property x :initial-element-names))
+       (symbol-listp (access frame$a-property x :fixers))
+       (symbol-listp (access frame$a-property x :equivs))
+       (symbol-listp (access frame$a-property x :stobjs))
+       (symbol-listp (access frame$a-property x :accessors))
+       (symbol-listp (access frame$a-property x :updaters))
+       (symbolp (access frame$a-property x :view))
+       (let ((n (len (access frame$a-property x :fields))))
+         (and (int= n (len (access frame$a-property x :recognizers)))
+              (int= n (len (access frame$a-property x :initial-element-names)))
+              (int= n (len (access frame$a-property x :fixers)))
+              (int= n (len (access frame$a-property x :equivs)))
+              (int= n (len (access frame$a-property x :stobjs)))
+              (int= n (len (access frame$a-property x :accessors)))
+              (int= n (len (access frame$a-property x :updaters)))))))
 
 (local
   (defthm stobj$a-property-generalizes
@@ -107,11 +186,10 @@
                  (weak-frame$a-property-p property))
              (weak-stobj$a-property-p property))))
 
-;; TODO: strengthen table guard
 (table stobj$a nil nil :guard (and (symbolp acl2::key)
-                                   (or (weak-vector$a-property-p acl2::val)
-                                       (weak-hash-table$a-property-p acl2::val)
-                                       (weak-frame$a-property-p acl2::val))))
+                                   (or (vector$a-property-p acl2::val)
+                                       (hash-table$a-property-p acl2::val)
+                                       (frame$a-property-p acl2::val))))
 
 (table stobj$a nil nil :clear)
 
