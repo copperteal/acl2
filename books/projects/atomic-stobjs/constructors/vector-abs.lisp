@@ -85,7 +85,7 @@
               (length$c (second (third stobj-property)))
               (accessor$c (fourth (third stobj-property)))
 
-              (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a-property (w state)))))
+              (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a (w state)))))
               (recognizer$a (first (second stobj$a-property)))
               (length$a (first (third (third stobj$a-property))))
               (accessor$a (third (third (third stobj$a-property)))))
@@ -220,7 +220,7 @@
               (updater$c (fifth (third stobj-property)))
 
               ;; `VECTOR$A'
-              (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a-property world))))
+              (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a world))))
               (recognizer$a (first (second stobj$a-property)))
               (creator$a (second (second stobj$a-property)))
               (fixer$a (third (second stobj$a-property)))
@@ -412,6 +412,6 @@
               :non-executable ,(not executable)
               :exports ,exports)
 
-            (table stobj$a-property ',vector ',stobj$a-property)
+            (table stobj$a ',vector ',stobj$a-property)
 
             (table package-witness ',vector ',package-witness))))))

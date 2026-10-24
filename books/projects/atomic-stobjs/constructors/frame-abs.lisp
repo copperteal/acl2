@@ -99,7 +99,7 @@
               (accessors$c (loop$ :for i :from 0 :to n
                                  :collect (nth (+ n (* 2 i)) (third stobj-property))))
 
-              (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a-property (w state)))))
+              (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a (w state)))))
               (recognizer$a (first (second stobj$a-property)))
               (accessors$a (seventh (third stobj$a-property))))
 
@@ -394,7 +394,7 @@
                                   :collect (nth (+ 1 n (* 2 i)) (third stobj-property))))
 
                 ;; `FRAME$A'
-                (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a-property world))))
+                (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a world))))
                 (recognizer$a (first (second stobj$a-property)))
                 (creator$a (second (second stobj$a-property)))
                 (fixer$a (third (second stobj$a-property)))
@@ -423,7 +423,7 @@
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
                                              :collect (and stobj
                                                            (cdr (assoc stobj
-                                                                       (table-alist 'stobj$a-property
+                                                                       (table-alist 'stobj$a
                                                                                     world))))))
                 (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                                   :collect (and stobj$a-property
@@ -689,6 +689,6 @@
                 :non-executable ,(not executable)
                 :exports ,exports)
 
-              (table stobj$a-property ',frame ',stobj$a-property)
+              (table stobj$a ',frame ',stobj$a-property)
 
               (table package-witness ',frame ',package-witness)))))))

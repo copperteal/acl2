@@ -175,7 +175,7 @@
               (stobj-property (getpropc val 'acl2::stobj))
               (absstobj-info (and stobj-property
                                   (getpropc val 'acl2::absstobj-info)))
-              (stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
+              (stobj$a-property (cdr (assoc val (table-alist 'stobj$a world))))
               (val-recognizer (cond
                                 (',val-recognizer)
                                 (stobj$a-property
@@ -3256,6 +3256,6 @@
 
             ,@epilogue
 
-            (table stobj$a-property ',hash-table ',stobj$a-property)
+            (table stobj$a ',hash-table ',stobj$a-property)
 
             (table package-witness ',hash-table ',package-witness))))))

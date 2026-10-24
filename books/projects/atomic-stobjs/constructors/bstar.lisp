@@ -62,7 +62,7 @@
          (binder-parser (symbolicate package-witness vector "-B*-PARSER"))
 
          (stobj-property (getpropc vector 'acl2::stobj))
-         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property (w state)))))
+         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a (w state)))))
          (element (first (first (third stobj$a-property))))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (accessor (if element-stobj-property
@@ -161,7 +161,7 @@
          (binder-parser (symbolicate package-witness hash-table "-B*-PARSER"))
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
-         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property (w state)))))
+         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a (w state)))))
          (element (first (second (third stobj$a-property))))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (accessor (if element-stobj-property
@@ -260,7 +260,7 @@
          (binder-parser (symbolicate package-witness frame "-B*-PARSER"))
 
          (world (w state))
-         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a-property world))))
+         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a world))))
          (fields (first (third stobj$a-property)))
          (stobjs (sixth (third stobj$a-property)))
 
@@ -402,7 +402,7 @@
                                  (package-witness-lookup)
                                  (t
                                   (current-package state))))
-              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property world)))))
+              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a world)))))
          (cond
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))

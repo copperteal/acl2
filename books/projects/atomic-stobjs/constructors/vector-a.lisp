@@ -118,7 +118,7 @@
               (stobj-property (getpropc element 'acl2::stobj))
               (absstobj-info (and stobj-property
                                   (getpropc element 'acl2::absstobj-info)))
-              (stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
+              (stobj$a-property (cdr (assoc element (table-alist 'stobj$a world))))
               (element-recognizer (cond
                                     (',element-recognizer)
                                     (stobj$a-property
@@ -1563,6 +1563,6 @@
 
             ,@epilogue
 
-            (table stobj$a-property ',vector ',stobj$a-property)
+            (table stobj$a ',vector ',stobj$a-property)
 
             (table package-witness ',vector ',package-witness))))))

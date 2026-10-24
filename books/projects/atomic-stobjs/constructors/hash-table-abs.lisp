@@ -97,7 +97,7 @@
               (keys$c (and copyable
                            (nth 11 (third stobj-property))))
 
-              (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a-property (w state)))))
+              (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a (w state)))))
               (recognizer$a (first (second stobj$a-property)))
               (key-recognizer (second (first (third stobj$a-property))))
               (accessor$a (first (fourth (third stobj$a-property))))
@@ -315,7 +315,7 @@
                                (nth 12 (third stobj-property))))
 
               ;; `HASH-TABLE$A'
-              (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a-property world))))
+              (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a world))))
               (recognizer$a (first (second stobj$a-property)))
               (creator$a (second (second stobj$a-property)))
               (fixer$a (third (second stobj$a-property)))
@@ -716,6 +716,6 @@
               :non-executable ,(not executable)
               :exports ,exports)
 
-            (table stobj$a-property ',hash-table ',stobj$a-property)
+            (table stobj$a ',hash-table ',stobj$a-property)
 
             (table package-witness ',hash-table ',package-witness))))))

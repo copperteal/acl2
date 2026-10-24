@@ -95,7 +95,7 @@
 
          ;; `VECTOR$A'
          (world (w state))
-         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a-property world))))
+         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a world))))
          (vector$a (first stobj$a-property))
          (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
          (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
@@ -116,7 +116,7 @@
          (element (first (first (third stobj$a-property))))
          (%element (symbolicate package-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
-         (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a-property world))))
+         (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a world))))
          (element-recognizer (second (first (third stobj$a-property))))
          (initial-element-name (third (first (third stobj$a-property))))
          (element-creator (second (second element-stobj$a-property)))
@@ -1048,7 +1048,7 @@
 
          ;; `HASH-TABLE$A'
          (world (w state))
-         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a-property world))))
+         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a world))))
          (hash-table$a (first stobj$a-property))
          (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
          (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
@@ -1093,7 +1093,7 @@
          (val (first (second (third stobj$a-property))))
          (%val (symbolicate val "%" val))
          (val-stobj-property (getpropc val 'acl2::stobj))
-         (val-stobj$a-property (cdr (assoc val (table-alist 'stobj$a-property world))))
+         (val-stobj$a-property (cdr (assoc val (table-alist 'stobj$a world))))
          (val-recognizer (second (second (third stobj$a-property))))
          (default-val-name (third (second (third stobj$a-property))))
          (val-creator (second (second val-stobj$a-property)))
@@ -2449,7 +2449,7 @@
 
          ;; `FRAME$A'
          (world (w state))
-         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a-property world))))
+         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a world))))
          (frame$a (first stobj$a-property))
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
@@ -2478,7 +2478,7 @@
                                                           nil
                                                           'acl2::current-acl2-world
                                                           world))))
-         (stobj$a-property-alist (table-alist 'stobj$a-property world))
+         (stobj$a-property-alist (table-alist 'stobj$a world))
          (stobj$a-property-list (loop$ :for stobj :in stobjs
                                       :collect (and (symbolp stobj)
                                                     (cdr (assoc stobj stobj$a-property-alist)))))
@@ -2881,7 +2881,7 @@
                                  (t
                                   (current-package state))))
               (debug ',debug)
-              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a-property world)))))
+              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a world)))))
          (cond
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))

@@ -258,7 +258,7 @@
                                                                  nil
                                                                  'acl2::current-acl2-world
                                                                  world))))
-                (stobj$a-property-alist (table-alist 'stobj$a-property world))
+                (stobj$a-property-alist (table-alist 'stobj$a world))
                 (stobj$a-property-list (loop$ :for element-type :in element-types
                                              :collect (and (symbolp element-type)
                                                            (cdr (assoc element-type stobj$a-property-alist)))))

@@ -259,7 +259,7 @@
                                                                  nil
                                                                  'acl2::current-acl2-world
                                                                  world))))
-                (stobj$a-property-alist (table-alist 'stobj$a-property world))
+                (stobj$a-property-alist (table-alist 'stobj$a world))
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
                                              :collect (cdr (assoc stobj stobj$a-property-alist))))
                 (recognizers ',recognizers)
@@ -842,6 +842,6 @@
 
               ,@epilogue
 
-              (table stobj$a-property ',frame ',stobj$a-property)
+              (table stobj$a ',frame ',stobj$a-property)
 
               (table package-witness ',frame ',package-witness)))))))
