@@ -32,7 +32,7 @@
 
 (include-book "std/util/bstar" :dir :system)
 
-(include-book "../utilities/symbolicate")
+(include-book "../utilities/top")
 
 
 ;;;; `%GET-PREFIX'
@@ -62,10 +62,11 @@
          (binder-parser (symbolicate package-witness vector "-B*-PARSER"))
 
          (stobj-property (getpropc vector 'acl2::stobj))
-         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a (w state)))))
-         (element (first (first (third stobj$a-property))))
+         (stobj$a-property (stobj$a-property vector (w state)))
+         (element (access vector$a-property stobj$a-property :element))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (accessor (if element-stobj-property
+                       ;; TODO: deal with this reordering, report to Github Issues
                        (first (third stobj-property))
                        (fourth (third stobj-property))))
          (updater (if element-stobj-property
@@ -161,8 +162,8 @@
          (binder-parser (symbolicate package-witness hash-table "-B*-PARSER"))
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
-         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a (w state)))))
-         (element (first (second (third stobj$a-property))))
+         (stobj$a-property (stobj$a-property hash-table (w state)))
+         (element (access hash-table$a-property stobj$a-property :val))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (accessor (if element-stobj-property
                        (first (third stobj-property))
@@ -260,9 +261,9 @@
          (binder-parser (symbolicate package-witness frame "-B*-PARSER"))
 
          (world (w state))
-         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a world))))
-         (fields (first (third stobj$a-property)))
-         (stobjs (sixth (third stobj$a-property)))
+         (stobj$a-property (stobj$a-property frame world))
+         (fields (access frame$a-property stobj$a-property :fields))
+         (stobjs (access frame$a-property stobj$a-property :stobjs))
 
          (stobj-property (getpropc frame 'acl2::stobj))
          (stobj-count (len (remove nil stobjs)))
@@ -402,8 +403,10 @@
                                  (package-witness-lookup)
                                  (t
                                   (current-package state))))
-              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a world)))))
+              (stobj$a-property (stobj$a-property stobj world)))
          (cond
+           ;; TODO: Redo using defrec access and indicators, after removing
+           ;; cheap flag
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
             (make-vector-b*-events stobj package-witness state))

@@ -30,6 +30,7 @@
 (in-package "ACL2")
 (set-verify-guards-eagerness 2)
 
-(include-book "symbolicate")
-(include-book "with-books")
 (include-book "macros")
+(include-book "symbolicate")
+(include-book "tables")
+(include-book "with-books")

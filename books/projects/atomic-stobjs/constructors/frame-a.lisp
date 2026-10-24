@@ -259,9 +259,8 @@
                                                                  nil
                                                                  'acl2::current-acl2-world
                                                                  world))))
-                (stobj$a-property-alist (table-alist 'stobj$a world))
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
-                                             :collect (cdr (assoc stobj stobj$a-property-alist))))
+                                             :collect (stobj$a-property stobj world)))
                 (recognizers ',recognizers)
                 (recognizers (loop$ :for recognizer :in recognizers
                                    :as stobj$a-property :in stobj$a-property-list

@@ -175,7 +175,7 @@
               (stobj-property (getpropc val 'acl2::stobj))
               (absstobj-info (and stobj-property
                                   (getpropc val 'acl2::absstobj-info)))
-              (stobj$a-property (cdr (assoc val (table-alist 'stobj$a world))))
+              (stobj$a-property (stobj$a-property val world))
               (val-recognizer (cond
                                 (',val-recognizer)
                                 (stobj$a-property
@@ -3242,12 +3242,12 @@
                                                 ,count
                                                 ,clear
                                                 ,init)
-                                               ,@(and copyable
-                                                      `((,keys
-                                                         ,keys-set
-                                                         ,keysp
-                                                         ,keys-fix
-                                                         ,keys-equiv)))))))
+                                               ,(and copyable
+                                                     `(,keys
+                                                       ,keys-set
+                                                       ,keysp
+                                                       ,keys-fix
+                                                       ,keys-equiv))))))
 
          `(progn
             ,@prologue

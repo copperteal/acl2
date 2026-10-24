@@ -118,7 +118,7 @@
               (stobj-property (getpropc element 'acl2::stobj))
               (absstobj-info (and stobj-property
                                   (getpropc element 'acl2::absstobj-info)))
-              (stobj$a-property (cdr (assoc element (table-alist 'stobj$a world))))
+              (stobj$a-property (stobj$a-property element world))
               (element-recognizer (cond
                                     (',element-recognizer)
                                     (stobj$a-property

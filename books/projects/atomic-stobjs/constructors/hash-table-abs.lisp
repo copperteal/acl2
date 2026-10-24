@@ -97,14 +97,14 @@
               (keys$c (and copyable
                            (nth 11 (third stobj-property))))
 
-              (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a (w state)))))
-              (recognizer$a (first (second stobj$a-property)))
-              (key-recognizer (second (first (third stobj$a-property))))
-              (accessor$a (first (fourth (third stobj$a-property))))
-              (boundp$a (third (fourth (third stobj$a-property))))
-              (count$a (sixth (fourth (third stobj$a-property))))
+              (stobj$a-property (stobj$a-property hash-table$a (w state)))
+              (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
+              (key-recognizer (access hash-table$a-property stobj$a-property :key-recognizer))
+              (accessor$a (access hash-table$a-property stobj$a-property :accessor))
+              (boundp$a (access hash-table$a-property stobj$a-property :boundp))
+              (count$a (access hash-table$a-property stobj$a-property :count))
               (keys$a (and copyable
-                           (first (fifth (third stobj$a-property))))))
+                           (first (access hash-table$a-property stobj$a-property :keys)))))
 
          `(progn
             (defun-sk ,hash-table$corr-keys (,hash-table$c ,hash-table$a)
@@ -315,32 +315,32 @@
                                (nth 12 (third stobj-property))))
 
               ;; `HASH-TABLE$A'
-              (stobj$a-property (cdr (assoc hash-table$a (table-alist 'stobj$a world))))
-              (recognizer$a (first (second stobj$a-property)))
-              (creator$a (second (second stobj$a-property)))
-              (fixer$a (third (second stobj$a-property)))
-              (accessor$a (first (fourth (third stobj$a-property))))
-              (updater$a (second (fourth (third stobj$a-property))))
-              (boundp$a (third (fourth (third stobj$a-property))))
-              (getp$a (fourth (fourth (third stobj$a-property))))
-              (remover$a (fifth (fourth (third stobj$a-property))))
-              (count$a (sixth (fourth (third stobj$a-property))))
-              (clear$a (seventh (fourth (third stobj$a-property))))
-              (init$a (eighth (fourth (third stobj$a-property))))
+              (stobj$a-property (stobj$a-property hash-table$a world))
+              (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
+              (creator$a (access hash-table$a-property stobj$a-property :creator))
+              (fixer$a (access hash-table$a-property stobj$a-property :fixer))
+              (accessor$a (access hash-table$a-property stobj$a-property :accessor))
+              (updater$a (access hash-table$a-property stobj$a-property :updater))
+              (boundp$a (access hash-table$a-property stobj$a-property :boundp))
+              (getp$a (access hash-table$a-property stobj$a-property :getp))
+              (remover$a (access hash-table$a-property stobj$a-property :remover))
+              (count$a (access hash-table$a-property stobj$a-property :count))
+              (clear$a (access hash-table$a-property stobj$a-property :clear))
+              (init$a (access hash-table$a-property stobj$a-property :init))
               (keys$a (and copyable
-                           (first (fifth (third stobj$a-property)))))
+                           (first (access hash-table$a-property stobj$a-property :keys))))
               (keys-set$a (and copyable
-                               (second (fifth (third stobj$a-property)))))
+                               (second (access hash-table$a-property stobj$a-property :keys))))
               (keys$ap (and copyable
-                            (third (fifth (third stobj$a-property)))))
+                            (third (access hash-table$a-property stobj$a-property :keys))))
 
-              (key-recognizer (second (first (third stobj$a-property))))
-              (val (first (second (third stobj$a-property))))
+              (key-recognizer (access hash-table$a-property stobj$a-property :key-recognizer))
+              (val (access hash-table$a-property stobj$a-property :val))
               (val-stobj-property (getpropc val 'acl2::stobj))
               (val-recognizer (if val-stobj-property
                                   (caadr val-stobj-property)
-                                  (second (second (third stobj$a-property)))))
-              (test (first (third (third stobj$a-property))))
+                                  (access hash-table$a-property stobj$a-property :val-recognizer)))
+              (test (access hash-table$a-property stobj$a-property :test))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))

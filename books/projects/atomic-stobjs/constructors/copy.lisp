@@ -95,39 +95,41 @@
 
          ;; `VECTOR$A'
          (world (w state))
-         (stobj$a-property (cdr (assoc vector (table-alist 'stobj$a world))))
-         (vector$a (first stobj$a-property))
+         (stobj$a-property (stobj$a-property vector world))
+         (vector$a (access vector$a-property stobj$a-property :name))
          (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
          (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
          (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
          (vector$a-constraints (symbolicate "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
-         (recognizer$a (first (second stobj$a-property)))
-         (creator$a (second (second stobj$a-property)))
-         (fixer$a (third (second stobj$a-property)))
-         (equiv$a (fourth (second stobj$a-property)))
-         (resizable (first (second (third stobj$a-property))))
-         (default-length-name (second (second (third stobj$a-property))))
-         (length$a (first (third (third stobj$a-property))))
-         (resizer$a (second (third (third stobj$a-property))))
-         (accessor$a (third (third (third stobj$a-property))))
-         (updater$a (fourth (third (third stobj$a-property))))
+         (recognizer$a (access vector$a-property stobj$a-property :recognizer))
+         (creator$a (access vector$a-property stobj$a-property :creator))
+         (fixer$a (access vector$a-property stobj$a-property :fixer))
+         (equiv$a (access vector$a-property stobj$a-property :equiv))
+         (resizable (access vector$a-property stobj$a-property :resizable))
+         (default-length-name (access vector$a-property stobj$a-property :default-length-name))
+         (length$a (access vector$a-property stobj$a-property :length))
+         (resizer$a (access vector$a-property stobj$a-property :resizer))
+         (accessor$a (access vector$a-property stobj$a-property :accessor))
+         (updater$a (access vector$a-property stobj$a-property :updater))
          (updater$a-of-accessor$a (symbolicate vector$a updater$a "-OF-" accessor$a))
 
-         (element (first (first (third stobj$a-property))))
+         (element (access vector$a-property stobj$a-property :element))
          (%element (symbolicate package-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
-         (element-stobj$a-property (cdr (assoc element (table-alist 'stobj$a world))))
-         (element-recognizer (second (first (third stobj$a-property))))
-         (initial-element-name (third (first (third stobj$a-property))))
+         (element-stobj$a-property (stobj$a-property element world))
+         (element-recognizer (access vector$a-property stobj$a-property :element-recognizer))
+         (initial-element-name (access vector$a-property stobj$a-property :initial-element-name))
+         ;; TODO: dispatch after cheap flag is removed
          (element-creator (second (second element-stobj$a-property)))
          (initial-element (if element-stobj-property
                               `(,element-creator)
                               initial-element-name))
-         (element-fixer (fourth (first (third stobj$a-property))))
-         (element-equiv (fifth (first (third stobj$a-property))))
+         (element-fixer (access vector$a-property stobj$a-property :element-fixer))
+         (element-equiv (access vector$a-property stobj$a-property :element-equiv))
 
          ;; Adjust for nested stobj interface shuffle
          (length (if element-stobj-property
+                     ;; TODO: report interface shuffle as bug
                      (fourth (third stobj-property))
                      length))
          (resizer (if element-stobj-property
@@ -1048,27 +1050,27 @@
 
          ;; `HASH-TABLE$A'
          (world (w state))
-         (stobj$a-property (cdr (assoc hash-table (table-alist 'stobj$a world))))
-         (hash-table$a (first stobj$a-property))
+         (stobj$a-property (stobj$a-property hash-table world))
+         (hash-table$a (access hash-table$a-property stobj$a-property :name))
          (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
          (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
-         (recognizer$a (first (second stobj$a-property)))
-         (creator$a (second (second stobj$a-property)))
-         (fixer$a (third (second stobj$a-property)))
-         (equiv$a (fourth (second stobj$a-property)))
-         (accessor$a (first (fourth (third stobj$a-property))))
-         (updater$a (second (fourth (third stobj$a-property))))
-         (boundp$a (third (fourth (third stobj$a-property))))
-         (getp$a (fourth (fourth (third stobj$a-property))))
-         (remover$a (fifth (fourth (third stobj$a-property))))
-         (count$a (sixth (fourth (third stobj$a-property))))
-         (clear$a (seventh (fourth (third stobj$a-property))))
-         (init$a (eighth (fourth (third stobj$a-property))))
-         (keys$a (first (fifth (third stobj$a-property))))
-         (keys$a-set (second (fifth (third stobj$a-property))))
-         (keys$ap (third (fifth (third stobj$a-property))))
-         (keys$a-fix (fourth (fifth (third stobj$a-property))))
-         (keys$a-equiv (fifth (fifth (third stobj$a-property))))
+         (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
+         (creator$a (access hash-table$a-property stobj$a-property :creator))
+         (fixer$a (access hash-table$a-property stobj$a-property :fixer))
+         (equiv$a (access hash-table$a-property stobj$a-property :equiv))
+         (accessor$a (access hash-table$a-property stobj$a-property :accessor))
+         (updater$a (access hash-table$a-property stobj$a-property :updater))
+         (boundp$a (access hash-table$a-property stobj$a-property :boundp))
+         (getp$a (access hash-table$a-property stobj$a-property :getp))
+         (remover$a (access hash-table$a-property stobj$a-property :remover))
+         (count$a (access hash-table$a-property stobj$a-property :count))
+         (clear$a (access hash-table$a-property stobj$a-property :clear))
+         (init$a (access hash-table$a-property stobj$a-property :init))
+         (keys$a (first (access hash-table$a-property stobj$a-property :keys)))
+         (keys$a-set (second (access hash-table$a-property stobj$a-property :keys)))
+         (keys$ap (third (access hash-table$a-property stobj$a-property :keys)))
+         (keys$a-fix (fourth (access hash-table$a-property stobj$a-property :keys)))
+         (keys$a-equiv (fifth (access hash-table$a-property stobj$a-property :keys)))
 
          (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
          (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
@@ -1083,25 +1085,26 @@
          (contents-clear$a (symbolicate hash-table$a contents$a "-CLR"))
          (contents-init$a (symbolicate hash-table$a contents$a "-INIT"))
 
-         (key (first (first (third stobj$a-property))))
+         (key (access hash-table$a-property stobj$a-property :key))
          (%key (symbolicate key "%" key))
-         (key-recognizer (second (first (third stobj$a-property))))
-         (default-key-name (third (first (third stobj$a-property))))
-         (key-fixer (fourth (first (third stobj$a-property))))
-         (key-equiv (fifth (first (third stobj$a-property))))
+         (key-recognizer (access hash-table$a-property stobj$a-property :key-recognizer))
+         (default-key-name (access hash-table$a-property stobj$a-property :default-key-name))
+         (key-fixer (access hash-table$a-property stobj$a-property :key-fixer))
+         (key-equiv (access hash-table$a-property stobj$a-property :key-equiv))
 
-         (val (first (second (third stobj$a-property))))
+         (val (access hash-table$a-property stobj$a-property :val))
          (%val (symbolicate val "%" val))
          (val-stobj-property (getpropc val 'acl2::stobj))
-         (val-stobj$a-property (cdr (assoc val (table-alist 'stobj$a world))))
-         (val-recognizer (second (second (third stobj$a-property))))
-         (default-val-name (third (second (third stobj$a-property))))
+         (val-stobj$a-property (stobj$a-property val world))
+         (val-recognizer (access hash-table$a-property stobj$a-property :val-recognizer))
+         (default-val-name (access hash-table$a-property stobj$a-property :default-val-name))
+         ;; TODO: conditional dispatch
          (val-creator (second (second val-stobj$a-property)))
          (default-val (if val-stobj-property
                           `(,val-creator)
                           default-val-name))
-         (val-fixer (fourth (second (third stobj$a-property))))
-         (val-equiv (fifth (second (third stobj$a-property))))
+         (val-fixer (access hash-table$a-property stobj$a-property :val-fixer))
+         (val-equiv (access hash-table$a-property stobj$a-property :val-equiv))
 
          ;; Adjust for nested stobj interface shuffle
          (accessor (if val-stobj-property
@@ -2449,21 +2452,21 @@
 
          ;; `FRAME$A'
          (world (w state))
-         (stobj$a-property (cdr (assoc frame (table-alist 'stobj$a world))))
-         (frame$a (first stobj$a-property))
+         (stobj$a-property (stobj$a-property frame world))
+         (frame$a (access frame$a-property stobj$a-property :name))
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
          (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
          (frame$a-aggressive (symbolicate frame$a frame$a "-AGGRESSIVE"))
-         (recognizer$a (first (second stobj$a-property)))
-         (creator$a (second (second stobj$a-property)))
-         (fixer$a (third (second stobj$a-property)))
-         (equiv$a (fourth (second stobj$a-property)))
+         (recognizer$a (access frame$a-property stobj$a-property :recognizer))
+         (creator$a (access frame$a-property stobj$a-property :creator))
+         (fixer$a (access frame$a-property stobj$a-property :fixer))
+         (equiv$a (access frame$a-property stobj$a-property :equiv))
 
-         (fields (first (third stobj$a-property)))
+         (fields (access frame$a-property stobj$a-property :fields))
          (%fields (loop$ :for field :in fields
                         :collect (symbolicate package-witness "%" field)))
-         (stobjs (sixth (third stobj$a-property)))
+         (stobjs (access frame$a-property stobj$a-property :stobjs))
          (stobj-property-list (loop$ :for stobj :in stobjs
                                     :collect (and (symbolp stobj)
                                                   (getprop stobj
@@ -2478,12 +2481,11 @@
                                                           nil
                                                           'acl2::current-acl2-world
                                                           world))))
-         (stobj$a-property-alist (table-alist 'stobj$a world))
          (stobj$a-property-list (loop$ :for stobj :in stobjs
                                       :collect (and (symbolp stobj)
-                                                    (cdr (assoc stobj stobj$a-property-alist)))))
-         (recognizers$a (second (third stobj$a-property)))
-         (initial-element-names (third (third stobj$a-property)))
+                                                    (stobj$a-property stobj world))))
+         (recognizers$a (access frame$a-property stobj$a-property :recognizers))
+         (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
          (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                            :collect (and stobj$a-property
                                          (second (second stobj$a-property)))))
@@ -2494,10 +2496,10 @@
                                  :collect (if stobj-property
                                               `(,creator$a)
                                               initial-element-name)))
-         (fixers$a (fourth (third stobj$a-property)))
-         (equivs$a (fifth (third stobj$a-property)))
-         (accessors$a (seventh (third stobj$a-property)))
-         (view$a (first (ninth (third stobj$a-property))))
+         (fixers$a (access frame$a-property stobj$a-property :fixers))
+         (equivs$a (access frame$a-property stobj$a-property :equivs))
+         (accessors$a (access frame$a-property stobj$a-property :accessors))
+         (view$a (access frame$a-property stobj$a-property :view))
 
          ;; Adjust for nested stobj interface shuffle
          (stobj-count (len (remove nil stobjs)))
@@ -2881,8 +2883,9 @@
                                  (t
                                   (current-package state))))
               (debug ',debug)
-              (stobj$a-property (cdr (assoc stobj (table-alist 'stobj$a world)))))
+              (stobj$a-property (stobj$a-property stobj world)))
          (cond
+           ;; TODO: rewrite
            ((and (= (len stobj$a-property) 3)
                  (= (len (third stobj$a-property)) 3))
             (make-vector-copy-events stobj package-witness debug state))

@@ -99,9 +99,9 @@
               (accessors$c (loop$ :for i :from 0 :to n
                                  :collect (nth (+ n (* 2 i)) (third stobj-property))))
 
-              (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a (w state)))))
-              (recognizer$a (first (second stobj$a-property)))
-              (accessors$a (seventh (third stobj$a-property))))
+              (stobj$a-property (stobj$a-property frame$a (w state)))
+              (recognizer$a (access frame$a-property stobj$a-property :recognizer))
+              (accessors$a (access frame$a-property stobj$a-property :accessors)))
 
          `(progn
             (defun-nx ,frame$corr (,frame$c ,frame$a)
@@ -394,10 +394,10 @@
                                   :collect (nth (+ 1 n (* 2 i)) (third stobj-property))))
 
                 ;; `FRAME$A'
-                (stobj$a-property (cdr (assoc frame$a (table-alist 'stobj$a world))))
-                (recognizer$a (first (second stobj$a-property)))
-                (creator$a (second (second stobj$a-property)))
-                (fixer$a (third (second stobj$a-property)))
+                (stobj$a-property (stobj$a-property frame$a world))
+                (recognizer$a (access frame$a-property stobj$a-property :recognizer))
+                (creator$a (access frame$a-property stobj$a-property :creator))
+                (fixer$a (access frame$a-property stobj$a-property :fixer))
                 (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
                 (stobj-property-list (loop$ :for stobj :in stobjs
                                            :collect (and stobj
@@ -408,7 +408,7 @@
                                                                   world))))
 
                 (recognizers (loop$ :for stobj-property :in stobj-property-list
-                                   :as recognizer$a :in (second (third stobj$a-property))
+                                   :as recognizer$a :in (access frame$a-property stobj$a-property :recognizers)
                                    :collect (if stobj-property
                                                 (caadr stobj-property)
                                                 recognizer$a)))
@@ -419,7 +419,7 @@
                                                                  nil
                                                                  'acl2::current-acl2-world
                                                                  world))))
-                (recognizers$a (second (third stobj$a-property)))
+                (recognizers$a (access frame$a-property stobj$a-property :recognizers))
                 (stobj$a-property-list (loop$ :for stobj :in stobjs
                                              :collect (and stobj
                                                            (cdr (assoc stobj
@@ -428,11 +428,11 @@
                 (creators$a (loop$ :for stobj$a-property :in stobj$a-property-list
                                   :collect (and stobj$a-property
                                                 (second (second stobj$a-property)))))
-                (initial-element-names (third (third stobj$a-property)))
-                (fixers$a (fourth (third stobj$a-property)))
-                (equivs$a (fifth (third stobj$a-property)))
-                (accessors$a (seventh (third stobj$a-property)))
-                (updaters$a (eighth (third stobj$a-property)))
+                (initial-element-names (access frame$a-property stobj$a-property :initial-element-names))
+                (fixers$a (access frame$a-property stobj$a-property :fixers))
+                (equivs$a (access frame$a-property stobj$a-property :equivs))
+                (accessors$a (access frame$a-property stobj$a-property :accessors))
+                (updaters$a (access frame$a-property stobj$a-property :updaters))
 
                 ;; Theorem Names
                 (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))

@@ -30,6 +30,7 @@
                (eval . (put 'defequiv 'common-lisp-indent-function 1))
                (eval . (put 'deflabel 'common-lisp-indent-function 0))
                (eval . (put 'defpkg 'common-lisp-indent-function 1))
+               (eval . (put 'defrec 'common-lisp-indent-function 1))
                (eval . (put 'defstobj 'common-lisp-indent-function 1))
                (eval . (put 'deftheory 'common-lisp-indent-function 1))
                (eval . (put 'deftheory-static 'common-lisp-indent-function 1))

@@ -85,10 +85,10 @@
               (length$c (second (third stobj-property)))
               (accessor$c (fourth (third stobj-property)))
 
-              (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a (w state)))))
-              (recognizer$a (first (second stobj$a-property)))
-              (length$a (first (third (third stobj$a-property))))
-              (accessor$a (third (third (third stobj$a-property)))))
+              (stobj$a-property (stobj$a-property vector$a (w state)))
+              (recognizer$a (access vector$a-property stobj$a-property :recognizer))
+              (length$a (access vector$a-property stobj$a-property :length))
+              (accessor$a (access vector$a-property stobj$a-property :accessor)))
 
          `(progn
             (defun-sk ,vector$corr-contents (,vector$c ,vector$a)
@@ -220,22 +220,22 @@
               (updater$c (fifth (third stobj-property)))
 
               ;; `VECTOR$A'
-              (stobj$a-property (cdr (assoc vector$a (table-alist 'stobj$a world))))
-              (recognizer$a (first (second stobj$a-property)))
-              (creator$a (second (second stobj$a-property)))
-              (fixer$a (third (second stobj$a-property)))
-              (length$a (first (third (third stobj$a-property))))
-              (resizer$a (second (third (third stobj$a-property))))
-              (accessor$a (third (third (third stobj$a-property))))
-              (updater$a (fourth (third (third stobj$a-property))))
+              (stobj$a-property (stobj$a-property vector$a world))
+              (recognizer$a (access vector$a-property stobj$a-property :recognizer))
+              (creator$a (access vector$a-property stobj$a-property :creator))
+              (fixer$a (access vector$a-property stobj$a-property :fixer))
+              (length$a (access vector$a-property stobj$a-property :length))
+              (resizer$a (access vector$a-property stobj$a-property :resizer))
+              (accessor$a (access vector$a-property stobj$a-property :accessor))
+              (updater$a (access vector$a-property stobj$a-property :updater))
 
-              (element (first (first (third stobj$a-property))))
+              (element (access vector$a-property stobj$a-property :element))
               (element-stobj-property (getpropc element 'acl2::stobj))
               (element-recognizer (if element-stobj-property
                                       (caadr element-stobj-property)
                                       (second (first (third stobj$a-property)))))
-              (resizable (first (second (third stobj$a-property))))
-              (default-length-name (second (second (third stobj$a-property))))
+              (resizable (access vector$a-property stobj$a-property :resizable))
+              (default-length-name (access vector$a-property stobj$a-property :default-length-name))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))

@@ -121,7 +121,7 @@
               (absstobj-info (and stobj-property
                                   (getpropc element-type 'acl2::absstobj-info)))
               (stobj$a-property (and (symbolp element-type)
-                                     (cdr (assoc element-type (table-alist 'stobj$a (w state))))))
+                                     (stobj$a-property element-type (w state))))
               (stobj-recognizer (cond
                                   (stobj$a-property
                                    (first (second stobj$a-property)))
