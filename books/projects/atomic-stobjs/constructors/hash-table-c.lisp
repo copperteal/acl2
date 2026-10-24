@@ -354,11 +354,11 @@
               (init-rw (symbolicate$ pkg-witness init "-RW"))
 
               ;; Epilogue
-              (hash-table-theorems (symbolicate$ pkg-witness hash-table "-THEOREMS"))
+              (theorems (symbolicate$ pkg-witness hash-table "-THEOREMS"))
               (epilogue
                `((deflabel ,hash-table-end)
 
-                 (deftheory-static ,hash-table-theorems
+                 (deftheory-static ,theorems
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',hash-table-end)
@@ -384,7 +384,7 @@
 
                  (in-theory
                    (union-theories (current-theory ',hash-table-begin)
-                                   (theory ',hash-table-theorems)))))
+                                   (theory ',theorems)))))
 
               ;; Functional Instantiation
               (fi-bindings
@@ -1166,7 +1166,34 @@
                              (("Goal"
                                :by (:functional-instance
                                     lem-hash-table$c::init-rw
-                                    ,@fi-bindings-with-fixer-and-clear-and-init)))))))))
+                                    ,@fi-bindings-with-fixer-and-clear-and-init))))))))
+              (stobj$c-property (make hash-table$c-property
+                                      :name hash-table
+                                      :recognizer recognizer
+                                      :creator creator
+                                      :fixer fixer
+                                      :accessor accessor
+                                      :updater updater
+                                      :boundp boundp
+                                      :getp getp
+                                      :remover remover
+                                      :count count
+                                      :clear clear
+                                      :init init
+                                      :keys keys
+                                      :keys-set keys-set
+                                      :contents contents
+                                      :contents-recognizer contents-recognizer
+                                      :value nil ; value
+                                      :element-type element-type
+                                      :default-value default-value-name
+                                      :copyable copyable
+                                      :test test
+                                      :memoizable memoizable
+                                      :theory theorems
+                                      :fi-bindings fi-bindings-with-fixer
+                                      :fi-theorem nil
+                                      :pkg-witness pkg-witness)))
 
          `(progn
             ,@prologue
@@ -1174,5 +1201,7 @@
             ,body
 
             ,@epilogue
+
+            (table stobj$c ',hash-table ',stobj$c-property)
 
             (table pkg-witness ',hash-table ',pkg-witness))))))

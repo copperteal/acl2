@@ -375,11 +375,11 @@
                 (nth-of-cons (symbolicate$ "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
                 ;; Epilogue
-                (frame-theorems (symbolicate$ pkg-witness frame "-THEOREMS"))
+                (theorems (symbolicate$ pkg-witness frame "-THEOREMS"))
                 (epilogue
                  `((deflabel ,frame-end)
 
-                   (deftheory-static ,frame-theorems
+                   (deftheory-static ,theorems
                      (set-difference-theories
                       (set-difference-theories
                        (current-theory ',frame-end)
@@ -394,7 +394,7 @@
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
-                                     (theory ',frame-theorems)))))
+                                     (theory ',theorems)))))
 
                 (body
                  `(encapsulate ()
@@ -475,7 +475,21 @@
                       :rule-classes :definition)
 
                     (in-theory
-                      (disable ,fixer)))))
+                      (disable ,fixer))))
+                (stobj$c-property (make frame$c-property
+                                        :name frame
+                                        :recognizer recognizer
+                                        :creator creator
+                                        :fixer fixer
+                                        :recognizers recognizers
+                                        :accessors accessors
+                                        :updaters updaters
+                                        :fields fields
+                                        :element-types element-types
+                                        :initial-elements initial-element-names
+                                        :memoizable memoizable
+                                        :theory theorems
+                                        :pkg-witness pkg-witness)))
 
            `(progn
               ,@prologue
@@ -483,5 +497,7 @@
               ,body
 
               ,@epilogue
+
+              (table stobj$c ',frame ',stobj$c-property)
 
               (table pkg-witness ',frame ',pkg-witness)))))))

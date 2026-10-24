@@ -832,8 +832,7 @@
                                       :theory theorems
                                       :fi-bindings fi-bindings-with-fixer
                                       :fi-theorem nil
-                                      :pkg-witness pkg-witness
-                                      )))
+                                      :pkg-witness pkg-witness)))
 
          `(progn
             ,@prologue
