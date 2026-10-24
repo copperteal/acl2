@@ -49,7 +49,7 @@
     (in-theory
       (disable explode-nonnegative-integer)))
 
-  (defun %symbolicate-coerce (expr)
+  (defun %symbolicate$-coerce (expr)
     (declare (xargs :guard t))
     (cond
       ((symbolp expr)
@@ -63,14 +63,14 @@
 
 (local
   (thm ; ensure `%SYMBOLICATE-COERCE' is known to return a string
-    (stringp (%symbolicate-coerce expr))
+    (stringp (%symbolicate$-coerce expr))
     :hints
     (("Goal"
-      :in-theory '((:t %symbolicate-coerce))))))
+      :in-theory '((:t %symbolicate$-coerce))))))
 
-(defwarrant %symbolicate-coerce)
+(defwarrant %symbolicate$-coerce)
 
-(defun %symbolicate-expand (exprs)
+(defun %symbolicate$-expand (exprs)
   (declare (xargs :guard (true-listp exprs)))
   (if (atom exprs)
       ""
@@ -78,14 +78,16 @@
             (exprs (cdr exprs)))
         (if (consp exprs)
             (list 'string-append
-                  (list '%symbolicate-coerce expr)
-                  (%symbolicate-expand exprs))
-            (list '%symbolicate-coerce expr)))))
+                  (list '%symbolicate$-coerce expr)
+                  (%symbolicate$-expand exprs))
+            (list '%symbolicate$-coerce expr)))))
 
-(defmacro symbolicate (witness &rest exprs)
+(defmacro symbolicate$ (witness &rest exprs)
   (declare (xargs :guard t))
+  ;; TODO: check that witness is a symbolp and exprs is a symbol-listp
+  ;; TODO: (fix-pkg witness) or (fix-pkg (symbol-name witness))
   `(let ((witness ,witness)
-         (expansion ,(%symbolicate-expand exprs)))
+         (expansion ,(%symbolicate$-expand exprs)))
      (cond
        ((stringp witness)
         (intern$ expansion witness))
@@ -95,39 +97,39 @@
         nil))))
 
 
-(defxdoc symbolicate
+(defxdoc symbolicate$
   :parents (symbols)
   :short "Concatenate strings and symbols to construct a symbol."
   :long "@({
 Examples:
 
-ACL2 !>(symbolicate \"ACL2\" 'hello \" world\")
+ACL2 !>(symbolicate$ \"ACL2\" 'hello \" world\")
 |HELLO world|
 
 ACL2 !>(defun foo () \"SOME-STRING\")
 ...
 
-ACL2 !>(symbolicate 'str::witness (foo) \"-suffix\")
+ACL2 !>(symbolicate$ 'str::witness (foo) \"-suffix\")
 STR::|SOME-STRING-suffix|
 
 ACL2 !>(defun bar () \"STR\")
 ...
 
-ACL2 !>(symbolicate (bar) (foo) 2 '-baz)
+ACL2 !>(symbolicate$ (bar) (foo) 2 '-baz)
 STR::SOME-STRING-BAZ
 
 General Form
-(symbolicate witness expr1 ... exprn)
+(symbolicate$ witness expr1 ... exprn)
 })
 
 <p>@('Symbolicate') evaluates each of its arguments.  If @('witness') is a
 string, it is taken as a <see topic=\"@(url packages)\">package</see> name.  If
 @('witness') is a symbol, its package name is used.  Otherwise, the
-@('symbolicate') form expands to @('nil').  For each @('expri'), if @('expri')
+@('symbolicate$') form expands to @('nil').  For each @('expri'), if @('expri')
 is a string, it is preserved; if @('expri') is a symbol, it is replaced by its
 name; if @('expri') is a non-negative integer, it is converted to a base-10
 string by @(tsee explode-nonnegative-integer); otherwise, @('expri') is replaced
-with the empty string.  After this evaluation, @('symbolicate') concatenates the
+with the empty string.  After this evaluation, @('symbolicate$') concatenates the
 strings resulting from @('expr1 ... exprn') and interns a symbol with that name
-in the package derived from @('witness').  The @('symbolicate') form expands to
+in the package derived from @('witness').  The @('symbolicate$') form expands to
 this symbol (assuming @('witness') evaluated to a string or symbol).</p>")

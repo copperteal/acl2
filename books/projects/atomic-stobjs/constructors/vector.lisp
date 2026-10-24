@@ -136,23 +136,23 @@
               (debug ',debug)
 
               (vector$a (or logic
-                            (symbolicate package-witness vector "$A")))
+                            (symbolicate$ package-witness vector "$A")))
               (vector$c (or exec
-                            (symbolicate package-witness vector "$C")))
+                            (symbolicate$ package-witness vector "$C")))
               (recognizer (or recognizer
-                              (symbolicate package-witness vector (make-predicate-suffix vector))))
+                              (symbolicate$ package-witness vector (make-predicate-suffix vector))))
               (creator (or creator
-                           (symbolicate package-witness "CREATE-" vector)))
+                           (symbolicate$ package-witness "CREATE-" vector)))
               (fixer (or fixer
-                         (symbolicate package-witness vector "-FIX")))
+                         (symbolicate$ package-witness vector "-FIX")))
               (length (or length
-                          (symbolicate package-witness vector "-LEN")))
+                          (symbolicate$ package-witness vector "-LEN")))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RSZ")))
+                           (symbolicate$ package-witness vector "-RSZ")))
               (accessor (or accessor
-                            (symbolicate package-witness vector "-REF")))
+                            (symbolicate$ package-witness vector "-REF")))
               (updater (or updater
-                           (symbolicate package-witness vector "-SET"))))
+                           (symbolicate$ package-witness vector "-SET"))))
 
          `(progn
             (define-vector$c ,vector$c ,dimensions
@@ -217,14 +217,14 @@
                      `(:package-witness ,package-witness))
               :debug ,debug)
 
-            (defmacro ,(symbolicate package-witness "THE-" vector) (,vector)
+            (defmacro ,(symbolicate$ package-witness "THE-" vector) (,vector)
               (declare (xargs :guard (symbolp ,vector)))
               `(mbe :logic ,(list ',fixer ,vector)
                     :exec ,,vector))
 
             (in-theory
-              (disable ,(symbolicate (if ,package-witness-supplied-p
-                                         package-witness
-                                         vector$c)
-                                     vector$c
-                                     "-THEOREMS"))))))))
+              (disable ,(symbolicate$ (if ,package-witness-supplied-p
+                                          package-witness
+                                          vector$c)
+                                      vector$c
+                                      "-THEOREMS"))))))))

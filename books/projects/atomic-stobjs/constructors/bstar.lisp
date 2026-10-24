@@ -58,8 +58,8 @@
                               (package-witness-p package-witness))
                   :verify-guards nil))
 
-  (let* ((binder-pair (symbolicate package-witness "*" vector "-B*-PAIR*"))
-         (binder-parser (symbolicate package-witness vector "-B*-PARSER"))
+  (let* ((binder-pair (symbolicate$ package-witness "*" vector "-B*-PAIR*"))
+         (binder-parser (symbolicate$ package-witness vector "-B*-PARSER"))
 
          (stobj-property (getpropc vector 'acl2::stobj))
          (stobj$a-property (stobj$a-property vector (w state)))
@@ -92,17 +92,17 @@
              (let* ((index (first kvl))
                     (accessor (car ,binder-pair))
                     (updater (cdr ,binder-pair))
-                    (accessor (symbolicate ',package-witness
-                                           (coerce (append %prefix
-                                                           (coerce (symbol-name accessor)
-                                                                   'list))
-                                                   'string)))
+                    (accessor (symbolicate$ ',package-witness
+                                            (coerce (append %prefix
+                                                            (coerce (symbol-name accessor)
+                                                                    'list))
+                                                    'string)))
                     (updater (and updater
-                                  (symbolicate ',package-witness
-                                               (coerce (append %prefix
-                                                               (coerce (symbol-name updater)
-                                                                       'list))
-                                                       'string)))))
+                                  (symbolicate$ ',package-witness
+                                                (coerce (append %prefix
+                                                                (coerce (symbol-name updater)
+                                                                        'list))
+                                                        'string)))))
                (,binder-parser vector
                                (cddr kvl)
                                (cons #\% %prefix)
@@ -158,8 +158,8 @@
                               (package-witness-p package-witness))
                   :verify-guards nil))
 
-  (let* ((binder-pair (symbolicate package-witness "*" hash-table "-B*-PAIR*"))
-         (binder-parser (symbolicate package-witness hash-table "-B*-PARSER"))
+  (let* ((binder-pair (symbolicate$ package-witness "*" hash-table "-B*-PAIR*"))
+         (binder-parser (symbolicate$ package-witness hash-table "-B*-PARSER"))
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
          (stobj$a-property (stobj$a-property hash-table (w state)))
@@ -191,17 +191,17 @@
              (let* ((index (first kvl))
                     (accessor (car ,binder-pair))
                     (updater (cdr ,binder-pair))
-                    (accessor (symbolicate ',package-witness
-                                           (coerce (append %prefix
-                                                           (coerce (symbol-name accessor)
-                                                                   'list))
-                                                   'string)))
+                    (accessor (symbolicate$ ',package-witness
+                                            (coerce (append %prefix
+                                                            (coerce (symbol-name accessor)
+                                                                    'list))
+                                                    'string)))
                     (updater (and updater
-                                  (symbolicate ',package-witness
-                                               (coerce (append %prefix
-                                                               (coerce (symbol-name updater)
-                                                                       'list))
-                                                       'string)))))
+                                  (symbolicate$ ',package-witness
+                                                (coerce (append %prefix
+                                                                (coerce (symbol-name updater)
+                                                                        'list))
+                                                        'string)))))
                (,binder-parser hash-table
                                (cddr kvl)
                                (cons #\% %prefix)
@@ -257,8 +257,8 @@
                               (package-witness-p package-witness))
                   :verify-guards nil))
 
-  (let* ((binder-alist (symbolicate package-witness "*" frame "-B*-ALIST*"))
-         (binder-parser (symbolicate package-witness frame "-B*-PARSER"))
+  (let* ((binder-alist (symbolicate$ package-witness "*" frame "-B*-ALIST*"))
+         (binder-parser (symbolicate$ package-witness frame "-B*-PARSER"))
 
          (world (w state))
          (stobj$a-property (stobj$a-property frame world))

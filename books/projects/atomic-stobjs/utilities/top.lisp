@@ -31,6 +31,6 @@
 (set-verify-guards-eagerness 2)
 
 (include-book "macros")
-(include-book "symbolicate")
+(include-book "symbolicate-dollar")
 (include-book "tables")
 (include-book "with-books")

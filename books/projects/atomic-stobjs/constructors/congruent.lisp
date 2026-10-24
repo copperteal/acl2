@@ -31,7 +31,7 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-(include-book "../utilities/symbolicate")
+(include-book "../utilities/top")
 
 
 ;;;; `PROTECT-EXPORTS'
@@ -88,31 +88,31 @@
               (package-witness (if ',package-witness-supplied-p
                                    ',package-witness
                                    (current-package state)))
-              (%stobj (symbolicate package-witness "%" ,(cond
-                                                          ((not name-supplied-p)
-                                                           (symbol-name stobj))
-                                                          ((symbolp name)
-                                                           (symbol-name name))
-                                                          (t
-                                                           name))))
+              (%stobj (symbolicate$ package-witness "%" ,(cond
+                                                           ((not name-supplied-p)
+                                                            (symbol-name stobj))
+                                                           ((symbolp name)
+                                                            (symbol-name name))
+                                                           (t
+                                                            name))))
               (stobj-property (getpropc stobj 'acl2::stobj))
               (absstobj-info (getpropc stobj 'acl2::absstobj-info))
               (recognizer-export (assoc (caadr stobj-property) (cdr absstobj-info)))
-              (recognizer-export (list (symbolicate package-witness "%" (first recognizer-export))
+              (recognizer-export (list (symbolicate$ package-witness "%" (first recognizer-export))
                                        :logic (second recognizer-export)
                                        :exec (third recognizer-export)))
               (creator-export (assoc (cdadr stobj-property) (cdr absstobj-info)))
-              (creator-export (list (symbolicate package-witness "%" (first creator-export))
+              (creator-export (list (symbolicate$ package-witness "%" (first creator-export))
                                     :logic (second creator-export)
                                     :exec (third creator-export)))
               (foundation (car absstobj-info))
               (exports (loop$ :for entry :in (cdddr absstobj-info)
-                             :collect (append (list (symbolicate package-witness "%" (first entry))
+                             :collect (append (list (symbolicate$ package-witness "%" (first entry))
                                                     :logic (second entry)
                                                     :exec (third entry))
                                               (let ((updater (cdr (last entry))))
                                                 (and updater
-                                                     (list :updater (symbolicate package-witness "%" updater)))))))
+                                                     (list :updater (symbolicate$ package-witness "%" updater)))))))
               (exports (protect-exports foundation exports () state)))
 
          `(defabsstobj ,%stobj

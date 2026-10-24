@@ -104,16 +104,16 @@
               (default-length (if (consp dimensions)
                                   (car dimensions)
                                   dimensions))
-              (default-length-name (symbolicate package-witness "*" vector "-DEFAULT-LENGTH*"))
+              (default-length-name (symbolicate$ package-witness "*" vector "-DEFAULT-LENGTH*"))
 
               (index (or ',index
-                         (symbolicate package-witness "I")))
+                         (symbolicate$ package-witness "I")))
               (%index (or ',%index
-                          (symbolicate index "%" index)))
+                          (symbolicate$ index "%" index)))
               (element (or ',element
-                           (symbolicate package-witness "V")))
+                           (symbolicate$ package-witness "V")))
               (%element (or ',%element
-                            (symbolicate package-witness "%" element)))
+                            (symbolicate$ package-witness "%" element)))
               (world (w state))
               (stobj-property (getpropc element 'acl2::stobj))
               (absstobj-info (and stobj-property
@@ -142,7 +142,7 @@
                                (t
                                 'equal)))
               (initial-element-name (and (not stobj-property)
-                                         (symbolicate package-witness "*" vector "-INITIAL-ELEMENT*")))
+                                         (symbolicate$ package-witness "*" vector "-INITIAL-ELEMENT*")))
               (initial-element (if element-creator
                                    `(,element-creator)
                                    initial-element-name))
@@ -159,25 +159,25 @@
 
               ;; Interface symbols
               (recognizer (or recognizer
-                              (symbolicate package-witness vector (make-predicate-suffix vector))))
+                              (symbolicate$ package-witness vector (make-predicate-suffix vector))))
               (creator (or creator
-                           (symbolicate package-witness "CREATE-" vector)))
+                           (symbolicate$ package-witness "CREATE-" vector)))
               (fixer (or fixer
-                         (symbolicate package-witness vector "-FIX")))
+                         (symbolicate$ package-witness vector "-FIX")))
               (equiv (or equiv
-                         (symbolicate package-witness vector "-EQUIV")))
+                         (symbolicate$ package-witness vector "-EQUIV")))
               (length (or length
-                          (symbolicate package-witness vector "-LEN")))
+                          (symbolicate$ package-witness vector "-LEN")))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RSZ")))
+                           (symbolicate$ package-witness vector "-RSZ")))
               (accessor (or accessor
-                            (symbolicate package-witness vector "-REF")))
+                            (symbolicate$ package-witness vector "-REF")))
               (updater (or updater
-                           (symbolicate package-witness vector "-SET")))
+                           (symbolicate$ package-witness vector "-SET")))
 
               ;; Prologue
-              (vector-begin (symbolicate package-witness vector "-BEGIN"))
-              (vector-end (symbolicate package-witness vector "-END"))
+              (vector-begin (symbolicate$ package-witness vector "-BEGIN"))
+              (vector-end (symbolicate$ package-witness vector "-END"))
               (prologue
                `((deflabel ,vector-begin)
 
@@ -187,95 +187,95 @@
                         `((defconst ,initial-element-name ',',initial-element)))))
 
               ;; Theorem Names
-              (element-recognizer-constraints (symbolicate "ATOMIC-STOBJS" element-recognizer "-CONSTRAINTS"))
-              (element-fixer-constraints (symbolicate "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
-              (element-equiv-constraints (symbolicate "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
+              (element-recognizer-constraints (symbolicate$ "ATOMIC-STOBJS" element-recognizer "-CONSTRAINTS"))
+              (element-fixer-constraints (symbolicate$ "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
+              (element-equiv-constraints (symbolicate$ "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
 
-              (recognizer-aux (symbolicate package-witness vector "-AUX-P"))
-              (recognizer-aux-tp (symbolicate "ATOMIC-STOBJS" recognizer-aux "-TP"))
-              (recognizer-aux-cr (symbolicate "ATOMIC-STOBJS" recognizer-aux "-CR"))
-              (element-recognizer-of-nth-when-recognizer-aux (symbolicate "ATOMIC-STOBJS"
-                                                                          element-recognizer
-                                                                          "-OF-NTH-WHEN-"
-                                                                          recognizer-aux))
+              (recognizer-aux (symbolicate$ package-witness vector "-AUX-P"))
+              (recognizer-aux-tp (symbolicate$ "ATOMIC-STOBJS" recognizer-aux "-TP"))
+              (recognizer-aux-cr (symbolicate$ "ATOMIC-STOBJS" recognizer-aux "-CR"))
+              (element-recognizer-of-nth-when-recognizer-aux (symbolicate$ "ATOMIC-STOBJS"
+                                                                           element-recognizer
+                                                                           "-OF-NTH-WHEN-"
+                                                                           recognizer-aux))
 
-              (vector-constraints (symbolicate package-witness vector "-CONSTRAINTS"))
+              (vector-constraints (symbolicate$ package-witness vector "-CONSTRAINTS"))
 
-              (recognizer-tp (symbolicate package-witness recognizer "-TP"))
-              (recognizer-cr (symbolicate package-witness recognizer "-CR"))
-              (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
-              (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
-              (recognizer-of-resizer (symbolicate package-witness recognizer "-OF-" resizer))
-              (recognizer-of-updater (symbolicate package-witness recognizer "-OF-" updater))
+              (recognizer-tp (symbolicate$ package-witness recognizer "-TP"))
+              (recognizer-cr (symbolicate$ package-witness recognizer "-CR"))
+              (recognizer-of-creator (symbolicate$ package-witness recognizer "-OF-" creator))
+              (recognizer-of-fixer (symbolicate$ package-witness recognizer "-OF-" fixer))
+              (recognizer-of-resizer (symbolicate$ package-witness recognizer "-OF-" resizer))
+              (recognizer-of-updater (symbolicate$ package-witness recognizer "-OF-" updater))
 
-              (fixer-tp (symbolicate package-witness fixer "-TP"))
-              (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
-              (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
+              (fixer-tp (symbolicate$ package-witness fixer "-TP"))
+              (fixer-when-recognizer (symbolicate$ package-witness fixer "-WHEN-" recognizer))
+              (fixer-when-not-recognizer (symbolicate$ package-witness fixer "-WHEN-NOT-" recognizer))
 
-              (equiv-tp (symbolicate package-witness equiv "-TP"))
-              (fixer-mod-equiv (symbolicate package-witness fixer "-MOD-" equiv))
-              (equiv-when-not-recognizer (symbolicate package-witness equiv "-WHEN-NOT-" recognizer))
+              (equiv-tp (symbolicate$ package-witness equiv "-TP"))
+              (fixer-mod-equiv (symbolicate$ package-witness fixer "-MOD-" equiv))
+              (equiv-when-not-recognizer (symbolicate$ package-witness equiv "-WHEN-NOT-" recognizer))
 
-              (length-tp (symbolicate package-witness length "-TP"))
-              (length-when-not-recognizer (symbolicate package-witness length "-WHEN-NOT-" recognizer))
-              (length-of-creator (symbolicate package-witness length "-OF-" creator))
-              (length-of-resizer (symbolicate package-witness length "-OF-" resizer))
-              (length-of-updater (symbolicate package-witness length "-OF-" updater))
-              (length-rw (symbolicate package-witness length "-RW"))
+              (length-tp (symbolicate$ package-witness length "-TP"))
+              (length-when-not-recognizer (symbolicate$ package-witness length "-WHEN-NOT-" recognizer))
+              (length-of-creator (symbolicate$ package-witness length "-OF-" creator))
+              (length-of-resizer (symbolicate$ package-witness length "-OF-" resizer))
+              (length-of-updater (symbolicate$ package-witness length "-OF-" updater))
+              (length-rw (symbolicate$ package-witness length "-RW"))
 
-              (resizer-tp (symbolicate package-witness resizer "-TP"))
-              (resizer-when-not-natp (symbolicate package-witness resizer "-WHEN-NOT-NATP"))
-              (resizer-when-not-recognizer (symbolicate package-witness resizer "-WHEN-NOT-" recognizer))
-              (resizer-of-creator (symbolicate package-witness resizer "-OF-" creator))
-              (resizer-of-length (symbolicate package-witness resizer "-OF-" length))
-              (resizer-of-length-free (symbolicate package-witness resizer-of-length "-FREE"))
-              (resizer-of-resizer (symbolicate package-witness resizer "-OF-" resizer))
-              (resizer-of-resizer-split (symbolicate package-witness resizer-of-resizer "-SPLIT"))
-              (resizer-of-updater (symbolicate package-witness resizer "-OF-" updater))
-              (resizer-of-updater-keep (symbolicate package-witness resizer-of-updater "-KEEP"))
-              (resizer-of-updater-drop (symbolicate package-witness resizer-of-updater "-DROP"))
-              (resizer-rw (symbolicate package-witness resizer "-RW"))
+              (resizer-tp (symbolicate$ package-witness resizer "-TP"))
+              (resizer-when-not-natp (symbolicate$ package-witness resizer "-WHEN-NOT-NATP"))
+              (resizer-when-not-recognizer (symbolicate$ package-witness resizer "-WHEN-NOT-" recognizer))
+              (resizer-of-creator (symbolicate$ package-witness resizer "-OF-" creator))
+              (resizer-of-length (symbolicate$ package-witness resizer "-OF-" length))
+              (resizer-of-length-free (symbolicate$ package-witness resizer-of-length "-FREE"))
+              (resizer-of-resizer (symbolicate$ package-witness resizer "-OF-" resizer))
+              (resizer-of-resizer-split (symbolicate$ package-witness resizer-of-resizer "-SPLIT"))
+              (resizer-of-updater (symbolicate$ package-witness resizer "-OF-" updater))
+              (resizer-of-updater-keep (symbolicate$ package-witness resizer-of-updater "-KEEP"))
+              (resizer-of-updater-drop (symbolicate$ package-witness resizer-of-updater "-DROP"))
+              (resizer-rw (symbolicate$ package-witness resizer "-RW"))
 
-              (element-recognizer-of-accessor (symbolicate package-witness element-recognizer "-OF-" accessor))
-              (accessor-when-large (symbolicate package-witness accessor "-WHEN-LARGE"))
-              (accessor-when-not-natp (symbolicate package-witness accessor "-WHEN-NOT-NATP"))
-              (accessor-when-not-recognizer (symbolicate package-witness accessor "-WHEN-NOT-" recognizer))
-              (accessor-of-creator (symbolicate package-witness accessor "-OF-" creator))
-              (accessor-of-resizer (symbolicate package-witness accessor "-OF-" resizer))
-              (accessor-of-resizer-wh (symbolicate package-witness accessor-of-resizer "-WH"))
-              (accessor-of-updater (symbolicate package-witness accessor "-OF-" updater))
-              (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
-              (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
+              (element-recognizer-of-accessor (symbolicate$ package-witness element-recognizer "-OF-" accessor))
+              (accessor-when-large (symbolicate$ package-witness accessor "-WHEN-LARGE"))
+              (accessor-when-not-natp (symbolicate$ package-witness accessor "-WHEN-NOT-NATP"))
+              (accessor-when-not-recognizer (symbolicate$ package-witness accessor "-WHEN-NOT-" recognizer))
+              (accessor-of-creator (symbolicate$ package-witness accessor "-OF-" creator))
+              (accessor-of-resizer (symbolicate$ package-witness accessor "-OF-" resizer))
+              (accessor-of-resizer-wh (symbolicate$ package-witness accessor-of-resizer "-WH"))
+              (accessor-of-updater (symbolicate$ package-witness accessor "-OF-" updater))
+              (accessor-of-updater-same (symbolicate$ package-witness accessor-of-updater "-SAME"))
+              (accessor-of-updater-diff (symbolicate$ package-witness accessor-of-updater "-DIFF"))
 
-              (updater-tp (symbolicate package-witness updater "-TP"))
-              (updater-when-large (symbolicate package-witness updater "-WHEN-LARGE"))
-              (updater-when-not-natp (symbolicate package-witness updater "-WHEN-NOT-NATP"))
-              (updater-when-not-element-recognizer (symbolicate package-witness updater "-WHEN-NOT-" element-recognizer))
+              (updater-tp (symbolicate$ package-witness updater "-TP"))
+              (updater-when-large (symbolicate$ package-witness updater "-WHEN-LARGE"))
+              (updater-when-not-natp (symbolicate$ package-witness updater "-WHEN-NOT-NATP"))
+              (updater-when-not-element-recognizer (symbolicate$ package-witness updater "-WHEN-NOT-" element-recognizer))
               (updater-when-not-natp (if (eq updater-when-not-natp updater-when-not-element-recognizer)
-                                         (symbolicate package-witness updater-when-not-natp "-1")
+                                         (symbolicate$ package-witness updater-when-not-natp "-1")
                                          updater-when-not-natp))
               (updater-when-not-element-recognizer (if (eq updater-when-not-natp updater-when-not-element-recognizer)
-                                                       (symbolicate package-witness updater-when-not-natp "-2")
+                                                       (symbolicate$ package-witness updater-when-not-natp "-2")
                                                        updater-when-not-element-recognizer))
-              (updater-when-not-recognizer (symbolicate package-witness updater "-WHEN-NOT-" recognizer))
-              (updater-of-creator (symbolicate package-witness updater "-OF-" creator))
-              (updater-of-resizer (symbolicate package-witness updater "-OF-" resizer))
-              (updater-of-accessor (symbolicate package-witness updater "-OF-" accessor))
-              (updater-of-accessor-free (symbolicate package-witness updater-of-accessor "-FREE"))
-              (updater-of-updater (symbolicate package-witness updater "-OF-" updater))
-              (updater-of-updater-same (symbolicate package-witness updater-of-updater "-SAME"))
-              (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
+              (updater-when-not-recognizer (symbolicate$ package-witness updater "-WHEN-NOT-" recognizer))
+              (updater-of-creator (symbolicate$ package-witness updater "-OF-" creator))
+              (updater-of-resizer (symbolicate$ package-witness updater "-OF-" resizer))
+              (updater-of-accessor (symbolicate$ package-witness updater "-OF-" accessor))
+              (updater-of-accessor-free (symbolicate$ package-witness updater-of-accessor "-FREE"))
+              (updater-of-updater (symbolicate$ package-witness updater "-OF-" updater))
+              (updater-of-updater-same (symbolicate$ package-witness updater-of-updater "-SAME"))
+              (updater-of-updater-diff (symbolicate$ package-witness updater-of-updater "-DIFF"))
 
-              (%vector (symbolicate package-witness "%" vector))
-              (contents-equal (symbolicate package-witness vector "-CONTENTS-EQUAL"))
-              (contents-equal-witness (symbolicate package-witness contents-equal "-WITNESS"))
-              (vector-equal (symbolicate package-witness vector "-EQUAL"))
-              (vector-equal-constraints (symbolicate package-witness vector-equal "-CONSTRAINTS"))
-              (vector-equal-fc (symbolicate package-witness vector-equal "-FC"))
+              (%vector (symbolicate$ package-witness "%" vector))
+              (contents-equal (symbolicate$ package-witness vector "-CONTENTS-EQUAL"))
+              (contents-equal-witness (symbolicate$ package-witness contents-equal "-WITNESS"))
+              (vector-equal (symbolicate$ package-witness vector "-EQUAL"))
+              (vector-equal-constraints (symbolicate$ package-witness vector-equal "-CONSTRAINTS"))
+              (vector-equal-fc (symbolicate$ package-witness vector-equal "-FC"))
 
               ;; Epilogue
-              (vector-theorems (symbolicate package-witness vector "-THEOREMS"))
-              (vector-aggressive (symbolicate package-witness vector "-AGGRESSIVE"))
+              (vector-theorems (symbolicate$ package-witness vector "-THEOREMS"))
+              (vector-aggressive (symbolicate$ package-witness vector "-AGGRESSIVE"))
               (epilogue
                `((deflabel ,vector-end)
 

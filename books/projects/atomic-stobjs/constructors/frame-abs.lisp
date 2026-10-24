@@ -86,12 +86,12 @@
                                      ',package-witness$c
                                      package-witness))
 
-              (frame$corr (symbolicate package-witness frame "$CORR"))
+              (frame$corr (symbolicate$ package-witness frame "$CORR"))
 
               (frame$a (or logic
-                           (symbolicate package-witness$a frame "$A")))
+                           (symbolicate$ package-witness$a frame "$A")))
               (frame$c (or exec
-                           (symbolicate package-witness$c frame "$C")))
+                           (symbolicate$ package-witness$c frame "$C")))
 
               (stobj-property (getpropc frame$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
@@ -358,23 +358,23 @@
 
                 ;; Interface Symbols
                 (frame$a (or logic
-                             (symbolicate package-witness$a frame "$A")))
+                             (symbolicate$ package-witness$a frame "$A")))
                 (frame$c (or exec
-                             (symbolicate package-witness$c frame "$C")))
+                             (symbolicate$ package-witness$c frame "$C")))
                 (recognizer (or recognizer
-                                (symbolicate package-witness frame (make-predicate-suffix frame))))
+                                (symbolicate$ package-witness frame (make-predicate-suffix frame))))
                 (creator (or creator
-                             (symbolicate package-witness "CREATE-" frame)))
+                             (symbolicate$ package-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate package-witness frame "-FIX")))
+                           (symbolicate$ package-witness frame "-FIX")))
                 (accessors (loop$ :for field :in fields
                                  :as accessor :in accessors
                                  :collect (or accessor
-                                              (symbolicate package-witness frame "-" field))))
+                                              (symbolicate$ package-witness frame "-" field))))
                 (updaters (loop$ :for field :in fields
                                 :as updater :in updaters
                                 :collect (or updater
-                                             (symbolicate package-witness frame "-" field "-SET"))))
+                                             (symbolicate$ package-witness frame "-" field "-SET"))))
 
                 (world (w state))
                 (frame$corr (cdr (assoc frame (table-alist 'corr world))))
@@ -398,7 +398,7 @@
                 (recognizer$a (access frame$a-property stobj$a-property :recognizer))
                 (creator$a (access frame$a-property stobj$a-property :creator))
                 (fixer$a (access frame$a-property stobj$a-property :fixer))
-                (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
+                (frame$a-theorems (symbolicate$ frame$a frame$a "-THEOREMS"))
                 (stobj-property-list (loop$ :for stobj :in stobjs
                                            :collect (and stobj
                                                          (getprop stobj
@@ -433,13 +433,13 @@
                 (updaters$a (access frame$a-property stobj$a-property :updaters))
 
                 ;; Theorem Names
-                (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
-                (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
+                (len-of-cons (symbolicate$ "ATOMIC-STOBJS" "LEN-OF-CONS"))
+                (nth-of-cons (symbolicate$ "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
-                (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
-                (creator{preserved} (symbolicate package-witness creator "{PRESERVED}"))
-                (fixer{correspondence} (symbolicate package-witness fixer "{CORRESPONDENCE}"))
-                (fixer{preserved} (symbolicate package-witness fixer "{PRESERVED}"))
+                (creator{correspondence} (symbolicate$ package-witness creator "{CORRESPONDENCE}"))
+                (creator{preserved} (symbolicate$ package-witness creator "{PRESERVED}"))
+                (fixer{correspondence} (symbolicate$ package-witness fixer "{CORRESPONDENCE}"))
+                (fixer{preserved} (symbolicate$ package-witness fixer "{PRESERVED}"))
 
                 ;; Exports
                 (exports `((,fixer :logic ,fixer$a
@@ -491,7 +491,7 @@
                       :as initial-element-name :in initial-element-names
                       :when recognizer$a
                       :collect `(local
-                                  (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer$a "-CONSTRAINTS-" i)
+                                  (defthm ,(symbolicate$ "ATOMIC-STOBJS" recognizer$a "-CONSTRAINTS-" i)
                                     (and (booleanp (,recognizer$a ,field))
                                          (,recognizer$a ,(or initial-element-name
                                                              `(,creator)))
@@ -526,7 +526,7 @@
                       :when (and recognizer
                                  fixer)
                       :collect `(local
-                                  (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
+                                  (defthm ,(symbolicate$ "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
                                     (equal (,fixer ,field)
                                            (if (,recognizer ,field)
                                                ,field
@@ -538,9 +538,9 @@
                       :as field :in fields
                       :as fixer :in fixers$a
                       :when fixer
-                      :collect (let ((%field (symbolicate "ATOMIC-STOBJS" "%" field)))
+                      :collect (let ((%field (symbolicate$ "ATOMIC-STOBJS" "%" field)))
                                  `(local
-                                    (defthm ,(symbolicate "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
+                                    (defthm ,(symbolicate$ "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
                                       (equal (,equiv ,%field ,field)
                                              (equal (,fixer ,%field)
                                                     (,fixer ,field)))
@@ -588,7 +588,7 @@
                           ,@(loop$ :for stobj$a-property :in stobj$a-property-list
                                   :when stobj$a-property
                                   :collect (let ((stobj$a (access stobj$a-property stobj$a-property :name)))
-                                             (symbolicate stobj$a stobj$a "-THEOREMS"))))))
+                                             (symbolicate$ stobj$a stobj$a "-THEOREMS"))))))
 
               ,@(loop$ :for absstobj-info :in absstobj-info-list
                       :when absstobj-info
@@ -632,7 +632,7 @@
                   ,@(loop$ :for accessor :in accessors
                           :as accessor$c :in accessors$c
                           :as accessor$a :in accessors$a
-                          :collect `(defthm ,(symbolicate package-witness accessor "{CORRESPONDENCE}")
+                          :collect `(defthm ,(symbolicate$ package-witness accessor "{CORRESPONDENCE}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     (,recognizer$a ,frame))
                                                (equal (,accessor$c ,frame$c)
@@ -644,7 +644,7 @@
                           :as updater$a :in updaters$a
                           :as updater$c-field :in updater$c-fields
                           :as field-recognizer :in recognizers
-                          :collect `(defthm ,(symbolicate package-witness updater "{CORRESPONDENCE}")
+                          :collect `(defthm ,(symbolicate$ package-witness updater "{CORRESPONDENCE}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     ,@(and field-recognizer
                                                            `((,field-recognizer ,updater$c-field)))
@@ -657,7 +657,7 @@
                           :as updater$c-guard :in updater$c-guards
                           :as updater$c-field :in updater$c-fields
                           :as field-recognizer :in recognizers
-                          :collect `(defthm ,(symbolicate package-witness updater "{GUARD-THM}")
+                          :collect `(defthm ,(symbolicate$ package-witness updater "{GUARD-THM}")
                                       (implies (and (,frame$corr ,frame$c ,frame)
                                                     ,@(and field-recognizer
                                                            `((,field-recognizer ,updater$c-field)))
@@ -669,7 +669,7 @@
                           :as updater$a :in updaters$a
                           :as updater$c-field :in updater$c-fields
                           :as field-recognizer :in recognizers
-                          :collect `(defthm ,(symbolicate package-witness updater "{PRESERVED}")
+                          :collect `(defthm ,(symbolicate$ package-witness updater "{PRESERVED}")
                                       (implies ,(if field-recognizer
                                                     `(and (,field-recognizer ,updater$c-field)
                                                           (,recognizer$a ,frame))

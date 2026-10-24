@@ -242,7 +242,7 @@
                                      (current-package state)))
                 (fields ',fields)
                 (%fields (loop$ :for field :in fields
-                               :collect (symbolicate package-witness "%" field)))
+                               :collect (symbolicate$ package-witness "%" field)))
 
                 (stobjs ',stobjs)
                 (world (w state))
@@ -301,7 +301,7 @@
                 (initial-element-names (loop$ :for field :in fields
                                              :as stobj-property :in stobj-property-list
                                              :collect (and (not stobj-property)
-                                                           (symbolicate package-witness "*" frame "-" field "-INITIAL-ELEMENT*"))))
+                                                           (symbolicate$ package-witness "*" frame "-" field "-INITIAL-ELEMENT*"))))
                 (initial-elements (loop$ :for initial-element-name :in initial-element-names
                                         :as creator :in creators
                                         :collect (if creator
@@ -318,27 +318,27 @@
 
                 ;; Interface Symbols
                 (recognizer (or recognizer
-                                (symbolicate package-witness frame (make-predicate-suffix frame))))
+                                (symbolicate$ package-witness frame (make-predicate-suffix frame))))
                 (creator (or creator
-                             (symbolicate package-witness "CREATE-" frame)))
+                             (symbolicate$ package-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate package-witness frame "-FIX")))
+                           (symbolicate$ package-witness frame "-FIX")))
                 (equiv (or equiv
-                           (symbolicate package-witness frame "-EQUIV")))
+                           (symbolicate$ package-witness frame "-EQUIV")))
                 (view (or view
-                          (symbolicate package-witness frame "-VIEW")))
+                          (symbolicate$ package-witness frame "-VIEW")))
                 (accessors (loop$ :for field :in fields
                                  :as accessor :in accessors
                                  :collect (or accessor
-                                              (symbolicate package-witness frame "-" field))))
+                                              (symbolicate$ package-witness frame "-" field))))
                 (updaters (loop$ :for field :in fields
                                 :as updater :in updaters
                                 :collect (or updater
-                                             (symbolicate package-witness frame "-" field "-SET"))))
+                                             (symbolicate$ package-witness frame "-" field "-SET"))))
 
                 ;; Prologue
-                (frame-begin (symbolicate package-witness frame "-BEGIN"))
-                (frame-end (symbolicate package-witness frame "-END"))
+                (frame-begin (symbolicate$ package-witness frame "-BEGIN"))
+                (frame-end (symbolicate$ package-witness frame "-END"))
                 (defconst-forms (loop$ :for initial-element-name :in initial-element-names
                                       :as initial-element :in ',initial-elements
                                       :as stobj-property :in stobj-property-list
@@ -350,40 +350,40 @@
                    ,@defconst-forms))
 
                 ;; Theorem Names
-                (true-listp-of-cons (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-OF-CONS"))
-                (true-listp-of-update-nth (symbolicate "ATOMIC-STOBJS" "TRUE-LISTP-OF-UPDATE-NTH"))
-                (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
-                (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
+                (true-listp-of-cons (symbolicate$ "ATOMIC-STOBJS" "TRUE-LISTP-OF-CONS"))
+                (true-listp-of-update-nth (symbolicate$ "ATOMIC-STOBJS" "TRUE-LISTP-OF-UPDATE-NTH"))
+                (len-of-cons (symbolicate$ "ATOMIC-STOBJS" "LEN-OF-CONS"))
+                (nth-of-cons (symbolicate$ "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
-                (recognizer-tp (symbolicate package-witness recognizer "-TP"))
-                (recognizer-cr (symbolicate package-witness recognizer "-CR"))
-                (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
-                (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
-                (recognizer-of-view (symbolicate package-witness recognizer "-OF-" view))
+                (recognizer-tp (symbolicate$ package-witness recognizer "-TP"))
+                (recognizer-cr (symbolicate$ package-witness recognizer "-CR"))
+                (recognizer-of-creator (symbolicate$ package-witness recognizer "-OF-" creator))
+                (recognizer-of-fixer (symbolicate$ package-witness recognizer "-OF-" fixer))
+                (recognizer-of-view (symbolicate$ package-witness recognizer "-OF-" view))
 
-                (fixer-tp (symbolicate package-witness fixer "-TP"))
-                (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
-                (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
+                (fixer-tp (symbolicate$ package-witness fixer "-TP"))
+                (fixer-when-recognizer (symbolicate$ package-witness fixer "-WHEN-" recognizer))
+                (fixer-when-not-recognizer (symbolicate$ package-witness fixer "-WHEN-NOT-" recognizer))
 
-                (equiv-tp (symbolicate package-witness equiv "-TP"))
-                (fixer-mod-equiv (symbolicate package-witness fixer "-MOD-" equiv))
-                (equiv-when-not-recognizer (symbolicate package-witness equiv "-WHEN-NOT-" recognizer))
+                (equiv-tp (symbolicate$ package-witness equiv "-TP"))
+                (fixer-mod-equiv (symbolicate$ package-witness fixer "-MOD-" equiv))
+                (equiv-when-not-recognizer (symbolicate$ package-witness equiv "-WHEN-NOT-" recognizer))
 
-                (view-tp (symbolicate package-witness view "-TP"))
-                (view-elim (symbolicate package-witness view "-ELIM"))
-                (equal-of-view (symbolicate package-witness "EQUAL-OF-" view))
+                (view-tp (symbolicate$ package-witness view "-TP"))
+                (view-elim (symbolicate$ package-witness view "-ELIM"))
+                (equal-of-view (symbolicate$ package-witness "EQUAL-OF-" view))
 
-                (%frame (symbolicate package-witness "%" frame))
-                (frame-equal (symbolicate package-witness frame "-EQUAL"))
-                (frame-equal-fc (symbolicate package-witness frame-equal "-FC"))
+                (%frame (symbolicate$ package-witness "%" frame))
+                (frame-equal (symbolicate$ package-witness frame "-EQUAL"))
+                (frame-equal-fc (symbolicate$ package-witness frame-equal "-FC"))
 
                 ;; Epilogue
-                (frame-theorems (symbolicate package-witness frame "-THEOREMS"))
-                (frame-aggressive (symbolicate package-witness frame "-AGGRESSIVE"))
+                (frame-theorems (symbolicate$ package-witness frame "-THEOREMS"))
+                (frame-aggressive (symbolicate$ package-witness frame "-AGGRESSIVE"))
                 (epilogue
                  `((in-theory
                      (enable ,@(loop$ :for updater :in updaters
-                                     :collect (symbolicate package-witness updater "-RW"))))
+                                     :collect (symbolicate$ package-witness updater "-RW"))))
 
                    (deflabel ,frame-end)
 
@@ -407,9 +407,9 @@
                         (loop$ :for i :from 1 :to (len fields)
                               :as recognizer :in recognizers
                               :when recognizer
-                              :collect (symbolicate package-witness view "-WHEN-NOT-" recognizer "-" i))
+                              :collect (symbolicate$ package-witness view "-WHEN-NOT-" recognizer "-" i))
                         (loop$ :for accessor :in accessors
-                              :collect (symbolicate package-witness accessor "-WHEN-NOT-" recognizer))))
+                              :collect (symbolicate$ package-witness accessor "-WHEN-NOT-" recognizer))))
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
@@ -447,7 +447,7 @@
                             :as initial-element-name :in initial-element-names
                             :when recognizer
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer "-CONSTRAINTS-" i)
+                                        (defthm ,(symbolicate$ "ATOMIC-STOBJS" recognizer "-CONSTRAINTS-" i)
                                           (and (booleanp (,recognizer ,field))
                                                (,recognizer ,initial-element))
                                           :rule-classes
@@ -465,7 +465,7 @@
                             :when (and recognizer
                                        fixer)
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
+                                        (defthm ,(symbolicate$ "ATOMIC-STOBJS" fixer "-CONSTRAINTS-" i)
                                           (and (,recognizer (,fixer ,field))
                                                (implies (,recognizer ,field)
                                                         (equal (,fixer ,field)
@@ -481,7 +481,7 @@
                             :as fixer :in fixers
                             :when fixer
                             :collect `(local
-                                        (defthm ,(symbolicate "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
+                                        (defthm ,(symbolicate$ "ATOMIC-STOBJS" equiv "-CONSTRAINTS-" i)
                                           (equal (,equiv ,%field ,field)
                                                  (equal (,fixer ,%field)
                                                         (,fixer ,field)))
@@ -705,7 +705,7 @@
                             :as recognizer :in recognizers
                             :as initial-element :in initial-elements
                             :when recognizer
-                            :collect `(defthmd ,(symbolicate package-witness view "-WHEN-NOT-" recognizer "-" i)
+                            :collect `(defthmd ,(symbolicate$ package-witness view "-WHEN-NOT-" recognizer "-" i)
                                         (implies (not (,recognizer ,field))
                                                  (equal (,view ,@fields)
                                                         (,view ,@(update-nth j initial-element fields))))))
@@ -737,7 +737,7 @@
                     ,@(loop$ :for recognizer :in recognizers
                             :as accessor :in accessors
                             :when recognizer
-                            :collect `(defthm ,(symbolicate package-witness recognizer "-OF-" accessor)
+                            :collect `(defthm ,(symbolicate$ package-witness recognizer "-OF-" accessor)
                                         (,recognizer (,accessor ,frame))
                                         :rule-classes
                                         (:rewrite
@@ -748,21 +748,21 @@
 
                     ,@(loop$ :for accessor :in accessors
                             :as initial-element :in initial-elements
-                            :collect `(defthmd ,(symbolicate package-witness accessor "-WHEN-NOT-" recognizer)
+                            :collect `(defthmd ,(symbolicate$ package-witness accessor "-WHEN-NOT-" recognizer)
                                         (implies (not (,recognizer ,frame))
                                                  (equal (,accessor ,frame)
                                                         ,initial-element))))
 
                     ,@(loop$ :for accessor :in accessors
                             :as initial-element :in initial-elements
-                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" creator)
+                            :collect `(defthm ,(symbolicate$ package-witness accessor "-OF-" creator)
                                         (equal (,accessor (,creator))
                                                ,initial-element)))
 
                     ,@(loop$ :for field :in fields
                             :as fixer :in fixers
                             :as accessor :in accessors
-                            :collect `(defthm ,(symbolicate package-witness accessor "-OF-" view)
+                            :collect `(defthm ,(symbolicate$ package-witness accessor "-OF-" view)
                                         (equal (,accessor (,view ,@fields))
                                                ,(if fixer
                                                     `(,fixer ,field)
@@ -774,7 +774,7 @@
                         (loop$ :for i :from 0 :to (1- (len fields))
                               :as field :in fields
                               :as updater :in updaters
-                              :collect `(defthmd ,(symbolicate package-witness updater "-RW")
+                              :collect `(defthmd ,(symbolicate$ package-witness updater "-RW")
                                           (implies (syntaxp (not (and (consp ,frame)
                                                                       (eq (car ,frame) ',view))))
                                                    (equal (,updater ,field ,frame)
@@ -785,7 +785,7 @@
                     ,@(loop$ :for i :from 0 :to (1- (len fields))
                             :as %field :in %fields
                             :as updater :in updaters
-                            :collect `(defthm ,(symbolicate package-witness updater "-OF-" view)
+                            :collect `(defthm ,(symbolicate$ package-witness updater "-OF-" view)
                                         (equal (,updater ,%field (,view ,@fields))
                                                (,view ,@(update-nth i %field fields)))
                                         :hints

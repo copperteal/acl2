@@ -104,7 +104,7 @@
                               dimensions
                               (list dimensions)))
               (default-length (car dimensions))
-              (default-length-name (symbolicate package-witness "*" name "-DEFAULT-LENGTH*"))
+              (default-length-name (symbolicate$ package-witness "*" name "-DEFAULT-LENGTH*"))
 
               (element-type ',element-type)
               (stobj-property (and (symbolp element-type)
@@ -125,7 +125,7 @@
                                 (cdadr stobj-property))))
               (specialize-element-type ',specialize-element-type)
               (initial-element ',initial-element)
-              (initial-element-name (symbolicate package-witness "*" name "-INITIAL-ELEMENT*"))
+              (initial-element-name (symbolicate$ package-witness "*" name "-INITIAL-ELEMENT*"))
               (resizable ',resizable)
 
               (inline ',inline)
@@ -144,30 +144,30 @@
 
               ;; Interface Symbols
               (contents (or contents
-                            (symbolicate package-witness name "-CONTENTS")))
-              (contents-recognizer-stobj-default (symbolicate package-witness contents "P"))
+                            (symbolicate$ package-witness name "-CONTENTS")))
+              (contents-recognizer-stobj-default (symbolicate$ package-witness contents "P"))
               (contents-recognizer (or contents-recognizer
-                                       (symbolicate package-witness contents (make-predicate-suffix contents))))
-              (recognizer-stobj-default (symbolicate package-witness name "P"))
+                                       (symbolicate$ package-witness contents (make-predicate-suffix contents))))
+              (recognizer-stobj-default (symbolicate$ package-witness name "P"))
               (recognizer (or recognizer
-                              (symbolicate package-witness name (make-predicate-suffix name))))
-              (creator-stobj-default (symbolicate package-witness "CREATE-" name))
+                              (symbolicate$ package-witness name (make-predicate-suffix name))))
+              (creator-stobj-default (symbolicate$ package-witness "CREATE-" name))
               (creator (or creator
-                           (symbolicate package-witness "CREATE-" name)))
+                           (symbolicate$ package-witness "CREATE-" name)))
               (fixer (or fixer
-                         (symbolicate package-witness name "-FIX")))
-              (length-stobj-default (symbolicate package-witness contents "-LENGTH"))
+                         (symbolicate$ package-witness name "-FIX")))
+              (length-stobj-default (symbolicate$ package-witness contents "-LENGTH"))
               (length (or length
-                          (symbolicate package-witness name "-LEN")))
-              (resizer-stobj-default (symbolicate package-witness "RESIZE-" contents))
+                          (symbolicate$ package-witness name "-LEN")))
+              (resizer-stobj-default (symbolicate$ package-witness "RESIZE-" contents))
               (resizer (or resizer
-                           (symbolicate package-witness name "-RSZ")))
-              (accessor-stobj-default (symbolicate package-witness contents "I"))
+                           (symbolicate$ package-witness name "-RSZ")))
+              (accessor-stobj-default (symbolicate$ package-witness contents "I"))
               (accessor (or accessor
-                            (symbolicate package-witness name "-REF")))
-              (updater-stobj-default (symbolicate package-witness "UPDATE-" contents "I"))
+                            (symbolicate$ package-witness name "-REF")))
+              (updater-stobj-default (symbolicate$ package-witness "UPDATE-" contents "I"))
               (updater (or updater
-                           (symbolicate package-witness name "-SET")))
+                           (symbolicate$ package-witness name "-SET")))
 
               ;; Make Doublets
               (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
@@ -186,10 +186,10 @@
                                      `((,updater-stobj-default ,updater)))))
 
               ;; Prologue
-              (begin-label (symbolicate package-witness name "-BEGIN"))
-              (end-label (symbolicate package-witness name "-END"))
-              (fixer-hack (symbolicate package-witness name "/FIXER-HACK"))
-              (contents/fh (symbolicate package-witness contents "/FIXER-HACK"))
+              (begin-label (symbolicate$ package-witness name "-BEGIN"))
+              (end-label (symbolicate$ package-witness name "-END"))
+              (fixer-hack (symbolicate$ package-witness name "/FIXER-HACK"))
+              (contents/fh (symbolicate$ package-witness contents "/FIXER-HACK"))
               (prologue
                `((deflabel ,begin-label)
 
@@ -227,59 +227,59 @@
                    :non-executable t)))
 
               ;; Theorem Names
-              (stobj-recognizer-of-stobj-creator (symbolicate "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
+              (stobj-recognizer-of-stobj-creator (symbolicate$ "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
 
-              (contents-recognizer-tp (symbolicate package-witness contents-recognizer "-TP"))
-              (contents-recognizer-cr (symbolicate package-witness contents-recognizer "-CR"))
+              (contents-recognizer-tp (symbolicate$ package-witness contents-recognizer "-TP"))
+              (contents-recognizer-cr (symbolicate$ package-witness contents-recognizer "-CR"))
 
-              (recognizer-tp (symbolicate package-witness recognizer "-TP"))
-              (recognizer-cr (symbolicate package-witness recognizer "-CR"))
-              (recognizer-of-creator (symbolicate package-witness recognizer "-OF-" creator))
-              (recognizer-of-resizer (symbolicate package-witness recognizer "-OF-" resizer))
-              (recognizer-of-updater (symbolicate package-witness recognizer "-OF-" updater))
+              (recognizer-tp (symbolicate$ package-witness recognizer "-TP"))
+              (recognizer-cr (symbolicate$ package-witness recognizer "-CR"))
+              (recognizer-of-creator (symbolicate$ package-witness recognizer "-OF-" creator))
+              (recognizer-of-resizer (symbolicate$ package-witness recognizer "-OF-" resizer))
+              (recognizer-of-updater (symbolicate$ package-witness recognizer "-OF-" updater))
 
-              (length-tp (symbolicate package-witness length "-TP"))
-              (length-of-creator (symbolicate package-witness length "-OF-" creator))
-              (length-of-resizer (symbolicate package-witness length "-OF-" resizer))
-              (length-of-updater (symbolicate package-witness length "-OF-" updater))
-              (length-rw (symbolicate package-witness length "-RW"))
+              (length-tp (symbolicate$ package-witness length "-TP"))
+              (length-of-creator (symbolicate$ package-witness length "-OF-" creator))
+              (length-of-resizer (symbolicate$ package-witness length "-OF-" resizer))
+              (length-of-updater (symbolicate$ package-witness length "-OF-" updater))
+              (length-rw (symbolicate$ package-witness length "-RW"))
 
-              (resizer-tp (symbolicate package-witness resizer "-TP"))
-              (resizer-of-creator (symbolicate package-witness resizer "-OF-" creator))
-              (resizer-of-length (symbolicate package-witness resizer "-OF-" length))
-              (resizer-of-resizer (symbolicate package-witness resizer "-OF-" resizer))
-              (resizer-of-updater (symbolicate package-witness resizer "-OF-" updater))
-              (resizer-of-updater-keep (symbolicate package-witness resizer-of-updater "-KEEP"))
-              (resizer-of-updater-drop (symbolicate package-witness resizer-of-updater "-DROP"))
-              (resizer-rw (symbolicate package-witness resizer "-RW"))
+              (resizer-tp (symbolicate$ package-witness resizer "-TP"))
+              (resizer-of-creator (symbolicate$ package-witness resizer "-OF-" creator))
+              (resizer-of-length (symbolicate$ package-witness resizer "-OF-" length))
+              (resizer-of-resizer (symbolicate$ package-witness resizer "-OF-" resizer))
+              (resizer-of-updater (symbolicate$ package-witness resizer "-OF-" updater))
+              (resizer-of-updater-keep (symbolicate$ package-witness resizer-of-updater "-KEEP"))
+              (resizer-of-updater-drop (symbolicate$ package-witness resizer-of-updater "-DROP"))
+              (resizer-rw (symbolicate$ package-witness resizer "-RW"))
 
-              (typep$-of-accessor (symbolicate package-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
-              (accessor-of-creator (symbolicate package-witness accessor "-OF-" creator))
-              (accessor-of-resizer (symbolicate package-witness accessor "-OF-" resizer))
-              (accessor-of-resizer-inner (symbolicate package-witness accessor-of-resizer "-INNER"))
-              (accessor-of-resizer-outer (symbolicate package-witness accessor-of-resizer "-OUTER"))
-              (accessor-of-updater (symbolicate package-witness accessor "-OF-" updater))
-              (accessor-of-updater-same (symbolicate package-witness accessor-of-updater "-SAME"))
-              (accessor-of-updater-diff (symbolicate package-witness accessor-of-updater "-DIFF"))
+              (typep$-of-accessor (symbolicate$ package-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
+              (accessor-of-creator (symbolicate$ package-witness accessor "-OF-" creator))
+              (accessor-of-resizer (symbolicate$ package-witness accessor "-OF-" resizer))
+              (accessor-of-resizer-inner (symbolicate$ package-witness accessor-of-resizer "-INNER"))
+              (accessor-of-resizer-outer (symbolicate$ package-witness accessor-of-resizer "-OUTER"))
+              (accessor-of-updater (symbolicate$ package-witness accessor "-OF-" updater))
+              (accessor-of-updater-same (symbolicate$ package-witness accessor-of-updater "-SAME"))
+              (accessor-of-updater-diff (symbolicate$ package-witness accessor-of-updater "-DIFF"))
 
-              (updater-tp (symbolicate package-witness updater "-TP"))
-              (updater-of-creator (symbolicate package-witness updater "-OF-" creator))
-              (updater-of-resizer (symbolicate package-witness updater "-OF-" resizer))
-              (updater-of-resizer-inner (symbolicate package-witness updater-of-resizer "-INNER"))
-              (updater-of-resizer-outer (symbolicate package-witness updater-of-resizer "-OUTER"))
-              (updater-of-accessor (symbolicate package-witness updater "-OF-" accessor))
-              (updater-of-updater (symbolicate package-witness updater "-OF-" updater))
-              (updater-of-updater-same (symbolicate package-witness updater-of-updater "-SAME"))
-              (updater-of-updater-diff (symbolicate package-witness updater-of-updater "-DIFF"))
+              (updater-tp (symbolicate$ package-witness updater "-TP"))
+              (updater-of-creator (symbolicate$ package-witness updater "-OF-" creator))
+              (updater-of-resizer (symbolicate$ package-witness updater "-OF-" resizer))
+              (updater-of-resizer-inner (symbolicate$ package-witness updater-of-resizer "-INNER"))
+              (updater-of-resizer-outer (symbolicate$ package-witness updater-of-resizer "-OUTER"))
+              (updater-of-accessor (symbolicate$ package-witness updater "-OF-" accessor))
+              (updater-of-updater (symbolicate$ package-witness updater "-OF-" updater))
+              (updater-of-updater-same (symbolicate$ package-witness updater-of-updater "-SAME"))
+              (updater-of-updater-diff (symbolicate$ package-witness updater-of-updater "-DIFF"))
 
-              (fixer-def (symbolicate package-witness fixer "-DEF"))
-              (fixer-tp (symbolicate package-witness fixer "-TP"))
-              (recognizer-of-fixer (symbolicate package-witness recognizer "-OF-" fixer))
-              (fixer-when-recognizer (symbolicate package-witness fixer "-WHEN-" recognizer))
-              (fixer-when-not-recognizer (symbolicate package-witness fixer "-WHEN-NOT-" recognizer))
+              (fixer-def (symbolicate$ package-witness fixer "-DEF"))
+              (fixer-tp (symbolicate$ package-witness fixer "-TP"))
+              (recognizer-of-fixer (symbolicate$ package-witness recognizer "-OF-" fixer))
+              (fixer-when-recognizer (symbolicate$ package-witness fixer "-WHEN-" recognizer))
+              (fixer-when-not-recognizer (symbolicate$ package-witness fixer "-WHEN-NOT-" recognizer))
 
               ;; Epilogue
-              (theorems (symbolicate package-witness name "-THEOREMS"))
+              (theorems (symbolicate$ package-witness name "-THEOREMS"))
               (epilogue
                `((deflabel ,end-label)
 

@@ -326,15 +326,15 @@
                 (debug ',debug)
 
                 (frame$a (or logic
-                             (symbolicate package-witness frame "$A")))
+                             (symbolicate$ package-witness frame "$A")))
                 (frame$c (or exec
-                             (symbolicate package-witness frame "$C")))
+                             (symbolicate$ package-witness frame "$C")))
                 (recognizer (or recognizer
-                                (symbolicate package-witness frame (make-predicate-suffix frame))))
+                                (symbolicate$ package-witness frame (make-predicate-suffix frame))))
                 (creator (or creator
-                             (symbolicate package-witness "CREATE-" frame)))
+                             (symbolicate$ package-witness "CREATE-" frame)))
                 (fixer (or fixer
-                           (symbolicate package-witness frame "-FIX"))))
+                           (symbolicate$ package-witness frame "-FIX"))))
 
            `(progn
               (define-frame$c ,frame$c
@@ -410,14 +410,14 @@
                        `(:package-witness ,package-witness))
                 :debug ,debug)
 
-              (defmacro ,(symbolicate package-witness "THE-" frame) (,frame)
+              (defmacro ,(symbolicate$ package-witness "THE-" frame) (,frame)
                 (declare (xargs :guard (symbolp ,frame)))
                 `(mbe :logic ,(list ',fixer ,frame)
                       :exec ,,frame))
 
               (in-theory
-                (disable ,(symbolicate (if ,package-witness-supplied-p
-                                           package-witness
-                                           frame$c)
-                                       frame$c
-                                       "-THEOREMS")))))))))
+                (disable ,(symbolicate$ (if ,package-witness-supplied-p
+                                            package-witness
+                                            frame$c)
+                                        frame$c
+                                        "-THEOREMS")))))))))

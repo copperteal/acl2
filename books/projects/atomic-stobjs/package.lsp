@@ -35,7 +35,7 @@
              *acl2-exports*
              *type-spec-exports*
              '(package-witness-p
-               symbolicate
+               symbolicate$
                with-books
                make-predicate-suffix
                coupledp)

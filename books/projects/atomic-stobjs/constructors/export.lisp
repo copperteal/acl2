@@ -47,22 +47,22 @@
                   :guard (and (symbolp vector)
                               (package-witness-p package-witness))
                   :verify-guards nil))
-  (let* ((%vector (symbolicate package-witness "%" vector))
+  (let* ((%vector (symbolicate$ package-witness "%" vector))
 
-         (export (symbolicate package-witness vector "-EXPORT"))
-         (export-begin (symbolicate package-witness export "-BEGIN"))
-         (export-end (symbolicate package-witness export "-END"))
-         (export-theory (symbolicate package-witness export "-THEORY"))
-         (exportp (symbolicate package-witness export (make-predicate-suffix export)))
-         (exportp-rec (symbolicate package-witness exportp "-REC"))
-         (export-acc (symbolicate package-witness export "-ACC"))
-         (import (symbolicate package-witness vector "-IMPORT"))
-         (import-rec (symbolicate package-witness import "-REC"))
+         (export (symbolicate$ package-witness vector "-EXPORT"))
+         (export-begin (symbolicate$ package-witness export "-BEGIN"))
+         (export-end (symbolicate$ package-witness export "-END"))
+         (export-theory (symbolicate$ package-witness export "-THEORY"))
+         (exportp (symbolicate$ package-witness export (make-predicate-suffix export)))
+         (exportp-rec (symbolicate$ package-witness exportp "-REC"))
+         (export-acc (symbolicate$ package-witness export "-ACC"))
+         (import (symbolicate$ package-witness vector "-IMPORT"))
+         (import-rec (symbolicate$ package-witness import "-REC"))
 
          (stobj-property (getpropc vector 'acl2::stobj))
          (creator (cdadr stobj-property))
-         (%creator (symbolicate %vector "%" creator))
-         (the-vector (symbolicate vector "THE-" vector))
+         (%creator (symbolicate$ %vector "%" creator))
+         (the-vector (symbolicate$ vector "THE-" vector))
          (length (second (third stobj-property)))
          (resizer (third (third stobj-property)))
          (accessor (fourth (third stobj-property)))
@@ -71,20 +71,20 @@
          (world (w state))
          (coupledp (cdr (assoc vector (table-alist 'coupledp world))))
          (coupledp-rec (and coupledp
-                            (symbolicate coupledp coupledp "-REC")))
+                            (symbolicate$ coupledp coupledp "-REC")))
 
          (copy (cdr (assoc vector (table-alist 'copy world))))
-         (copy-theory (symbolicate copy copy "-THEORY"))
+         (copy-theory (symbolicate$ copy copy "-THEORY"))
 
          (stobj$a-property (stobj$a-property vector world))
          (vector$a (access vector$a-property stobj$a-property :name))
-         (recognizer$a-aux (symbolicate vector$a vector$a "-AUX-P"))
-         (vector$a-theorems (symbolicate vector$a vector$a "-THEOREMS"))
-         (vector$a-aggressive (symbolicate vector$a vector$a "-AGGRESSIVE"))
-         (vector$a-constraints (symbolicate "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
-         (exportp-constraints (symbolicate "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
-         (export-constraints (symbolicate "ATOMIC-STOBJS" export "-CONSTRAINTS"))
-         (import-constraints (symbolicate "ATOMIC-STOBJS" import "-CONSTRAINTS"))
+         (recognizer$a-aux (symbolicate$ vector$a vector$a "-AUX-P"))
+         (vector$a-theorems (symbolicate$ vector$a vector$a "-THEOREMS"))
+         (vector$a-aggressive (symbolicate$ vector$a vector$a "-AGGRESSIVE"))
+         (vector$a-constraints (symbolicate$ "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
+         (exportp-constraints (symbolicate$ "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
+         (export-constraints (symbolicate$ "ATOMIC-STOBJS" export "-CONSTRAINTS"))
+         (import-constraints (symbolicate$ "ATOMIC-STOBJS" import "-CONSTRAINTS"))
          (recognizer$a (access vector$a-property stobj$a-property :recognizer))
          (creator$a (access vector$a-property stobj$a-property :creator))
          (fixer$a (access vector$a-property stobj$a-property :fixer))
@@ -94,10 +94,10 @@
          (accessor$a (access vector$a-property stobj$a-property :accessor))
          (updater$a (access vector$a-property stobj$a-property :updater))
 
-         (index (symbolicate package-witness "I"))
+         (index (symbolicate$ package-witness "I"))
          (resizable (access vector$a-property stobj$a-property :resizable))
          (element (access vector$a-property stobj$a-property :element))
-         (%element (symbolicate package-witness "%" element))
+         (%element (symbolicate$ package-witness "%" element))
          (element-stobj-property (getpropc element 'acl2::stobj))
          (element-stobj$a-property (stobj$a-property element world))
          (initial-element-name (access vector$a-property stobj$a-property :initial-element-name))
@@ -134,28 +134,28 @@
          (element-import (third element-export-list))
 
          ;; Theorem Names
-         (element-recognizer-constraints (symbolicate "ATOMIC-STOBJS" element-recognizer "-CONSTRAINTS"))
-         (element-fixer-constraints (symbolicate "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
-         (element-equiv-constraints (symbolicate "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
+         (element-recognizer-constraints (symbolicate$ "ATOMIC-STOBJS" element-recognizer "-CONSTRAINTS"))
+         (element-fixer-constraints (symbolicate$ "ATOMIC-STOBJS" element-fixer "-CONSTRAINTS"))
+         (element-equiv-constraints (symbolicate$ "ATOMIC-STOBJS" element-equiv "-CONSTRAINTS"))
 
-         (exportp-tp (symbolicate package-witness exportp "-TP"))
-         (exportp-cr (symbolicate package-witness exportp "-CR"))
+         (exportp-tp (symbolicate$ package-witness exportp "-TP"))
+         (exportp-cr (symbolicate$ package-witness exportp "-CR"))
 
-         (export-tp (symbolicate package-witness export "-TP"))
-         (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
-         (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
+         (export-tp (symbolicate$ package-witness export "-TP"))
+         (exportp-of-export (symbolicate$ package-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate$ package-witness export "-WHEN-NOT-" recognizer$a))
 
-         (import-tp (symbolicate package-witness import "-TP"))
-         (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
-         (coupledp-constraints (symbolicate "ATOMIC-STOBJS" coupledp "-CONSTRAINTS"))
-         (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
-         (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
-         (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
-         (length$a-of-import (symbolicate package-witness length$a "-OF-" import))
-         (accessor$a-of-import (symbolicate package-witness accessor$a "-OF-" import))
+         (import-tp (symbolicate$ package-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate$ package-witness recognizer$a "-OF-" import))
+         (coupledp-constraints (symbolicate$ "ATOMIC-STOBJS" coupledp "-CONSTRAINTS"))
+         (coupledp-of-import (symbolicate$ package-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate$ package-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate$ package-witness import "-IGNORES-2"))
+         (length$a-of-import (symbolicate$ package-witness length$a "-OF-" import))
+         (accessor$a-of-import (symbolicate$ package-witness accessor$a "-OF-" import))
 
-         (export-of-import (symbolicate package-witness export "-OF-" import))
-         (import-of-export (symbolicate package-witness import "-OF-" export))
+         (export-of-import (symbolicate$ package-witness export "-OF-" import))
+         (import-of-export (symbolicate$ package-witness import "-OF-" export))
 
          (fi-bindings
           (list `(lem-vector$a::element-recognizer ,(or element-recognizer
@@ -349,7 +349,7 @@
          ,@(and element-stobj-property
                 `((local
                     (in-theory
-                      (enable ,(symbolicate element element "-EXPORT-THEORY"))))))
+                      (enable ,(symbolicate$ element element "-EXPORT-THEORY"))))))
 
          (local
            (defthm ,vector$a-constraints
@@ -951,25 +951,25 @@
                   :guard (and (symbolp hash-table)
                               (package-witness-p package-witness))
                   :verify-guards nil))
-  (let* ((%hash-table (symbolicate package-witness "%" hash-table))
-         (contents (symbolicate hash-table hash-table "-CONTENTS"))
-         (set (symbolicate package-witness "SET"))
-         (%set (symbolicate package-witness "%SET"))
+  (let* ((%hash-table (symbolicate$ package-witness "%" hash-table))
+         (contents (symbolicate$ hash-table hash-table "-CONTENTS"))
+         (set (symbolicate$ package-witness "SET"))
+         (%set (symbolicate$ package-witness "%SET"))
 
-         (export (symbolicate package-witness hash-table "-EXPORT"))
-         (export-begin (symbolicate package-witness export "-BEGIN"))
-         (export-end (symbolicate package-witness export "-END"))
-         (export-theory (symbolicate package-witness export "-THEORY"))
-         (exportp (symbolicate package-witness export (make-predicate-suffix export)))
-         (exportp-rec (symbolicate package-witness exportp "-REC"))
-         (export-acc (symbolicate package-witness export "-ACC"))
-         (import (symbolicate package-witness hash-table "-IMPORT"))
-         (import-rec (symbolicate package-witness import "-REC"))
+         (export (symbolicate$ package-witness hash-table "-EXPORT"))
+         (export-begin (symbolicate$ package-witness export "-BEGIN"))
+         (export-end (symbolicate$ package-witness export "-END"))
+         (export-theory (symbolicate$ package-witness export "-THEORY"))
+         (exportp (symbolicate$ package-witness export (make-predicate-suffix export)))
+         (exportp-rec (symbolicate$ package-witness exportp "-REC"))
+         (export-acc (symbolicate$ package-witness export "-ACC"))
+         (import (symbolicate$ package-witness hash-table "-IMPORT"))
+         (import-rec (symbolicate$ package-witness import "-REC"))
 
          (stobj-property (getpropc hash-table 'acl2::stobj))
          (creator (cdadr stobj-property))
-         (%creator (symbolicate %hash-table "%" creator))
-         (the-hash-table (symbolicate hash-table "THE-" hash-table))
+         (%creator (symbolicate$ %hash-table "%" creator))
+         (the-hash-table (symbolicate$ hash-table "THE-" hash-table))
          (accessor (second (third stobj-property)))
          (updater (third (third stobj-property)))
          (init (ninth (third stobj-property)))
@@ -978,15 +978,15 @@
 
          (world (w state))
          (coupledp (cdr (assoc hash-table (table-alist 'coupledp world))))
-         (coupledp-rec (symbolicate coupledp coupledp "-REC"))
+         (coupledp-rec (symbolicate$ coupledp coupledp "-REC"))
 
          (copy (cdr (assoc hash-table (table-alist 'copy world))))
-         (copy-theory (symbolicate copy copy "-THEORY"))
+         (copy-theory (symbolicate$ copy copy "-THEORY"))
 
          (stobj$a-property (stobj$a-property hash-table world))
          (hash-table$a (access hash-table$a-property stobj$a-property :name))
-         (hash-table$a-theorems (symbolicate hash-table$a hash-table$a "-THEOREMS"))
-         (hash-table$a-aggressive (symbolicate hash-table$a hash-table$a "-AGGRESSIVE"))
+         (hash-table$a-theorems (symbolicate$ hash-table$a hash-table$a "-THEOREMS"))
+         (hash-table$a-aggressive (symbolicate$ hash-table$a hash-table$a "-AGGRESSIVE"))
          (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
          (creator$a (access hash-table$a-property stobj$a-property :creator))
          (fixer$a (access hash-table$a-property stobj$a-property :fixer))
@@ -1005,28 +1005,28 @@
          (keys$a-fix (fourth (access hash-table$a-property stobj$a-property :keys)))
          (keys$a-equiv (fifth (access hash-table$a-property stobj$a-property :keys)))
 
-         (contents$a (symbolicate hash-table$a hash-table$a "-CONTENTS"))
-         (contents-recognizer$a (symbolicate hash-table$a contents$a "-P"))
-         (contents-creator$a (symbolicate hash-table$a "CREATE-" contents$a))
-         (contents-fixer$a (symbolicate hash-table$a contents$a "-FIX"))
-         (contents-accessor$a (symbolicate hash-table$a contents$a "-GET"))
-         (contents-updater$a (symbolicate hash-table$a contents$a "-PUT"))
-         (contents-boundp$a (symbolicate hash-table$a contents$a "-BNDP"))
-         (contents-getp$a (symbolicate hash-table$a contents$a "-GETP"))
-         (contents-remover$a (symbolicate hash-table$a contents$a "-REM"))
-         (contents-count$a (symbolicate hash-table$a contents$a "-CNT"))
-         (contents-clear$a (symbolicate hash-table$a contents$a "-CLR"))
-         (contents-init$a (symbolicate hash-table$a contents$a "-INIT"))
+         (contents$a (symbolicate$ hash-table$a hash-table$a "-CONTENTS"))
+         (contents-recognizer$a (symbolicate$ hash-table$a contents$a "-P"))
+         (contents-creator$a (symbolicate$ hash-table$a "CREATE-" contents$a))
+         (contents-fixer$a (symbolicate$ hash-table$a contents$a "-FIX"))
+         (contents-accessor$a (symbolicate$ hash-table$a contents$a "-GET"))
+         (contents-updater$a (symbolicate$ hash-table$a contents$a "-PUT"))
+         (contents-boundp$a (symbolicate$ hash-table$a contents$a "-BNDP"))
+         (contents-getp$a (symbolicate$ hash-table$a contents$a "-GETP"))
+         (contents-remover$a (symbolicate$ hash-table$a contents$a "-REM"))
+         (contents-count$a (symbolicate$ hash-table$a contents$a "-CNT"))
+         (contents-clear$a (symbolicate$ hash-table$a contents$a "-CLR"))
+         (contents-init$a (symbolicate$ hash-table$a contents$a "-INIT"))
 
          (key (access hash-table$a-property stobj$a-property :key))
-         (%key (symbolicate key "%" key))
+         (%key (symbolicate$ key "%" key))
          (key-recognizer (access hash-table$a-property stobj$a-property :key-recognizer))
          (default-key-name (access hash-table$a-property stobj$a-property :default-key-name))
          (key-fixer (access hash-table$a-property stobj$a-property :key-fixer))
          (key-equiv (access hash-table$a-property stobj$a-property :key-equiv))
 
          (val (access hash-table$a-property stobj$a-property :val))
-         (%val (symbolicate val "%" val))
+         (%val (symbolicate$ val "%" val))
          (val-stobj-property (getpropc val 'acl2::stobj))
          (val-stobj$a-property (stobj$a-property val world))
          (val-creator (access stobj$a-property val-stobj$a-property :creator))
@@ -1057,52 +1057,52 @@
          (val-import (third val-export-list))
 
          ;; Theorem Names
-         (key-recognizer-constraints (symbolicate "ATOMIC-STOBJS" key-recognizer "-CONSTRAINT-1"))
-         (key-fixer-constraints (symbolicate "ATOMIC-STOBJS" key-fixer "-CONSTRAINT-1"))
-         (key-equiv-constraints (symbolicate "ATOMIC-STOBJS" key-equiv "-CONSTRAINT-1"))
+         (key-recognizer-constraints (symbolicate$ "ATOMIC-STOBJS" key-recognizer "-CONSTRAINT-1"))
+         (key-fixer-constraints (symbolicate$ "ATOMIC-STOBJS" key-fixer "-CONSTRAINT-1"))
+         (key-equiv-constraints (symbolicate$ "ATOMIC-STOBJS" key-equiv "-CONSTRAINT-1"))
 
-         (val-recognizer-constraints (symbolicate "ATOMIC-STOBJS" val-recognizer "-CONSTRAINT-2"))
-         (val-fixer-constraints (symbolicate "ATOMIC-STOBJS" val-fixer "-CONSTRAINT-2"))
-         (val-equiv-constraints (symbolicate "ATOMIC-STOBJS" val-equiv "-CONSTRAINT-2"))
+         (val-recognizer-constraints (symbolicate$ "ATOMIC-STOBJS" val-recognizer "-CONSTRAINT-2"))
+         (val-fixer-constraints (symbolicate$ "ATOMIC-STOBJS" val-fixer "-CONSTRAINT-2"))
+         (val-equiv-constraints (symbolicate$ "ATOMIC-STOBJS" val-equiv "-CONSTRAINT-2"))
 
-         (hash-table$a-constraints/unique (symbolicate "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/UNIQUE"))
-         (hash-table$a-constraints/copyable (symbolicate "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/COPYABLE"))
+         (hash-table$a-constraints/unique (symbolicate$ "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/UNIQUE"))
+         (hash-table$a-constraints/copyable (symbolicate$ "ATOMIC-STOBJS" hash-table$a "-CONSTRAINTS/COPYABLE"))
 
-         (exportp-constraints (symbolicate "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
-         (exportp-rec-tp (symbolicate "ATOMIC-STOBJS" exportp-rec "-TP"))
-         (exportp-rec-cr (symbolicate "ATOMIC-STOBJS" exportp-rec "-CR"))
-         (exportp-tp (symbolicate package-witness exportp "-TP"))
-         (exportp-cr (symbolicate package-witness exportp "-CR"))
-         (mapp-when-exportp-rec (symbolicate "ATOMIC-STOBJS" "MAPP-WHEN-" exportp-rec))
-         (key-recognizer-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS" key-recognizer "-HEAD-WHEN-" exportp-rec "-1"))
-         (val-export-p-head-when-exportp-rec (symbolicate "ATOMIC-STOBJS"
-                                                          (or val-export-p
-                                                              val-recognizer)
-                                                          "-HEAD-WHEN-"
-                                                          exportp-rec
-                                                          "-2"))
-         (exportp-rec-of-tail (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-TAIL"))
-         (exportp-rec-of-update (symbolicate "ATOMIC-STOBJS" exportp-rec "-OF-UPDATE"))
-         (keysp-of-keys-when-exportp-rec (symbolicate "ATOMIC-STOBJS" keys$ap "-OF-KEYS-WHEN-" exportp-rec))
+         (exportp-constraints (symbolicate$ "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
+         (exportp-rec-tp (symbolicate$ "ATOMIC-STOBJS" exportp-rec "-TP"))
+         (exportp-rec-cr (symbolicate$ "ATOMIC-STOBJS" exportp-rec "-CR"))
+         (exportp-tp (symbolicate$ package-witness exportp "-TP"))
+         (exportp-cr (symbolicate$ package-witness exportp "-CR"))
+         (mapp-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS" "MAPP-WHEN-" exportp-rec))
+         (key-recognizer-head-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS" key-recognizer "-HEAD-WHEN-" exportp-rec "-1"))
+         (val-export-p-head-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS"
+                                                           (or val-export-p
+                                                               val-recognizer)
+                                                           "-HEAD-WHEN-"
+                                                           exportp-rec
+                                                           "-2"))
+         (exportp-rec-of-tail (symbolicate$ "ATOMIC-STOBJS" exportp-rec "-OF-TAIL"))
+         (exportp-rec-of-update (symbolicate$ "ATOMIC-STOBJS" exportp-rec "-OF-UPDATE"))
+         (keysp-of-keys-when-exportp-rec (symbolicate$ "ATOMIC-STOBJS" keys$ap "-OF-KEYS-WHEN-" exportp-rec))
 
-         (export-constraints (symbolicate "ATOMIC-STOBJS" export "-CONSTRAINTS"))
-         (export-tp (symbolicate package-witness export "-TP"))
-         (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
-         (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
+         (export-constraints (symbolicate$ "ATOMIC-STOBJS" export "-CONSTRAINTS"))
+         (export-tp (symbolicate$ package-witness export "-TP"))
+         (exportp-of-export (symbolicate$ package-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate$ package-witness export "-WHEN-NOT-" recognizer$a))
 
-         (import-constraints (symbolicate "ATOMIC-STOBJS" import "-CONSTRAINTS"))
-         (import-tp (symbolicate package-witness import "-TP"))
-         (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
-         (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
-         (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
-         (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
-         (keys$a-of-import (symbolicate package-witness keys$a "-OF-" import))
-         (boundp$a-of-import (symbolicate package-witness boundp$a "-OF-" import))
-         (accessor$a-of-import (symbolicate package-witness accessor$a "-OF-" import))
-         (count$a-of-import (symbolicate package-witness count$a "-OF-" import))
+         (import-constraints (symbolicate$ "ATOMIC-STOBJS" import "-CONSTRAINTS"))
+         (import-tp (symbolicate$ package-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate$ package-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate$ package-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate$ package-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate$ package-witness import "-IGNORES-2"))
+         (keys$a-of-import (symbolicate$ package-witness keys$a "-OF-" import))
+         (boundp$a-of-import (symbolicate$ package-witness boundp$a "-OF-" import))
+         (accessor$a-of-import (symbolicate$ package-witness accessor$a "-OF-" import))
+         (count$a-of-import (symbolicate$ package-witness count$a "-OF-" import))
 
-         (export-of-import (symbolicate package-witness export "-OF-" import))
-         (import-of-export (symbolicate package-witness import "-OF-" export))
+         (export-of-import (symbolicate$ package-witness export "-OF-" import))
+         (import-of-export (symbolicate$ package-witness import "-OF-" export))
 
          (fi-bindings
           (list `(lem-hash-table$a::key-recognizer ,(or key-recognizer
@@ -1336,7 +1336,7 @@
          ,@(and val-stobj-property
                 `((local
                     (in-theory
-                      (enable ,(symbolicate val val "-EXPORT-THEORY"))))))
+                      (enable ,(symbolicate$ val val "-EXPORT-THEORY"))))))
 
          (local
            (defthm ,hash-table$a-constraints/unique
@@ -2240,34 +2240,34 @@
                   :guard (and (symbolp frame)
                               (package-witness-p package-witness))
                   :verify-guards nil))
-  (let* ((%frame (symbolicate package-witness "%" frame))
+  (let* ((%frame (symbolicate$ package-witness "%" frame))
 
-         (export (symbolicate package-witness frame "-EXPORT"))
-         (export-begin (symbolicate package-witness export "-BEGIN"))
-         (export-end (symbolicate package-witness export "-END"))
-         (export-theory (symbolicate package-witness export "-THEORY"))
-         (exportp (symbolicate package-witness export (make-predicate-suffix export)))
-         (import (symbolicate package-witness frame "-IMPORT"))
+         (export (symbolicate$ package-witness frame "-EXPORT"))
+         (export-begin (symbolicate$ package-witness export "-BEGIN"))
+         (export-end (symbolicate$ package-witness export "-END"))
+         (export-theory (symbolicate$ package-witness export "-THEORY"))
+         (exportp (symbolicate$ package-witness export (make-predicate-suffix export)))
+         (import (symbolicate$ package-witness frame "-IMPORT"))
 
          (stobj-property (getpropc frame 'acl2::stobj))
          (creator (cdadr stobj-property))
-         (%creator (symbolicate %frame "%" creator))
-         (the-frame (symbolicate frame "THE-" frame))
+         (%creator (symbolicate$ %frame "%" creator))
+         (the-frame (symbolicate$ frame "THE-" frame))
 
          (world (w state))
          (stobj$a-property (stobj$a-property frame world))
          (frame$a (access frame$a-property stobj$a-property :name))
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
-         (frame$a-theorems (symbolicate frame$a frame$a "-THEOREMS"))
-         (frame$a-aggressive (symbolicate frame$a frame$a "-AGGRESSIVE"))
+         (frame$a-theorems (symbolicate$ frame$a frame$a "-THEOREMS"))
+         (frame$a-aggressive (symbolicate$ frame$a frame$a "-AGGRESSIVE"))
          (recognizer$a (access frame$a-property stobj$a-property :recognizer))
          (creator$a (access frame$a-property stobj$a-property :creator))
          (fixer$a (access frame$a-property stobj$a-property :fixer))
 
          (fields (access frame$a-property stobj$a-property :fields))
          (%fields (loop$ :for field :in fields
-                        :collect (symbolicate package-witness "%" field)))
+                        :collect (symbolicate$ package-witness "%" field)))
          (stobjs (access frame$a-property stobj$a-property :stobjs))
          (stobj-property-list (loop$ :for stobj :in stobjs
                                     :collect (and (symbolp stobj)
@@ -2351,27 +2351,27 @@
          (coupledp (cdr (assoc frame (table-alist 'coupledp world))))
 
          (copy (cdr (assoc frame (table-alist 'copy world))))
-         (copy-theory (symbolicate copy copy "-THEORY"))
+         (copy-theory (symbolicate$ copy copy "-THEORY"))
 
          ;; Theorem Names
-         (len-of-cons (symbolicate "ATOMIC-STOBJS" "LEN-OF-CONS"))
-         (nth-of-cons (symbolicate "ATOMIC-STOBJS" "NTH-OF-CONS"))
+         (len-of-cons (symbolicate$ "ATOMIC-STOBJS" "LEN-OF-CONS"))
+         (nth-of-cons (symbolicate$ "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
-         (exportp-tp (symbolicate package-witness exportp "-TP"))
-         (exportp-cr (symbolicate package-witness exportp "-CR"))
+         (exportp-tp (symbolicate$ package-witness exportp "-TP"))
+         (exportp-cr (symbolicate$ package-witness exportp "-CR"))
 
-         (export-tp (symbolicate package-witness export "-TP"))
-         (exportp-of-export (symbolicate package-witness exportp "-OF-" export))
-         (export-when-not-recognizer$a (symbolicate package-witness export "-WHEN-NOT-" recognizer$a))
+         (export-tp (symbolicate$ package-witness export "-TP"))
+         (exportp-of-export (symbolicate$ package-witness exportp "-OF-" export))
+         (export-when-not-recognizer$a (symbolicate$ package-witness export "-WHEN-NOT-" recognizer$a))
 
-         (import-tp (symbolicate package-witness import "-TP"))
-         (recognizer$a-of-import (symbolicate package-witness recognizer$a "-OF-" import))
-         (coupledp-of-import (symbolicate package-witness coupledp "-OF-" import))
-         (import-when-not-exportp (symbolicate package-witness import "-WHEN-NOT-" exportp))
-         (import-ignores-2 (symbolicate package-witness import "-IGNORES-2"))
+         (import-tp (symbolicate$ package-witness import "-TP"))
+         (recognizer$a-of-import (symbolicate$ package-witness recognizer$a "-OF-" import))
+         (coupledp-of-import (symbolicate$ package-witness coupledp "-OF-" import))
+         (import-when-not-exportp (symbolicate$ package-witness import "-WHEN-NOT-" exportp))
+         (import-ignores-2 (symbolicate$ package-witness import "-IGNORES-2"))
 
-         (export-of-import (symbolicate package-witness export "-OF-" import))
-         (import-of-export (symbolicate package-witness import "-OF-" export)))
+         (export-of-import (symbolicate$ package-witness export "-OF-" import))
+         (import-of-export (symbolicate$ package-witness import "-OF-" export)))
 
     `(progn
        (deflabel ,export-begin)
@@ -2405,7 +2405,7 @@
                             recognizer$a
                             (not (eq equiv$a 'equal)))
                  :append `((local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" recognizer$a "-CONSTRAINT-" i)
+                             (defthm ,(symbolicate$ "ATOMIC-STOBJS" recognizer$a "-CONSTRAINT-" i)
                                (and (booleanp (,recognizer$a ,field))
                                     (,recognizer$a ,initial-element))
                                :rule-classes
@@ -2416,7 +2416,7 @@
                                                    (,recognizer$a ,initial-element)))))))
 
                            (local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" fixer$a "-CONSTRAINT-" i)
+                             (defthm ,(symbolicate$ "ATOMIC-STOBJS" fixer$a "-CONSTRAINT-" i)
                                (and (,recognizer$a (,fixer$a ,field))
                                     (implies (,recognizer$a ,field)
                                              (equal (,fixer$a ,field)
@@ -2426,7 +2426,7 @@
                                                     ,initial-element)))))
 
                            (local
-                             (defthm ,(symbolicate "ATOMIC-STOBJS" equiv$a "-CONSTRAINT-" i)
+                             (defthm ,(symbolicate$ "ATOMIC-STOBJS" equiv$a "-CONSTRAINT-" i)
                                (equal (,equiv$a ,%field ,field)
                                       (equal (,fixer$a ,%field)
                                              (,fixer$a ,field)))
@@ -2481,7 +2481,7 @@
                  :when stobj
                  :collect `(local
                              (in-theory
-                               (enable ,(symbolicate stobj stobj "-EXPORT-THEORY")))))
+                               (enable ,(symbolicate$ stobj stobj "-EXPORT-THEORY")))))
 
          ;; `EXPORTP'
          (defun ,exportp (export)
@@ -2627,7 +2627,7 @@
                  :as accessor$a :in accessors$a
                  :as export :in export-list
                  :as stobj :in stobjs
-                 :collect `(defthm ,(symbolicate package-witness accessor$a "-OF-" import)
+                 :collect `(defthm ,(symbolicate$ package-witness accessor$a "-OF-" import)
                              (equal (,accessor$a (,import export ,frame))
                                     ,(if stobj
                                          `(if (,exportp export)

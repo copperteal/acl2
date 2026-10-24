@@ -180,35 +180,35 @@
               (debug ',debug)
 
               (hash-table$a (or logic
-                                (symbolicate package-witness hash-table "$A")))
+                                (symbolicate$ package-witness hash-table "$A")))
               (hash-table$c (or exec
-                                (symbolicate package-witness hash-table "$C")))
+                                (symbolicate$ package-witness hash-table "$C")))
               (recognizer (or recognizer
-                              (symbolicate package-witness hash-table (make-predicate-suffix hash-table))))
+                              (symbolicate$ package-witness hash-table (make-predicate-suffix hash-table))))
               (creator (or creator
-                           (symbolicate package-witness "CREATE-" hash-table)))
+                           (symbolicate$ package-witness "CREATE-" hash-table)))
               (fixer (or fixer
-                         (symbolicate package-witness hash-table "-FIX")))
+                         (symbolicate$ package-witness hash-table "-FIX")))
               (accessor (or accessor
-                            (symbolicate package-witness hash-table "-GET")))
+                            (symbolicate$ package-witness hash-table "-GET")))
               (updater (or updater
-                           (symbolicate package-witness hash-table "-PUT")))
+                           (symbolicate$ package-witness hash-table "-PUT")))
               (boundp (or boundp
-                          (symbolicate package-witness hash-table "-BNDP")))
+                          (symbolicate$ package-witness hash-table "-BNDP")))
               (getp (or getp
-                        (symbolicate package-witness hash-table "-GETP")))
+                        (symbolicate$ package-witness hash-table "-GETP")))
               (remover (or remover
-                           (symbolicate package-witness hash-table "-REM")))
+                           (symbolicate$ package-witness hash-table "-REM")))
               (count (or count
-                         (symbolicate package-witness hash-table "-CNT")))
+                         (symbolicate$ package-witness hash-table "-CNT")))
               (clear (or clear
-                         (symbolicate package-witness hash-table "-CLR")))
+                         (symbolicate$ package-witness hash-table "-CLR")))
               (init (or init
-                        (symbolicate package-witness hash-table "-INIT")))
+                        (symbolicate$ package-witness hash-table "-INIT")))
               (keys (or keys
-                        (symbolicate package-witness hash-table "-KEYS")))
+                        (symbolicate$ package-witness hash-table "-KEYS")))
               (keys-set (or keys-set
-                            (symbolicate package-witness hash-table "-KEYS-SET"))))
+                            (symbolicate$ package-witness hash-table "-KEYS-SET"))))
 
          `(progn
             (define-hash-table$c ,hash-table$c ,test
@@ -293,14 +293,14 @@
                      `(:package-witness ,package-witness))
               :debug ,debug)
 
-            (defmacro ,(symbolicate package-witness "THE-" hash-table) (,hash-table)
+            (defmacro ,(symbolicate$ package-witness "THE-" hash-table) (,hash-table)
               (declare (xargs :guard (symbolp ,hash-table)))
               `(mbe :logic ,(list ',fixer ,hash-table)
                     :exec ,,hash-table))
 
             (in-theory
-              (disable ,(symbolicate (if ,package-witness-supplied-p
-                                         package-witness
-                                         hash-table$c)
-                                     hash-table$c
-                                     "-THEOREMS"))))))))
+              (disable ,(symbolicate$ (if ,package-witness-supplied-p
+                                          package-witness
+                                          hash-table$c)
+                                      hash-table$c
+                                      "-THEOREMS"))))))))

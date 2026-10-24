@@ -72,13 +72,13 @@
                                      ',package-witness$c
                                      package-witness))
 
-              (vector$corr (symbolicate package-witness vector "$CORR"))
-              (vector$corr-contents (symbolicate package-witness vector$corr "-CONTENTS"))
+              (vector$corr (symbolicate$ package-witness vector "$CORR"))
+              (vector$corr-contents (symbolicate$ package-witness vector$corr "-CONTENTS"))
 
               (vector$a (or logic
-                            (symbolicate package-witness$a vector "$A")))
+                            (symbolicate$ package-witness$a vector "$A")))
               (vector$c (or exec
-                            (symbolicate package-witness$c vector "$C")))
+                            (symbolicate$ package-witness$c vector "$C")))
 
               (stobj-property (getpropc vector$c 'acl2::stobj))
               (recognizer$c (caadr stobj-property))
@@ -183,28 +183,28 @@
 
               ;; Interface Symbols
               (vector$a (or logic
-                            (symbolicate package-witness$a vector "$A")))
+                            (symbolicate$ package-witness$a vector "$A")))
               (vector$c (or exec
-                            (symbolicate package-witness$c vector "$C")))
+                            (symbolicate$ package-witness$c vector "$C")))
               (recognizer (or recognizer
-                              (symbolicate package-witness vector (make-predicate-suffix vector))))
+                              (symbolicate$ package-witness vector (make-predicate-suffix vector))))
               (creator (or creator
-                           (symbolicate package-witness "CREATE-" vector)))
+                           (symbolicate$ package-witness "CREATE-" vector)))
               (fixer (or fixer
-                         (symbolicate package-witness vector "-FIX")))
+                         (symbolicate$ package-witness vector "-FIX")))
               (length (or length
-                          (symbolicate package-witness vector "-LEN")))
+                          (symbolicate$ package-witness vector "-LEN")))
               (resizer (or resizer
-                           (symbolicate package-witness vector "-RSZ")))
+                           (symbolicate$ package-witness vector "-RSZ")))
               (accessor (or accessor
-                            (symbolicate package-witness vector "-REF")))
+                            (symbolicate$ package-witness vector "-REF")))
               (updater (or updater
-                           (symbolicate package-witness vector "-SET")))
+                           (symbolicate$ package-witness vector "-SET")))
 
               (world (w state))
               (vector$corr-list (cdr (assoc vector (table-alist 'corr world))))
               (vector$corr-contents (first vector$corr-list))
-              (vector$corr-contents-witness (symbolicate vector$corr-contents vector$corr-contents "-WITNESS"))
+              (vector$corr-contents-witness (symbolicate$ vector$corr-contents vector$corr-contents "-WITNESS"))
               (vector$corr (second vector$corr-list))
 
               ;; `VECTOR$C'
@@ -238,18 +238,18 @@
               (default-length-name (access vector$a-property stobj$a-property :default-length-name))
 
               ;; Theorem Names
-              (creator{correspondence} (symbolicate package-witness creator "{CORRESPONDENCE}"))
-              (creator{preserved} (symbolicate package-witness creator "{PRESERVED}"))
-              (fixer{correspondence} (symbolicate package-witness fixer "{CORRESPONDENCE}"))
-              (fixer{preserved} (symbolicate package-witness fixer "{PRESERVED}"))
-              (length{correspondence} (symbolicate package-witness length "{CORRESPONDENCE}"))
-              (resizer{correspondence} (symbolicate package-witness resizer "{CORRESPONDENCE}"))
-              (resizer{preserved} (symbolicate package-witness resizer "{PRESERVED}"))
-              (accessor{correspondence} (symbolicate package-witness accessor "{CORRESPONDENCE}"))
-              (accessor{guard-thm} (symbolicate package-witness accessor "{GUARD-THM}"))
-              (updater{correspondence} (symbolicate package-witness updater "{CORRESPONDENCE}"))
-              (updater{guard-thm} (symbolicate package-witness updater "{GUARD-THM}"))
-              (updater{preserved} (symbolicate package-witness updater "{PRESERVED}"))
+              (creator{correspondence} (symbolicate$ package-witness creator "{CORRESPONDENCE}"))
+              (creator{preserved} (symbolicate$ package-witness creator "{PRESERVED}"))
+              (fixer{correspondence} (symbolicate$ package-witness fixer "{CORRESPONDENCE}"))
+              (fixer{preserved} (symbolicate$ package-witness fixer "{PRESERVED}"))
+              (length{correspondence} (symbolicate$ package-witness length "{CORRESPONDENCE}"))
+              (resizer{correspondence} (symbolicate$ package-witness resizer "{CORRESPONDENCE}"))
+              (resizer{preserved} (symbolicate$ package-witness resizer "{PRESERVED}"))
+              (accessor{correspondence} (symbolicate$ package-witness accessor "{CORRESPONDENCE}"))
+              (accessor{guard-thm} (symbolicate$ package-witness accessor "{GUARD-THM}"))
+              (updater{correspondence} (symbolicate$ package-witness updater "{CORRESPONDENCE}"))
+              (updater{guard-thm} (symbolicate$ package-witness updater "{GUARD-THM}"))
+              (updater{preserved} (symbolicate$ package-witness updater "{PRESERVED}"))
 
               ;; Exports
               (exports `((,fixer :logic ,fixer$a
@@ -272,7 +272,7 @@
                                    (cddr updater$c-guard)
                                    (cdr updater$c-guard)))
 
-              (aggressive$a (symbolicate package-witness$a vector$a "-AGGRESSIVE"))
+              (aggressive$a (symbolicate$ package-witness$a vector$a "-AGGRESSIVE"))
 
               (resizer$c-index (car (getpropc resizer$c 'acl2::formals)))
               (accessor$c-index (car (getpropc accessor$c 'acl2::formals)))
