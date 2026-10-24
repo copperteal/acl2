@@ -820,19 +820,21 @@
                                  :cases ,(loop$ :for i :from 0 :to (1- (len fields))
                                                :collect `(equal acl2::n ,i)))))))))
 
-                (stobj$a-property `(,frame (,recognizer
-                                            ,creator
-                                            ,fixer
-                                            ,equiv)
-                                           (,fields
-                                            ,recognizers
-                                            ,initial-element-names
-                                            ,fixers
-                                            ,equivs
-                                            ,stobjs
-                                            ,accessors
-                                            ,updaters
-                                            (,view)))))
+                (stobj$a-property (make frame$a-property
+                                        :name frame
+                                        :recognizer recognizer
+                                        :creator creator
+                                        :fixer fixer
+                                        :equiv equiv
+                                        :fields fields
+                                        :recognizers recognizers
+                                        :initial-element-names initial-element-names
+                                        :fixers fixers
+                                        :equivs equivs
+                                        :stobjs stobjs
+                                        :accessors accessors
+                                        :updaters updaters
+                                        :view view)))
 
            `(progn
               ,@prologue

@@ -3218,36 +3218,38 @@
                                 'lem-hash-table$a::equal/unique-fc)
                            ,@fi-bindings-with-skolem))))))
 
-              (stobj$a-property `(,hash-table (,recognizer
-                                               ,creator
-                                               ,fixer
-                                               ,equiv)
-                                              ((,key
-                                                ,key-recognizer
-                                                ,default-key-name
-                                                ,key-fixer
-                                                ,key-equiv)
-                                               (,val
-                                                ,val-recognizer
-                                                ,default-val-name
-                                                ,val-fixer
-                                                ,val-equiv)
-                                               (,test
-                                                ,copyable)
-                                               (,accessor
-                                                ,updater
-                                                ,boundp
-                                                ,getp
-                                                ,remover
-                                                ,count
-                                                ,clear
-                                                ,init)
-                                               ,(and copyable
-                                                     `(,keys
-                                                       ,keys-set
-                                                       ,keysp
-                                                       ,keys-fix
-                                                       ,keys-equiv))))))
+              (stobj$a-property (make hash-table$a-property
+                                      :name hash-table
+                                      :recognizer recognizer
+                                      :creator creator
+                                      :fixer fixer
+                                      :equiv equiv
+                                      :key key
+                                      :key-recognizer key-recognizer
+                                      :default-key-name default-key-name
+                                      :key-fixer key-fixer
+                                      :key-equiv key-equiv
+                                      :val val
+                                      :val-recognizer val-recognizer
+                                      :default-val-name default-val-name
+                                      :val-fixer val-fixer
+                                      :val-equiv val-equiv
+                                      :test test
+                                      :copyable copyable
+                                      :accessor accessor
+                                      :updater updater
+                                      :boundp boundp
+                                      :getp getp
+                                      :remover remover
+                                      :count count
+                                      :clear clear
+                                      :init init
+                                      :keys (and copyable
+                                                 (list keys
+                                                       keys-set
+                                                       keysp
+                                                       keys-fix
+                                                       keys-equiv)))))
 
          `(progn
             ,@prologue

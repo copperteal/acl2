@@ -1540,21 +1540,23 @@
                                 'lem-vector$a::equal/fixed-fc)
                            ,@fi-bindings-with-skolem))))))
 
-              (stobj$a-property `(,vector (,recognizer
-                                           ,creator
-                                           ,fixer
-                                           ,equiv)
-                                          ((,element
-                                            ,element-recognizer
-                                            ,initial-element-name
-                                            ,element-fixer
-                                            ,element-equiv)
-                                           (,resizable
-                                            ,default-length-name)
-                                           (,length
-                                            ,resizer
-                                            ,accessor
-                                            ,updater)))))
+              (stobj$a-property (make vector$a-property
+                                      :name vector
+                                      :recognizer recognizer
+                                      :creator creator
+                                      :fixer fixer
+                                      :equiv equiv
+                                      :element element
+                                      :element-recognizer element-recognizer
+                                      :initial-element-name initial-element-name
+                                      :element-fixer element-fixer
+                                      :element-equiv element-equiv
+                                      :resizable resizable
+                                      :default-length-name default-length-name
+                                      :length length
+                                      :resizer resizer
+                                      :accessor accessor
+                                      :updater updater)))
 
          `(progn
             ,@prologue
