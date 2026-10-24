@@ -39,6 +39,8 @@
       (not (equal x ""))
       (symbolp x)))
 
+(defwarrant package-witness-p)
+
 (encapsulate ()
   (local
     (defthm character-listp-of-explode-nonnegative-integer
@@ -49,7 +51,7 @@
     (in-theory
       (disable explode-nonnegative-integer)))
 
-  (defun %symbolicate$-coerce (expr)
+  (defun symbolicate$-coerce (expr)
     (declare (xargs :guard t))
     (cond
       ((symbolp expr)
@@ -62,15 +64,15 @@
        ""))))
 
 (local
-  (thm ; ensure `%SYMBOLICATE-COERCE' is known to return a string
-    (stringp (%symbolicate$-coerce expr))
+  (thm ; Ensure `SYMBOLICATE-COERCE' is known to return a string.
+    (stringp (symbolicate$-coerce expr))
     :hints
     (("Goal"
-      :in-theory '((:t %symbolicate$-coerce))))))
+      :in-theory '((:t symbolicate$-coerce))))))
 
-(defwarrant %symbolicate$-coerce)
+(defwarrant symbolicate$-coerce)
 
-(defun %symbolicate$-expand (exprs)
+(defun symbolicate$-expand (exprs)
   (declare (xargs :guard (true-listp exprs)))
   (if (atom exprs)
       ""
@@ -78,23 +80,28 @@
             (exprs (cdr exprs)))
         (if (consp exprs)
             (list 'string-append
-                  (list '%symbolicate$-coerce expr)
-                  (%symbolicate$-expand exprs))
-            (list '%symbolicate$-coerce expr)))))
+                  (list 'symbolicate$-coerce expr)
+                  (symbolicate$-expand exprs))
+            (list 'symbolicate$-coerce expr)))))
+
+(defun symbolicate$-fn (witness exprs)
+  (declare (xargs :guard (true-listp exprs)))
+  `(let ((witness ,witness)
+         (expansion ,(symbolicate$-expand exprs)))
+     (if (package-witness-p witness)
+         (intern$ expansion (fix-pkg
+                             (cond
+                               ((stringp witness)
+                                witness)
+                               ((symbolp witness)
+                                (symbol-package-name witness))
+                               (t
+                                (illegal 'symbolicate$-fn "GUARD VIOLATION" ())))))
+         (er hard 'symbolicate$ "Bad witness: ~x0" witness))))
 
 (defmacro symbolicate$ (witness &rest exprs)
   (declare (xargs :guard t))
-  ;; TODO: check that witness is a symbolp and exprs is a symbol-listp
-  ;; TODO: (fix-pkg witness) or (fix-pkg (symbol-name witness))
-  `(let ((witness ,witness)
-         (expansion ,(%symbolicate$-expand exprs)))
-     (cond
-       ((stringp witness)
-        (intern$ expansion witness))
-       ((symbolp witness)
-        (intern-in-package-of-symbol expansion witness))
-       (t
-        nil))))
+  (symbolicate$-fn witness exprs))
 
 
 (defxdoc symbolicate$
@@ -122,14 +129,14 @@ General Form
 (symbolicate$ witness expr1 ... exprn)
 })
 
-<p>@('Symbolicate') evaluates each of its arguments.  If @('witness') is a
-string, it is taken as a <see topic=\"@(url packages)\">package</see> name.  If
-@('witness') is a symbol, its package name is used.  Otherwise, the
-@('symbolicate$') form expands to @('nil').  For each @('expri'), if @('expri')
-is a string, it is preserved; if @('expri') is a symbol, it is replaced by its
-name; if @('expri') is a non-negative integer, it is converted to a base-10
-string by @(tsee explode-nonnegative-integer); otherwise, @('expri') is replaced
-with the empty string.  After this evaluation, @('symbolicate$') concatenates the
-strings resulting from @('expr1 ... exprn') and interns a symbol with that name
-in the package derived from @('witness').  The @('symbolicate$') form expands to
-this symbol (assuming @('witness') evaluated to a string or symbol).</p>")
+<p>@('Symbolicate') evaluates each of its arguments.  @('witness') must evaluate
+to be a non-empty string or a symbol.  If that is a non-empty string, it is
+taken as a <see topic=\"@(url packages)\">package</see> name.  If that is a
+symbol, its package name is used.  In either case, @(tsee fix-pkg) is applied to
+the resulting string.  For each @('expri'), if @('expri') is a string, it is
+preserved; if @('expri') is a symbol, it is replaced by its @('symbol-name'); if
+@('expri') is a non-negative integer, it is converted to its base-10 string
+representation; otherwise, @('expri') is replaced with the empty string.  After
+these evaluations, @('symbolicate$') concatenates the strings from @('expr1
+... exprn') and interns a symbol with that name in the package derived from
+@('witness').  The @('symbolicate$') form expands to this symbol.</p>")
