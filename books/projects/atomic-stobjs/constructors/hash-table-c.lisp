@@ -1039,8 +1039,6 @@
                                         ,hash-table)))
                          :exec ,hash-table))
 
-                  (table fixer ',hash-table ',fixer)
-
                   (defthm ,fixer-def
                     (equal (,fixer ,hash-table)
                            (if (,recognizer ,hash-table)
@@ -1105,8 +1103,6 @@
                                     (,hash-table (,keys-set '() ,hash-table)))
                                (,%clear ,hash-table)))
 
-                           (table clear ',hash-table ',clear)
-
                            (defthm ,clear-tp
                              (implies (,recognizer ,hash-table)
                                       (and (consp (,clear ,hash-table))
@@ -1144,8 +1140,6 @@
                              (let* ((,hash-table (,fixer ,hash-table))
                                     (,hash-table (,keys-set '() ,hash-table)))
                                (,%init ht-size rehash-size rehash-threshold ,hash-table)))
-
-                           (table init ',hash-table ',init)
 
                            (defthm ,init-tp
                              (implies (,recognizer ,hash-table)
@@ -1202,6 +1196,4 @@
 
             ,@epilogue
 
-            (table stobj$c ',hash-table ',stobj$c-property)
-
-            (table pkg-witness ',hash-table ',pkg-witness))))))
+            (table stobj$c ',hash-table ',stobj$c-property))))))

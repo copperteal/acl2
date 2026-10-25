@@ -764,8 +764,6 @@
                                         ,vector)))
                          :exec ,vector))
 
-                  (table fixer ',vector ',fixer)
-
                   (defthm ,fixer-def
                     (equal (,fixer ,vector)
                            (if (,recognizer ,vector)
@@ -841,6 +839,4 @@
 
             ,@epilogue
 
-            (table stobj$c ',vector ',stobj$c-property)
-
-            (table pkg-witness ',vector ',pkg-witness))))))
+            (table stobj$c ',vector ',stobj$c-property))))))

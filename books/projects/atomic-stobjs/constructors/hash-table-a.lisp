@@ -3258,6 +3258,4 @@
 
             ,@epilogue
 
-            (table stobj$a ',hash-table ',stobj$a-property)
-
-            (table pkg-witness ',hash-table ',pkg-witness))))))
+            (table stobj$a ',hash-table ',stobj$a-property))))))

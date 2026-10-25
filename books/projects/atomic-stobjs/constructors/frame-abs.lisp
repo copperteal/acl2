@@ -93,11 +93,13 @@
               (frame$c (or exec
                            (symbolicate$ pkg-witness$c frame "$C")))
 
-              (stobj-property (getpropc frame$c 'acl2::stobj))
-              (recognizer$c (caadr stobj-property))
-              (n (floor (len (third stobj-property)) 4))
-              (accessors$c (loop$ :for i :from 0 :to n
-                                 :collect (nth (+ n (* 2 i)) (third stobj-property))))
+              (stobj$c-property (stobj$c-property frame$c (w state)))
+              (recognizer$c (access frame$c-property
+                                    stobj$c-property
+                                    :recognizer))
+              (accessors$c (access frame$c-property
+                                   stobj$c-property
+                                   :accessors))
 
               (stobj$a-property (stobj$a-property frame$a (w state)))
               (recognizer$a (access frame$a-property stobj$a-property :recognizer))
@@ -380,18 +382,27 @@
                 (frame$corr (cdr (assoc frame (table-alist 'corr world))))
 
                 ;; `FRAME$C'
-                (stobj-property (getpropc frame$c 'acl2::stobj))
-                (recognizer$c (caadr stobj-property))
-                (creator$c (cdadr stobj-property))
-                (fixer$c (cdr (assoc frame$c (table-alist 'fixer world))))
+                (stobj$c-property (stobj$c-property frame$c (w state)))
+                (recognizer$c (access frame$c-property
+                                      stobj$c-property
+                                      :recognizer))
+                (creator$c (access frame$c-property
+                                   stobj$c-property
+                                   :creator))
+                (fixer$c (access frame$c-property
+                                 stobj$c-property
+                                 :fixer))
                 (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
                                     fixer$c))
-                (n (floor (len (third stobj-property)) 4))
-                (recognizers$c (take n (third stobj-property)))
-                (accessors$c (loop$ :for i :from 0 :to (1- n)
-                                   :collect (nth (+ n (* 2 i)) (third stobj-property))))
-                (updaters$c (loop$ :for i :from 0 :to (1- n)
-                                  :collect (nth (+ 1 n (* 2 i)) (third stobj-property))))
+                (recognizers$c (access frame$c-property
+                                       stobj$c-property
+                                       :recognizers))
+                (accessors$c (access frame$c-property
+                                     stobj$c-property
+                                     :accessors))
+                (updaters$c (access frame$c-property
+                                    stobj$c-property
+                                    :updaters))
 
                 ;; `FRAME$A'
                 (stobj$a-property (stobj$a-property frame$a world))
@@ -687,6 +698,4 @@
                 :non-executable ,(not executable)
                 :exports ,exports)
 
-              (table stobj$a ',frame ',stobj$a-property)
-
-              (table pkg-witness ',frame ',pkg-witness)))))))
+              (table stobj$a ',frame ',stobj$a-property)))))))

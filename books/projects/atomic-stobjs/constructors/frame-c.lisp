@@ -465,8 +465,6 @@
                                           ,frame)))
                            :exec ,frame))
 
-                    (table fixer ',frame ',fixer)
-
                     (defthm ,(symbolicate$ pkg-witness fixer "-DEF")
                       (equal (,fixer ,frame)
                              (if (,recognizer ,frame)
@@ -498,6 +496,4 @@
 
               ,@epilogue
 
-              (table stobj$c ',frame ',stobj$c-property)
-
-              (table pkg-witness ',frame ',pkg-witness)))))))
+              (table stobj$c ',frame ',stobj$c-property)))))))

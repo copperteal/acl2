@@ -843,6 +843,4 @@
 
               ,@epilogue
 
-              (table stobj$a ',frame ',stobj$a-property)
-
-              (table pkg-witness ',frame ',pkg-witness)))))))
+              (table stobj$a ',frame ',stobj$a-property)))))))

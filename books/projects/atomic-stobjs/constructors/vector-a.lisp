@@ -1565,6 +1565,4 @@
 
             ,@epilogue
 
-            (table stobj$a ',vector ',stobj$a-property)
-
-            (table pkg-witness ',vector ',pkg-witness))))))
+            (table stobj$a ',vector ',stobj$a-property))))))

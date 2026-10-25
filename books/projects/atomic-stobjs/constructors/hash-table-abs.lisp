@@ -83,19 +83,13 @@
               (hash-table$c (or exec
                                 (symbolicate$ pkg-witness$c hash-table "$C")))
 
-              (stobj-property (getpropc hash-table$c 'acl2::stobj))
-              (recognizer$c (caadr stobj-property))
-              (accessor$c (if copyable
-                              (third (third stobj-property))
-                              (second (third stobj-property))))
-              (boundp$c  (if copyable
-                             (fifth (third stobj-property))
-                             (fourth (third stobj-property))))
-              (count$c (if copyable
-                           (ninth (third stobj-property))
-                           (eighth (third stobj-property))))
+              (stobj$c-property (stobj$c-property hash-table$c (w state)))
+              (recognizer$c (access hash-table$c-property stobj$c-property :recognizer))
+              (accessor$c (access hash-table$c-property stobj$c-property :accessor))
+              (boundp$c  (access hash-table$c-property stobj$c-property :boundp))
+              (count$c (access hash-table$c-property stobj$c-property :count))
               (keys$c (and copyable
-                           (nth 11 (third stobj-property))))
+                           (access hash-table$c-property stobj$c-property :keys)))
 
               (stobj$a-property (stobj$a-property hash-table$a (w state)))
               (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
@@ -278,42 +272,6 @@
               (hash-table$corr-vals (second hash-table$corr-list))
               (hash-table$corr (third hash-table$corr-list))
 
-              ;; `HASH-TABLE$C'
-              (stobj-property (getpropc hash-table$c 'acl2::stobj))
-              (recognizer$c (caadr stobj-property))
-              (creator$c (cdadr stobj-property))
-              (fixer$c (cdr (assoc hash-table$c (table-alist 'fixer world))))
-              (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
-                                  fixer$c))
-              (accessor$c (if copyable
-                              (third (third stobj-property))
-                              (second (third stobj-property))))
-              (updater$c (if copyable
-                             (fourth (third stobj-property))
-                             (third (third stobj-property))))
-              (boundp$c (if copyable
-                            (fifth (third stobj-property))
-                            (fourth (third stobj-property))))
-              (getp$c (if copyable
-                          (seventh (third stobj-property))
-                          (sixth (third stobj-property))))
-              (remover$c (if copyable
-                             (eighth (third stobj-property))
-                             (seventh (third stobj-property))))
-              (count$c (if copyable
-                           (ninth (third stobj-property))
-                           (eighth (third stobj-property))))
-              (clear$c (if copyable
-                           (cdr (assoc hash-table$c (table-alist 'clear world)))
-                           (ninth (third stobj-property))))
-              (init$c (if copyable
-                          (cdr (assoc hash-table$c (table-alist 'init world)))
-                          (tenth (third stobj-property))))
-              (keys$c (and copyable
-                           (nth 11 (third stobj-property))))
-              (keys-set$c (and copyable
-                               (nth 12 (third stobj-property))))
-
               ;; `HASH-TABLE$A'
               (stobj$a-property (stobj$a-property hash-table$a world))
               (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
@@ -341,6 +299,26 @@
                                   (caadr val-stobj-property)
                                   (access hash-table$a-property stobj$a-property :val-recognizer)))
               (test (access hash-table$a-property stobj$a-property :test))
+
+              ;; `HASH-TABLE$C'
+              (stobj$c-property (stobj$c-property hash-table$c (w state)))
+              (recognizer$c (access hash-table$c-property stobj$c-property :recognizer))
+              (creator$c (access hash-table$c-property stobj$c-property :creator))
+              (fixer$c (access hash-table$c-property stobj$c-property :fixer))
+              (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
+                                  fixer$c))
+              (accessor$c (access hash-table$c-property stobj$c-property :accessor))
+              (updater$c (access hash-table$c-property stobj$c-property :updater))
+              (boundp$c (access hash-table$c-property stobj$c-property :boundp))
+              (getp$c (access hash-table$c-property stobj$c-property :getp))
+              (remover$c (access hash-table$c-property stobj$c-property :remover))
+              (count$c (access hash-table$c-property stobj$c-property :count))
+              (clear$c (access hash-table$c-property stobj$c-property :clear))
+              (init$c (access hash-table$c-property stobj$c-property :init))
+              (keys$c (and copyable
+                           (access hash-table$c-property stobj$c-property :keys)))
+              (keys-set$c (and copyable
+                               (access hash-table$c-property stobj$c-property :keys-set)))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate$ pkg-witness creator "{CORRESPONDENCE}"))
@@ -716,6 +694,4 @@
               :non-executable ,(not executable)
               :exports ,exports)
 
-            (table stobj$a ',hash-table ',stobj$a-property)
-
-            (table pkg-witness ',hash-table ',pkg-witness))))))
+            (table stobj$a ',hash-table ',stobj$a-property))))))

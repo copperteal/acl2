@@ -42,6 +42,7 @@
                coupledp)
              '(<<
                nat-equiv
+               assoc-equal-cadr
 
                b*
                def-b*-binder

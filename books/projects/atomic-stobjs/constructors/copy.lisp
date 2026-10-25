@@ -85,14 +85,6 @@
          (coupledp (symbolicate$ pkg-witness vector "-COUPLEDP"))
          (coupledp-rec (symbolicate$ pkg-witness coupledp "-REC"))
 
-         ;; `VECTOR'
-         (stobj-property (getpropc vector 'acl2::stobj))
-         (the-vector (symbolicate$ vector "THE-" vector))
-         (length (second (third stobj-property)))
-         (resizer (third (third stobj-property)))
-         (accessor (fourth (third stobj-property)))
-         (updater (fifth (third stobj-property)))
-
          ;; `VECTOR$A'
          (world (w state))
          (stobj$a-property (stobj$a-property vector world))
@@ -126,21 +118,27 @@
          (element-fixer (access vector$a-property stobj$a-property :element-fixer))
          (element-equiv (access vector$a-property stobj$a-property :element-equiv))
 
-         ;; Adjust for nested stobj interface shuffle
-         (length (if element-stobj-property
-                     ;; TODO: report interface shuffle as bug
-                     (fourth (third stobj-property))
-                     length))
-         (resizer (if element-stobj-property
-                      (fifth (third stobj-property))
-                      resizer))
-         (accessor (if element-stobj-property
-                       (first (third stobj-property))
-                       accessor))
+         ;; `VECTOR'
+         (the-vector (symbolicate$ vector "THE-" vector))
+         (absstobj-info (getpropc vector 'acl2::absstobj-info))
+         (length (car (assoc-equal-cadr (access vector$a-property
+                                                stobj$a-property
+                                                :length)
+                                        (cdr absstobj-info))))
+         (resizer (car (assoc-equal-cadr (access vector$a-property
+                                                 stobj$a-property
+                                                 :resizer)
+                                         (cdr absstobj-info))))
+         (accessor (car (assoc-equal-cadr (access vector$a-property
+                                                  stobj$a-property
+                                                  :accessor)
+                                          (cdr absstobj-info))))
+         (updater (car (assoc-equal-cadr (access vector$a-property
+                                                 stobj$a-property
+                                                 :updater)
+                                         (cdr absstobj-info))))
+         ;; TODO: report nested stobj interface shuffle
          (%accessor (symbolicate$ pkg-witness "%" accessor))
-         (updater (if element-stobj-property
-                      (second (third stobj-property))
-                      updater))
          (%updater (symbolicate$ pkg-witness "%" updater))
 
          (element-copy (cdr (assoc element (table-alist 'copy world))))
@@ -1036,17 +1034,6 @@
          (coupledp (symbolicate$ pkg-witness hash-table "-COUPLEDP"))
          (coupledp-rec (symbolicate$ pkg-witness coupledp "-REC"))
 
-         ;; `HASH-TABLE'
-         (stobj-property (getpropc hash-table 'acl2::stobj))
-         (the-hash-table (symbolicate$ hash-table "THE-" hash-table))
-         (accessor (second (third stobj-property)))
-         (updater (third (third stobj-property)))
-         (boundp (fourth (third stobj-property)))
-         (count (seventh (third stobj-property)))
-         (init (ninth (third stobj-property)))
-         (keys (tenth (third stobj-property)))
-         (keys-set (nth 10 (third stobj-property)))
-
          ;; `HASH-TABLE$A'
          (world (w state))
          (stobj$a-property (stobj$a-property hash-table world))
@@ -1104,14 +1091,38 @@
          (val-fixer (access hash-table$a-property stobj$a-property :val-fixer))
          (val-equiv (access hash-table$a-property stobj$a-property :val-equiv))
 
-         ;; Adjust for nested stobj interface shuffle
-         (accessor (if val-stobj-property
-                       (first (third stobj-property))
-                       accessor))
+         ;; `HASH-TABLE'
+         (the-hash-table (symbolicate$ hash-table "THE-" hash-table))
+         (absstobj-info (getpropc hash-table 'acl2::absstobj-info))
+         (accessor (car (assoc-equal-cadr (access hash-table$a-property
+                                                  stobj$a-property
+                                                  :accessor)
+                                          (cdr absstobj-info))))
+         (updater (car (assoc-equal-cadr (access hash-table$a-property
+                                                 stobj$a-property
+                                                 :updater)
+                                         (cdr absstobj-info))))
+         (boundp (car (assoc-equal-cadr (access hash-table$a-property
+                                                stobj$a-property
+                                                :boundp)
+                                        (cdr absstobj-info))))
+         (count (car (assoc-equal-cadr (access hash-table$a-property
+                                               stobj$a-property
+                                               :count)
+                                       (cdr absstobj-info))))
+         (init (car (assoc-equal-cadr (access hash-table$a-property
+                                              stobj$a-property
+                                              :init)
+                                      (cdr absstobj-info))))
+         (keys (car (assoc-equal-cadr (first (access hash-table$a-property
+                                                     stobj$a-property
+                                                     :keys))
+                                      (cdr absstobj-info))))
+         (keys-set (car (assoc-equal-cadr (second (access hash-table$a-property
+                                                          stobj$a-property
+                                                          :keys))
+                                          (cdr absstobj-info))))
          (%accessor (symbolicate$ pkg-witness "%" accessor))
-         (updater (if val-stobj-property
-                      (second (third stobj-property))
-                      updater))
          (%updater (symbolicate$ pkg-witness "%" updater))
 
          (val-copy (cdr (assoc val (table-alist 'copy world))))
@@ -2444,10 +2455,6 @@
 
          (coupledp (symbolicate$ pkg-witness frame "-COUPLEDP"))
 
-         ;; `FRAME'
-         (stobj-property (getpropc frame 'acl2::stobj))
-         (the-frame (symbolicate$ frame "THE-" frame))
-
          ;; `FRAME$A'
          (world (w state))
          (stobj$a-property (stobj$a-property frame world))
@@ -2499,48 +2506,19 @@
          (accessors$a (access frame$a-property stobj$a-property :accessors))
          (view$a (access frame$a-property stobj$a-property :view))
 
-         ;; Adjust for nested stobj interface shuffle
-         (stobj-count (len (remove nil stobjs)))
-         (stobj-accessors-and-updaters (third stobj-property))
-         (non-stobj-accessors-and-updaters (nthcdr (1+ (* 2 stobj-count)) stobj-accessors-and-updaters))
-         (stobj-accessors-and-updaters (take (* 2 stobj-count) stobj-accessors-and-updaters))
-         (accessors (loop$ :with stobj-accessors-and-updaters := stobj-accessors-and-updaters
-                          :with non-stobj-accessors-and-updaters := non-stobj-accessors-and-updaters
-                          :with stobjs := stobjs
-                          :with accessors := ()
-                          :do
-                          (progn
-                            (cond
-                              ((endp stobjs)
-                               (return (reverse accessors)))
-                              ((car stobjs)
-                               (progn
-                                 (setq accessors (cons (car stobj-accessors-and-updaters) accessors))
-                                 (setq stobj-accessors-and-updaters (cddr stobj-accessors-and-updaters))))
-                              (t
-                               (progn
-                                 (setq accessors (cons (car non-stobj-accessors-and-updaters) accessors))
-                                 (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
-                            (setq stobjs (cdr stobjs)))))
-         (updaters (loop$ :with stobj-accessors-and-updaters := (cdr stobj-accessors-and-updaters)
-                         :with non-stobj-accessors-and-updaters := (nthcdr (- (len fields) stobj-count)
-                                                                           non-stobj-accessors-and-updaters)
-                         :with stobjs := stobjs
-                         :with updaters := ()
-                         :do
-                         (progn
-                           (cond
-                             ((endp stobjs)
-                              (return (reverse updaters)))
-                             ((car stobjs)
-                              (progn
-                                (setq updaters (cons (car stobj-accessors-and-updaters) updaters))
-                                (setq stobj-accessors-and-updaters (cddr stobj-accessors-and-updaters))))
-                             (t
-                              (progn
-                                (setq updaters (cons (car non-stobj-accessors-and-updaters) updaters))
-                                (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
-                           (setq stobjs (cdr stobjs)))))
+         ;; `FRAME'
+         (the-frame (symbolicate$ frame "THE-" frame))
+         (absstobj-info (getpropc frame 'acl2::absstobj-info))
+         (accessors (loop$ :for accessor$a :in (access frame$a-property
+                                                       stobj$a-property
+                                                       :accessors)
+                          :collect (car (assoc-equal-cadr accessor$a
+                                                          (cdr absstobj-info)))))
+         (updaters (loop$ :for updater$a :in (access frame$a-property
+                                                     stobj$a-property
+                                                     :updaters)
+                         :collect (car (assoc-equal-cadr updater$a
+                                                         (cdr absstobj-info)))))
          (%accessors (loop$ :for accessor :in accessors
                            :collect (symbolicate$ pkg-witness "%" accessor)))
          (%updaters (loop$ :for updater :in updaters

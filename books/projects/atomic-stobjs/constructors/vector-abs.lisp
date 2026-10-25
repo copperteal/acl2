@@ -80,10 +80,10 @@
               (vector$c (or exec
                             (symbolicate$ pkg-witness$c vector "$C")))
 
-              (stobj-property (getpropc vector$c 'acl2::stobj))
-              (recognizer$c (access acl2::stobj-property stobj-property :recognizer))
-              (length$c (second (third stobj-property)))
-              (accessor$c (fourth (third stobj-property)))
+              (stobj$c-property (stobj$c-property vector$c (w state)))
+              (recognizer$c (access vector$c-property stobj$c-property :recognizer))
+              (length$c (access vector$c-property stobj$c-property :length))
+              (accessor$c (access vector$c-property stobj$c-property :accessor))
 
               (stobj$a-property (stobj$a-property vector$a (w state)))
               (recognizer$a (access vector$a-property stobj$a-property :recognizer))
@@ -207,18 +207,6 @@
               (vector$corr-contents-witness (symbolicate$ vector$corr-contents vector$corr-contents "-WITNESS"))
               (vector$corr (second vector$corr-list))
 
-              ;; `VECTOR$C'
-              (stobj-property (getpropc vector$c 'acl2::stobj))
-              (recognizer$c (caadr stobj-property))
-              (creator$c (cdadr stobj-property))
-              (fixer$c (cdr (assoc vector$c (table-alist 'fixer world))))
-              (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
-                                  fixer$c))
-              (length$c (second (third stobj-property)))
-              (resizer$c (third (third stobj-property)))
-              (accessor$c (fourth (third stobj-property)))
-              (updater$c (fifth (third stobj-property)))
-
               ;; `VECTOR$A'
               (stobj$a-property (stobj$a-property vector$a world))
               (recognizer$a (access vector$a-property stobj$a-property :recognizer))
@@ -236,6 +224,18 @@
                                       (access vector$a-property stobj$a-property :element-recognizer)))
               (resizable (access vector$a-property stobj$a-property :resizable))
               (default-length-name (access vector$a-property stobj$a-property :default-length))
+
+              ;; `VECTOR$C'
+              (stobj$c-property (stobj$c-property vector$c (w state)))
+              (recognizer$c (access vector$c-property stobj$c-property :recognizer))
+              (creator$c (access vector$c-property stobj$c-property :creator))
+              (fixer$c (access vector$c-property stobj$c-property :fixer))
+              (fixer$c$inline (or (cdr (assoc fixer$c (table-alist 'acl2::macro-aliases-table world)))
+                                  fixer$c))
+              (length$c (access vector$c-property stobj$c-property :length))
+              (resizer$c (access vector$c-property stobj$c-property :resizer))
+              (accessor$c (access vector$c-property stobj$c-property :accessor))
+              (updater$c (access vector$c-property stobj$c-property :updater))
 
               ;; Theorem Names
               (creator{correspondence} (symbolicate$ pkg-witness creator "{CORRESPONDENCE}"))
@@ -412,6 +412,4 @@
               :non-executable ,(not executable)
               :exports ,exports)
 
-            (table stobj$a ',vector ',stobj$a-property)
-
-            (table pkg-witness ',vector ',pkg-witness))))))
+            (table stobj$a ',vector ',stobj$a-property))))))

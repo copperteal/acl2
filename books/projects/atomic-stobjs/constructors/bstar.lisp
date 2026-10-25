@@ -62,17 +62,18 @@
   (let* ((binder-pair (symbolicate$ pkg-witness "*" vector "-B*-PAIR*"))
          (binder-parser (symbolicate$ pkg-witness vector "-B*-PARSER"))
 
-         (stobj-property (getpropc vector 'acl2::stobj))
+         (absstobj-info (getpropc vector 'acl2::absstobj-info))
          (stobj$a-property (stobj$a-property vector (w state)))
          (element (access vector$a-property stobj$a-property :element))
          (element-stobj-property (getpropc element 'acl2::stobj))
-         (accessor (if element-stobj-property
-                       ;; TODO: deal with this reordering, report to Github Issues
-                       (first (third stobj-property))
-                       (fourth (third stobj-property))))
-         (updater (if element-stobj-property
-                      (second (third stobj-property))
-                      (fifth (third stobj-property)))))
+         (accessor (car (assoc-equal-cadr (access vector$a-property
+                                                  stobj$a-property
+                                                  :accessor)
+                                          (cdr absstobj-info))))
+         (updater (car (assoc-equal-cadr (access vector$a-property
+                                                 stobj$a-property
+                                                 :updater)
+                                         (cdr absstobj-info)))))
 
     `(progn
 
@@ -163,16 +164,18 @@
   (let* ((binder-pair (symbolicate$ pkg-witness "*" hash-table "-B*-PAIR*"))
          (binder-parser (symbolicate$ pkg-witness hash-table "-B*-PARSER"))
 
-         (stobj-property (getpropc hash-table 'acl2::stobj))
+         (absstobj-info (getpropc hash-table 'acl2::absstobj-info))
          (stobj$a-property (stobj$a-property hash-table (w state)))
          (element (access hash-table$a-property stobj$a-property :val))
          (element-stobj-property (getpropc element 'acl2::stobj))
-         (accessor (if element-stobj-property
-                       (first (third stobj-property))
-                       (second (third stobj-property))))
-         (updater (if element-stobj-property
-                      (second (third stobj-property))
-                      (third (third stobj-property)))))
+         (accessor (car (assoc-equal-cadr (access hash-table$a-property
+                                                  stobj$a-property
+                                                  :accessor)
+                                          (cdr absstobj-info))))
+         (updater (car (assoc-equal-cadr (access hash-table$a-property
+                                                 stobj$a-property
+                                                 :updater)
+                                         (cdr absstobj-info)))))
 
     `(progn
 
@@ -268,47 +271,17 @@
          (fields (access frame$a-property stobj$a-property :fields))
          (stobjs (access frame$a-property stobj$a-property :stobjs))
 
-         (stobj-property (getpropc frame 'acl2::stobj))
-         (stobj-count (len (remove nil stobjs)))
-         (stobj-accessors-and-updaters (third stobj-property))
-         (non-stobj-accessors-and-updaters (nthcdr (1+ (* 2 stobj-count)) stobj-accessors-and-updaters))
-         (accessors (loop$ :with stobj-accessors-and-updaters := stobj-accessors-and-updaters
-                          :with non-stobj-accessors-and-updaters := non-stobj-accessors-and-updaters
-                          :with stobjs := stobjs
-                          :with accessors := ()
-                          :do
-                          (progn
-                            (cond
-                              ((endp stobjs)
-                               (return (reverse accessors)))
-                              ((car stobjs)
-                               (progn
-                                 (setq accessors (cons (car stobj-accessors-and-updaters) accessors))
-                                 (setq stobj-accessors-and-updaters (cddr stobj-accessors-and-updaters))))
-                              (t
-                               (progn
-                                 (setq accessors (cons (car non-stobj-accessors-and-updaters) accessors))
-                                 (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
-                            (setq stobjs (cdr stobjs)))))
-         (updaters (loop$ :with stobj-accessors-and-updaters := (cdr stobj-accessors-and-updaters)
-                         :with non-stobj-accessors-and-updaters := (nthcdr (- (len fields) stobj-count)
-                                                                           non-stobj-accessors-and-updaters)
-                         :with stobjs := stobjs
-                         :with updaters := ()
-                         :do
-                         (progn
-                           (cond
-                             ((endp stobjs)
-                              (return (reverse updaters)))
-                             ((car stobjs)
-                              (progn
-                                (setq updaters (cons (car stobj-accessors-and-updaters) updaters))
-                                (setq stobj-accessors-and-updaters (cddr stobj-accessors-and-updaters))))
-                             (t
-                              (progn
-                                (setq updaters (cons (car non-stobj-accessors-and-updaters) updaters))
-                                (setq non-stobj-accessors-and-updaters (cdr non-stobj-accessors-and-updaters)))))
-                           (setq stobjs (cdr stobjs))))))
+         (absstobj-info (getpropc frame 'acl2::absstobj-info))
+         (accessors (loop$ :for accessor$a :in (access frame$a-property
+                                                       stobj$a-property
+                                                       :accessors)
+                          :collect (car (assoc-equal-cadr accessor$a
+                                                          (cdr absstobj-info)))))
+         (updaters (loop$ :for updater$a :in (access frame$a-property
+                                                     stobj$a-property
+                                                     :updaters)
+                         :collect (car (assoc-equal-cadr updater$a
+                                                         (cdr absstobj-info))))))
 
     `(progn
 
