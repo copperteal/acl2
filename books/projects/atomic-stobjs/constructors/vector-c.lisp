@@ -417,11 +417,11 @@
 (defmacro defthm-fi (name statement &rest kvl)
 ; TODO: move to utilities
   (declare (xargs :guard t))
-  (b* ((theorem (cadr (assoc-keyword :theorem kvl)))
-       (bindings (cadr (assoc-keyword :bindings kvl)))
-       (kvl (remove-keyword :bindings
-                            (remove-keyword :theorem
-                                            (remove-keyword :hints kvl)))))
+  (let ((theorem (cadr (assoc-keyword :theorem kvl)))
+        (bindings (cadr (assoc-keyword :bindings kvl)))
+        (kvl (remove-keyword :bindings
+                             (remove-keyword :theorem
+                                             (remove-keyword :hints kvl)))))
     `(defthm ,name
        ,statement
        ,@kvl
@@ -518,9 +518,6 @@
                    ,vector
                    (,creator)))
         :rule-classes :definition)
-
-      (in-theory
-        (disable ,fixer))
 
       (defthm-fi ,fixer-tp
         (and (consp (,fixer ,vector))
@@ -840,6 +837,27 @@
         :bindings ,fi-bindings))))
 
 
+;;;; `STRIP-THEORY'
+(defun strip-theory-rec (theory acc)
+  (declare (xargs :guard (and (alistp theory)
+                              (true-listp acc))))
+  (cond
+    ((endp theory)
+     (reverse acc))
+    ((member (caar theory) '(:definition
+                             :induction
+                             :executable-counterpart)
+             :test 'eq)
+     (strip-theory-rec (cdr theory)
+                       acc))
+    (t (strip-theory-rec (cdr theory)
+                         (cons (car theory) acc)))))
+
+(defun strip-theory (theory)
+  (declare (xargs :guard (alistp theory)))
+  (strip-theory-rec theory ()))
+
+
 ;;;; `DEFINE-VECTOR$C'
 (defmacro define-vector$c
     (&whole form
@@ -939,27 +957,20 @@
                ,fixer-hack-form))
 
             ;; Epilogue
-            (theorems (symbolicate$ pkg-witness vector "-THEOREMS"))
+            (theory (symbolicate$ pkg-witness vector "-THEORY"))
             (epilogue
              `((deflabel ,end-label)
 
-               (deftheory-static ,theorems
-                 (set-difference-theories
-                  (set-difference-theories
-                   (current-theory ',end-label)
-                   (current-theory ',begin-label))
-                  ',(list contents-recognizer
-                          recognizer
-                          creator
-                          length
-                          resizer
-                          accessor
-                          updater
-                          fixer)))
+               (deftheory-static ,theory
+                 (union-theories
+                  (strip-theory (set-difference-theories
+                                 (current-theory ',end-label)
+                                 (current-theory ',begin-label)))
+                  '((:d ,(symbolicate$ pkg-witness fixer "-DEF")))))
 
                (in-theory
                  (union-theories (current-theory ',begin-label)
-                                 (theory ',theorems)))))
+                                 (theory ',theory)))))
 
             ;; Functional Instantiation
             (fi-bindings
@@ -1041,7 +1052,7 @@
 
                 ,@theorem-statements))
             (property (change vector$c-property property
-                              :theory theorems
+                              :theory theory
                               :fi-bindings fi-bindings-with-fixer
                               :fi-theorem nil)))
 
