@@ -63,6 +63,8 @@
     accessor
     updater)
    (contents . contents-recognizer)
+   ;; TODO: rename `ELEMENT-TYPE' to `ELEMENT-SPEC' because it is a stobj name
+   ;; or type-spec, but never an ACL2 type.
    (element element-type initial-element . default-length)
    (resizable . memoizable)
    (theory fi-bindings . fi-theorem)
@@ -151,6 +153,7 @@
     updaters)
    (fields element-types initial-elements)
    memoizable
+   ;; TODO: drop bindings?
    (theory fi-bindings . fi-theorem)
    pkg-witness)
   nil)
