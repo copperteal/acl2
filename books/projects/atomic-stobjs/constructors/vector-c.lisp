@@ -412,6 +412,26 @@
                          (cdaddr form))))
     (list* 'defstobj name field-spec kvl)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;; `DEFTHM-FI'
+(defmacro defthm-fi (name statement &rest kvl)
+; TODO: move to utilities
+  (declare (xargs :guard t))
+  (b* ((theorem (cadr (assoc-keyword :theorem kvl)))
+       (bindings (cadr (assoc-keyword :bindings kvl)))
+       (kvl (remove-keyword :bindings
+                            (remove-keyword :theorem
+                                            (remove-keyword :hints kvl)))))
+    `(defthm ,name
+       ,statement
+       ,@kvl
+       :hints
+       (("Goal"
+         :by (:functional-instance ,theorem
+                                   ,@bindings))))))
+
 
 ;;;; `DEFINE-VECTOR$C'
 (defmacro define-vector$c
@@ -652,65 +672,47 @@
                 ;; ,@theorem-statements
 
                 ;; `CONTENTS-RECOGNIZER'
-                (defthm ,contents-recognizer-tp
+                (defthm-fi ,contents-recognizer-tp
                   (booleanp (,contents-recognizer ,contents))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::contents-recognizer-tp
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::contents-recognizer-tp
+                  :bindings ,fi-bindings)
 
-                (defthm ,contents-recognizer-cr
+                (defthm-fi ,contents-recognizer-cr
                   (implies (,contents-recognizer ,contents)
                            (true-listp ,contents))
                   :rule-classes :compound-recognizer
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::contents-recognizer-cr
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::contents-recognizer-cr
+                  :bindings ,fi-bindings)
 
                 ;; `RECOGNIZER'
-                (defthm ,recognizer-tp
+                (defthm-fi ,recognizer-tp
                   (booleanp (,recognizer ,vector))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::recognizer-tp
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::recognizer-tp
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-cr
+                (defthm-fi ,recognizer-cr
                   (implies (,recognizer ,vector)
                            (and (consp ,vector)
                                 (true-listp ,vector)))
                   :rule-classes :compound-recognizer
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::recognizer-cr
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::recognizer-cr
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-of-creator
+                (defthm-fi ,recognizer-of-creator
                   (,recognizer (,creator))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::recognizer-of-creator
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::recognizer-of-creator
+                  :bindings ,fi-bindings)
 
                 ,@(and resizable
-                       `((defthm ,recognizer-of-resizer
+                       `((defthm-fi ,recognizer-of-resizer
                            (implies (,recognizer ,vector)
                                     (,recognizer (,resizer length ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$c::recognizer-of-resizer
-                                  ,@fi-bindings))))))
+                           :theorem lem-vector$c::recognizer-of-resizer
+                           :bindings ,fi-bindings)))
 
-                (defthm ,recognizer-of-updater
+                (defthm-fi ,recognizer-of-updater
                   (implies (and (natp index)
                                 (< index ,(if resizable
                                               `(,length ,vector)
@@ -721,96 +723,69 @@
                                            `(,(typep$transform 'value element-type))))
                                 (,recognizer ,vector))
                            (,recognizer (,updater index value ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::recognizer-of-updater
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::recognizer-of-updater
+                  :bindings ,fi-bindings)
 
                 ;; `LENGTH'
-                (defthm ,length-tp
+                (defthm-fi ,length-tp
                   (natp (,length ,vector))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::length-tp
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::length-tp
+                  :bindings ,fi-bindings)
 
                 ,@(if resizable
-                      `((defthm ,length-of-creator
+                      `((defthm-fi ,length-of-creator
                           (equal (,length (,creator))
                                  ,default-length-name)
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::length-of-creator
-                                 ,@fi-bindings))))
+                          :theorem lem-vector$c::length-of-creator
+                          :bindings ,fi-bindings)
 
-                        (defthm ,length-of-resizer
+                        (defthm-fi ,length-of-resizer
                           (implies (natp length)
                                    (equal (,length (,resizer length ,vector))
                                           length))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::length-of-resizer
-                                 ,@fi-bindings))))
+                          :theorem lem-vector$c::length-of-resizer
+                          :bindings ,fi-bindings)
 
-                        (defthm ,length-of-updater
+                        (defthm-fi ,length-of-updater
                           (implies (and (natp index)
                                         (< index (,length ,vector)))
                                    (equal (,length (,updater index value ,vector))
                                           (,length ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::length-of-updater
-                                 ,@fi-bindings)))))
+                          :theorem lem-vector$c::length-of-updater
+                          :bindings ,fi-bindings))
 
-                      `((defthm ,length-rw
+                      `((defthm-fi ,length-rw
                           (equal (,length ,vector)
                                  ,default-length-name)
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::length-rw
-                                 ,@fi-bindings))))))
+                          :theorem lem-vector$c::length-rw
+                          :bindings ,fi-bindings)))
 
                 ;; `RESIZER'
-                (defthm ,resizer-tp
+                (defthm-fi ,resizer-tp
                   (implies (,recognizer ,vector)
                            (and (consp (,resizer length ,vector))
                                 (true-listp (,resizer length ,vector))))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::resizer-tp
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::resizer-tp
+                  :bindings ,fi-bindings)
 
                 ,@(if resizable
-                      `((defthm ,resizer-of-creator
+                      `((defthm-fi ,resizer-of-creator
                           (implies (equal length ,default-length-name)
                                    (equal (,resizer length (,creator))
                                           (,creator)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::resizer-of-creator
-                                 ,@fi-bindings))))
+                          :theorem lem-vector$c::resizer-of-creator
+                          :bindings ,fi-bindings)
 
-                        (defthm ,resizer-of-length
+                        (defthm-fi ,resizer-of-length
                           (implies (,recognizer ,vector)
                                    (equal (,resizer (,length ,vector) ,vector)
                                           ,vector))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::resizer-of-length
-                                 ,@fi-bindings))))
+                          :theorem lem-vector$c::resizer-of-length
+                          :bindings ,fi-bindings)
 
-                        (defthm ,resizer-of-resizer
+                        (defthm-fi ,resizer-of-resizer
                           (implies (and (natp %length)
                                         (natp length)
                                         (or (<= %length length)
@@ -818,50 +793,38 @@
                                         (,recognizer ,vector))
                                    (equal (,resizer %length (,resizer length ,vector))
                                           (,resizer %length ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::resizer-of-resizer
-                                 ,@fi-bindings))))
+                          :theorem lem-vector$c::resizer-of-resizer
+                          :bindings ,fi-bindings)
 
-                        (defthm ,resizer-of-updater-keep
+                        (defthm-fi ,resizer-of-updater-keep
                           (implies (and (natp index)
                                         (natp length)
                                         (< index length)
                                         (< index (,length ,vector)))
                                    (equal (,resizer length (,updater index value ,vector))
                                           (,updater index value (,resizer length ,vector))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::resizer-of-updater-keep
-                                 ,@fi-bindings))))
+                          :theorem lem-vector$c::resizer-of-updater-keep
+                          :bindings ,fi-bindings)
 
-                        (defthm ,resizer-of-updater-drop
+                        (defthm-fi ,resizer-of-updater-drop
                           (implies (and (natp index)
                                         (natp length)
                                         (<= length index)
                                         (< index (,length ,vector)))
                                    (equal (,resizer length (,updater index value ,vector))
                                           (,resizer length ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::resizer-of-updater-drop
-                                 ,@fi-bindings)))))
+                          :theorem lem-vector$c::resizer-of-updater-drop
+                          :bindings ,fi-bindings))
 
-                      `((defthm ,resizer-rw
+                      `((defthm-fi ,resizer-rw
                           (equal (,resizer length ,vector)
                                  ,vector)
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$c::resizer-rw
-                                 ,@fi-bindings))))))
+                          :theorem lem-vector$c::resizer-rw
+                          :bindings ,fi-bindings)))
 
                 ;; `ACCESSOR'
                 ,@(and (not (eq element-type t))
-                       `((defthm ,typep$-of-accessor
+                       `((defthm-fi ,typep$-of-accessor
                            (implies (and (natp index)
                                          (< index ,(if resizable
                                                        `(,length ,vector)
@@ -873,40 +836,31 @@
                            :rule-classes
                            (:rewrite
                             :type-prescription)
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$c::element-recognizer-of-accessor
-                                  ,@fi-bindings))))))
+                           :theorem lem-vector$c::element-recognizer-of-accessor
+                           :bindings ,fi-bindings)))
 
-                (defthm ,accessor-of-creator
+                (defthm-fi ,accessor-of-creator
                   (implies (and (natp index)
                                 (< index ,default-length-name))
                            (equal (,accessor index (,creator))
                                   ,(if stobj-creator
                                        `(,stobj-creator)
                                        initial-element-name)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::accessor-of-creator
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::accessor-of-creator
+                  :bindings ,fi-bindings)
 
                 ,@(and resizable
-                       `((defthm ,accessor-of-resizer-inner
+                       `((defthm-fi ,accessor-of-resizer-inner
                            (implies (and (natp index)
                                          (natp length)
                                          (< index length)
                                          (< index (,length ,vector)))
                                     (equal (,accessor index (,resizer length ,vector))
                                            (,accessor index ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$c::accessor-of-resizer-inner
-                                  ,@fi-bindings))))
+                           :theorem lem-vector$c::accessor-of-resizer-inner
+                           :bindings ,fi-bindings)
 
-                         (defthm ,accessor-of-resizer-outer
+                         (defthm-fi ,accessor-of-resizer-outer
                            (implies (and (natp index)
                                          (natp length)
                                          (< index length)
@@ -915,47 +869,35 @@
                                            ,(if stobj-creator
                                                 `(,stobj-creator)
                                                 initial-element-name)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$c::accessor-of-resizer-outer
-                                  ,@fi-bindings))))))
+                           :theorem lem-vector$c::accessor-of-resizer-outer
+                           :bindings ,fi-bindings)))
 
-                (defthm ,accessor-of-updater-same
+                (defthm-fi ,accessor-of-updater-same
                   (implies (equal %index index)
                            (equal (,accessor %index (,updater index value ,vector))
                                   value))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::accessor-of-updater-same
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::accessor-of-updater-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,accessor-of-updater-diff
+                (defthm-fi ,accessor-of-updater-diff
                   (implies (and (not (equal %index index))
                                 (natp %index)
                                 (natp index))
                            (equal (,accessor %index (,updater index value ,vector))
                                   (,accessor %index ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::accessor-of-updater-diff
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::accessor-of-updater-diff
+                  :bindings ,fi-bindings)
 
                 ;; `UPDATER'
-                (defthm ,updater-tp
+                (defthm-fi ,updater-tp
                   (implies (,recognizer ,vector)
                            (and (consp (,updater index value ,vector))
                                 (true-listp (,updater index value ,vector))))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::updater-tp
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::updater-tp
+                  :bindings ,fi-bindings)
 
-                (defthm ,updater-of-creator
+                (defthm-fi ,updater-of-creator
                   (implies (and (equal value ,(if stobj-creator
                                                   `(,stobj-creator)
                                                   initial-element-name))
@@ -963,14 +905,11 @@
                                 (< index ,default-length-name))
                            (equal (,updater index value (,creator))
                                   (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::updater-of-creator
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::updater-of-creator
+                  :bindings ,fi-bindings)
 
                 ,@(and resizable
-                       `((defthm ,updater-of-resizer-inner
+                       `((defthm-fi ,updater-of-resizer-inner
                            (implies (and (equal value (,accessor index ,vector))
                                          (natp index)
                                          (natp length)
@@ -978,13 +917,10 @@
                                          (< index (,length ,vector)))
                                     (equal (,updater index value (,resizer length ,vector))
                                            (,resizer length ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$c::updater-of-resizer-inner
-                                  ,@fi-bindings))))
+                           :theorem lem-vector$c::updater-of-resizer-inner
+                           :bindings ,fi-bindings)
 
-                         (defthm ,updater-of-resizer-outer
+                         (defthm-fi ,updater-of-resizer-outer
                            (implies (and (equal value ,(if stobj-creator
                                                            `(,stobj-creator)
                                                            initial-element-name))
@@ -994,13 +930,10 @@
                                          (<= (,length ,vector) index))
                                     (equal (,updater index value (,resizer length ,vector))
                                            (,resizer length ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$c::updater-of-resizer-outer
-                                  ,@fi-bindings))))))
+                           :theorem lem-vector$c::updater-of-resizer-outer
+                           :bindings ,fi-bindings)))
 
-                (defthm ,updater-of-accessor
+                (defthm-fi ,updater-of-accessor
                   (implies (and (equal %index index)
                                 (natp %index)
                                 (< %index ,(if resizable
@@ -1009,23 +942,17 @@
                                 (,recognizer ,vector))
                            (equal (,updater %index (,accessor index ,vector) ,vector)
                                   ,vector))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::updater-of-accessor
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::updater-of-accessor
+                  :bindings ,fi-bindings)
 
-                (defthm ,updater-of-updater-same
+                (defthm-fi ,updater-of-updater-same
                   (implies (equal %index index)
                            (equal (,updater %index %value (,updater index value ,vector))
                                   (,updater %index %value ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::updater-of-updater-same
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::updater-of-updater-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,updater-of-updater-diff
+                (defthm-fi ,updater-of-updater-diff
                   (implies (and (not (equal %index index))
                                 (natp %index)
                                 (natp index))
@@ -1033,11 +960,8 @@
                                   (,updater index value (,updater %index %value ,vector))))
                   :rule-classes
                   ((:rewrite :loop-stopper ((%index index ,updater))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::updater-of-updater-diff
-                         ,@fi-bindings))))
+                  :theorem lem-vector$c::updater-of-updater-diff
+                  :bindings ,fi-bindings)
 
                 ;; `FIXER'
                 (defun-inline ,fixer (,vector)
@@ -1060,42 +984,30 @@
                 (in-theory
                   (disable ,fixer))
 
-                (defthm ,fixer-tp
+                (defthm-fi ,fixer-tp
                   (and (consp (,fixer ,vector))
                        (true-listp (,fixer ,vector)))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::fixer-tp
-                         ,@fi-bindings-with-fixer))))
+                  :theorem lem-vector$c::fixer-tp
+                  :bindings ,fi-bindings-with-fixer)
 
-                (defthm ,recognizer-of-fixer
+                (defthm-fi ,recognizer-of-fixer
                   (,recognizer (,fixer ,vector))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::recognizer-of-fixer
-                         ,@fi-bindings-with-fixer))))
+                  :theorem lem-vector$c::recognizer-of-fixer
+                  :bindings ,fi-bindings-with-fixer)
 
-                (defthm ,fixer-when-recognizer
+                (defthm-fi ,fixer-when-recognizer
                   (implies (,recognizer ,vector)
                            (equal (,fixer ,vector)
                                   ,vector))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::fixer-when-recognizer
-                         ,@fi-bindings-with-fixer))))
+                  :theorem lem-vector$c::fixer-when-recognizer
+                  :bindings ,fi-bindings-with-fixer)
 
-                (defthm ,fixer-when-not-recognizer
+                (defthm-fi ,fixer-when-not-recognizer
                   (implies (not (,recognizer ,vector))
                            (equal (,fixer ,vector) (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-vector$c::fixer-when-not-recognizer
-                         ,@fi-bindings-with-fixer))))))
+                  :theorem lem-vector$c::fixer-when-not-recognizer
+                  :bindings ,fi-bindings-with-fixer)))
             (property (change vector$c-property property
                               :theory theorems
                               :fi-bindings fi-bindings-with-fixer

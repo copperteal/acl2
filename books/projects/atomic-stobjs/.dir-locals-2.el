@@ -6,6 +6,7 @@
                (eval . (put 'define-congruent 'common-lisp-indent-function 1))
                (eval . (put 'define-copy 'common-lisp-indent-function 1))
                (eval . (put 'define-export 'common-lisp-indent-function 1))
+               (eval . (put 'defthm-fi 'common-lisp-indent-function 1))
 
                (eval . (put 'define-hash-table 'common-lisp-indent-function 2))
                (eval . (put 'define-hash-table$a 'common-lisp-indent-function 2))
