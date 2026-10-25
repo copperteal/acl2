@@ -95,7 +95,6 @@
           (t
            (mv-er 2 hard 'define-vector$c
                   "GUARD VIOLATION: ~x0" :dimensions))))
-       (dimensions (list default-length))
 
        (contents (let ((contents (assoc-keyword :contents kvl)))
                    (if contents
@@ -265,8 +264,7 @@
                       (if element-stobj-property
                           element-type
                           (intern-in-package-of-symbol "X" pkg-witness))))))
-    (mv (list (cons :dimensions dimensions)
-              (cons :default-length-val default-length-val)
+    (mv (list (cons :default-length-val default-length-val)
               (cons :element-stobj-property element-stobj-property)
               (cons :initial-element-val initial-element-val)
               (cons :specialize-element-type specialize-element-type)
@@ -291,6 +289,128 @@
               :resizable resizable
               :memoizable memoizable
               :pkg-witness pkg-witness))))
+
+
+;;;; `DEFINE-VECTOR$C/MAKE-DEFSTOBJ-DOUBLETS'
+(defun define-vector$c/make-defstobj-doublets (property)
+  (declare (xargs :mode :program
+                  :guard (vector$c-property-p property)))
+  (b* ((pkg-witness (access vector$c-property property :pkg-witness))
+       (vector (access vector$c-property property :name))
+       (doublets ())
+       (contents (access vector$c-property property :contents))
+       (contents-recognizer (access vector$c-property property :contents-recognizer))
+       (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
+       (doublets (if (eq contents-recognizer-stobj-default contents-recognizer)
+                     doublets
+                     (cons (list contents-recognizer-stobj-default
+                                 contents-recognizer)
+                           doublets)))
+       (recognizer (access vector$c-property property :recognizer))
+       (recognizer-stobj-default (symbolicate$ pkg-witness vector "P"))
+       (doublets (if (eq recognizer-stobj-default recognizer)
+                     doublets
+                     (cons (list recognizer-stobj-default
+                                 recognizer)
+                           doublets)))
+       (creator (access vector$c-property property :creator))
+       (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" vector))
+       (doublets (if (eq creator-stobj-default creator)
+                     doublets
+                     (cons (list creator-stobj-default
+                                 creator)
+                           doublets)))
+       (length (access vector$c-property property :length))
+       (length-stobj-default (symbolicate$ pkg-witness contents "-LENGTH"))
+       (doublets (if (eq length-stobj-default length)
+                     doublets
+                     (cons (list length-stobj-default
+                                 length)
+                           doublets)))
+       (resizer (access vector$c-property property :resizer))
+       (resizer-stobj-default (symbolicate$ pkg-witness "RESIZE-" contents))
+       (doublets (if (eq resizer-stobj-default resizer)
+                     doublets
+                     (cons (list resizer-stobj-default
+                                 resizer)
+                           doublets)))
+       (accessor (access vector$c-property property :accessor))
+       (accessor-stobj-default (symbolicate$ pkg-witness contents "I"))
+       (doublets (if (eq accessor-stobj-default accessor)
+                     doublets
+                     (cons (list accessor-stobj-default
+                                 accessor)
+                           doublets)))
+       (updater (access vector$c-property property :updater))
+       (updater-stobj-default (symbolicate$ pkg-witness "UPDATE-" contents "I"))
+       (doublets (if (eq updater-stobj-default updater)
+                     doublets
+                     (cons (list updater-stobj-default
+                                 updater)
+                           doublets))))
+    doublets))
+
+
+;;;; `DEFINE-VECTOR$C/MAKE-DEFSTOBJ-FORM'
+(defun define-vector$c/make-defstobj-form (tmps property)
+  (declare (xargs :mode :program
+                  :guard (and (alistp tmps)
+                              (vector$c-property-p property))))
+  (let ((contents (access vector$c-property property :contents))
+        (element-type (access vector$c-property property :element-type))
+        (default-length (access vector$c-property property :default-length))
+        (element-stobj-property (cdr (assoc :element-stobj-property tmps)))
+        (specialize-element-type (cdr (assoc :specialize-element-type tmps)))
+        (initial-element-val (cdr (assoc :initial-element-val tmps)))
+        (resizable (access vector$c-property property :resizable))
+        (doublets (define-vector$c/make-defstobj-doublets property))
+        (inline (cdr (assoc :inline tmps)))
+        (memoizable (access vector$c-property property :memoizable))
+        (executable (cdr (assoc :executable tmps))))
+    `(defstobj ,(access vector$c-property property :name)
+       (,contents :type (acl2::array ,element-type (,default-length))
+                  ,@(and (not element-stobj-property)
+                         `(:element-type
+                           ,(if specialize-element-type
+                                element-type
+                                t)
+                           :initially ,initial-element-val))
+                  :resizable ,resizable)
+       :renaming ,doublets
+       :inline ,inline
+       :non-memoizable ,(not memoizable)
+       :non-executable ,(not executable))))
+
+
+;;;; `DEFINE-VECTOR$C/APPLY-FIXER-HACK'
+(defun remove-keyword (keyword kvl)
+  ;; TODO: move to utilities
+  (declare (xargs :guard (and (keywordp keyword)
+                              (keyword-value-listp kvl))))
+  (cond
+    ((endp kvl)
+     ())
+    ((eq keyword (car kvl))
+     (cddr kvl))
+    (t
+     (list* (car kvl)
+            (cadr kvl)
+            (remove-keyword keyword (cddr kvl))))))
+
+(defun define-vector$c/apply-fixer-hack (property form)
+  (declare (xargs :mode :program))
+  (b* ((pkg-witness (access vector$c-property property :pkg-witness))
+       (vector (access vector$c-property property :name))
+       (kvl (list* :congruent-to vector
+                   :non-executable t
+                   (remove-keyword :renaming
+                                   (remove-keyword :non-executable
+                                                   (cdddr form)))))
+       (name (symbolicate$ pkg-witness vector "/FIXER-HACK"))
+       (contents (access vector$c-property property :contents))
+       (field-spec (cons (symbolicate$ pkg-witness contents "/FIXER-HACK")
+                         (cdaddr form))))
+    (list* 'defstobj name field-spec kvl)))
 
 
 ;;;; `DEFINE-VECTOR$C'
@@ -348,7 +468,6 @@
        (b* (((mv tmps property) (define-vector$c/parse-form ',form state))
             (vector (access vector$c-property property :name))
             (pkg-witness (access vector$c-property property :pkg-witness))
-            (dimensions (cdr (assoc :dimensions tmps)))
             (default-length (cdr (assoc :default-length-val tmps)))
             (default-length-name (access vector$c-property property :default-length))
 
@@ -360,14 +479,9 @@
                                            (stobj$a-property element-type (w state))))
             (stobj-recognizer (access stobj$a-property element-stobj$a-property :recognizer))
             (stobj-creator (access stobj$a-property element-stobj$a-property :creator))
-            (specialize-element-type (cdr (assoc :specialize-element-type tmps)))
             (initial-element (cdr (assoc :initial-element-val tmps)))
             (initial-element-name (access vector$c-property property :initial-element))
             (resizable (access vector$c-property property :resizable))
-
-            (inline (cdr (assoc :inline tmps)))
-            (memoizable (access vector$c-property property :memoizable))
-            (executable (cdr (assoc :executable tmps)))
 
             (contents (access vector$c-property property :contents))
             (contents-recognizer (access vector$c-property property :contents-recognizer))
@@ -379,71 +493,24 @@
             (accessor (access vector$c-property property :accessor))
             (updater (access vector$c-property property :updater))
 
-            ;; Interface Symbols
-            (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
-            (recognizer-stobj-default (symbolicate$ pkg-witness vector "P"))
-            (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" vector))
-            (length-stobj-default (symbolicate$ pkg-witness contents "-LENGTH"))
-            (resizer-stobj-default (symbolicate$ pkg-witness "RESIZE-" contents))
-            (accessor-stobj-default (symbolicate$ pkg-witness contents "I"))
-            (updater-stobj-default (symbolicate$ pkg-witness "UPDATE-" contents "I"))
-
-            ;; Make Doublets
-            (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
-                                   `((,contents-recognizer-stobj-default ,contents-recognizer)))
-                              (and (not (eq recognizer recognizer-stobj-default))
-                                   `((,recognizer-stobj-default ,recognizer)))
-                              (and (not (eq creator creator-stobj-default))
-                                   `((,creator-stobj-default ,creator)))
-                              (and (not (eq length length-stobj-default))
-                                   `((,length-stobj-default ,length)))
-                              (and (not (eq resizer resizer-stobj-default))
-                                   `((,resizer-stobj-default ,resizer)))
-                              (and (not (eq accessor accessor-stobj-default))
-                                   `((,accessor-stobj-default ,accessor)))
-                              (and (not (eq updater updater-stobj-default))
-                                   `((,updater-stobj-default ,updater)))))
-
             ;; Prologue
             (begin-label (symbolicate$ pkg-witness vector "-BEGIN"))
             (end-label (symbolicate$ pkg-witness vector "-END"))
-            (fixer-hack (symbolicate$ pkg-witness vector "/FIXER-HACK"))
-            (contents/fh (symbolicate$ pkg-witness contents "/FIXER-HACK"))
+            (defstobj-form (define-vector$c/make-defstobj-form tmps property))
+            (fixer-hack-form (define-vector$c/apply-fixer-hack property defstobj-form))
+            (fixer-hack (second fixer-hack-form))
             (prologue
              `((deflabel ,begin-label)
 
+               ;; TODO: only if this is not already defined
                (defconst ,default-length-name ',default-length)
 
+               ;; TODO: only if this is not already defined
                ,@(and (not element-stobj-property)
                       `((defconst ,initial-element-name ',initial-element)))
 
-               (defstobj ,vector
-                 (,contents :type (acl2::array ,element-type ,dimensions)
-                            ,@(and (not element-stobj-property)
-                                   `(:element-type
-                                     ,(if specialize-element-type
-                                          element-type
-                                          t)
-                                     :initially ,initial-element))
-                            :resizable ,resizable)
-                 :renaming ,doublets
-                 :inline ,inline
-                 :non-memoizable ,(not memoizable)
-                 :non-executable ,(not executable))
-
-               (defstobj ,fixer-hack
-                 (,contents/fh :type (acl2::array ,element-type ,dimensions)
-                               ,@(and (not element-stobj-property)
-                                      `(:element-type
-                                        ,(if specialize-element-type
-                                             element-type
-                                             t)
-                                        :initially ,initial-element))
-                               :resizable ,resizable)
-                 :inline ,inline
-                 :congruent-to ,vector
-                 :non-memoizable ,(not memoizable)
-                 :non-executable t)))
+               ,defstobj-form
+               ,fixer-hack-form))
 
             ;; Theorem Names
             (stobj-recognizer-of-stobj-creator (symbolicate$ "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
