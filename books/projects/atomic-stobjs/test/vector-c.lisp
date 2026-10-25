@@ -36,26 +36,26 @@
 
 
 ;;;; Stobj Values
-(defstobj foo$c
-  a
-  :non-memoizable t
-  :non-executable t)
+;; (defstobj foo$c
+;;   a
+;;   :non-memoizable t
+;;   :non-executable t)
 
-(atomic-stobjs::define-vector$c vec$c/foo$c-0 0
-  :element-type foo$c
-  :resizable nil)
+;; (atomic-stobjs::define-vector$c vec$c/foo$c-0 0
+;;   :element-type foo$c
+;;   :resizable nil)
 
-(atomic-stobjs::define-vector$c vec$c/foo$c-1 0
-  :element-type foo$c
-  :resizable t)
+;; (atomic-stobjs::define-vector$c vec$c/foo$c-1 0
+;;   :element-type foo$c
+;;   :resizable t)
 
-(atomic-stobjs::define-vector$c vec$c/foo$c-2 997
-  :element-type foo$c
-  :resizable nil)
+;; (atomic-stobjs::define-vector$c vec$c/foo$c-2 997
+;;   :element-type foo$c
+;;   :resizable nil)
 
-(atomic-stobjs::define-vector$c vec$c/foo$c-3 997
-  :element-type foo$c
-  :resizable t)
+;; (atomic-stobjs::define-vector$c vec$c/foo$c-3 997
+;;   :element-type foo$c
+;;   :resizable t)
 
 
 ;;;; type t

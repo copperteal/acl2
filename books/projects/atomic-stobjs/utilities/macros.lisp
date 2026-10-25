@@ -39,3 +39,12 @@
                         string-or-symbol))
       "-P"
       "P"))
+
+(defmacro mv-er (n severity &rest rest)
+  (declare (xargs :guard (and (integerp n)
+                              (< 1 n)
+                              (symbolp severity)
+                              (member-symbol-name (symbol-name severity)
+                                                  '(hard hard? hard! hard?!)))))
+  (list 'prog2$ (list* 'er severity rest)
+        (cons 'mv (make-list n))))

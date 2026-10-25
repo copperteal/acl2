@@ -39,10 +39,13 @@
                symbolicate$
                with-books
                make-predicate-suffix
-               coupledp)
+               coupledp
+               mv-er)
              '(<<
                nat-equiv
                assoc-equal-cadr
+               legal-constantp
+               legal-variablep
 
                b*
                def-b*-binder

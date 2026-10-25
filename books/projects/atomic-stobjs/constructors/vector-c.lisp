@@ -35,13 +35,268 @@
 (include-book "../lemmas/vector-c-resizable")
 |#
 
+(include-book "std/util/bstar" :dir :system)
+
 (include-book "../type-spec")
 (include-book "../utilities/top")
 
 
+;;;; `DEFINE-VECTOR$C/PARSE-FORM'
+(defun define-vector$c/parse-form (form state)
+; This function should be in logic mode because it is non-recursive and
+; satisfies its guards or is trivially fixable.  However, guard checking it
+; causes a combinatorial explosion in the prover.  If it is ever needed in logic
+; mode, we can refactor it into bite-size, disabled pieces.
+  (declare (xargs :mode :program
+                  :stobjs state
+                  :guard (true-listp form)))
+  (b* (((list* & name dimensions kvl) form)
+       ((unless (legal-variablep name))
+        (mv-er 2 hard 'define-vector$c
+               "Invalid stobj name: ~x0." name))
+       ((unless (keyword-value-listp kvl))
+        (mv-er 2 hard 'define-vector$c
+               "Invalid form: ~x0." form))
+
+       (pkg-witness (let ((suppliedp (assoc-keyword :pkg-witness kvl)))
+                      (pkg-witness-fix (if suppliedp
+                                           (cadr suppliedp)
+                                           (current-package state)))))
+
+       ((unless (if (atom dimensions)
+                    (or (natp dimensions)
+                        (and (legal-constantp dimensions)
+                             (let ((qval (getpropc dimensions 'acl2::const)))
+                               (and (quotep qval)
+                                    (natp (cadr qval))))))
+                    (and (null (cdr dimensions))
+                         (let ((dimensions (car dimensions)))
+                           (or (natp dimensions)
+                               (and (legal-constantp dimensions)
+                                    (let ((qval (getpropc dimensions 'acl2::const)))
+                                      (and (quotep qval)
+                                           (natp (cadr qval))))))))))
+        (mv-er 2 hard 'define-vector$c
+               "Invalid stobj array dimensions: ~x0." dimensions))
+       ((mv default-length default-length-val)
+        (cond
+          ((natp dimensions)
+           (mv (symbolicate$ pkg-witness "*" name "-DEFAULT-LENGTH*")
+               dimensions))
+          ((symbolp dimensions)
+           (mv dimensions
+               (cadr (getpropc dimensions 'acl2::const))))
+          ((natp (car dimensions))
+           (mv (symbolicate$ pkg-witness "*" name "-DEFAULT-LENGTH*")
+               (car dimensions)))
+          ((symbolp (car dimensions))
+           (mv (car dimensions)
+               (cadr (getpropc (car dimensions) 'acl2::const))))
+          (t
+           (mv-er 2 hard 'define-vector$c
+                  "GUARD VIOLATION: ~x0" :dimensions))))
+       (dimensions (list default-length))
+
+       (contents (let ((contents (assoc-keyword :contents kvl)))
+                   (if contents
+                       (cadr contents)
+                       (symbolicate$ pkg-witness name "-CONTENTS"))))
+       ((unless (legal-variablep contents))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." contents))
+       (contents-recognizer (let ((contents-recognizer (assoc-keyword :contents-recognizer kvl)))
+                              (if contents-recognizer
+                                  (cadr contents-recognizer)
+                                  (symbolicate$ pkg-witness contents (make-predicate-suffix contents)))))
+       ((unless (legal-variablep contents-recognizer))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." contents-recognizer))
+       (recognizer (let ((recognizer (assoc-keyword :recognizer kvl)))
+                     (if recognizer
+                         (cadr recognizer)
+                         (symbolicate$ pkg-witness name (make-predicate-suffix name)))))
+       ((unless (legal-variablep recognizer))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." recognizer))
+       (creator (let ((creator (assoc-keyword :creator kvl)))
+                  (if creator
+                      (cadr creator)
+                      (symbolicate$ pkg-witness "CREATE-" name))))
+       ((unless (legal-variablep creator))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." creator))
+       (fixer (let ((fixer (assoc-keyword :fixer kvl)))
+                (if fixer
+                    (cadr fixer)
+                    (symbolicate$ pkg-witness name "-FIX"))))
+       ((unless (legal-variablep fixer))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." fixer))
+       (length (let ((length (assoc-keyword :length kvl)))
+                 (if length
+                     (cadr length)
+                     (symbolicate$ pkg-witness name "-LEN"))))
+       ((unless (legal-variablep length))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." length))
+       (resizer (let ((resizer (assoc-keyword :resizer kvl)))
+                  (if resizer
+                      (cadr resizer)
+                      (symbolicate$ pkg-witness name "-RSZ"))))
+       ((unless (legal-variablep resizer))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." resizer))
+       (accessor (let ((accessor (assoc-keyword :accessor kvl)))
+                   (if accessor
+                       (cadr accessor)
+                       (symbolicate$ pkg-witness name "-REF"))))
+       ((unless (legal-variablep accessor))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." accessor))
+       (updater (let ((updater (assoc-keyword :updater kvl)))
+                  (if updater
+                      (cadr updater)
+                      (symbolicate$ pkg-witness name "-SET"))))
+       ((unless (legal-variablep updater))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 is not a legal variable name." updater))
+
+       (debug (let ((debug (assoc-keyword :debug kvl)))
+                (and debug
+                     (cadr debug))))
+       ((unless (booleanp debug))
+        (mv-er 2 hard 'define-vector$c
+               "If provided, ~x0 must be boolean." :debug))
+       (resizable (let ((resizable (assoc-keyword :resizable kvl)))
+                    (if resizable
+                        (cadr resizable)
+                        t)))
+       ((unless (booleanp resizable))
+        (mv-er 2 hard 'define-vector$c
+               "If provided, ~x0 must be boolean." :resizable))
+       (specialize-element-type
+        (let ((specialize-element-type (assoc-keyword :specialize-element-type kvl)))
+          (and specialize-element-type
+               (cadr specialize-element-type))))
+       ((unless (booleanp specialize-element-type))
+        (mv-er 2 hard 'define-vector$c
+               "If provided, ~x0 must be boolean." :specialize-element-type))
+       (inline (let ((inline (assoc-keyword :inline kvl)))
+                 (if inline
+                     (cadr inline)
+                     t)))
+       ((unless (booleanp inline))
+        (mv-er 2 hard 'define-vector$c
+               "If provided, ~x0 must be boolean." :inline))
+       (memoizable (let ((memoizable (assoc-keyword :memoizable kvl)))
+                     (and memoizable
+                          (cadr memoizable))))
+       ((unless (booleanp memoizable))
+        (mv-er 2 hard 'define-vector$c
+               "If provided, ~x0 must be boolean." :memoizable))
+       (executable (let ((executable (assoc-keyword :executable kvl)))
+                     (and executable
+                          (cadr executable))))
+       ((unless (booleanp executable))
+        (mv-er 2 hard 'define-vector$c
+               "If provided, ~x0 must be boolean." :executable))
+
+       (element-type (let ((element-type (assoc-keyword :element-type kvl)))
+                       (if element-type
+                           (cadr element-type)
+                           't)))
+       (element-stobj-property (and (symbolp element-type)
+                                    (getpropc element-type 'acl2::stobj)))
+       ((unless (or (acl2-type-spec-p element-type)
+                    element-stobj-property))
+        (mv-er 2 hard 'define-vector$c
+               "~x0 must be a stobj name or type-spec: ~x1."
+               :element-type element-type))
+       (initial-element (let ((initial-element (assoc-keyword :initial-element kvl)))
+                          (and initial-element
+                               (cadr initial-element))))
+       ((unless (if (acl2-type-spec-p element-type)
+                    (or (typep$ initial-element element-type)
+                        (and (legal-constantp initial-element)
+                             (let ((initial-element (symbol-name initial-element)))
+                               (and (not (= (acl2::length initial-element) 0))
+                                    (eql (char initial-element 0) #\*)
+                                    (eql (char initial-element (1- (acl2::length initial-element))) #\*)))
+                             (let ((qval (getpropc initial-element 'acl2::const)))
+                               (and (quotep qval)
+                                    (typep$ (cadr qval) element-type)))))
+                    (and element-stobj-property
+                         (null initial-element))))
+        (mv-er 2 hard 'define-vector$c
+               "Bad ~x0: ~x1.  If ~x0 is provided, ~x2 must be a type-spec and ~
+               ~x0 must satisfy it.  Here, ~x2 is ~x3."
+               :initial-element initial-element
+               :element-type element-type))
+       ((mv initial-element initial-element-val)
+        (if (acl2-type-spec-p element-type)
+            (cond
+
+; This ordering precludes defining a vector with the name of a legal constant as
+; initial element.  The alternative is only allowing the initial element to be a
+; defined constant when the element type excludes symbols.
+;
+; Cue "You Can't Always Get What You Want" by The Rolling Stones.
+
+              ((and (legal-constantp initial-element)
+                    (let ((initial-element (symbol-name initial-element)))
+                      (and (not (= (acl2::length initial-element) 0))
+                           (eql (char initial-element 0) #\*)
+                           (eql (char initial-element (1- (acl2::length initial-element))) #\*))))
+               (mv initial-element
+                   (cadr (getpropc initial-element 'acl2::const))))
+              ((typep$ initial-element element-type)
+               (mv (symbolicate$ pkg-witness "*" name "-INITIAL-ELEMENT*")
+                   initial-element))
+              (t
+               (mv-er 2 hard 'define-vector$c
+                      "GUARD VIOLATION: ~x0" :initial-element)))
+            (mv nil nil)))
+       (element (let ((element (assoc-keyword :element kvl)))
+                  (if element
+                      (if (legal-variablep (cadr element))
+                          (cadr element)
+                          (er hard 'define-vector$c
+                              "~x0 is not a legal variable name." element))
+                      (if element-stobj-property
+                          element-type
+                          (intern-in-package-of-symbol "X" pkg-witness))))))
+    (mv (list (cons :dimensions dimensions)
+              (cons :default-length-val default-length-val)
+              (cons :element-stobj-property element-stobj-property)
+              (cons :initial-element-val initial-element-val)
+              (cons :specialize-element-type specialize-element-type)
+              (cons :inline inline)
+              (cons :executable executable)
+              (cons :debug debug))
+        (make vector$c-property
+              :name name
+              :recognizer recognizer
+              :creator creator
+              :fixer fixer
+              :length length
+              :resizer resizer
+              :accessor accessor
+              :updater updater
+              :contents contents
+              :contents-recognizer contents-recognizer
+              :element element
+              :element-type element-type
+              :initial-element initial-element
+              :default-length default-length
+              :resizable resizable
+              :memoizable memoizable
+              :pkg-witness pkg-witness))))
+
+
 ;;;; `DEFINE-VECTOR$C'
 (defmacro define-vector$c
-    (vector dimensions
+    (&whole form
+       vector dimensions
      &key
        (element-type 't)
        (specialize-element-type 'nil)
@@ -62,775 +317,722 @@
        (accessor 'nil)
        (updater 'nil)
 
-       (pkg-witness 'nil pkg-witness-supplied-p)
+       (pkg-witness 'nil)
        (debug 'nil))
 
-  (declare (xargs :guard (and (symbolp vector)
-                              (or (and (consp dimensions)
-                                       (natp (car dimensions))
-                                       (null (cdr dimensions)))
-                                  (natp dimensions))
-                              (if (acl2-type-spec-p element-type)
-                                  (typep$ initial-element element-type)
-                                  (symbolp element-type))
-                              (boolean-listp (list specialize-element-type
-                                                   resizable
-                                                   inline
-                                                   memoizable
-                                                   executable))
-                              (symbol-listp (list contents
-                                                  contents-recognizer
-                                                  recognizer
-                                                  creator
-                                                  fixer
-                                                  length
-                                                  resizer
-                                                  accessor
-                                                  updater))
-                              ;; (pkg-witness-p pkg-witness)
-                              (booleanp debug))))
+  (declare (xargs :guard t)
+           (ignore vector dimensions
+                   element-type specialize-element-type
+                   initial-element resizable
 
+                   inline memoizable executable
+
+                   contents
+                   contents-recognizer
+                   recognizer
+                   creator
+                   fixer
+                   length
+                   resizer
+                   accessor
+                   updater
+
+                   pkg-witness))
   `(with-output
-     ,@(and (not debug)
+     ;; TODO: Put output control inside `DEFINE-VECTOR$C-FN'
+     ,@(and (not debug) nil
+            ;; TODO: revisit constructor output settings
             *constructor-output*)
 
      (make-event
-       (let* ((vector ',vector)
-              (pkg-witness (pkg-witness-fix (if ',pkg-witness-supplied-p
-                                                ',pkg-witness
-                                                (current-package state))))
-              (dimensions ',dimensions)
-              (dimensions (if (consp dimensions)
-                              dimensions
-                              (list dimensions)))
-              (default-length (car dimensions))
-              (default-length-name (symbolicate$ pkg-witness "*" vector "-DEFAULT-LENGTH*"))
-
-              (element-type ',element-type)
-              (stobj-property (and (symbolp element-type)
-                                   (getpropc element-type 'acl2::stobj)))
-              (absstobj-info (and stobj-property
-                                  (getpropc element-type 'acl2::absstobj-info)))
-              (stobj$a-property (and (symbolp element-type)
-                                     (stobj$a-property element-type (w state))))
-              (stobj-recognizer (cond
-                                  (stobj$a-property
-                                   (access stobj$a-property stobj$a-property :recognizer))
-                                  (stobj-property
-                                   (access acl2::stobj-property stobj-property :recognizer))))
-              (stobj-creator (cond
-                               (stobj$a-property
-                                (access stobj$a-property stobj$a-property :creator))
-                               (stobj-property
-                                (access acl2::stobj-property stobj-property :creator))))
-              (specialize-element-type ',specialize-element-type)
-              (initial-element ',initial-element)
-              (initial-element-name (symbolicate$ pkg-witness "*" vector "-INITIAL-ELEMENT*"))
-              (resizable ',resizable)
-
-              (inline ',inline)
-              (memoizable ',memoizable)
-              (executable ',executable)
-
-              (contents ',contents)
-              (contents-recognizer ',contents-recognizer)
-              (recognizer ',recognizer)
-              (creator ',creator)
-              (fixer ',fixer)
-              (length ',length)
-              (resizer ',resizer)
-              (accessor ',accessor)
-              (updater ',updater)
-
-              ;; Interface Symbols
-              (contents (or contents
-                            (symbolicate$ pkg-witness vector "-CONTENTS")))
-              (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
-              (contents-recognizer (or contents-recognizer
-                                       (symbolicate$ pkg-witness contents (make-predicate-suffix contents))))
-              (recognizer-stobj-default (symbolicate$ pkg-witness vector "P"))
-              (recognizer (or recognizer
-                              (symbolicate$ pkg-witness vector (make-predicate-suffix vector))))
-              (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" vector))
-              (creator (or creator
-                           (symbolicate$ pkg-witness "CREATE-" vector)))
-              (fixer (or fixer
-                         (symbolicate$ pkg-witness vector "-FIX")))
-              (length-stobj-default (symbolicate$ pkg-witness contents "-LENGTH"))
-              (length (or length
-                          (symbolicate$ pkg-witness vector "-LEN")))
-              (resizer-stobj-default (symbolicate$ pkg-witness "RESIZE-" contents))
-              (resizer (or resizer
-                           (symbolicate$ pkg-witness vector "-RSZ")))
-              (accessor-stobj-default (symbolicate$ pkg-witness contents "I"))
-              (accessor (or accessor
-                            (symbolicate$ pkg-witness vector "-REF")))
-              (updater-stobj-default (symbolicate$ pkg-witness "UPDATE-" contents "I"))
-              (updater (or updater
-                           (symbolicate$ pkg-witness vector "-SET")))
-
-              ;; Make Doublets
-              (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
-                                     `((,contents-recognizer-stobj-default ,contents-recognizer)))
-                                (and (not (eq recognizer recognizer-stobj-default))
-                                     `((,recognizer-stobj-default ,recognizer)))
-                                (and (not (eq creator creator-stobj-default))
-                                     `((,creator-stobj-default ,creator)))
-                                (and (not (eq length length-stobj-default))
-                                     `((,length-stobj-default ,length)))
-                                (and (not (eq resizer resizer-stobj-default))
-                                     `((,resizer-stobj-default ,resizer)))
-                                (and (not (eq accessor accessor-stobj-default))
-                                     `((,accessor-stobj-default ,accessor)))
-                                (and (not (eq updater updater-stobj-default))
-                                     `((,updater-stobj-default ,updater)))))
-
-              ;; Prologue
-              (begin-label (symbolicate$ pkg-witness vector "-BEGIN"))
-              (end-label (symbolicate$ pkg-witness vector "-END"))
-              (fixer-hack (symbolicate$ pkg-witness vector "/FIXER-HACK"))
-              (contents/fh (symbolicate$ pkg-witness contents "/FIXER-HACK"))
-              (prologue
-               `((deflabel ,begin-label)
-
-                 (defconst ,default-length-name ',default-length)
-
-                 ,@(and (not stobj-property)
-                        `((defconst ,initial-element-name ',initial-element)))
-
-                 (defstobj ,vector
-                   (,contents :type (acl2::array ,element-type ,dimensions)
-                              ,@(and (not stobj-property)
-                                     `(:element-type
-                                       ,(if specialize-element-type
-                                            element-type
-                                            t)
-                                       :initially ,initial-element))
-                              :resizable ,resizable)
-                   :renaming ,doublets
-                   :inline ,inline
-                   :non-memoizable ,(not memoizable)
-                   :non-executable ,(not executable))
-
-                 (defstobj ,fixer-hack
-                   (,contents/fh :type (acl2::array ,element-type ,dimensions)
-                                 ,@(and (not stobj-property)
-                                        `(:element-type
-                                          ,(if specialize-element-type
-                                               element-type
-                                               t)
-                                          :initially ,initial-element))
-                                 :resizable ,resizable)
-                   :inline ,inline
-                   :congruent-to ,vector
-                   :non-memoizable ,(not memoizable)
-                   :non-executable t)))
-
-              ;; Theorem Names
-              (stobj-recognizer-of-stobj-creator (symbolicate$ "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
-
-              (contents-recognizer-tp (symbolicate$ pkg-witness contents-recognizer "-TP"))
-              (contents-recognizer-cr (symbolicate$ pkg-witness contents-recognizer "-CR"))
-
-              (recognizer-tp (symbolicate$ pkg-witness recognizer "-TP"))
-              (recognizer-cr (symbolicate$ pkg-witness recognizer "-CR"))
-              (recognizer-of-creator (symbolicate$ pkg-witness recognizer "-OF-" creator))
-              (recognizer-of-resizer (symbolicate$ pkg-witness recognizer "-OF-" resizer))
-              (recognizer-of-updater (symbolicate$ pkg-witness recognizer "-OF-" updater))
-
-              (length-tp (symbolicate$ pkg-witness length "-TP"))
-              (length-of-creator (symbolicate$ pkg-witness length "-OF-" creator))
-              (length-of-resizer (symbolicate$ pkg-witness length "-OF-" resizer))
-              (length-of-updater (symbolicate$ pkg-witness length "-OF-" updater))
-              (length-rw (symbolicate$ pkg-witness length "-RW"))
-
-              (resizer-tp (symbolicate$ pkg-witness resizer "-TP"))
-              (resizer-of-creator (symbolicate$ pkg-witness resizer "-OF-" creator))
-              (resizer-of-length (symbolicate$ pkg-witness resizer "-OF-" length))
-              (resizer-of-resizer (symbolicate$ pkg-witness resizer "-OF-" resizer))
-              (resizer-of-updater (symbolicate$ pkg-witness resizer "-OF-" updater))
-              (resizer-of-updater-keep (symbolicate$ pkg-witness resizer-of-updater "-KEEP"))
-              (resizer-of-updater-drop (symbolicate$ pkg-witness resizer-of-updater "-DROP"))
-              (resizer-rw (symbolicate$ pkg-witness resizer "-RW"))
-
-              (typep$-of-accessor (symbolicate$ pkg-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
-              (accessor-of-creator (symbolicate$ pkg-witness accessor "-OF-" creator))
-              (accessor-of-resizer (symbolicate$ pkg-witness accessor "-OF-" resizer))
-              (accessor-of-resizer-inner (symbolicate$ pkg-witness accessor-of-resizer "-INNER"))
-              (accessor-of-resizer-outer (symbolicate$ pkg-witness accessor-of-resizer "-OUTER"))
-              (accessor-of-updater (symbolicate$ pkg-witness accessor "-OF-" updater))
-              (accessor-of-updater-same (symbolicate$ pkg-witness accessor-of-updater "-SAME"))
-              (accessor-of-updater-diff (symbolicate$ pkg-witness accessor-of-updater "-DIFF"))
-
-              (updater-tp (symbolicate$ pkg-witness updater "-TP"))
-              (updater-of-creator (symbolicate$ pkg-witness updater "-OF-" creator))
-              (updater-of-resizer (symbolicate$ pkg-witness updater "-OF-" resizer))
-              (updater-of-resizer-inner (symbolicate$ pkg-witness updater-of-resizer "-INNER"))
-              (updater-of-resizer-outer (symbolicate$ pkg-witness updater-of-resizer "-OUTER"))
-              (updater-of-accessor (symbolicate$ pkg-witness updater "-OF-" accessor))
-              (updater-of-updater (symbolicate$ pkg-witness updater "-OF-" updater))
-              (updater-of-updater-same (symbolicate$ pkg-witness updater-of-updater "-SAME"))
-              (updater-of-updater-diff (symbolicate$ pkg-witness updater-of-updater "-DIFF"))
-
-              (fixer-def (symbolicate$ pkg-witness fixer "-DEF"))
-              (fixer-tp (symbolicate$ pkg-witness fixer "-TP"))
-              (recognizer-of-fixer (symbolicate$ pkg-witness recognizer "-OF-" fixer))
-              (fixer-when-recognizer (symbolicate$ pkg-witness fixer "-WHEN-" recognizer))
-              (fixer-when-not-recognizer (symbolicate$ pkg-witness fixer "-WHEN-NOT-" recognizer))
-
-              ;; Epilogue
-              (theorems (symbolicate$ pkg-witness vector "-THEOREMS"))
-              (epilogue
-               `((deflabel ,end-label)
-
-                 (deftheory-static ,theorems
-                   (set-difference-theories
-                    (set-difference-theories
-                     (current-theory ',end-label)
-                     (current-theory ',begin-label))
-                    ',(list contents-recognizer
-                            recognizer
-                            creator
-                            length
-                            resizer
-                            accessor
-                            updater
-                            fixer)))
-
-                 (in-theory
-                   (union-theories (current-theory ',begin-label)
-                                   (theory ',theorems)))))
-
-              ;; Functional Instantiation
-              (fi-bindings
-               (list `(lem-vector$c::default-length (lambda ()
-                                                      ,default-length))
-                     `(lem-vector$c::element-recognizer ,(or stobj-recognizer
-                                                             `(lambda (value)
-                                                                ,(typep$transform 'value element-type))))
-                     `(lem-vector$c::initial-element ,(or stobj-creator
-                                                          `(lambda ()
-                                                             ,initial-element-name)))
-                     `(lem-vector$c::contents-recognizer ,contents-recognizer)
-                     `(lem-vector$c::recognizer ,recognizer)
-                     `(lem-vector$c::creator ,creator)
-                     `(lem-vector$c::length ,length)
-                     `(lem-vector$c::resizer ,resizer)
-                     `(lem-vector$c::accessor ,accessor)
-                     `(lem-vector$c::updater ,updater)))
-              (fi-bindings-with-fixer
-               (cons `(lem-vector$c::fixer ,fixer)
-                     fi-bindings))
-              ;; (theorem-statements (define-vector$c/theorems interface fi-bindings))
-
-              (body
-               `(encapsulate ()
-
-                  ,@(and stobj-property
-                         `((local
-                             (defthm ,stobj-recognizer-of-stobj-creator
-                               (,stobj-recognizer (,stobj-creator))))))
-
-                  (local
-                    (deflabel end-of-prologue))
-
-                  (local
-                    ,(if resizable
-                         '(include-book "projects/atomic-stobjs/lemmas/vector-c-resizable" :dir :system)
-                         '(include-book "projects/atomic-stobjs/lemmas/vector-c-fixed-length" :dir :system)))
-
-                  (local
-                    (table acl2::theory-invariant-table nil nil :clear))
-
-                  (local
-                    (in-theory
-                      (union-theories (current-theory 'acl2::ground-zero)
-                                      (set-difference-theories
-                                       (universal-theory 'end-of-prologue)
-                                       (universal-theory ',begin-label)))))
-
-                  ,@(and absstobj-info
-                         `((local
-                             (in-theory
-                               (enable ,@(strip-cars (cdr absstobj-info)))))))
-
-                  (local
-                    (in-theory
-                      (enable type-spec-theory)))
-
-                  (local
-                    (in-theory
-                      (disable make-list-ac
-                               (:e make-list-ac))))
-
-                  ;; ,@theorem-statements
-
-                  ;; `CONTENTS-RECOGNIZER'
-                  (defthm ,contents-recognizer-tp
-                    (booleanp (,contents-recognizer ,contents))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::contents-recognizer-tp
-                           ,@fi-bindings))))
-
-                  (defthm ,contents-recognizer-cr
-                    (implies (,contents-recognizer ,contents)
-                             (true-listp ,contents))
-                    :rule-classes :compound-recognizer
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::contents-recognizer-cr
-                           ,@fi-bindings))))
-
-                  ;; `RECOGNIZER'
-                  (defthm ,recognizer-tp
-                    (booleanp (,recognizer ,vector))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::recognizer-tp
-                           ,@fi-bindings))))
-
-                  (defthm ,recognizer-cr
-                    (implies (,recognizer ,vector)
-                             (and (consp ,vector)
-                                  (true-listp ,vector)))
-                    :rule-classes :compound-recognizer
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::recognizer-cr
-                           ,@fi-bindings))))
-
-                  (defthm ,recognizer-of-creator
-                    (,recognizer (,creator))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::recognizer-of-creator
-                           ,@fi-bindings))))
-
-                  ,@(and resizable
-                         `((defthm ,recognizer-of-resizer
-                             (implies (,recognizer ,vector)
-                                      (,recognizer (,resizer length ,vector)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::recognizer-of-resizer
-                                    ,@fi-bindings))))))
-
-                  (defthm ,recognizer-of-updater
-                    (implies (and (natp index)
-                                  (< index ,(if resizable
-                                                `(,length ,vector)
-                                                default-length-name))
-                                  ,@(and (not (eq element-type t))
-                                         (if stobj-recognizer
-                                             `((,stobj-recognizer value))
-                                             `(,(typep$transform 'value element-type))))
-                                  (,recognizer ,vector))
-                             (,recognizer (,updater index value ,vector)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::recognizer-of-updater
-                           ,@fi-bindings))))
-
-                  ;; `LENGTH'
-                  (defthm ,length-tp
-                    (natp (,length ,vector))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::length-tp
-                           ,@fi-bindings))))
-
-                  ,@(if resizable
-                        `((defthm ,length-of-creator
-                            (equal (,length (,creator))
-                                   ,default-length-name)
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::length-of-creator
-                                   ,@fi-bindings))))
-
-                          (defthm ,length-of-resizer
-                            (implies (natp length)
-                                     (equal (,length (,resizer length ,vector))
-                                            length))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::length-of-resizer
-                                   ,@fi-bindings))))
-
-                          (defthm ,length-of-updater
-                            (implies (and (natp index)
-                                          (< index (,length ,vector)))
-                                     (equal (,length (,updater index value ,vector))
-                                            (,length ,vector)))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::length-of-updater
-                                   ,@fi-bindings)))))
-
-                        `((defthm ,length-rw
-                            (equal (,length ,vector)
-                                   ,default-length-name)
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::length-rw
-                                   ,@fi-bindings))))))
-
-                  ;; `RESIZER'
-                  (defthm ,resizer-tp
-                    (implies (,recognizer ,vector)
-                             (and (consp (,resizer length ,vector))
-                                  (true-listp (,resizer length ,vector))))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::resizer-tp
-                           ,@fi-bindings))))
-
-                  ,@(if resizable
-                        `((defthm ,resizer-of-creator
-                            (implies (equal length ,default-length-name)
-                                     (equal (,resizer length (,creator))
-                                            (,creator)))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer-of-creator
-                                   ,@fi-bindings))))
-
-                          (defthm ,resizer-of-length
-                            (implies (,recognizer ,vector)
-                                     (equal (,resizer (,length ,vector) ,vector)
-                                            ,vector))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer-of-length
-                                   ,@fi-bindings))))
-
-                          (defthm ,resizer-of-resizer
-                            (implies (and (natp %length)
-                                          (natp length)
-                                          (or (<= %length length)
-                                              (<= (,length ,vector) length))
-                                          (,recognizer ,vector))
-                                     (equal (,resizer %length (,resizer length ,vector))
-                                            (,resizer %length ,vector)))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer-of-resizer
-                                   ,@fi-bindings))))
-
-                          (defthm ,resizer-of-updater-keep
-                            (implies (and (natp index)
-                                          (natp length)
-                                          (< index length)
-                                          (< index (,length ,vector)))
-                                     (equal (,resizer length (,updater index value ,vector))
-                                            (,updater index value (,resizer length ,vector))))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer-of-updater-keep
-                                   ,@fi-bindings))))
-
-                          (defthm ,resizer-of-updater-drop
-                            (implies (and (natp index)
-                                          (natp length)
-                                          (<= length index)
-                                          (< index (,length ,vector)))
-                                     (equal (,resizer length (,updater index value ,vector))
-                                            (,resizer length ,vector)))
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer-of-updater-drop
-                                   ,@fi-bindings)))))
-
-                        `((defthm ,resizer-rw
-                            (equal (,resizer length ,vector)
-                                   ,vector)
-                            :hints
-                            (("Goal"
-                              :by (:functional-instance
-                                   lem-vector$c::resizer-rw
-                                   ,@fi-bindings))))))
-
-                  ;; `ACCESSOR'
-                  ,@(and (not (eq element-type t))
-                         `((defthm ,typep$-of-accessor
-                             (implies (and (natp index)
-                                           (< index ,(if resizable
-                                                         `(,length ,vector)
-                                                         default-length-name))
-                                           (,recognizer ,vector))
-                                      ,(if stobj-recognizer
-                                           `(,stobj-recognizer (,accessor index ,vector))
-                                           (typep$transform `(,accessor index ,vector) element-type)))
-                             :rule-classes
-                             (:rewrite
-                              :type-prescription)
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::element-recognizer-of-accessor
-                                    ,@fi-bindings))))))
-
-                  (defthm ,accessor-of-creator
-                    (implies (and (natp index)
-                                  (< index ,default-length-name))
-                             (equal (,accessor index (,creator))
-                                    ,(if stobj-creator
-                                         `(,stobj-creator)
-                                         initial-element-name)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::accessor-of-creator
-                           ,@fi-bindings))))
-
-                  ,@(and resizable
-                         `((defthm ,accessor-of-resizer-inner
-                             (implies (and (natp index)
-                                           (natp length)
-                                           (< index length)
-                                           (< index (,length ,vector)))
-                                      (equal (,accessor index (,resizer length ,vector))
-                                             (,accessor index ,vector)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::accessor-of-resizer-inner
-                                    ,@fi-bindings))))
-
-                           (defthm ,accessor-of-resizer-outer
-                             (implies (and (natp index)
-                                           (natp length)
-                                           (< index length)
-                                           (<= (,length ,vector) index))
-                                      (equal (,accessor index (,resizer length ,vector))
-                                             ,(if stobj-creator
-                                                  `(,stobj-creator)
-                                                  initial-element-name)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::accessor-of-resizer-outer
-                                    ,@fi-bindings))))))
-
-                  (defthm ,accessor-of-updater-same
-                    (implies (equal %index index)
-                             (equal (,accessor %index (,updater index value ,vector))
-                                    value))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::accessor-of-updater-same
-                           ,@fi-bindings))))
-
-                  (defthm ,accessor-of-updater-diff
-                    (implies (and (not (equal %index index))
-                                  (natp %index)
-                                  (natp index))
-                             (equal (,accessor %index (,updater index value ,vector))
-                                    (,accessor %index ,vector)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::accessor-of-updater-diff
-                           ,@fi-bindings))))
-
-                  ;; `UPDATER'
-                  (defthm ,updater-tp
-                    (implies (,recognizer ,vector)
-                             (and (consp (,updater index value ,vector))
-                                  (true-listp (,updater index value ,vector))))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::updater-tp
-                           ,@fi-bindings))))
-
-                  (defthm ,updater-of-creator
-                    (implies (and (equal value ,(if stobj-creator
-                                                    `(,stobj-creator)
-                                                    initial-element-name))
-                                  (natp index)
-                                  (< index ,default-length-name))
-                             (equal (,updater index value (,creator))
-                                    (,creator)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::updater-of-creator
-                           ,@fi-bindings))))
-
-                  ,@(and resizable
-                         `((defthm ,updater-of-resizer-inner
-                             (implies (and (equal value (,accessor index ,vector))
-                                           (natp index)
-                                           (natp length)
-                                           (< index length)
-                                           (< index (,length ,vector)))
-                                      (equal (,updater index value (,resizer length ,vector))
-                                             (,resizer length ,vector)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::updater-of-resizer-inner
-                                    ,@fi-bindings))))
-
-                           (defthm ,updater-of-resizer-outer
-                             (implies (and (equal value ,(if stobj-creator
-                                                             `(,stobj-creator)
-                                                             initial-element-name))
-                                           (natp index)
-                                           (natp length)
-                                           (< index length)
-                                           (<= (,length ,vector) index))
-                                      (equal (,updater index value (,resizer length ,vector))
-                                             (,resizer length ,vector)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance
-                                    lem-vector$c::updater-of-resizer-outer
-                                    ,@fi-bindings))))))
-
-                  (defthm ,updater-of-accessor
-                    (implies (and (equal %index index)
-                                  (natp %index)
-                                  (< %index ,(if resizable
-                                                 `(,length ,vector)
-                                                 default-length-name))
-                                  (,recognizer ,vector))
-                             (equal (,updater %index (,accessor index ,vector) ,vector)
-                                    ,vector))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::updater-of-accessor
-                           ,@fi-bindings))))
-
-                  (defthm ,updater-of-updater-same
-                    (implies (equal %index index)
-                             (equal (,updater %index %value (,updater index value ,vector))
-                                    (,updater %index %value ,vector)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::updater-of-updater-same
-                           ,@fi-bindings))))
-
-                  (defthm ,updater-of-updater-diff
-                    (implies (and (not (equal %index index))
-                                  (natp %index)
-                                  (natp index))
-                             (equal (,updater %index %value (,updater index value ,vector))
-                                    (,updater index value (,updater %index %value ,vector))))
-                    :rule-classes
-                    ((:rewrite :loop-stopper ((%index index ,updater))))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::updater-of-updater-diff
-                           ,@fi-bindings))))
-
-                  ;; `FIXER'
-                  (defun-inline ,fixer (,vector)
-                    (declare (xargs :stobjs ,vector))
-                    (mbe :logic (if (,recognizer ,vector)
-                                    ,vector
-                                    (with-local-stobj ,fixer-hack
-                                      (mv-let (,vector ,fixer-hack)
-                                              (swap-stobjs ,vector ,fixer-hack)
-                                        ,vector)))
-                         :exec ,vector))
-
-                  (defthm ,fixer-def
-                    (equal (,fixer ,vector)
-                           (if (,recognizer ,vector)
-                               ,vector
-                               (,creator)))
-                    :rule-classes :definition)
-
+       (b* (((mv tmps property) (define-vector$c/parse-form ',form state))
+            (vector (access vector$c-property property :name))
+            (pkg-witness (access vector$c-property property :pkg-witness))
+            (dimensions (cdr (assoc :dimensions tmps)))
+            (default-length (cdr (assoc :default-length-val tmps)))
+            (default-length-name (access vector$c-property property :default-length))
+
+            (element-type (access vector$c-property property :element-type))
+            (element-stobj-property (cdr (assoc :element-stobj-property tmps)))
+            (absstobj-info (and element-stobj-property
+                                (getpropc element-type 'acl2::absstobj-info)))
+            (element-stobj$a-property (and element-stobj-property
+                                           (stobj$a-property element-type (w state))))
+            (stobj-recognizer (access stobj$a-property element-stobj$a-property :recognizer))
+            (stobj-creator (access stobj$a-property element-stobj$a-property :creator))
+            (specialize-element-type (cdr (assoc :specialize-element-type tmps)))
+            (initial-element (cdr (assoc :initial-element-val tmps)))
+            (initial-element-name (access vector$c-property property :initial-element))
+            (resizable (access vector$c-property property :resizable))
+
+            (inline (cdr (assoc :inline tmps)))
+            (memoizable (access vector$c-property property :memoizable))
+            (executable (cdr (assoc :executable tmps)))
+
+            (contents (access vector$c-property property :contents))
+            (contents-recognizer (access vector$c-property property :contents-recognizer))
+            (recognizer (access vector$c-property property :recognizer))
+            (creator (access vector$c-property property :creator))
+            (fixer (access vector$c-property property :fixer))
+            (length (access vector$c-property property :length))
+            (resizer (access vector$c-property property :resizer))
+            (accessor (access vector$c-property property :accessor))
+            (updater (access vector$c-property property :updater))
+
+            ;; Interface Symbols
+            (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
+            (recognizer-stobj-default (symbolicate$ pkg-witness vector "P"))
+            (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" vector))
+            (length-stobj-default (symbolicate$ pkg-witness contents "-LENGTH"))
+            (resizer-stobj-default (symbolicate$ pkg-witness "RESIZE-" contents))
+            (accessor-stobj-default (symbolicate$ pkg-witness contents "I"))
+            (updater-stobj-default (symbolicate$ pkg-witness "UPDATE-" contents "I"))
+
+            ;; Make Doublets
+            (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
+                                   `((,contents-recognizer-stobj-default ,contents-recognizer)))
+                              (and (not (eq recognizer recognizer-stobj-default))
+                                   `((,recognizer-stobj-default ,recognizer)))
+                              (and (not (eq creator creator-stobj-default))
+                                   `((,creator-stobj-default ,creator)))
+                              (and (not (eq length length-stobj-default))
+                                   `((,length-stobj-default ,length)))
+                              (and (not (eq resizer resizer-stobj-default))
+                                   `((,resizer-stobj-default ,resizer)))
+                              (and (not (eq accessor accessor-stobj-default))
+                                   `((,accessor-stobj-default ,accessor)))
+                              (and (not (eq updater updater-stobj-default))
+                                   `((,updater-stobj-default ,updater)))))
+
+            ;; Prologue
+            (begin-label (symbolicate$ pkg-witness vector "-BEGIN"))
+            (end-label (symbolicate$ pkg-witness vector "-END"))
+            (fixer-hack (symbolicate$ pkg-witness vector "/FIXER-HACK"))
+            (contents/fh (symbolicate$ pkg-witness contents "/FIXER-HACK"))
+            (prologue
+             `((deflabel ,begin-label)
+
+               (defconst ,default-length-name ',default-length)
+
+               ,@(and (not element-stobj-property)
+                      `((defconst ,initial-element-name ',initial-element)))
+
+               (defstobj ,vector
+                 (,contents :type (acl2::array ,element-type ,dimensions)
+                            ,@(and (not element-stobj-property)
+                                   `(:element-type
+                                     ,(if specialize-element-type
+                                          element-type
+                                          t)
+                                     :initially ,initial-element))
+                            :resizable ,resizable)
+                 :renaming ,doublets
+                 :inline ,inline
+                 :non-memoizable ,(not memoizable)
+                 :non-executable ,(not executable))
+
+               (defstobj ,fixer-hack
+                 (,contents/fh :type (acl2::array ,element-type ,dimensions)
+                               ,@(and (not element-stobj-property)
+                                      `(:element-type
+                                        ,(if specialize-element-type
+                                             element-type
+                                             t)
+                                        :initially ,initial-element))
+                               :resizable ,resizable)
+                 :inline ,inline
+                 :congruent-to ,vector
+                 :non-memoizable ,(not memoizable)
+                 :non-executable t)))
+
+            ;; Theorem Names
+            (stobj-recognizer-of-stobj-creator (symbolicate$ "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
+
+            (contents-recognizer-tp (symbolicate$ pkg-witness contents-recognizer "-TP"))
+            (contents-recognizer-cr (symbolicate$ pkg-witness contents-recognizer "-CR"))
+
+            (recognizer-tp (symbolicate$ pkg-witness recognizer "-TP"))
+            (recognizer-cr (symbolicate$ pkg-witness recognizer "-CR"))
+            (recognizer-of-creator (symbolicate$ pkg-witness recognizer "-OF-" creator))
+            (recognizer-of-resizer (symbolicate$ pkg-witness recognizer "-OF-" resizer))
+            (recognizer-of-updater (symbolicate$ pkg-witness recognizer "-OF-" updater))
+
+            (length-tp (symbolicate$ pkg-witness length "-TP"))
+            (length-of-creator (symbolicate$ pkg-witness length "-OF-" creator))
+            (length-of-resizer (symbolicate$ pkg-witness length "-OF-" resizer))
+            (length-of-updater (symbolicate$ pkg-witness length "-OF-" updater))
+            (length-rw (symbolicate$ pkg-witness length "-RW"))
+
+            (resizer-tp (symbolicate$ pkg-witness resizer "-TP"))
+            (resizer-of-creator (symbolicate$ pkg-witness resizer "-OF-" creator))
+            (resizer-of-length (symbolicate$ pkg-witness resizer "-OF-" length))
+            (resizer-of-resizer (symbolicate$ pkg-witness resizer "-OF-" resizer))
+            (resizer-of-updater (symbolicate$ pkg-witness resizer "-OF-" updater))
+            (resizer-of-updater-keep (symbolicate$ pkg-witness resizer-of-updater "-KEEP"))
+            (resizer-of-updater-drop (symbolicate$ pkg-witness resizer-of-updater "-DROP"))
+            (resizer-rw (symbolicate$ pkg-witness resizer "-RW"))
+
+            (typep$-of-accessor (symbolicate$ pkg-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
+            (accessor-of-creator (symbolicate$ pkg-witness accessor "-OF-" creator))
+            (accessor-of-resizer (symbolicate$ pkg-witness accessor "-OF-" resizer))
+            (accessor-of-resizer-inner (symbolicate$ pkg-witness accessor-of-resizer "-INNER"))
+            (accessor-of-resizer-outer (symbolicate$ pkg-witness accessor-of-resizer "-OUTER"))
+            (accessor-of-updater (symbolicate$ pkg-witness accessor "-OF-" updater))
+            (accessor-of-updater-same (symbolicate$ pkg-witness accessor-of-updater "-SAME"))
+            (accessor-of-updater-diff (symbolicate$ pkg-witness accessor-of-updater "-DIFF"))
+
+            (updater-tp (symbolicate$ pkg-witness updater "-TP"))
+            (updater-of-creator (symbolicate$ pkg-witness updater "-OF-" creator))
+            (updater-of-resizer (symbolicate$ pkg-witness updater "-OF-" resizer))
+            (updater-of-resizer-inner (symbolicate$ pkg-witness updater-of-resizer "-INNER"))
+            (updater-of-resizer-outer (symbolicate$ pkg-witness updater-of-resizer "-OUTER"))
+            (updater-of-accessor (symbolicate$ pkg-witness updater "-OF-" accessor))
+            (updater-of-updater (symbolicate$ pkg-witness updater "-OF-" updater))
+            (updater-of-updater-same (symbolicate$ pkg-witness updater-of-updater "-SAME"))
+            (updater-of-updater-diff (symbolicate$ pkg-witness updater-of-updater "-DIFF"))
+
+            (fixer-def (symbolicate$ pkg-witness fixer "-DEF"))
+            (fixer-tp (symbolicate$ pkg-witness fixer "-TP"))
+            (recognizer-of-fixer (symbolicate$ pkg-witness recognizer "-OF-" fixer))
+            (fixer-when-recognizer (symbolicate$ pkg-witness fixer "-WHEN-" recognizer))
+            (fixer-when-not-recognizer (symbolicate$ pkg-witness fixer "-WHEN-NOT-" recognizer))
+
+            ;; Epilogue
+            (theorems (symbolicate$ pkg-witness vector "-THEOREMS"))
+            (epilogue
+             `((deflabel ,end-label)
+
+               (deftheory-static ,theorems
+                 (set-difference-theories
+                  (set-difference-theories
+                   (current-theory ',end-label)
+                   (current-theory ',begin-label))
+                  ',(list contents-recognizer
+                          recognizer
+                          creator
+                          length
+                          resizer
+                          accessor
+                          updater
+                          fixer)))
+
+               (in-theory
+                 (union-theories (current-theory ',begin-label)
+                                 (theory ',theorems)))))
+
+            ;; Functional Instantiation
+            (fi-bindings
+             (list `(lem-vector$c::default-length (lambda ()
+                                                    ,default-length))
+                   `(lem-vector$c::element-recognizer ,(or stobj-recognizer
+                                                           `(lambda (value)
+                                                              ,(typep$transform 'value element-type))))
+                   `(lem-vector$c::initial-element ,(or stobj-creator
+                                                        `(lambda ()
+                                                           ,initial-element-name)))
+                   `(lem-vector$c::contents-recognizer ,contents-recognizer)
+                   `(lem-vector$c::recognizer ,recognizer)
+                   `(lem-vector$c::creator ,creator)
+                   `(lem-vector$c::length ,length)
+                   `(lem-vector$c::resizer ,resizer)
+                   `(lem-vector$c::accessor ,accessor)
+                   `(lem-vector$c::updater ,updater)))
+            (fi-bindings-with-fixer
+             (cons `(lem-vector$c::fixer ,fixer)
+                   fi-bindings))
+            ;; (theorem-statements (define-vector$c/theorems interface fi-bindings))
+
+            (body
+             `(encapsulate ()
+
+                ,@(and element-stobj-property
+                       `((local
+                           (defthm ,stobj-recognizer-of-stobj-creator
+                             (,stobj-recognizer (,stobj-creator))))))
+
+                (local
+                  (deflabel end-of-prologue))
+
+                (local
+                  ,(if resizable
+                       '(include-book "projects/atomic-stobjs/lemmas/vector-c-resizable" :dir :system)
+                       '(include-book "projects/atomic-stobjs/lemmas/vector-c-fixed-length" :dir :system)))
+
+                (local
+                  (table acl2::theory-invariant-table nil nil :clear))
+
+                (local
                   (in-theory
-                    (disable ,fixer))
+                    (union-theories (current-theory 'acl2::ground-zero)
+                                    (set-difference-theories
+                                     (universal-theory 'end-of-prologue)
+                                     (universal-theory ',begin-label)))))
 
-                  (defthm ,fixer-tp
-                    (and (consp (,fixer ,vector))
-                         (true-listp (,fixer ,vector)))
-                    :rule-classes :type-prescription
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::fixer-tp
-                           ,@fi-bindings-with-fixer))))
+                ,@(and absstobj-info
+                       `((local
+                           (in-theory
+                             (enable ,@(strip-cars (cdr absstobj-info)))))))
 
-                  (defthm ,recognizer-of-fixer
-                    (,recognizer (,fixer ,vector))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::recognizer-of-fixer
-                           ,@fi-bindings-with-fixer))))
+                (local
+                  (in-theory
+                    (enable type-spec-theory)))
 
-                  (defthm ,fixer-when-recognizer
-                    (implies (,recognizer ,vector)
-                             (equal (,fixer ,vector)
-                                    ,vector))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::fixer-when-recognizer
-                           ,@fi-bindings-with-fixer))))
+                (local
+                  (in-theory
+                    (disable make-list-ac
+                             (:e make-list-ac))))
 
-                  (defthm ,fixer-when-not-recognizer
-                    (implies (not (,recognizer ,vector))
-                             (equal (,fixer ,vector) (,creator)))
-                    :hints
-                    (("Goal"
-                      :by (:functional-instance
-                           lem-vector$c::fixer-when-not-recognizer
-                           ,@fi-bindings-with-fixer))))))
-              (stobj$c-property (make vector$c-property
-                                      :name vector
-                                      :recognizer recognizer
-                                      :creator creator
-                                      :fixer fixer
-                                      :length length
-                                      :resizer resizer
-                                      :accessor accessor
-                                      :updater updater
-                                      :contents contents
-                                      :contents-recognizer contents-recognizer
-                                      :element nil ; TODO: element
-                                      :element-type element-type
-                                      :initial-element initial-element-name
-                                      :default-length default-length-name
-                                      :resizable resizable
-                                      :memoizable memoizable
-                                      :theory theorems
-                                      :fi-bindings fi-bindings-with-fixer
-                                      :fi-theorem nil
-                                      :pkg-witness pkg-witness)))
+                ;; ,@theorem-statements
+
+                ;; `CONTENTS-RECOGNIZER'
+                (defthm ,contents-recognizer-tp
+                  (booleanp (,contents-recognizer ,contents))
+                  :rule-classes :type-prescription
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::contents-recognizer-tp
+                         ,@fi-bindings))))
+
+                (defthm ,contents-recognizer-cr
+                  (implies (,contents-recognizer ,contents)
+                           (true-listp ,contents))
+                  :rule-classes :compound-recognizer
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::contents-recognizer-cr
+                         ,@fi-bindings))))
+
+                ;; `RECOGNIZER'
+                (defthm ,recognizer-tp
+                  (booleanp (,recognizer ,vector))
+                  :rule-classes :type-prescription
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::recognizer-tp
+                         ,@fi-bindings))))
+
+                (defthm ,recognizer-cr
+                  (implies (,recognizer ,vector)
+                           (and (consp ,vector)
+                                (true-listp ,vector)))
+                  :rule-classes :compound-recognizer
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::recognizer-cr
+                         ,@fi-bindings))))
+
+                (defthm ,recognizer-of-creator
+                  (,recognizer (,creator))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::recognizer-of-creator
+                         ,@fi-bindings))))
+
+                ,@(and resizable
+                       `((defthm ,recognizer-of-resizer
+                           (implies (,recognizer ,vector)
+                                    (,recognizer (,resizer length ,vector)))
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance
+                                  lem-vector$c::recognizer-of-resizer
+                                  ,@fi-bindings))))))
+
+                (defthm ,recognizer-of-updater
+                  (implies (and (natp index)
+                                (< index ,(if resizable
+                                              `(,length ,vector)
+                                              default-length-name))
+                                ,@(and (not (eq element-type t))
+                                       (if stobj-recognizer
+                                           `((,stobj-recognizer value))
+                                           `(,(typep$transform 'value element-type))))
+                                (,recognizer ,vector))
+                           (,recognizer (,updater index value ,vector)))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::recognizer-of-updater
+                         ,@fi-bindings))))
+
+                ;; `LENGTH'
+                (defthm ,length-tp
+                  (natp (,length ,vector))
+                  :rule-classes :type-prescription
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::length-tp
+                         ,@fi-bindings))))
+
+                ,@(if resizable
+                      `((defthm ,length-of-creator
+                          (equal (,length (,creator))
+                                 ,default-length-name)
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::length-of-creator
+                                 ,@fi-bindings))))
+
+                        (defthm ,length-of-resizer
+                          (implies (natp length)
+                                   (equal (,length (,resizer length ,vector))
+                                          length))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::length-of-resizer
+                                 ,@fi-bindings))))
+
+                        (defthm ,length-of-updater
+                          (implies (and (natp index)
+                                        (< index (,length ,vector)))
+                                   (equal (,length (,updater index value ,vector))
+                                          (,length ,vector)))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::length-of-updater
+                                 ,@fi-bindings)))))
+
+                      `((defthm ,length-rw
+                          (equal (,length ,vector)
+                                 ,default-length-name)
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::length-rw
+                                 ,@fi-bindings))))))
+
+                ;; `RESIZER'
+                (defthm ,resizer-tp
+                  (implies (,recognizer ,vector)
+                           (and (consp (,resizer length ,vector))
+                                (true-listp (,resizer length ,vector))))
+                  :rule-classes :type-prescription
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::resizer-tp
+                         ,@fi-bindings))))
+
+                ,@(if resizable
+                      `((defthm ,resizer-of-creator
+                          (implies (equal length ,default-length-name)
+                                   (equal (,resizer length (,creator))
+                                          (,creator)))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::resizer-of-creator
+                                 ,@fi-bindings))))
+
+                        (defthm ,resizer-of-length
+                          (implies (,recognizer ,vector)
+                                   (equal (,resizer (,length ,vector) ,vector)
+                                          ,vector))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::resizer-of-length
+                                 ,@fi-bindings))))
+
+                        (defthm ,resizer-of-resizer
+                          (implies (and (natp %length)
+                                        (natp length)
+                                        (or (<= %length length)
+                                            (<= (,length ,vector) length))
+                                        (,recognizer ,vector))
+                                   (equal (,resizer %length (,resizer length ,vector))
+                                          (,resizer %length ,vector)))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::resizer-of-resizer
+                                 ,@fi-bindings))))
+
+                        (defthm ,resizer-of-updater-keep
+                          (implies (and (natp index)
+                                        (natp length)
+                                        (< index length)
+                                        (< index (,length ,vector)))
+                                   (equal (,resizer length (,updater index value ,vector))
+                                          (,updater index value (,resizer length ,vector))))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::resizer-of-updater-keep
+                                 ,@fi-bindings))))
+
+                        (defthm ,resizer-of-updater-drop
+                          (implies (and (natp index)
+                                        (natp length)
+                                        (<= length index)
+                                        (< index (,length ,vector)))
+                                   (equal (,resizer length (,updater index value ,vector))
+                                          (,resizer length ,vector)))
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::resizer-of-updater-drop
+                                 ,@fi-bindings)))))
+
+                      `((defthm ,resizer-rw
+                          (equal (,resizer length ,vector)
+                                 ,vector)
+                          :hints
+                          (("Goal"
+                            :by (:functional-instance
+                                 lem-vector$c::resizer-rw
+                                 ,@fi-bindings))))))
+
+                ;; `ACCESSOR'
+                ,@(and (not (eq element-type t))
+                       `((defthm ,typep$-of-accessor
+                           (implies (and (natp index)
+                                         (< index ,(if resizable
+                                                       `(,length ,vector)
+                                                       default-length-name))
+                                         (,recognizer ,vector))
+                                    ,(if stobj-recognizer
+                                         `(,stobj-recognizer (,accessor index ,vector))
+                                         (typep$transform `(,accessor index ,vector) element-type)))
+                           :rule-classes
+                           (:rewrite
+                            :type-prescription)
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance
+                                  lem-vector$c::element-recognizer-of-accessor
+                                  ,@fi-bindings))))))
+
+                (defthm ,accessor-of-creator
+                  (implies (and (natp index)
+                                (< index ,default-length-name))
+                           (equal (,accessor index (,creator))
+                                  ,(if stobj-creator
+                                       `(,stobj-creator)
+                                       initial-element-name)))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::accessor-of-creator
+                         ,@fi-bindings))))
+
+                ,@(and resizable
+                       `((defthm ,accessor-of-resizer-inner
+                           (implies (and (natp index)
+                                         (natp length)
+                                         (< index length)
+                                         (< index (,length ,vector)))
+                                    (equal (,accessor index (,resizer length ,vector))
+                                           (,accessor index ,vector)))
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance
+                                  lem-vector$c::accessor-of-resizer-inner
+                                  ,@fi-bindings))))
+
+                         (defthm ,accessor-of-resizer-outer
+                           (implies (and (natp index)
+                                         (natp length)
+                                         (< index length)
+                                         (<= (,length ,vector) index))
+                                    (equal (,accessor index (,resizer length ,vector))
+                                           ,(if stobj-creator
+                                                `(,stobj-creator)
+                                                initial-element-name)))
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance
+                                  lem-vector$c::accessor-of-resizer-outer
+                                  ,@fi-bindings))))))
+
+                (defthm ,accessor-of-updater-same
+                  (implies (equal %index index)
+                           (equal (,accessor %index (,updater index value ,vector))
+                                  value))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::accessor-of-updater-same
+                         ,@fi-bindings))))
+
+                (defthm ,accessor-of-updater-diff
+                  (implies (and (not (equal %index index))
+                                (natp %index)
+                                (natp index))
+                           (equal (,accessor %index (,updater index value ,vector))
+                                  (,accessor %index ,vector)))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::accessor-of-updater-diff
+                         ,@fi-bindings))))
+
+                ;; `UPDATER'
+                (defthm ,updater-tp
+                  (implies (,recognizer ,vector)
+                           (and (consp (,updater index value ,vector))
+                                (true-listp (,updater index value ,vector))))
+                  :rule-classes :type-prescription
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::updater-tp
+                         ,@fi-bindings))))
+
+                (defthm ,updater-of-creator
+                  (implies (and (equal value ,(if stobj-creator
+                                                  `(,stobj-creator)
+                                                  initial-element-name))
+                                (natp index)
+                                (< index ,default-length-name))
+                           (equal (,updater index value (,creator))
+                                  (,creator)))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::updater-of-creator
+                         ,@fi-bindings))))
+
+                ,@(and resizable
+                       `((defthm ,updater-of-resizer-inner
+                           (implies (and (equal value (,accessor index ,vector))
+                                         (natp index)
+                                         (natp length)
+                                         (< index length)
+                                         (< index (,length ,vector)))
+                                    (equal (,updater index value (,resizer length ,vector))
+                                           (,resizer length ,vector)))
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance
+                                  lem-vector$c::updater-of-resizer-inner
+                                  ,@fi-bindings))))
+
+                         (defthm ,updater-of-resizer-outer
+                           (implies (and (equal value ,(if stobj-creator
+                                                           `(,stobj-creator)
+                                                           initial-element-name))
+                                         (natp index)
+                                         (natp length)
+                                         (< index length)
+                                         (<= (,length ,vector) index))
+                                    (equal (,updater index value (,resizer length ,vector))
+                                           (,resizer length ,vector)))
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance
+                                  lem-vector$c::updater-of-resizer-outer
+                                  ,@fi-bindings))))))
+
+                (defthm ,updater-of-accessor
+                  (implies (and (equal %index index)
+                                (natp %index)
+                                (< %index ,(if resizable
+                                               `(,length ,vector)
+                                               default-length-name))
+                                (,recognizer ,vector))
+                           (equal (,updater %index (,accessor index ,vector) ,vector)
+                                  ,vector))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::updater-of-accessor
+                         ,@fi-bindings))))
+
+                (defthm ,updater-of-updater-same
+                  (implies (equal %index index)
+                           (equal (,updater %index %value (,updater index value ,vector))
+                                  (,updater %index %value ,vector)))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::updater-of-updater-same
+                         ,@fi-bindings))))
+
+                (defthm ,updater-of-updater-diff
+                  (implies (and (not (equal %index index))
+                                (natp %index)
+                                (natp index))
+                           (equal (,updater %index %value (,updater index value ,vector))
+                                  (,updater index value (,updater %index %value ,vector))))
+                  :rule-classes
+                  ((:rewrite :loop-stopper ((%index index ,updater))))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::updater-of-updater-diff
+                         ,@fi-bindings))))
+
+                ;; `FIXER'
+                (defun-inline ,fixer (,vector)
+                  (declare (xargs :stobjs ,vector))
+                  (mbe :logic (if (,recognizer ,vector)
+                                  ,vector
+                                  (with-local-stobj ,fixer-hack
+                                    (mv-let (,vector ,fixer-hack)
+                                            (swap-stobjs ,vector ,fixer-hack)
+                                      ,vector)))
+                       :exec ,vector))
+
+                (defthm ,fixer-def
+                  (equal (,fixer ,vector)
+                         (if (,recognizer ,vector)
+                             ,vector
+                             (,creator)))
+                  :rule-classes :definition)
+
+                (in-theory
+                  (disable ,fixer))
+
+                (defthm ,fixer-tp
+                  (and (consp (,fixer ,vector))
+                       (true-listp (,fixer ,vector)))
+                  :rule-classes :type-prescription
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::fixer-tp
+                         ,@fi-bindings-with-fixer))))
+
+                (defthm ,recognizer-of-fixer
+                  (,recognizer (,fixer ,vector))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::recognizer-of-fixer
+                         ,@fi-bindings-with-fixer))))
+
+                (defthm ,fixer-when-recognizer
+                  (implies (,recognizer ,vector)
+                           (equal (,fixer ,vector)
+                                  ,vector))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::fixer-when-recognizer
+                         ,@fi-bindings-with-fixer))))
+
+                (defthm ,fixer-when-not-recognizer
+                  (implies (not (,recognizer ,vector))
+                           (equal (,fixer ,vector) (,creator)))
+                  :hints
+                  (("Goal"
+                    :by (:functional-instance
+                         lem-vector$c::fixer-when-not-recognizer
+                         ,@fi-bindings-with-fixer))))))
+            (property (change vector$c-property property
+                              :theory theorems
+                              :fi-bindings fi-bindings-with-fixer
+                              :fi-theorem nil)))
 
          `(progn
             ,@prologue
@@ -839,4 +1041,4 @@
 
             ,@epilogue
 
-            (table stobj$c ',vector ',stobj$c-property))))))
+            (table stobj$c ',vector ',property))))))
