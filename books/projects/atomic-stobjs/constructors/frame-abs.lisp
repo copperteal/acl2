@@ -409,7 +409,7 @@
                 (recognizer$a (access frame$a-property stobj$a-property :recognizer))
                 (creator$a (access frame$a-property stobj$a-property :creator))
                 (fixer$a (access frame$a-property stobj$a-property :fixer))
-                (frame$a-theorems (symbolicate$ frame$a frame$a "-THEOREMS"))
+                (frame$a-theory (symbolicate$ frame$a frame$a "-THEORY"))
                 (stobj-property-list (loop$ :for stobj :in stobjs
                                            :collect (and stobj
                                                          (getprop stobj
@@ -569,7 +569,7 @@
                 (in-theory
                   (union-theories
                    (union-theories (current-theory 'acl2::ground-zero)
-                                   (theory ',frame$a-theorems))
+                                   (theory ',frame$a-theory))
                    (set-difference-theories (universal-theory 'end-of-prologue)
                                             (universal-theory 'start-of-prologue)))))
 
@@ -599,7 +599,7 @@
                           ,@(loop$ :for stobj$a-property :in stobj$a-property-list
                                   :when stobj$a-property
                                   :collect (let ((stobj$a (access stobj$a-property stobj$a-property :name)))
-                                             (symbolicate$ stobj$a stobj$a "-THEOREMS"))))))
+                                             (symbolicate$ stobj$a stobj$a "-THEORY"))))))
 
               ,@(loop$ :for absstobj-info :in absstobj-info-list
                       :when absstobj-info

@@ -354,11 +354,11 @@
               (init-rw (symbolicate$ pkg-witness init "-RW"))
 
               ;; Epilogue
-              (theorems (symbolicate$ pkg-witness hash-table "-THEOREMS"))
+              (theory (symbolicate$ pkg-witness hash-table "-THEORY"))
               (epilogue
                `((deflabel ,hash-table-end)
 
-                 (deftheory-static ,theorems
+                 (deftheory-static ,theory
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',hash-table-end)
@@ -384,7 +384,7 @@
 
                  (in-theory
                    (union-theories (current-theory ',hash-table-begin)
-                                   (theory ',theorems)))))
+                                   (theory ',theory)))))
 
               ;; Functional Instantiation
               (fi-bindings
@@ -1184,7 +1184,7 @@
                                       :copyable copyable
                                       :test test
                                       :memoizable memoizable
-                                      :theory theorems
+                                      :theory theory
                                       :fi-bindings fi-bindings-with-fixer
                                       :fi-theorem nil
                                       :pkg-witness pkg-witness)))

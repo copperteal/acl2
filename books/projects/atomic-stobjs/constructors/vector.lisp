@@ -227,4 +227,4 @@
                                           pkg-witness
                                           vector$c)
                                       vector$c
-                                      "-THEOREMS"))))))))
+                                      "-THEORY"))))))))

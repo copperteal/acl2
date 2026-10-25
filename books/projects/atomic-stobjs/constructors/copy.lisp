@@ -90,7 +90,7 @@
          (stobj$a-property (stobj$a-property vector world))
          (vector$a (access vector$a-property stobj$a-property :name))
          (recognizer$a-aux (symbolicate$ vector$a vector$a "-AUX-P"))
-         (vector$a-theorems (symbolicate$ vector$a vector$a "-THEOREMS"))
+         (vector$a-theory (symbolicate$ vector$a vector$a "-THEORY"))
          (vector$a-aggressive (symbolicate$ vector$a vector$a "-AGGRESSIVE"))
          (vector$a-constraints (symbolicate$ "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
          (recognizer$a (access vector$a-property stobj$a-property :recognizer))
@@ -453,7 +453,7 @@
                                                 (<= ,index (,length ,vector)))
                                     :guard-hints
                                     (("Goal"
-                                      :in-theory (enable ,vector$a-theorems)))))
+                                      :in-theory (enable ,vector$a-theory)))))
                     (or (zp ,index)
                         ,(if element-copy
                              `(let ((,index (1- ,index)))
@@ -731,7 +731,7 @@
                                        (<= ,index (,length ,vector)))
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,vector$a-theorems
+                             :in-theory (enable ,vector$a-theory
                                                 ,vector$a-aggressive)))))
            (if (zp ,index)
                (,the-vector ,%vector)
@@ -753,7 +753,7 @@
            (declare (xargs :stobjs (,%vector ,vector)
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,vector$a-theorems
+                             :in-theory (enable ,vector$a-theory
                                                 ,vector$a-aggressive)))))
            ,(if resizable
                 `(let* ((length (,length ,vector))
@@ -772,7 +772,7 @@
              :hints
              (("Goal"
                :induct (,copy-rec ,index ,%vector ,vector)
-               :in-theory (enable ,vector$a-theorems)))))
+               :in-theory (enable ,vector$a-theory)))))
 
          (local
            (defthmd ,copy-rec-of-fixer$a-3
@@ -781,7 +781,7 @@
              :hints
              (("Goal"
                :induct (,copy-rec ,index ,%vector ,vector)
-               :in-theory (enable ,vector$a-theorems)
+               :in-theory (enable ,vector$a-theory)
                :expand (,copy-rec ,index ,%vector (,fixer$a ,vector))))))
 
          (local
@@ -981,7 +981,7 @@
                       (,copy ,%vector ,vector)))
            :hints
            (("Goal"
-             :in-theory (enable ,vector$a-theorems
+             :in-theory (enable ,vector$a-theory
                                 ,vector$a-aggressive)
              :use ,copy-of-updater$a-lemma)))
 
@@ -1038,7 +1038,7 @@
          (world (w state))
          (stobj$a-property (stobj$a-property hash-table world))
          (hash-table$a (access hash-table$a-property stobj$a-property :name))
-         (hash-table$a-theorems (symbolicate$ hash-table$a hash-table$a "-THEOREMS"))
+         (hash-table$a-theory (symbolicate$ hash-table$a hash-table$a "-THEORY"))
          (hash-table$a-aggressive (symbolicate$ hash-table$a hash-table$a "-AGGRESSIVE"))
          (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
          (creator$a (access hash-table$a-property stobj$a-property :creator))
@@ -2153,7 +2153,7 @@
                                        (set::subset set (,keys ,hash-table)))
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,hash-table$a-theorems
+                             :in-theory (enable ,hash-table$a-theory
                                                 ,hash-table$a-aggressive
                                                 set::subset
                                                 set::emptyp
@@ -2184,7 +2184,7 @@
            (declare (xargs :stobjs (,%hash-table ,hash-table)
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,hash-table$a-theorems
+                             :in-theory (enable ,hash-table$a-theory
                                                 ,hash-table$a-aggressive)))))
            (let* ((,keys (,keys ,hash-table))
                   (,count (,count ,hash-table))
@@ -2206,7 +2206,7 @@
                :induct (,copy-rec set ,%hash-table ,hash-table)
                :in-theory (enable set::subset
                                   set::in
-                                  ,hash-table$a-theorems
+                                  ,hash-table$a-theory
                                   ,hash-table$a-aggressive)
                :expand (:free (,key ,val)
                               (,copy-rec set (,updater$a ,key ,val ,%hash-table) ,hash-table))))))
@@ -2222,7 +2222,7 @@
                :induct (,copy-rec set ,%hash-table ,hash-table)
                :in-theory (enable set::subset
                                   set::in
-                                  ,hash-table$a-theorems
+                                  ,hash-table$a-theory
                                   ,hash-table$a-aggressive
                                   ,copy-rec-of-updater$a-2)
                :expand (:free (,key ,val)
@@ -2272,7 +2272,7 @@
                :do-not-induct t
                :in-theory (enable ,copy-rec-of-updater$a-2
                                   ,copy-rec-of-updater$a-3
-                                  ,hash-table$a-theorems)
+                                  ,hash-table$a-theory)
                :use (:instance (:functional-instance
                                 lem-hash-table$a::copy-constraints
                                 ,@fi-bindings-with-copy)
@@ -2461,7 +2461,7 @@
          (frame$a (access frame$a-property stobj$a-property :name))
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
-         (frame$a-theorems (symbolicate$ frame$a frame$a "-THEOREMS"))
+         (frame$a-theory (symbolicate$ frame$a frame$a "-THEORY"))
          (frame$a-aggressive (symbolicate$ frame$a frame$a "-AGGRESSIVE"))
          (recognizer$a (access frame$a-property stobj$a-property :recognizer))
          (creator$a (access frame$a-property stobj$a-property :creator))
@@ -2618,7 +2618,7 @@
            (in-theory
              (union-theories
               (union-theories (theory 'acl2::ground-zero)
-                              (theory ',frame$a-theorems))
+                              (theory ',frame$a-theory))
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 
@@ -2653,7 +2653,7 @@
                  :collect `(local
                              (in-theory
                                (enable ,(let ((stobj$a (access stobj$a-property stobj$a-property :name)))
-                                          (symbolicate$ stobj$a stobj$a "-THEOREMS"))))))
+                                          (symbolicate$ stobj$a stobj$a "-THEORY"))))))
 
          ;; `COUPLEDP'
          ,@(and (remove nil stobj-coupledp-list)

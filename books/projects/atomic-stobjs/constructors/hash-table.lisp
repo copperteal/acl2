@@ -303,4 +303,4 @@
                                           pkg-witness
                                           hash-table$c)
                                       hash-table$c
-                                      "-THEOREMS"))))))))
+                                      "-THEORY"))))))))

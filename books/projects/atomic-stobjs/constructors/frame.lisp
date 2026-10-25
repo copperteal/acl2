@@ -420,4 +420,4 @@
                                             pkg-witness
                                             frame$c)
                                         frame$c
-                                        "-THEOREMS")))))))))
+                                        "-THEORY")))))))))

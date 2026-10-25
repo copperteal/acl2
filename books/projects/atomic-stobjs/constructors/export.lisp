@@ -71,7 +71,7 @@
          (stobj$a-property (stobj$a-property vector world))
          (vector$a (access vector$a-property stobj$a-property :name))
          (recognizer$a-aux (symbolicate$ vector$a vector$a "-AUX-P"))
-         (vector$a-theorems (symbolicate$ vector$a vector$a "-THEOREMS"))
+         (vector$a-theory (symbolicate$ vector$a vector$a "-THEORY"))
          (vector$a-aggressive (symbolicate$ vector$a vector$a "-AGGRESSIVE"))
          (vector$a-constraints (symbolicate$ "ATOMIC-STOBJS" vector$a "-CONSTRAINTS"))
          (exportp-constraints (symbolicate$ "ATOMIC-STOBJS" exportp "-CONSTRAINTS"))
@@ -646,7 +646,7 @@
                            :guard-hints
                            (("Goal"
                              :in-theory (enable ,exportp-rec
-                                                ,vector$a-theorems)))))
+                                                ,vector$a-theory)))))
            (if (consp list)
                ,(if element-import
                     `(stobj-let ((,element (,accessor ,index ,vector) ,updater))
@@ -669,7 +669,7 @@
                            :guard-hints
                            (("Goal"
                              :in-theory (enable ,exportp
-                                                ,vector$a-theorems)))))
+                                                ,vector$a-theory)))))
            (if (mbt (,exportp export))
                (let* ((list (cdr export))
                       ,@(and resizable
@@ -724,7 +724,7 @@
              :hints
              (("Goal"
                :do-not-induct t
-               :in-theory (enable ,vector$a-theorems
+               :in-theory (enable ,vector$a-theory
                                   ,vector$a-aggressive)
                :use (:functional-instance
                      ,(if resizable
@@ -978,7 +978,7 @@
 
          (stobj$a-property (stobj$a-property hash-table world))
          (hash-table$a (access hash-table$a-property stobj$a-property :name))
-         (hash-table$a-theorems (symbolicate$ hash-table$a hash-table$a "-THEOREMS"))
+         (hash-table$a-theory (symbolicate$ hash-table$a hash-table$a "-THEORY"))
          (hash-table$a-aggressive (symbolicate$ hash-table$a hash-table$a "-AGGRESSIVE"))
          (recognizer$a (access hash-table$a-property stobj$a-property :recognizer))
          (creator$a (access hash-table$a-property stobj$a-property :creator))
@@ -1883,7 +1883,7 @@
                                        (,exportp-rec acc))
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,hash-table$a-theorems
+                             :in-theory (enable ,hash-table$a-theory
                                                 set::emptyp)))
                            :measure (set::cardinality set)
                            :hints
@@ -1985,7 +1985,7 @@
                            :guard (,exportp-rec map)
                            :guard-hints
                            (("Goal"
-                             :in-theory (enable ,hash-table$a-theorems
+                             :in-theory (enable ,hash-table$a-theory
                                                 set::emptyp)))
                            :measure (omap::size map)
                            :hints
@@ -2268,7 +2268,7 @@
          (frame$a (access frame$a-property stobj$a-property :name))
          (frame$a-equal (cdr (assoc frame$a (table-alist 'equality world))))
          (%frame$a (car (getpropc frame$a-equal 'acl2::formals)))
-         (frame$a-theorems (symbolicate$ frame$a frame$a "-THEOREMS"))
+         (frame$a-theory (symbolicate$ frame$a frame$a "-THEORY"))
          (frame$a-aggressive (symbolicate$ frame$a frame$a "-AGGRESSIVE"))
          (recognizer$a (access frame$a-property stobj$a-property :recognizer))
          (creator$a (access frame$a-property stobj$a-property :creator))
@@ -2432,7 +2432,7 @@
            (in-theory
              (union-theories
               (union-theories (theory 'acl2::ground-zero)
-                              (theory ',frame$a-theorems))
+                              (theory ',frame$a-theory))
               (set-difference-theories (current-theory 'prologue-end)
                                        (current-theory 'prologue-begin)))))
 

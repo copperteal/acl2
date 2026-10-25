@@ -378,7 +378,7 @@
                 (frame-equal-fc (symbolicate$ pkg-witness frame-equal "-FC"))
 
                 ;; Epilogue
-                (frame-theorems (symbolicate$ pkg-witness frame "-THEOREMS"))
+                (frame-theory (symbolicate$ pkg-witness frame "-THEORY"))
                 (frame-aggressive (symbolicate$ pkg-witness frame "-AGGRESSIVE"))
                 (epilogue
                  `((in-theory
@@ -387,7 +387,7 @@
 
                    (deflabel ,frame-end)
 
-                   (deftheory-static ,frame-theorems
+                   (deftheory-static ,frame-theory
                      (set-difference-theories
                       (set-difference-theories
                        (current-theory ',frame-end)
@@ -413,7 +413,7 @@
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
-                                     (theory ',frame-theorems)))))
+                                     (theory ',frame-theory)))))
 
                 (body
                  `(encapsulate ()

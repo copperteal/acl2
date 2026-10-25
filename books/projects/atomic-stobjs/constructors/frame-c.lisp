@@ -375,11 +375,11 @@
                 (nth-of-cons (symbolicate$ "ATOMIC-STOBJS" "NTH-OF-CONS"))
 
                 ;; Epilogue
-                (theorems (symbolicate$ pkg-witness frame "-THEOREMS"))
+                (theory (symbolicate$ pkg-witness frame "-THEORY"))
                 (epilogue
                  `((deflabel ,frame-end)
 
-                   (deftheory-static ,theorems
+                   (deftheory-static ,theory
                      (set-difference-theories
                       (set-difference-theories
                        (current-theory ',frame-end)
@@ -394,7 +394,7 @@
 
                    (in-theory
                      (union-theories (current-theory ',frame-begin)
-                                     (theory ',theorems)))))
+                                     (theory ',theory)))))
 
                 (body
                  `(encapsulate ()
@@ -486,7 +486,7 @@
                                         :element-types element-types
                                         :initial-elements initial-element-names
                                         :memoizable memoizable
-                                        :theory theorems
+                                        :theory theory
                                         :pkg-witness pkg-witness)))
 
            `(progn

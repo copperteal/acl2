@@ -985,13 +985,13 @@
                    `(lem-vector$c::contents-recognizer ,contents-recognizer)
                    `(lem-vector$c::recognizer ,recognizer)
                    `(lem-vector$c::creator ,creator)
+                   `(lem-vector$c::fixer ,fixer)
                    `(lem-vector$c::length ,length)
                    `(lem-vector$c::resizer ,resizer)
                    `(lem-vector$c::accessor ,accessor)
                    `(lem-vector$c::updater ,updater)))
-            (fi-bindings-with-fixer
-             (cons `(lem-vector$c::fixer ,fixer)
-                   fi-bindings))
+            ;; HERE: collapse functional instantiation to single bindings var
+            (fi-bindings-with-fixer fi-bindings)
             (property (change vector$c-property property
                               :fi-bindings fi-bindings))
             (theorem-statements (define-vector$c/make-theorems property

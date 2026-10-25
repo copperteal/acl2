@@ -486,12 +486,12 @@
               (hash-table-equal-fc (symbolicate$ pkg-witness hash-table-equal "-FC"))
 
               ;; Epilogue
-              (hash-table-theorems (symbolicate$ pkg-witness hash-table "-THEOREMS"))
+              (hash-table-theory (symbolicate$ pkg-witness hash-table "-THEORY"))
               (hash-table-aggressive (symbolicate$ pkg-witness hash-table "-AGGRESSIVE"))
               (epilogue
                `((deflabel ,hash-table-end)
 
-                 (deftheory-static ,hash-table-theorems
+                 (deftheory-static ,hash-table-theory
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',hash-table-end)
@@ -574,7 +574,7 @@
 
                  (in-theory
                    (union-theories (current-theory ',hash-table-begin)
-                                   (theory ',hash-table-theorems)))
+                                   (theory ',hash-table-theory)))
 
                  (in-theory
                    ;; Ensure `:USE' `HASH-TABLE-EQUAL' automagically works.

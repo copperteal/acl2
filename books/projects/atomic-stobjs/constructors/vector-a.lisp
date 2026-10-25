@@ -274,12 +274,12 @@
               (vector-equal-fc (symbolicate$ pkg-witness vector-equal "-FC"))
 
               ;; Epilogue
-              (vector-theorems (symbolicate$ pkg-witness vector "-THEOREMS"))
+              (vector-theory (symbolicate$ pkg-witness vector "-THEORY"))
               (vector-aggressive (symbolicate$ pkg-witness vector "-AGGRESSIVE"))
               (epilogue
                `((deflabel ,vector-end)
 
-                 (deftheory-static ,vector-theorems
+                 (deftheory-static ,vector-theory
                    (set-difference-theories
                     (set-difference-theories
                      (current-theory ',vector-end)
@@ -321,7 +321,7 @@
 
                  (in-theory
                    (union-theories (current-theory ',vector-begin)
-                                   (theory ',vector-theorems)))
+                                   (theory ',vector-theory)))
                  (in-theory
                    ;; Ensure `:USE' `VECTOR-EQUAL' automagically works.
                    (enable ,contents-equal))))

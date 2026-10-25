@@ -43,6 +43,12 @@
            (if (zp i)
                ()
                (cons a (resize-list l (1- i) d))))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (resize-list (cons a l) i d)
+                      (if (zp (double-rewrite i))
+                          ()
+                          (cons a (resize-list l (1- i) d))))))
     :hints
     (("Goal"
       :expand (resize-list (cons a l) i d)))))
@@ -70,6 +76,16 @@
                       (<= (len lst) n)))
              (equal (resize-list (resize-list lst n d) m e)
                     (resize-list lst m e)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (equal d e)
+                             (consp (double-rewrite lst))
+                             (natp n)
+                             (natp m)
+                             (or (<= m n)
+                                 (<= (len lst) n)))
+                        (equal (resize-list (resize-list lst n d) m e)
+                               (resize-list lst m e)))))
     :hints
     (("Goal"
       :induct (and (nth n lst)
@@ -216,6 +232,12 @@
            (if (zp n)
                t
                (element-recognizer x)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (contents-recognizer (repeat n x))
+                      (if (zp (double-rewrite n))
+                          t
+                          (element-recognizer x)))))
     :hints
     (("Goal"
       :in-theory (enable repeat)))))
@@ -236,6 +258,13 @@
                   (element-recognizer value)
                   (contents-recognizer contents))
              (contents-recognizer (update-nth index value contents)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (natp index)
+                             (< index (len (double-rewrite contents)))
+                             (element-recognizer value)
+                             (contents-recognizer contents))
+                        (contents-recognizer (update-nth index value contents)))))
     :hints
     (("Goal"
       :in-theory (enable update-nth)))))
