@@ -6,5 +6,7 @@
 (ld "hash-table-a.acl2")
 (ld "copy.acl2")
 (in-package "ATOMIC-STOBJS")
+(set-match-free-error t)
 (set-verify-guards-eagerness 2)
 (set-warnings-as-errors t '("double-rewrite" "free") state)
+(reset-prehistory)
