@@ -67,7 +67,7 @@
    ;; or type-spec, but never an ACL2 type.
    (element element-type initial-element . default-length)
    (resizable . memoizable)
-   (theory fi-bindings . fi-theorem)
+   (theory fi-bindings . fi-theorems)
    pkg-witness)
   nil)
 
@@ -90,7 +90,7 @@
        (booleanp (access vector$c-property x :memoizable))
        (symbolp (access vector$c-property x :theory))
        (symbol-doublet-listp (access vector$c-property x :fi-bindings))
-       (symbolp (access vector$c-property x :fi-theorem))
+       (symbolp (access vector$c-property x :fi-theorems))
        (pkg-witness-p (access vector$c-property x :pkg-witness))))
 
 (defrec hash-table$c-property
@@ -110,7 +110,7 @@
    ;; TODO: drop copyable
    (value element-type default-value . copyable)
    (test . memoizable)
-   (theory fi-bindings . fi-theorem)
+   (theory fi-bindings . fi-theorems)
    pkg-witness)
   nil)
 
@@ -142,7 +142,7 @@
        (booleanp (access hash-table$c-property x :memoizable))
        (symbolp (access hash-table$c-property x :theory))
        (symbol-doublet-listp (access hash-table$c-property x :fi-bindings))
-       (symbolp (access hash-table$c-property x :fi-theorem))
+       (true-list-listp (access hash-table$c-property x :fi-theorems))
        (pkg-witness-p (access hash-table$c-property x :pkg-witness))))
 
 (defrec frame$c-property
@@ -154,7 +154,7 @@
    (fields element-types initial-elements)
    memoizable
    ;; TODO: drop bindings?
-   (theory fi-bindings . fi-theorem)
+   (theory fi-bindings . fi-theorems)
    pkg-witness)
   nil)
 
@@ -171,7 +171,7 @@
        (booleanp (access frame$c-property x :memoizable))
        (symbolp (access frame$c-property x :theory))
        (symbol-doublet-listp (access frame$c-property x :fi-bindings))
-       (symbolp (access frame$c-property x :fi-theorem))
+       (true-list-listp (access frame$c-property x :fi-theorems))
        (pkg-witness-p (access frame$c-property x :pkg-witness))
        (let ((n (len (access frame$c-property x :fields))))
          (and (int= n (len (access frame$c-property x :recognizers)))

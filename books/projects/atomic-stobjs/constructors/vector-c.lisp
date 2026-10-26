@@ -263,14 +263,26 @@
                               "~x0 is not a legal variable name." element))
                       (if element-stobj-property
                           element-type
-                          (intern-in-package-of-symbol "X" pkg-witness))))))
+                          (intern-in-package-of-symbol "X" pkg-witness)))))
+       (element-absstobj-info (and element-stobj-property
+                                   (getpropc element-type 'acl2::absstobj-info)))
+       (element-stobj$a-property (and element-stobj-property
+                                      (stobj$a-property element-type (w state))))
+       (element-recognizer (access stobj$a-property element-stobj$a-property :recognizer))
+       (element-creator (access stobj$a-property element-stobj$a-property :creator)))
     (mv (list (cons :default-length-val default-length-val)
               (cons :element-stobj-property element-stobj-property)
               (cons :initial-element-val initial-element-val)
               (cons :specialize-element-type specialize-element-type)
+              (cons :element-absstobj-info element-absstobj-info)
+              (cons :element-stobj$a-property element-stobj$a-property)
+              (cons :element-recognizer element-recognizer)
+              (cons :element-creator element-creator)
               (cons :inline inline)
               (cons :executable executable)
-              (cons :debug debug))
+              (cons :debug debug)
+              (cons :begin-label (symbolicate$ pkg-witness name "-BEGIN"))
+              (cons :end-label (symbolicate$ pkg-witness name "-END")))
         (make vector$c-property
               :name name
               :recognizer recognizer
@@ -288,6 +300,8 @@
               :default-length default-length
               :resizable resizable
               :memoizable memoizable
+              :theory (symbolicate$ pkg-witness name "-THEORY")
+              :fi-theorems (symbolicate$ pkg-witness "*" name "-FI-THEOREMS*")
               :pkg-witness pkg-witness))))
 
 
@@ -352,21 +366,21 @@
 
 
 ;;;; `DEFINE-VECTOR$C/MAKE-DEFSTOBJ-FORM'
-(defun define-vector$c/make-defstobj-form (tmps property)
+(defun define-vector$c/make-defstobj-form (tmp property)
   (declare (xargs :mode :program
-                  :guard (and (alistp tmps)
+                  :guard (and (alistp tmp)
                               (vector$c-property-p property))))
   (let ((contents (access vector$c-property property :contents))
         (element-type (access vector$c-property property :element-type))
         (default-length (access vector$c-property property :default-length))
-        (element-stobj-property (cdr (assoc :element-stobj-property tmps)))
-        (specialize-element-type (cdr (assoc :specialize-element-type tmps)))
-        (initial-element-val (cdr (assoc :initial-element-val tmps)))
+        (element-stobj-property (cdr (assoc :element-stobj-property tmp)))
+        (specialize-element-type (cdr (assoc :specialize-element-type tmp)))
+        (initial-element-val (cdr (assoc :initial-element-val tmp)))
         (resizable (access vector$c-property property :resizable))
         (doublets (define-vector$c/make-defstobj-doublets property))
-        (inline (cdr (assoc :inline tmps)))
+        (inline (cdr (assoc :inline tmp)))
         (memoizable (access vector$c-property property :memoizable))
-        (executable (cdr (assoc :executable tmps))))
+        (executable (cdr (assoc :executable tmp))))
     `(defstobj ,(access vector$c-property property :name)
        (,contents :type (acl2::array ,element-type (,default-length))
                   ,@(and (not element-stobj-property)
@@ -383,20 +397,6 @@
 
 
 ;;;; `DEFINE-VECTOR$C/APPLY-FIXER-HACK'
-(defun remove-keyword (keyword kvl)
-  ;; TODO: move to utilities
-  (declare (xargs :guard (and (keywordp keyword)
-                              (keyword-value-listp kvl))))
-  (cond
-    ((endp kvl)
-     ())
-    ((eq keyword (car kvl))
-     (cddr kvl))
-    (t
-     (list* (car kvl)
-            (cadr kvl)
-            (remove-keyword keyword (cddr kvl))))))
-
 (defun define-vector$c/apply-fixer-hack (property form)
   (declare (xargs :mode :program))
   (b* ((pkg-witness (access vector$c-property property :pkg-witness))
@@ -413,30 +413,48 @@
     (list* 'defstobj name field-spec kvl)))
 
 
-;;;; `DEFTHM-FI'
-(defmacro defthm-fi (name statement &rest kvl)
-; TODO: move to utilities
-  (declare (xargs :guard t))
-  (let ((theorem (cadr (assoc-keyword :theorem kvl)))
-        (bindings (cadr (assoc-keyword :bindings kvl)))
-        (kvl (remove-keyword :bindings
-                             (remove-keyword :theorem
-                                             (remove-keyword :hints kvl)))))
-    `(defthm ,name
-       ,statement
-       ,@kvl
-       :hints
-       (("Goal"
-         :by (:functional-instance ,theorem
-                                   ,@bindings))))))
+;;;; `DEFINE-VECTOR$C/MAKE-FI-BINDINGS'
+(defun define-vector$c/make-fi-bindings (tmp property)
+  (declare (xargs :mode :program
+                  :guard (and (alistp tmp)
+                              (vector$c-property-p property))))
+  (let ((element-recognizer (cdr (assoc :element-recognizer tmp)))
+        (element-creator (cdr (assoc :element-creator tmp)))
+        (default-length (access vector$c-property property :default-length))
+        (element (access vector$c-property property :element))
+        (element-type (access vector$c-property property :element-type))
+        (initial-element (access vector$c-property property :initial-element))
+        (contents-recognizer (access vector$c-property property :contents-recognizer))
+        (recognizer (access vector$c-property property :recognizer))
+        (creator (access vector$c-property property :creator))
+        (fixer (access vector$c-property property :fixer))
+        (length (access vector$c-property property :length))
+        (resizer (access vector$c-property property :resizer))
+        (accessor (access vector$c-property property :accessor))
+        (updater (access vector$c-property property :updater)))
+    `((lem-vector$c::default-length (lambda ()
+                                      ,default-length))
+      (lem-vector$c::element-recognizer ,(or element-recognizer
+                                             `(lambda (,element)
+                                                ,(typep$transform element element-type))))
+      (lem-vector$c::initial-element ,(or element-creator
+                                          `(lambda ()
+                                             ,initial-element)))
+      (lem-vector$c::contents-recognizer ,contents-recognizer)
+      (lem-vector$c::recognizer ,recognizer)
+      (lem-vector$c::creator ,creator)
+      (lem-vector$c::fixer ,fixer)
+      (lem-vector$c::length ,length)
+      (lem-vector$c::resizer ,resizer)
+      (lem-vector$c::accessor ,accessor)
+      (lem-vector$c::updater ,updater))))
 
 
 ;;;; `DEFINE-VECTOR$C/MAKE-THEOREMS'
-(defun define-vector$c/make-theorems (property
-                                      stobj-recognizer
-                                      stobj-creator
-                                      fi-bindings-with-fixer)
-  (declare (xargs :mode :program))
+(defun define-vector$c/make-theorems (tmp property)
+  (declare (xargs :mode :program
+                  :guard (and (alistp tmp)
+                              (vector$c-property-p property))))
   (b* ((vector (access vector$c-property property :name))
        (recognizer (access vector$c-property property :recognizer))
        (creator (access vector$c-property property :creator))
@@ -453,13 +471,11 @@
        (default-length-name (access vector$c-property property :default-length))
        (resizable (access vector$c-property property :resizable))
        (fi-bindings (access vector$c-property property :fi-bindings))
+       (fi-theorems (access vector$c-property property :fi-theorems))
        (pkg-witness (access vector$c-property property :pkg-witness))
 
-; TODO: Change signature after refactoring fi-bindings so that there's only one
-; set of bindings.
-       ;; stobj-recognizer
-       ;; stobj-creator
-       ;; fi-bindings-with-fixer
+       (element-recognizer (cdr (assoc :element-recognizer tmp)))
+       (element-creator (cdr (assoc :element-creator tmp)))
 
        ;; Theorem Names
        (fixer-def (symbolicate$ pkg-witness fixer "-DEF"))
@@ -492,7 +508,7 @@
        (resizer-of-updater-drop (symbolicate$ pkg-witness resizer-of-updater "-DROP"))
        (resizer-rw (symbolicate$ pkg-witness resizer "-RW"))
 
-       (typep$-of-accessor (symbolicate$ pkg-witness (or stobj-recognizer "TYPEP$") "-OF-" accessor))
+       (typep$-of-accessor (symbolicate$ pkg-witness (or element-recognizer "TYPEP$") "-OF-" accessor))
        (accessor-of-creator (symbolicate$ pkg-witness accessor "-OF-" creator))
        (accessor-of-resizer (symbolicate$ pkg-witness accessor "-OF-" resizer))
        (accessor-of-resizer-inner (symbolicate$ pkg-witness accessor-of-resizer "-INNER"))
@@ -519,30 +535,50 @@
                    (,creator)))
         :rule-classes :definition)
 
+      (make-event
+        `(encapsulate ()
+           (set-ignore-ok t)
+
+           ,@(loop$ :for name :in ,fi-theorems
+                   :as body :in (sublis ',(doublets-to-alist fi-bindings)
+                                        lem-vector$c::*constraints*)
+                   :collect `(defthm ,name
+                               ,body
+                               :rule-classes nil))))
+
+      (local
+        (in-theory
+          (union-theories
+           (strip-theory (set-difference-theories
+                          (current-theory :here)
+                          (current-theory 'working-theory)))
+           (current-theory 'working-theory)
+           '((:d ,fixer-def)))))
+
       (defthm-fi ,fixer-tp
         (and (consp (,fixer ,vector))
              (true-listp (,fixer ,vector)))
         :rule-classes :type-prescription
         :theorem lem-vector$c::fixer-tp
-        :bindings ,fi-bindings-with-fixer)
+        :bindings ,fi-bindings)
 
       (defthm-fi ,recognizer-of-fixer
         (,recognizer (,fixer ,vector))
         :theorem lem-vector$c::recognizer-of-fixer
-        :bindings ,fi-bindings-with-fixer)
+        :bindings ,fi-bindings)
 
       (defthm-fi ,fixer-when-recognizer
         (implies (,recognizer ,vector)
                  (equal (,fixer ,vector)
                         ,vector))
         :theorem lem-vector$c::fixer-when-recognizer
-        :bindings ,fi-bindings-with-fixer)
+        :bindings ,fi-bindings)
 
       (defthm-fi ,fixer-when-not-recognizer
         (implies (not (,recognizer ,vector))
                  (equal (,fixer ,vector) (,creator)))
         :theorem lem-vector$c::fixer-when-not-recognizer
-        :bindings ,fi-bindings-with-fixer)
+        :bindings ,fi-bindings)
 
       ;; `CONTENTS-RECOGNIZER'
       (defthm-fi ,contents-recognizer-tp
@@ -591,8 +627,8 @@
                                     `(,length ,vector)
                                     default-length-name))
                       ,@(and (not (eq element-type t))
-                             (if stobj-recognizer
-                                 `((,stobj-recognizer value))
+                             (if element-recognizer
+                                 `((,element-recognizer value))
                                  `(,(typep$transform 'value element-type))))
                       (,recognizer ,vector))
                  (,recognizer (,updater index value ,vector)))
@@ -703,8 +739,8 @@
                                              `(,length ,vector)
                                              default-length-name))
                                (,recognizer ,vector))
-                          ,(if stobj-recognizer
-                               `(,stobj-recognizer (,accessor index ,vector))
+                          ,(if element-recognizer
+                               `(,element-recognizer (,accessor index ,vector))
                                (typep$transform `(,accessor index ,vector) element-type)))
                  :rule-classes
                  (:rewrite
@@ -716,8 +752,8 @@
         (implies (and (natp index)
                       (< index ,default-length-name))
                  (equal (,accessor index (,creator))
-                        ,(if stobj-creator
-                             `(,stobj-creator)
+                        ,(if element-creator
+                             `(,element-creator)
                              initial-element-name)))
         :theorem lem-vector$c::accessor-of-creator
         :bindings ,fi-bindings)
@@ -739,8 +775,8 @@
                                (< index length)
                                (<= (,length ,vector) index))
                           (equal (,accessor index (,resizer length ,vector))
-                                 ,(if stobj-creator
-                                      `(,stobj-creator)
+                                 ,(if element-creator
+                                      `(,element-creator)
                                       initial-element-name)))
                  :theorem lem-vector$c::accessor-of-resizer-outer
                  :bindings ,fi-bindings)))
@@ -771,8 +807,8 @@
         :bindings ,fi-bindings)
 
       (defthm-fi ,updater-of-creator
-        (implies (and (equal value ,(if stobj-creator
-                                        `(,stobj-creator)
+        (implies (and (equal value ,(if element-creator
+                                        `(,element-creator)
                                         initial-element-name))
                       (natp index)
                       (< index ,default-length-name))
@@ -794,8 +830,8 @@
                  :bindings ,fi-bindings)
 
                (defthm-fi ,updater-of-resizer-outer
-                 (implies (and (equal value ,(if stobj-creator
-                                                 `(,stobj-creator)
+                 (implies (and (equal value ,(if element-creator
+                                                 `(,element-creator)
                                                  initial-element-name))
                                (natp index)
                                (natp length)
@@ -832,30 +868,146 @@
                  (equal (,updater %index %value (,updater index value ,vector))
                         (,updater index value (,updater %index %value ,vector))))
         :rule-classes
+        ;; TODO: rename %index index to index1 index2
         ((:rewrite :loop-stopper ((%index index ,updater))))
         :theorem lem-vector$c::updater-of-updater-diff
         :bindings ,fi-bindings))))
 
 
-;;;; `STRIP-THEORY'
-(defun strip-theory-rec (theory acc)
-  (declare (xargs :guard (and (alistp theory)
-                              (true-listp acc))))
-  (cond
-    ((endp theory)
-     (reverse acc))
-    ((member (caar theory) '(:definition
-                             :induction
-                             :executable-counterpart)
-             :test 'eq)
-     (strip-theory-rec (cdr theory)
-                       acc))
-    (t (strip-theory-rec (cdr theory)
-                         (cons (car theory) acc)))))
+;;;; `DEFINE-VECTOR$C-FN'
+(defun define-vector$c-fn (form debug)
+  (declare (xargs :mode :program
+                  :guard (true-listp form)))
+  `(with-output
+     ,@(and (not debug)
+            ;; TODO: revisit constructor output settings
+            *constructor-output*)
+     (make-event
+       (b* (((mv tmp property) (define-vector$c/parse-form ',form state))
+            (fi-bindings (define-vector$c/make-fi-bindings tmp property))
+            (property (change vector$c-property property
+                              :fi-bindings fi-bindings))
 
-(defun strip-theory (theory)
-  (declare (xargs :guard (alistp theory)))
-  (strip-theory-rec theory ()))
+            (vector (access vector$c-property property :name))
+            (recognizer (access vector$c-property property :recognizer))
+            (fixer (access vector$c-property property :fixer))
+            (element-stobj-property (cdr (assoc :element-stobj-property tmp)))
+            (pkg-witness (access vector$c-property property :pkg-witness))
+
+            (begin-label (cdr (assoc :begin-label tmp)))
+            (end-label (cdr (assoc :end-label tmp)))
+            (theory (access vector$c-property property :theory))
+
+            (defstobj-form (define-vector$c/make-defstobj-form tmp property))
+            (fixer-hack-form (define-vector$c/apply-fixer-hack property defstobj-form))
+            (fixer-hack (second fixer-hack-form)))
+
+         `(progn
+            (deflabel ,begin-label)
+
+            ,@(let ((default-length-name (access vector$c-property
+                                                 property
+                                                 :default-length))
+                    (default-length (cdr (assoc :default-length-val tmp))))
+                (and (not (getpropc default-length-name 'acl2::const))
+                     `((defconst ,default-length-name ',default-length))))
+
+            ,@(let ((initial-element-name (access vector$c-property
+                                                  property
+                                                  :initial-element))
+                    (initial-element (cdr (assoc :initial-element-val tmp))))
+                (and (not element-stobj-property)
+                     (not (getpropc initial-element-name 'acl2::const))
+                     `((defconst ,initial-element-name ',initial-element))))
+
+            ,defstobj-form
+
+            ,fixer-hack-form
+
+            (encapsulate ()
+
+              ,@(and element-stobj-property
+                     (let ((element-recognizer (cdr (assoc :element-recognizer tmp)))
+                           (element-creator (cdr (assoc :element-creator tmp))))
+                       `((local
+                           (defthm element-constraints
+                             (,element-recognizer (,element-creator)))))))
+
+              (local
+                (deflabel end-of-prologue))
+
+              (local
+                (include-book ,(if (access vector$c-property property :resizable)
+                                   "projects/atomic-stobjs/lemmas/vector-c-resizable"
+                                   "projects/atomic-stobjs/lemmas/vector-c-fixed-length")
+                              :dir :system))
+
+              (local
+                (table acl2::theory-invariant-table nil nil :clear))
+
+              (local
+                (in-theory
+                  (union-theories (current-theory 'acl2::ground-zero)
+                                  (set-difference-theories
+                                   (universal-theory 'end-of-prologue)
+                                   (universal-theory ',begin-label)))))
+
+              ,@(let ((element-absstobj-info (cdr (assoc :element-absstobj-info tmp))))
+                  (and element-absstobj-info
+                       `((local
+                           (in-theory
+                             (enable ,@(strip-cars (cdr element-absstobj-info))))))))
+
+              (local
+                (in-theory
+                  (e/d (type-spec-theory)
+                       (make-list-ac
+                        (:e make-list-ac)))))
+
+              (local
+                (deflabel working-theory))
+
+              (make-event
+
+; The `FI-THEOREMS' constant must be defined inside the local context where
+; `LEM-VECTOR$C::*CONSTRAINTS*' is a defined constant.
+
+                (list 'defconst ',(access vector$c-property
+                                          property
+                                          :fi-theorems)
+                      (list 'quote
+                            (loop$ :for n
+                                  :from 0
+                                  :to (1- (len lem-vector$c::*constraints*))
+                                  :collect (symbolicate$ ',pkg-witness ',vector "-FI-" n)))))
+
+              (defun-inline ,fixer (,vector)
+                (declare (xargs :stobjs ,vector))
+                (mbe :logic (if (,recognizer ,vector)
+                                ,vector
+                                (with-local-stobj ,fixer-hack
+                                  (mv-let (,vector ,fixer-hack)
+                                          (swap-stobjs ,vector ,fixer-hack)
+                                    ,vector)))
+                     :exec ,vector))
+
+              ,@(define-vector$c/make-theorems tmp property))
+
+            (deflabel ,end-label)
+
+            (deftheory-static ,theory
+              (union-theories
+               (strip-theory
+                (set-difference-theories
+                 (current-theory ',end-label)
+                 (current-theory ',begin-label)))
+               '((:d ,(symbolicate$ pkg-witness fixer "-DEF")))))
+
+            (in-theory
+              (union-theories (current-theory ',begin-label)
+                              (theory ',theory)))
+
+            (table stobj$c ',vector ',property))))))
 
 
 ;;;; `DEFINE-VECTOR$C'
@@ -884,7 +1036,6 @@
 
        (pkg-witness 'nil)
        (debug 'nil))
-
   (declare (xargs :guard t)
            (ignore vector dimensions
                    element-type specialize-element-type
@@ -903,164 +1054,4 @@
                    updater
 
                    pkg-witness))
-  `(with-output
-     ;; TODO: Put output control inside `DEFINE-VECTOR$C-FN'
-     ,@(and (not debug) nil
-            ;; TODO: revisit constructor output settings
-            *constructor-output*)
-
-     (make-event
-       (b* (((mv tmps property) (define-vector$c/parse-form ',form state))
-            (vector (access vector$c-property property :name))
-            (pkg-witness (access vector$c-property property :pkg-witness))
-            (default-length (cdr (assoc :default-length-val tmps)))
-            (default-length-name (access vector$c-property property :default-length))
-
-            (element-type (access vector$c-property property :element-type))
-            (element-stobj-property (cdr (assoc :element-stobj-property tmps)))
-            (absstobj-info (and element-stobj-property
-                                (getpropc element-type 'acl2::absstobj-info)))
-            (element-stobj$a-property (and element-stobj-property
-                                           (stobj$a-property element-type (w state))))
-            (stobj-recognizer (access stobj$a-property element-stobj$a-property :recognizer))
-            (stobj-creator (access stobj$a-property element-stobj$a-property :creator))
-            (initial-element (cdr (assoc :initial-element-val tmps)))
-            (initial-element-name (access vector$c-property property :initial-element))
-            (resizable (access vector$c-property property :resizable))
-
-            (contents-recognizer (access vector$c-property property :contents-recognizer))
-            (recognizer (access vector$c-property property :recognizer))
-            (creator (access vector$c-property property :creator))
-            (fixer (access vector$c-property property :fixer))
-            (length (access vector$c-property property :length))
-            (resizer (access vector$c-property property :resizer))
-            (accessor (access vector$c-property property :accessor))
-            (updater (access vector$c-property property :updater))
-
-            ;; Prologue
-            (begin-label (symbolicate$ pkg-witness vector "-BEGIN"))
-            (end-label (symbolicate$ pkg-witness vector "-END"))
-            (defstobj-form (define-vector$c/make-defstobj-form tmps property))
-            (fixer-hack-form (define-vector$c/apply-fixer-hack property defstobj-form))
-            (fixer-hack (second fixer-hack-form))
-            (prologue
-             `((deflabel ,begin-label)
-
-               ;; TODO: only if this is not already defined
-               (defconst ,default-length-name ',default-length)
-
-               ;; TODO: only if this is not already defined
-               ,@(and (not element-stobj-property)
-                      `((defconst ,initial-element-name ',initial-element)))
-
-               ,defstobj-form
-               ,fixer-hack-form))
-
-            ;; Epilogue
-            (theory (symbolicate$ pkg-witness vector "-THEORY"))
-            (epilogue
-             `((deflabel ,end-label)
-
-               (deftheory-static ,theory
-                 (union-theories
-                  (strip-theory (set-difference-theories
-                                 (current-theory ',end-label)
-                                 (current-theory ',begin-label)))
-                  '((:d ,(symbolicate$ pkg-witness fixer "-DEF")))))
-
-               (in-theory
-                 (union-theories (current-theory ',begin-label)
-                                 (theory ',theory)))))
-
-            ;; Functional Instantiation
-            (fi-bindings
-             (list `(lem-vector$c::default-length (lambda ()
-                                                    ,default-length))
-                   `(lem-vector$c::element-recognizer ,(or stobj-recognizer
-                                                           `(lambda (value)
-                                                              ,(typep$transform 'value element-type))))
-                   `(lem-vector$c::initial-element ,(or stobj-creator
-                                                        `(lambda ()
-                                                           ,initial-element-name)))
-                   `(lem-vector$c::contents-recognizer ,contents-recognizer)
-                   `(lem-vector$c::recognizer ,recognizer)
-                   `(lem-vector$c::creator ,creator)
-                   `(lem-vector$c::fixer ,fixer)
-                   `(lem-vector$c::length ,length)
-                   `(lem-vector$c::resizer ,resizer)
-                   `(lem-vector$c::accessor ,accessor)
-                   `(lem-vector$c::updater ,updater)))
-            ;; HERE: collapse functional instantiation to single bindings var
-            (fi-bindings-with-fixer fi-bindings)
-            (property (change vector$c-property property
-                              :fi-bindings fi-bindings))
-            (theorem-statements (define-vector$c/make-theorems property
-                                                               stobj-recognizer
-                                                               stobj-creator
-                                                               fi-bindings-with-fixer))
-
-            (stobj-recognizer-of-stobj-creator (symbolicate$ "ATOMIC-STOBJS" stobj-recognizer "-OF-" stobj-creator))
-            (body
-             `(encapsulate ()
-
-                ,@(and element-stobj-property
-                       `((local
-                           (defthm ,stobj-recognizer-of-stobj-creator
-                             (,stobj-recognizer (,stobj-creator))))))
-
-                (local
-                  (deflabel end-of-prologue))
-
-                (local
-                  ,(if resizable
-                       '(include-book "projects/atomic-stobjs/lemmas/vector-c-resizable" :dir :system)
-                       '(include-book "projects/atomic-stobjs/lemmas/vector-c-fixed-length" :dir :system)))
-
-                (local
-                  (table acl2::theory-invariant-table nil nil :clear))
-
-                (local
-                  (in-theory
-                    (union-theories (current-theory 'acl2::ground-zero)
-                                    (set-difference-theories
-                                     (universal-theory 'end-of-prologue)
-                                     (universal-theory ',begin-label)))))
-
-                ,@(and absstobj-info
-                       `((local
-                           (in-theory
-                             (enable ,@(strip-cars (cdr absstobj-info)))))))
-
-                (local
-                  (in-theory
-                    (enable type-spec-theory)))
-
-                (local
-                  (in-theory
-                    (disable make-list-ac
-                             (:e make-list-ac))))
-
-                (defun-inline ,fixer (,vector)
-                  (declare (xargs :stobjs ,vector))
-                  (mbe :logic (if (,recognizer ,vector)
-                                  ,vector
-                                  (with-local-stobj ,fixer-hack
-                                    (mv-let (,vector ,fixer-hack)
-                                            (swap-stobjs ,vector ,fixer-hack)
-                                      ,vector)))
-                       :exec ,vector))
-
-                ,@theorem-statements))
-            (property (change vector$c-property property
-                              :theory theory
-                              :fi-bindings fi-bindings-with-fixer
-                              :fi-theorem nil)))
-
-         `(progn
-            ,@prologue
-
-            ,body
-
-            ,@epilogue
-
-            (table stobj$c ',vector ',property))))))
+  (define-vector$c-fn form debug))

@@ -1186,7 +1186,7 @@
                                       :memoizable memoizable
                                       :theory theory
                                       :fi-bindings fi-bindings-with-fixer
-                                      :fi-theorem nil
+                                      :fi-theorems nil
                                       :pkg-witness pkg-witness)))
 
          `(progn

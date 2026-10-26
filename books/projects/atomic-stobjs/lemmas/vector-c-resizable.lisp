@@ -1,4 +1,4 @@
-;;; Copyright 2025 J. David Taylor
+;;; Copyright 2026 J. David Taylor
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions are met:
@@ -43,6 +43,12 @@
            (if (zp i)
                ()
                (cons a (resize-list l (1- i) d))))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (resize-list (cons a l) i d)
+                      (if (zp (double-rewrite i))
+                          ()
+                          (cons a (resize-list l (1- i) d))))))
     :hints
     (("Goal"
       :expand (resize-list (cons a l) i d)))))
@@ -70,6 +76,16 @@
                       (<= (len lst) n)))
              (equal (resize-list (resize-list lst n d) m e)
                     (resize-list lst m e)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (equal d e)
+                             (consp (double-rewrite lst))
+                             (natp n)
+                             (natp m)
+                             (or (<= m n)
+                                 (<= (len lst) n)))
+                        (equal (resize-list (resize-list lst n d) m e)
+                               (resize-list lst m e)))))
     :hints
     (("Goal"
       :induct (and (nth n lst)
@@ -217,6 +233,12 @@
            (if (zp n)
                t
                (element-recognizer x)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (contents-recognizer (repeat n x))
+                      (if (zp (double-rewrite n))
+                          t
+                          (element-recognizer x)))))
     :hints
     (("Goal"
       :in-theory (enable repeat)))))
@@ -237,6 +259,13 @@
                   (element-recognizer value)
                   (contents-recognizer contents))
              (contents-recognizer (update-nth index value contents)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (natp index)
+                             (< index (len (double-rewrite contents)))
+                             (element-recognizer value)
+                             (contents-recognizer contents))
+                        (contents-recognizer (update-nth index value contents)))))
     :hints
     (("Goal"
       :in-theory (enable update-nth)))))
@@ -334,13 +363,13 @@
                   vector)))
 
 (defthm resizer-of-resizer
-  (implies (and (natp %length)
-                (natp length)
-                (or (<= %length length)
-                    (<= (length vector) length))
+  (implies (and (natp length1)
+                (natp length2)
+                (or (<= length1 length2)
+                    (<= (length vector) length2))
                 (recognizer vector))
-           (equal (resizer %length (resizer length vector))
-                  (resizer %length vector)))
+           (equal (resizer length1 (resizer length2 vector))
+                  (resizer length1 vector)))
   :hints
   (("Goal"
     :cases ((atom (car vector))))))
@@ -392,16 +421,16 @@
                   (initial-element))))
 
 (defthm accessor-of-updater-same
-  (implies (equal %index index)
-           (equal (accessor %index (updater index value vector))
+  (implies (equal index1 index2)
+           (equal (accessor index1 (updater index2 value vector))
                   value)))
 
 (defthm accessor-of-updater-diff
-  (implies (and (not (equal %index index))
-                (natp %index)
-                (natp index))
-           (equal (accessor %index (updater index value vector))
-                  (accessor %index vector))))
+  (implies (and (not (equal index1 index2))
+                (natp index1)
+                (natp index2))
+           (equal (accessor index1 (updater index2 value vector))
+                  (accessor index1 vector))))
 
 
 ;;;; `UPDATER'
@@ -437,23 +466,45 @@
                   (resizer length vector))))
 
 (defthm updater-of-accessor
-  (implies (and (equal %index index)
-                (natp %index)
-                (< %index (length vector))
+  (implies (and (equal index1 index2)
+                (natp index1)
+                (< index1 (length vector))
                 (recognizer vector))
-           (equal (updater %index (accessor index vector) vector)
+           (equal (updater index1 (accessor index2 vector) vector)
                   vector)))
 
 (defthm updater-of-updater-same
-  (implies (equal %index index)
-           (equal (updater %index %value (updater index value vector))
-                  (updater %index %value vector))))
+  (implies (equal index1 index2)
+           (equal (updater index1 element1 (updater index2 element2 vector))
+                  (updater index1 element1 vector))))
 
 (defthm updater-of-updater-diff
-  (implies (and (not (equal %index index))
-                (natp %index)
-                (natp index))
-           (equal (updater %index %value (updater index value vector))
-                  (updater index value (updater %index %value vector))))
+  (implies (and (not (equal index1 index2))
+                (natp index1)
+                (natp index2))
+           (equal (updater index1 element1 (updater index2 element2 vector))
+                  (updater index2 element2 (updater index1 element1 vector))))
   :rule-classes
-  ((:rewrite :loop-stopper ((%index index updater)))))
+  ((:rewrite :loop-stopper ((index1 index2 updater)))))
+
+
+;;;; Constraints
+(defconst *exports* '(default-length
+                      element-recognizer
+                      initial-element
+                      contents-recognizer
+                      recognizer
+                      creator
+                      fixer
+                      length
+                      resizer
+                      accessor
+                      updater))
+
+(encapsulate ()
+  (local
+    (include-book"../utilities/top"))
+
+  (make-event
+    `(defconst *constraints*
+       ',(collect-constraint-info *exports* (w state)))))

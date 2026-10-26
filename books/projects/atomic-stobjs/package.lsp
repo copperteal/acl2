@@ -40,12 +40,19 @@
                with-books
                make-predicate-suffix
                coupledp
-               mv-er)
+               mv-er
+               collect-constraint-info
+               defthm-fi
+               strip-theory)
              '(<<
                nat-equiv
+
+               remove-keyword
                assoc-equal-cadr
                legal-constantp
                legal-variablep
+
+               doublets-to-alist
 
                b*
                def-b*-binder

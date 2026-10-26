@@ -41,13 +41,23 @@
   (defthm count-keys-of-hons-remove-assoc-when-hons-assoc-equal
     (implies (hons-assoc-equal k alist)
              (equal (count-keys (hons-remove-assoc k alist))
-                    (1- (count-keys alist))))))
+                    (1- (count-keys alist))))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (hons-assoc-equal k (double-rewrite alist))
+                        (equal (count-keys (hons-remove-assoc k alist))
+                               (1- (count-keys alist))))))))
 
 (local
   (defthm count-keys-of-hons-remove-assoc-when-not-hons-assoc-equal
     (implies (not (hons-assoc-equal k alist))
              (equal (count-keys (hons-remove-assoc k alist))
-                    (count-keys alist)))))
+                    (count-keys alist)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (not (hons-assoc-equal k (double-rewrite alist)))
+                        (equal (count-keys (hons-remove-assoc k alist))
+                               (count-keys alist)))))))
 
 (local
   (defthm count-keys-of-alist-fix

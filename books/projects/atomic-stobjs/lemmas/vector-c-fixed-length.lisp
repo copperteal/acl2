@@ -147,12 +147,12 @@
     :rule-classes :type-prescription)
 
   (local
-    (defun element-recognizer (value)
+    (defun element-recognizer (element)
       (declare (xargs :guard t))
-      (integerp value)))
+      (integerp element)))
 
   (defthm booleanp-of-element-recognizer
-    (booleanp (element-recognizer value))
+    (booleanp (element-recognizer element))
     :rule-classes :type-prescription)
 
   (local
@@ -208,12 +208,12 @@
                               (< index (default-length)))))
   (nth index (nth 0 vector)))
 
-(defun updater (index value vector)
+(defun updater (index element vector)
   (declare (xargs :guard (and (recognizer vector)
                               (natp index)
                               (< index (default-length))
-                              (element-recognizer value))))
-  (update-nth-array 0 index value vector))
+                              (element-recognizer element))))
+  (update-nth-array 0 index element vector))
 
 
 ;;;; `CONTENTS-RECOGNIZER'
@@ -245,8 +245,8 @@
 (local
   (defthm contents-recognizer-of-resize-list
     (implies (and (contents-recognizer contents)
-                  (element-recognizer value))
-             (contents-recognizer (resize-list contents length value)))
+                  (element-recognizer element))
+             (contents-recognizer (resize-list contents length element)))
     :hints
     (("Goal"
       :in-theory (enable resize-list)))))
@@ -255,16 +255,16 @@
   (defthm contents-recognizer-of-update-nth
     (implies (and (natp index)
                   (< index (len contents))
-                  (element-recognizer value)
+                  (element-recognizer element)
                   (contents-recognizer contents))
-             (contents-recognizer (update-nth index value contents)))
+             (contents-recognizer (update-nth index element contents)))
     :rule-classes
     ((:rewrite :corollary
                (implies (and (natp index)
                              (< index (len (double-rewrite contents)))
-                             (element-recognizer value)
+                             (element-recognizer element)
                              (contents-recognizer contents))
-                        (contents-recognizer (update-nth index value contents)))))
+                        (contents-recognizer (update-nth index element contents)))))
     :hints
     (("Goal"
       :in-theory (enable update-nth)))))
@@ -297,9 +297,9 @@
 (defthm recognizer-of-updater
   (implies (and (natp index)
                 (< index (default-length))
-                (element-recognizer value)
+                (element-recognizer element)
                 (recognizer vector))
-           (recognizer (updater index value vector))))
+           (recognizer (updater index element vector))))
 
 
 ;;;; `FIXER'
@@ -354,52 +354,73 @@
            (equal (accessor index (creator))
                   (initial-element))))
 
-
 (defthm accessor-of-updater-same
-  (implies (equal %index index)
-           (equal (accessor %index (updater index value vector))
-                  value)))
+  (implies (equal index1 index2)
+           (equal (accessor index1 (updater index2 element vector))
+                  element)))
 
 (defthm accessor-of-updater-diff
-  (implies (and (not (equal %index index))
-                (natp %index)
-                (natp index))
-           (equal (accessor %index (updater index value vector))
-                  (accessor %index vector))))
+  (implies (and (not (equal index1 index2))
+                (natp index1)
+                (natp index2))
+           (equal (accessor index1 (updater index2 element vector))
+                  (accessor index1 vector))))
 
 
 ;;;; `UPDATER'
 (defthm updater-tp
   (implies (recognizer vector)
-           (and (consp (updater index value vector))
-                (true-listp (updater index value vector))))
+           (and (consp (updater index element vector))
+                (true-listp (updater index element vector))))
   :rule-classes :type-prescription)
 
 (defthm updater-of-creator
-  (implies (and (equal value (initial-element))
+  (implies (and (equal element (initial-element))
                 (natp index)
                 (< index (default-length)))
-           (equal (updater index value (creator))
+           (equal (updater index element (creator))
                   (creator))))
 
 (defthm updater-of-accessor
-  (implies (and (equal %index index)
-                (natp %index)
-                (< %index (default-length))
+  (implies (and (equal index1 index2)
+                (natp index1)
+                (< index1 (default-length))
                 (recognizer vector))
-           (equal (updater %index (accessor index vector) vector)
+           (equal (updater index1 (accessor index2 vector) vector)
                   vector)))
 
 (defthm updater-of-updater-same
-  (implies (equal %index index)
-           (equal (updater %index %value (updater index value vector))
-                  (updater %index %value vector))))
+  (implies (equal index1 index2)
+           (equal (updater index1 element1 (updater index2 element2 vector))
+                  (updater index1 element1 vector))))
 
 (defthm updater-of-updater-diff
-  (implies (and (not (equal %index index))
-                (natp %index)
-                (natp index))
-           (equal (updater %index %value (updater index value vector))
-                  (updater index value (updater %index %value vector))))
+  (implies (and (not (equal index1 index2))
+                (natp index1)
+                (natp index2))
+           (equal (updater index1 element1 (updater index2 element2 vector))
+                  (updater index2 element2 (updater index1 element1 vector))))
   :rule-classes
-  ((:rewrite :loop-stopper ((%index index updater)))))
+  ((:rewrite :loop-stopper ((index1 index2 updater)))))
+
+
+;;;; Constraints
+(defconst *exports* '(default-length
+                      element-recognizer
+                      initial-element
+                      contents-recognizer
+                      recognizer
+                      creator
+                      fixer
+                      length
+                      resizer
+                      accessor
+                      updater))
+
+(encapsulate ()
+  (local
+    (include-book"../utilities/top"))
+
+  (make-event
+    `(defconst *constraints*
+       ',(collect-constraint-info *exports* (w state)))))

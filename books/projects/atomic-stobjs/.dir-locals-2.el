@@ -25,6 +25,7 @@
                (eval . (put 'define-vector$abs 'common-lisp-indent-function 1))
                (eval . (put 'define-vector$c 'common-lisp-indent-function 2))
                (eval . (put 'define-vector$c/make-theorems 'common-lisp-indent-function 0))
+               (eval . (put 'define-vector$c/make-fi-bindings 'common-lisp-indent-function 0))
                (eval . (put 'define-vector$corr 'common-lisp-indent-function 1))
 
                )))

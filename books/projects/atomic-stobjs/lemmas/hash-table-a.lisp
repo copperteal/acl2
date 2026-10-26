@@ -296,7 +296,15 @@
                            (val-recognizer val)
                            (recognizer/unique (omap::tail map)))))))
     :rule-classes
-    ((:definition :controller-alist ((recognizer/unique t))))
+    ((:definition :controller-alist ((recognizer/unique t))
+       :corollary (equal (recognizer/unique map)
+                         (and (omap::mapp map)
+                              (or (omap::emptyp (double-rewrite map))
+                                  (mv-let (key val)
+                                          (omap::head (double-rewrite map))
+                                    (and (key-recognizer key)
+                                         (val-recognizer val)
+                                         (recognizer/unique (omap::tail (double-rewrite map))))))))))
     :hints
     (("Goal"
       :in-theory (enable omap::mapp
@@ -314,7 +322,12 @@
   (defthm recognizer/unique-when-emptyp
     (implies (omap::emptyp map)
              (equal (recognizer/unique map)
-                    (omap::mapp map)))))
+                    (omap::mapp map)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (omap::emptyp (double-rewrite map))
+                        (equal (recognizer/unique map)
+                               (omap::mapp map)))))))
 
 (local
   (defthm key-recognizer-when-not-emptyp
@@ -359,7 +372,12 @@
   (defthm accessor/unique-when-emptyp
     (implies (omap::emptyp map)
              (equal (accessor/unique key map)
-                    (default-val)))))
+                    (default-val)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (omap::emptyp (double-rewrite map))
+                        (equal (accessor/unique key map)
+                               (default-val)))))))
 
 (local
   (defthm accessor/unique-when-hit
@@ -367,7 +385,14 @@
                   (recognizer/unique map)
                   (key-equiv (double-rewrite key) (omap::head-key map)))
              (equal (accessor/unique key map)
-                    (omap::head-val map)))))
+                    (omap::head-val map)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (not (omap::emptyp (double-rewrite map)))
+                             (recognizer/unique map)
+                             (key-equiv (double-rewrite key) (omap::head-key map)))
+                        (equal (accessor/unique key map)
+                               (omap::head-val map)))))))
 
 (local
   (defthm accessor/unique-when-small
@@ -443,6 +468,12 @@
                       (key-recognizer key))
                  (equal (remover/unique key map)
                         (omap::delete key map)))
+        :rule-classes
+        ((:rewrite :corollary
+                   (implies (and (recognizer/unique map)
+                                 (key-recognizer key))
+                            (equal (remover/unique key map)
+                                   (omap::delete key (double-rewrite map))))))
         :hints
         (("Goal"
           :induct (recognizer/unique map)
@@ -2793,6 +2824,15 @@
                     (not (equal (omap::head-key %hash-table)
                                 (omap::head-key hash-table))))
                (not (keys-equal/unique %hash-table hash-table)))
+      :rule-classes
+      ((:rewrite :corollary
+                 (implies (and (recognizer/unique %hash-table)
+                               (recognizer/unique hash-table)
+                               (not (omap::emptyp (double-rewrite %hash-table)))
+                               (not (omap::emptyp (double-rewrite hash-table)))
+                               (not (equal (omap::head-key %hash-table)
+                                           (omap::head-key hash-table))))
+                          (not (keys-equal/unique %hash-table hash-table)))))
       :hints
       (("Goal"
         :do-not-induct t
@@ -2870,6 +2910,16 @@
                     (not (equal (omap::head-val %hash-table)
                                 (omap::head-val hash-table))))
                (not (vals-equal/unique %hash-table hash-table)))
+      :rule-classes
+      ((:rewrite :corollary
+                 (implies (and (recognizer/unique %hash-table)
+                               (recognizer/unique hash-table)
+                               (not (omap::emptyp (double-rewrite %hash-table)))
+                               (not (omap::emptyp (double-rewrite hash-table)))
+                               (keys-equal/unique %hash-table hash-table)
+                               (not (equal (omap::head-val %hash-table)
+                                           (omap::head-val hash-table))))
+                          (not (vals-equal/unique %hash-table hash-table)))))
       :hints
       (("Goal"
         :do-not-induct t
@@ -4071,7 +4121,15 @@
                       (val-export-p val)
                       (exportp-rec (omap::tail map))))))
     :rule-classes
-    ((:definition :controller-alist ((exportp-rec t))))
+    ((:definition :controller-alist ((exportp-rec t))
+       :corollary (equal (exportp-rec map)
+                         (if (omap::emptyp (double-rewrite map))
+                             (null map)
+                             (mv-let (key val)
+                                     (omap::head (double-rewrite map))
+                               (and (key-recognizer key)
+                                    (val-export-p val)
+                                    (exportp-rec (omap::tail map))))))))
     :hints
     (("Goal"
       :in-theory (enable omap::mapp
@@ -4095,7 +4153,12 @@
   (defthm exportp-rec-when-emptyp
     (implies (omap::emptyp map)
              (equal (exportp-rec map)
-                    (null map)))))
+                    (null map)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (omap::emptyp (double-rewrite map))
+                        (equal (exportp-rec map)
+                               (null map)))))))
 
 (defthm key-recognizer-head-when-exportp-rec
   (implies (and (not (omap::emptyp map))
@@ -4256,6 +4319,12 @@
            (if (keysp set)
                (set::union set (omap::keys acc))
                (omap::keys acc)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (omap::keys (export-acc set acc hash-table))
+                      (if (keysp set)
+                          (set::union set (omap::keys (double-rewrite acc)))
+                          (omap::keys (double-rewrite acc))))))
     :hints
     (("Goal"
       :in-theory (enable set::union)))))
@@ -4322,9 +4391,9 @@
                                  ((set::emptyp set)
                                   (omap::update key
                                                 (val-export (accessor/copyable (double-rewrite key) hash-table))
-                                                acc))
+                                                (double-rewrite acc)))
                                  ((not (keysp set))
-                                  (omap::mfix acc))
+                                  (omap::mfix (double-rewrite acc)))
                                  (t
                                   (omap::update key
                                                 (val-export (accessor/copyable (double-rewrite key) hash-table))
@@ -4367,6 +4436,12 @@
            (if (keysp set)
                (set::cardinality (set::union set (omap::keys acc)))
                (omap::size acc)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (omap::size (export-acc set acc hash-table))
+                      (if (keysp set)
+                          (set::cardinality (set::union set (omap::keys (double-rewrite acc))))
+                          (omap::size (double-rewrite acc))))))
     :hints
     (("Goal"
       :induct (export-acc set acc hash-table)
@@ -4382,7 +4457,14 @@
            (if (and (keysp set)
                     (set::in key set))
                (cons key (val-export (accessor/copyable (double-rewrite key) hash-table)))
-               (omap::assoc key acc)))))
+               (omap::assoc key acc)))
+    :rule-classes
+    ((:rewrite :corollary
+               (equal (omap::assoc key (export-acc set acc hash-table))
+                      (if (and (keysp set)
+                               (set::in key set))
+                          (cons key (val-export (accessor/copyable (double-rewrite key) hash-table)))
+                          (omap::assoc key (double-rewrite acc))))))))
 
 (local
   (in-theory

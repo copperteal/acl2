@@ -37,6 +37,16 @@
 
 
 ;;;; `SYMBOLICATE$'
+(defun make-predicate-suffix (string-or-symbol)
+  ;; TODO: Mention reference to CTL2 in XDOC
+  (declare (xargs :guard (or (stringp string-or-symbol)
+                             (symbolp string-or-symbol))))
+  (if (position #\- (if (symbolp string-or-symbol)
+                        (symbol-name string-or-symbol)
+                        string-or-symbol))
+      "-P"
+      "P"))
+
 (encapsulate ()
   (local
     (defthm character-listp-of-explode-nonnegative-integer

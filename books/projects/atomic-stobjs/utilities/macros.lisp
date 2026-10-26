@@ -30,16 +30,10 @@
 (in-package "ACL2")
 (set-verify-guards-eagerness 2)
 
-(defun make-predicate-suffix (string-or-symbol)
-  ;; TODO: Mention reference to CTL2 in XDOC
-  (declare (xargs :guard (or (stringp string-or-symbol)
-                             (symbolp string-or-symbol))))
-  (if (position #\- (if (symbolp string-or-symbol)
-                        (symbol-name string-or-symbol)
-                        string-or-symbol))
-      "-P"
-      "P"))
+(include-book "std/util/bstar" :dir :system)
 
+
+;;;; `MV-ER'
 (defmacro mv-er (n severity &rest rest)
   (declare (xargs :guard (and (integerp n)
                               (< 1 n)
@@ -48,3 +42,52 @@
                                                   '(hard hard? hard! hard?!)))))
   (list 'prog2$ (list* 'er severity rest)
         (cons 'mv (make-list n))))
+
+
+;;;; `DEFTHM-FI'
+(defmacro defthm-fi (name statement &rest kvl)
+  (declare (xargs :guard t))
+  (let ((theorem (cadr (assoc-keyword :theorem kvl)))
+        (bindings (cadr (assoc-keyword :bindings kvl)))
+        (kvl (remove-keyword :bindings
+                             (remove-keyword :theorem
+                                             (remove-keyword :hints kvl)))))
+    `(defthm ,name
+       ,statement
+       ,@kvl
+       :hints
+       (("Goal"
+         :by (:functional-instance ,theorem
+                                   ,@bindings))))))
+
+
+;;;; `COLLECT-CONSTRAINT-INFO'
+(defun collect-constraint-info-acc (list acc wrld)
+  (declare (xargs :mode :program
+                  :guard (and (symbol-listp list)
+                              (true-listp acc)
+                              (plist-worldp wrld))
+                  :measure (acl2-count list)))
+  (b*
+      (((when (atom list))
+        (reverse (remove-duplicates acc :test 'equal)))
+       ((cons sym list) list)
+       ((mv flg info &) (constraint-info+ sym wrld)))
+    (collect-constraint-info-acc list
+                                 (cond
+                                   (flg
+                                    (revappend info acc))
+                                   ((and (quotep info)
+                                         (equal (cadr info) ''t))
+                                    acc)
+                                   ((consp info)
+                                    (cons info acc))
+                                   (t
+                                    acc))
+                                 wrld)))
+
+(defun-inline collect-constraint-info (list wrld)
+  (declare (xargs :mode :program
+                  :guard (and (symbol-listp list)
+                              (plist-worldp wrld))))
+  (collect-constraint-info-acc list nil wrld))

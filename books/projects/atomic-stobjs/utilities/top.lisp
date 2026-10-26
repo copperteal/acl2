@@ -30,8 +30,42 @@
 (in-package "ACL2")
 (set-verify-guards-eagerness 2)
 
+#|
+(include-book "kestrel/utilities/doublets" :dir :system)
+|#
+
 (include-book "macros")
 (include-book "pkg-witness")
 (include-book "symbolicate-dollar")
 (include-book "tables")
 (include-book "with-books")
+
+
+;;;; `STRIP-THEORY'
+(defun strip-theory-rec (theory acc)
+  (declare (xargs :guard (and (alistp theory)
+                              (true-listp acc))))
+  (cond
+    ((endp theory)
+     (reverse acc))
+    ((member (caar theory) '(:definition
+                             :induction
+                             :executable-counterpart)
+             :test 'eq)
+     (strip-theory-rec (cdr theory)
+                       acc))
+    (t (strip-theory-rec (cdr theory)
+                         (cons (car theory) acc)))))
+
+(defun strip-theory (theory)
+  (declare (xargs :guard (alistp theory)))
+  (strip-theory-rec theory ()))
+
+(with-books (("kestrel/utilities/doublets" :dir :system))
+  (defun doublets-to-alist (doublets)
+    (declare (xargs :guard (doublet-listp doublets)))
+    (if (endp doublets)
+        nil
+        (cons (cons (car (first doublets))
+                    (cadr (first doublets)))
+              (doublets-to-alist (rest doublets))))))

@@ -33,6 +33,7 @@
   (set-difference-eq
    (union-eq *common-lisp-symbols-from-main-lisp-package*
              *acl2-exports*
+             '(collect-constraint-info)
              '(dec-dec-induct
                repeat))
    '(length)))
