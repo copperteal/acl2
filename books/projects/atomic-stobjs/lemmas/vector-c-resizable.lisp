@@ -147,12 +147,12 @@
     :rule-classes :type-prescription)
 
   (local
-    (defun element-recognizer (value)
+    (defun element-recognizer (element)
       (declare (xargs :guard t))
-      (integerp value)))
+      (integerp element)))
 
   (defthm booleanp-of-element-recognizer
-    (booleanp (element-recognizer value))
+    (booleanp (element-recognizer element))
     :rule-classes :type-prescription)
 
   (local
@@ -209,12 +209,12 @@
                               (< index (length vector)))))
   (nth index (nth 0 vector)))
 
-(defun updater (index value vector)
+(defun updater (index element vector)
   (declare (xargs :guard (and (recognizer vector)
                               (natp index)
                               (< index (length vector))
-                              (element-recognizer value))))
-  (update-nth-array 0 index value vector))
+                              (element-recognizer element))))
+  (update-nth-array 0 index element vector))
 
 
 ;;;; `CONTENTS-RECOGNIZER'
@@ -246,8 +246,8 @@
 (local
   (defthm contents-recognizer-of-resize-list
     (implies (and (contents-recognizer contents)
-                  (element-recognizer value))
-             (contents-recognizer (resize-list contents length value)))
+                  (element-recognizer element))
+             (contents-recognizer (resize-list contents length element)))
     :hints
     (("Goal"
       :in-theory (enable resize-list)))))
@@ -256,16 +256,16 @@
   (defthm contents-recognizer-of-update-nth
     (implies (and (natp index)
                   (< index (len contents))
-                  (element-recognizer value)
+                  (element-recognizer element)
                   (contents-recognizer contents))
-             (contents-recognizer (update-nth index value contents)))
+             (contents-recognizer (update-nth index element contents)))
     :rule-classes
     ((:rewrite :corollary
                (implies (and (natp index)
                              (< index (len (double-rewrite contents)))
-                             (element-recognizer value)
+                             (element-recognizer element)
                              (contents-recognizer contents))
-                        (contents-recognizer (update-nth index value contents)))))
+                        (contents-recognizer (update-nth index element contents)))))
     :hints
     (("Goal"
       :in-theory (enable update-nth)))))
@@ -302,9 +302,9 @@
 (defthm recognizer-of-updater
   (implies (and (natp index)
                 (< index (length vector))
-                (element-recognizer value)
+                (element-recognizer element)
                 (recognizer vector))
-           (recognizer (updater index value vector))))
+           (recognizer (updater index element vector))))
 
 
 ;;;; `FIXER'
@@ -341,7 +341,7 @@
 (defthm length-of-updater
   (implies (and (natp index)
                 (< index (length vector)))
-           (equal (length (updater index value vector))
+           (equal (length (updater index element vector))
                   (length vector))))
 
 
@@ -379,15 +379,15 @@
                 (natp length)
                 (< index length)
                 (< index (length vector)))
-           (equal (resizer length (updater index value vector))
-                  (updater index value (resizer length vector)))))
+           (equal (resizer length (updater index element vector))
+                  (updater index element (resizer length vector)))))
 
 (defthm resizer-of-updater-drop
   (implies (and (natp index)
                 (natp length)
                 (<= length index)
                 (< index (length vector)))
-           (equal (resizer length (updater index value vector))
+           (equal (resizer length (updater index element vector))
                   (resizer length vector))))
 
 
@@ -422,47 +422,47 @@
 
 (defthm accessor-of-updater-same
   (implies (equal index1 index2)
-           (equal (accessor index1 (updater index2 value vector))
-                  value)))
+           (equal (accessor index1 (updater index2 element vector))
+                  element)))
 
 (defthm accessor-of-updater-diff
   (implies (and (not (equal index1 index2))
                 (natp index1)
                 (natp index2))
-           (equal (accessor index1 (updater index2 value vector))
+           (equal (accessor index1 (updater index2 element vector))
                   (accessor index1 vector))))
 
 
 ;;;; `UPDATER'
 (defthm updater-tp
   (implies (recognizer vector)
-           (and (consp (updater index value vector))
-                (true-listp (updater index value vector))))
+           (and (consp (updater index element vector))
+                (true-listp (updater index element vector))))
   :rule-classes :type-prescription)
 
 (defthm updater-of-creator
-  (implies (and (equal value (initial-element))
+  (implies (and (equal element (initial-element))
                 (natp index)
                 (< index (default-length)))
-           (equal (updater index value (creator))
+           (equal (updater index element (creator))
                   (creator))))
 
 (defthm updater-of-resizer-inner
-  (implies (and (equal value (accessor index vector))
+  (implies (and (equal element (accessor index vector))
                 (natp index)
                 (natp length)
                 (< index length)
                 (< index (length vector)))
-           (equal (updater index value (resizer length vector))
+           (equal (updater index element (resizer length vector))
                   (resizer length vector))))
 
 (defthm updater-of-resizer-outer
-  (implies (and (equal value (initial-element))
+  (implies (and (equal element (initial-element))
                 (natp index)
                 (natp length)
                 (< index length)
                 (<= (length vector) index))
-           (equal (updater index value (resizer length vector))
+           (equal (updater index element (resizer length vector))
                   (resizer length vector))))
 
 (defthm updater-of-accessor
