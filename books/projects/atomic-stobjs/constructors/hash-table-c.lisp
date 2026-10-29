@@ -772,51 +772,39 @@
                     (enable type-spec-theory)))
 
                 ;; `CONTENTS-RECOGNIZER'
-                (defthm ,contents-recognizer-tp
+                (defthm-fi ,contents-recognizer-tp
                   (booleanp (,contents-recognizer ,contents))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::contents-recognizer-tp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::contents-recognizer-tp
+                  :bindings ,fi-bindings)
 
                 ;; `RECOGNIZER'
-                (defthm ,recognizer-tp
+                (defthm-fi ,recognizer-tp
                   (booleanp (,recognizer ,hash-table))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-tp
-                              'lem-hash-table$c::recognizer/unique-tp)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-tp
+                                'lem-hash-table$c::recognizer/unique-tp)
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-cr
+                (defthm-fi ,recognizer-cr
                   (implies (,recognizer ,hash-table)
                            (and (consp ,hash-table)
                                 (true-listp ,hash-table)))
                   :rule-classes :compound-recognizer
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-cr
-                              'lem-hash-table$c::recognizer/unique-cr)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-cr
+                                'lem-hash-table$c::recognizer/unique-cr)
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-of-creator
+                (defthm-fi ,recognizer-of-creator
                   (,recognizer (,creator))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-of-creator/copyable
-                              'lem-hash-table$c::recognizer/unique-of-creator/unique)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-creator/copyable
+                                'lem-hash-table$c::recognizer/unique-of-creator/unique)
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-of-updater
+                (defthm-fi ,recognizer-of-updater
                   (implies ,(if (eq element-type t)
                                 `(,recognizer ,hash-table)
                                 `(and (,recognizer ,hash-table)
@@ -824,60 +812,46 @@
                                            `(,element-recognizer value)
                                            (typep$transform 'value element-type))))
                            (,recognizer (,updater key value ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-of-updater
-                              'lem-hash-table$c::recognizer/unique-of-updater)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-updater
+                                'lem-hash-table$c::recognizer/unique-of-updater)
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-of-remover
+                (defthm-fi ,recognizer-of-remover
                   (implies (,recognizer ,hash-table)
                            (,recognizer (,remover key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-of-remover
-                              'lem-hash-table$c::recognizer/unique-of-remover)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-remover
+                                'lem-hash-table$c::recognizer/unique-of-remover)
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-of-%clear
+                (defthm-fi ,recognizer-of-%clear
                   (implies (,recognizer ,hash-table)
                            (,recognizer (,%clear ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-of-%clear
-                              'lem-hash-table$c::recognizer/unique-of-%clear)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-%clear
+                                'lem-hash-table$c::recognizer/unique-of-%clear)
+                  :bindings ,fi-bindings)
 
-                (defthm ,recognizer-of-%init
+                (defthm-fi ,recognizer-of-%init
                   (implies (,recognizer ,hash-table)
-                           (,recognizer (,%init ht-size rehash-size rehash-threshold ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-of-%init
-                              'lem-hash-table$c::recognizer/unique-of-%init)
-                         ,@fi-bindings))))
+                           (,recognizer (,%init ht-size rehash-size
+                                                rehash-threshold ,hash-table)))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-%init
+                                'lem-hash-table$c::recognizer/unique-of-%init)
+                  :bindings ,fi-bindings)
 
                 ,@(and copyable
-                       `((defthm ,recognizer-of-keys-set
+                       `((defthm-fi ,recognizer-of-keys-set
                            (implies (,recognizer ,hash-table)
                                     (,recognizer (,keys-set set ,hash-table)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::recognizer/copyable-of-keys-set
-                                  ,@fi-bindings))))))
+                           :theorem lem-hash-table$c::recognizer/copyable-of-keys-set
+                           :bindings ,fi-bindings)))
 
                 ;; `ACCESSOR'
                 ,@(and (not (eq element-type t))
-                       `((defthm ,typep$-of-accessor
+                       `((defthm-fi ,typep$-of-accessor
                            (implies (,recognizer ,hash-table)
                                     ,(if element-recognizer
                                          `(,element-recognizer (,accessor key ,hash-table))
@@ -885,453 +859,328 @@
                            :rule-classes
                            (:rewrite
                             :type-prescription)
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  ,(if copyable
-                                       'lem-hash-table$c::element-recognizer-of-accessor/copyable
-                                       'lem-hash-table$c::element-recognizer-of-accessor/unique)
-                                  ,@fi-bindings))))))
+                           :theorem ,(if copyable
+                                         'lem-hash-table$c::element-recognizer-of-accessor/copyable
+                                         'lem-hash-table$c::element-recognizer-of-accessor/unique)
+                           :bindings ,fi-bindings)))
 
-                (defthm ,accessor-of-creator
+                (defthm-fi ,accessor-of-creator
                   (equal (,accessor key (,creator))
                          ,(if element-creator
                               `(,element-creator)
                               default-value-name))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::accessor-of-creator/copyable
-                              'lem-hash-table$c::accessor-of-creator/unique)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::accessor-of-creator/copyable
+                                'lem-hash-table$c::accessor-of-creator/unique)
+                  :bindings ,fi-bindings)
 
-                (defthm ,accessor-of-updater-same
+                (defthm-fi ,accessor-of-updater-same
                   (implies (equal %key key)
                            (equal (,accessor %key (,updater key value ,hash-table))
                                   value))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::accessor-of-updater-same
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::accessor-of-updater-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,accessor-of-updater-diff
+                (defthm-fi ,accessor-of-updater-diff
                   (implies (not (equal %key key))
                            (equal (,accessor %key (,updater key value ,hash-table))
                                   (,accessor %key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::accessor-of-updater-diff
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::accessor-of-updater-diff
+                  :bindings ,fi-bindings)
 
-                (defthm ,accessor-of-remover-same
+                (defthm-fi ,accessor-of-remover-same
                   (implies (equal %key key)
                            (equal (,accessor %key (,remover key ,hash-table))
                                   ,(if element-creator
                                        `(,element-creator)
                                        default-value-name)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::accessor-of-remover-same
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::accessor-of-remover-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,accessor-of-remover-diff
+                (defthm-fi ,accessor-of-remover-diff
                   (implies (not (equal %key key))
                            (equal (,accessor %key (,remover key ,hash-table))
                                   (,accessor %key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::accessor-of-remover-diff
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::accessor-of-remover-diff
+                  :bindings ,fi-bindings)
 
                 ,@(and copyable
-                       `((defthm ,accessor-of-keys-set
+                       `((defthm-fi ,accessor-of-keys-set
                            (equal (,accessor key (,keys-set set ,hash-table))
                                   (,accessor key ,hash-table))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::accessor-of-keys-set
-                                  ,@fi-bindings))))))
+                           :theorem lem-hash-table$c::accessor-of-keys-set
+                           :bindings ,fi-bindings)))
 
                 ;; `UPDATER'
-                (defthm ,updater-tp
+                (defthm-fi ,updater-tp
                   (implies (,recognizer ,hash-table)
                            (and (consp (,updater key value ,hash-table))
                                 (true-listp (,updater key value ,hash-table))))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::updater/copyable-tp
-                              'lem-hash-table$c::updater/unique-tp)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::updater/copyable-tp
+                                'lem-hash-table$c::updater/unique-tp)
+                  :bindings ,fi-bindings)
 
                 ;; `BOUNDP'
-                (defthm ,boundp-tp
+                (defthm-fi ,boundp-tp
                   (booleanp (,boundp key ,hash-table))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::boundp-tp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::boundp-tp
+                  :bindings ,fi-bindings)
 
-                (defthm ,boundp-of-creator
+                (defthm-fi ,boundp-of-creator
                   (not (,boundp key (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::boundp-of-creator/copyable
-                              'lem-hash-table$c::boundp-of-creator/unique)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::boundp-of-creator/copyable
+                                'lem-hash-table$c::boundp-of-creator/unique)
+                  :bindings ,fi-bindings)
 
-                (defthm ,boundp-of-updater-same
+                (defthm-fi ,boundp-of-updater-same
                   (implies (equal %key key)
                            (equal (,boundp %key (,updater key value ,hash-table))
                                   t))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::boundp-of-updater-same
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::boundp-of-updater-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,boundp-of-updater-diff
+                (defthm-fi ,boundp-of-updater-diff
                   (implies (not (equal %key key))
                            (equal (,boundp %key (,updater key value ,hash-table))
                                   (,boundp %key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::boundp-of-updater-diff
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::boundp-of-updater-diff
+                  :bindings ,fi-bindings)
 
-                (defthm ,boundp-of-remover-same
+                (defthm-fi ,boundp-of-remover-same
                   (implies (equal %key key)
                            (not (,boundp %key (,remover key ,hash-table))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::boundp-of-remover-same
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::boundp-of-remover-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,boundp-of-remover-diff
+                (defthm-fi ,boundp-of-remover-diff
                   (implies (not (equal %key key))
                            (equal (,boundp %key (,remover key ,hash-table))
                                   (,boundp %key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::boundp-of-remover-diff
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::boundp-of-remover-diff
+                  :bindings ,fi-bindings)
 
                 ,@(and copyable
-                       `((defthm ,boundp-of-keys-set
+                       `((defthm-fi ,boundp-of-keys-set
                            (equal (,boundp key (,keys-set set ,hash-table))
                                   (,boundp key ,hash-table))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::boundp-of-keys-set
-                                  ,@fi-bindings))))))
+                           :theorem lem-hash-table$c::boundp-of-keys-set
+                           :bindings ,fi-bindings)))
 
                 ;; `GETP'
-                (defthm ,getp-tp
+                (defthm-fi ,getp-tp
                   (and (consp (,getp key ,hash-table))
                        (true-listp (,getp key ,hash-table)))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::getp-tp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::getp-tp
+                  :bindings ,fi-bindings)
 
-                (defthm ,getp-rw
+                (defthm-fi ,getp-rw
                   (mv-let (v0 v1)
                           (,getp key ,hash-table)
                     (and (equal v0 (,accessor key ,hash-table))
                          (equal v1 (,boundp key ,hash-table))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::getp-rw
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::getp-rw
+                  :bindings ,fi-bindings)
 
                 ;; `REMOVER'
-                (defthm ,remover-tp
+                (defthm-fi ,remover-tp
                   (implies (,recognizer ,hash-table)
                            (and (consp (,remover key ,hash-table))
                                 (true-listp (,remover key ,hash-table))))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::remover/copyable-tp
-                              'lem-hash-table$c::remover/unique-tp)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::remover/copyable-tp
+                                'lem-hash-table$c::remover/unique-tp)
+                  :bindings ,fi-bindings)
 
-                (defthm ,remover-of-creator
+                (defthm-fi ,remover-of-creator
                   (equal (,remover key (,creator))
                          (,creator))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::remover-of-creator/copyable
-                              'lem-hash-table$c::remover-of-creator/unique)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::remover-of-creator/copyable
+                                'lem-hash-table$c::remover-of-creator/unique)
+                  :bindings ,fi-bindings)
 
-                (defthm ,remover-of-updater-same
+                (defthm-fi ,remover-of-updater-same
                   (implies (equal %key key)
                            (equal (,remover %key (,updater key value ,hash-table))
                                   (,remover %key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::remover-of-updater-same
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::remover-of-updater-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,remover-of-updater-diff
+                (defthm-fi ,remover-of-updater-diff
                   (implies (not (equal %key key))
                            (equal (,remover %key (,updater key value ,hash-table))
-                                  (,updater key value (,remover %key ,hash-table))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::remover-of-updater-diff
-                         ,@fi-bindings))))
+                                  (,updater key value (,remover %key
+                                                                ,hash-table))))
+                  :theorem lem-hash-table$c::remover-of-updater-diff
+                  :bindings ,fi-bindings)
 
-                (defthm ,remover-of-remover-same
+                (defthm-fi ,remover-of-remover-same
                   (implies (equal %key key)
                            (equal (,remover %key (,remover key ,hash-table))
                                   (,remover %key ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::remover-of-remover-same
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::remover-of-remover-same
+                  :bindings ,fi-bindings)
 
-                (defthm ,remover-of-remover-diff
+                (defthm-fi ,remover-of-remover-diff
                   (implies (not (equal %key key))
                            (equal (,remover %key (,remover key ,hash-table))
                                   (,remover key (,remover %key ,hash-table))))
                   :rule-classes
                   ((:rewrite :loop-stopper ((%key key ,remover))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::remover-of-remover-diff
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::remover-of-remover-diff
+                  :bindings ,fi-bindings)
 
                 ;; `COUNT'
-                (defthm ,count-tp
+                (defthm-fi ,count-tp
                   (natp (,count ,hash-table))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::count-tp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::count-tp
+                  :bindings ,fi-bindings)
 
-                (defthm ,count-of-creator
+                (defthm-fi ,count-of-creator
                   (equal (,count (,creator)) 0)
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::count-of-creator/copyable
-                              'lem-hash-table$c::count-of-creator/unique)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::count-of-creator/copyable
+                                'lem-hash-table$c::count-of-creator/unique)
+                  :bindings ,fi-bindings)
 
-                (defthm ,count-of-updater-when-boundp
+                (defthm-fi ,count-of-updater-when-boundp
                   (implies (,boundp key ,hash-table)
                            (equal (,count (,updater key value ,hash-table))
                                   (,count ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::count-of-updater-when-boundp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::count-of-updater-when-boundp
+                  :bindings ,fi-bindings)
 
-                (defthm ,count-of-updater-when-not-boundp
+                (defthm-fi ,count-of-updater-when-not-boundp
                   (implies (not (,boundp key ,hash-table))
                            (equal (,count (,updater key value ,hash-table))
                                   (1+ (,count ,hash-table))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::count-of-updater-when-not-boundp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::count-of-updater-when-not-boundp
+                  :bindings ,fi-bindings)
 
-                (defthm ,count-of-remover-when-boundp
+                (defthm-fi ,count-of-remover-when-boundp
                   (implies (,boundp key ,hash-table)
                            (equal (,count (,remover key ,hash-table))
                                   (1- (,count ,hash-table))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::count-of-remover-when-boundp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::count-of-remover-when-boundp
+                  :bindings ,fi-bindings)
 
-                (defthm ,count-of-remover-when-not-boundp
+                (defthm-fi ,count-of-remover-when-not-boundp
                   (implies (not (,boundp key ,hash-table))
                            (equal (,count (,remover key ,hash-table))
                                   (,count ,hash-table)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         lem-hash-table$c::count-of-remover-when-not-boundp
-                         ,@fi-bindings))))
+                  :theorem lem-hash-table$c::count-of-remover-when-not-boundp
+                  :bindings ,fi-bindings)
 
                 ,@(and copyable
-                       `((defthm ,count-of-keys-set
+                       `((defthm-fi ,count-of-keys-set
                            (equal (,count (,keys-set set ,hash-table))
                                   (,count ,hash-table))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::count-of-keys-set
-                                  ,@fi-bindings))))))
+                           :theorem lem-hash-table$c::count-of-keys-set
+                           :bindings ,fi-bindings)))
 
                 ;; `%CLEAR'
-                (defthm ,%clear-tp
+                (defthm-fi ,%clear-tp
                   (implies (,recognizer ,hash-table)
                            (and (consp (,%clear ,hash-table))
                                 (true-listp (,%clear ,hash-table))))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::%clear/copyable-tp
-                              'lem-hash-table$c::%clear/unique-tp)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::%clear/copyable-tp
+                                'lem-hash-table$c::%clear/unique-tp)
+                  :bindings ,fi-bindings)
 
-                (defthm ,%clear-rw
+                (defthm-fi ,%clear-rw
                   (implies (,recognizer ,hash-table)
                            (equal (,%clear ,hash-table)
                                   ,(if copyable
                                        `(,keys-set (,keys ,hash-table) (,creator))
                                        `(,creator))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::%clear/copyable-rw
-                              'lem-hash-table$c::%clear/unique-rw)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::%clear/copyable-rw
+                                'lem-hash-table$c::%clear/unique-rw)
+                  :bindings ,fi-bindings)
 
                 ;; `%INIT'
-                (defthm ,%init-tp
+                (defthm-fi ,%init-tp
                   (implies (,recognizer ,hash-table)
                            (and (consp (,%init ht-size rehash-size rehash-threshold ,hash-table))
                                 (true-listp (,%init ht-size rehash-size rehash-threshold ,hash-table))))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::%init/copyable-tp
-                              'lem-hash-table$c::%init/unique-tp)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::%init/copyable-tp
+                                'lem-hash-table$c::%init/unique-tp)
+                  :bindings ,fi-bindings)
 
-                (defthm ,%init-rw
+                (defthm-fi ,%init-rw
                   (implies (,recognizer ,hash-table)
                            (equal (,%init ht-size rehash-size rehash-threshold ,hash-table)
                                   ,(if copyable
                                        `(,keys-set (,keys ,hash-table) (,creator))
                                        `(,creator))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::%init/copyable-rw
-                              'lem-hash-table$c::%init/unique-rw)
-                         ,@fi-bindings))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::%init/copyable-rw
+                                'lem-hash-table$c::%init/unique-rw)
+                  :bindings ,fi-bindings)
 
                 ;; `KEYS'
                 ,@(and copyable
-                       `((defthm ,keys-of-creator
+                       `((defthm-fi ,keys-of-creator
                            (not (,keys (,creator)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-of-creator/copyable
-                                  ,@fi-bindings))))
+                           :theorem lem-hash-table$c::keys-of-creator/copyable
+                           :bindings ,fi-bindings)
 
-                         (defthm ,keys-of-updater
+                         (defthm-fi ,keys-of-updater
                            (equal (,keys (,updater key value ,hash-table))
                                   (,keys ,hash-table))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-of-updater
-                                  ,@fi-bindings))))
+                           :theorem lem-hash-table$c::keys-of-updater
+                           :bindings ,fi-bindings)
 
-                         (defthm ,keys-of-remover
+                         (defthm-fi ,keys-of-remover
                            (equal (,keys (,remover key ,hash-table))
                                   (,keys ,hash-table))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-of-remover
-                                  ,@fi-bindings))))
+                           :theorem lem-hash-table$c::keys-of-remover
+                           :bindings ,fi-bindings)
 
-                         (defthm ,keys-of-keys-set
+                         (defthm-fi ,keys-of-keys-set
                            (equal (,keys (,keys-set set ,hash-table))
                                   set)
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-of-keys-set
-                                  ,@fi-bindings))))))
+                           :theorem lem-hash-table$c::keys-of-keys-set
+                           :bindings ,fi-bindings)))
 
                 ;; `KEYS-SET'
                 ,@(and copyable
-                       `((defthm ,keys-set-tp
+                       `((defthm-fi ,keys-set-tp
                            (implies (,recognizer ,hash-table)
                                     (and (consp (,keys-set set ,hash-table))
                                          (true-listp (,keys-set set ,hash-table))))
                            :rule-classes :type-prescription
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-set-tp
-                                  ,@fi-bindings))))
+                           :theorem lem-hash-table$c::keys-set-tp
+                           :bindings ,fi-bindings)
 
-                         (defthm ,keys-set-of-updater
+                         (defthm-fi ,keys-set-of-updater
                            (equal (,keys-set set (,updater key value ,hash-table))
                                   (,updater key value (,keys-set set ,hash-table)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-set-of-updater
-                                  ,@fi-bindings))))
+                           :theorem lem-hash-table$c::keys-set-of-updater
+                           :bindings ,fi-bindings)
 
-                         (defthm ,keys-set-of-remover
+                         (defthm-fi ,keys-set-of-remover
                            (equal (,keys-set set (,remover key ,hash-table))
                                   (,remover key (,keys-set set ,hash-table)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-set-of-remover
-                                  ,@fi-bindings))))
+                           :theorem lem-hash-table$c::keys-set-of-remover
+                           :bindings ,fi-bindings)
 
-                         (defthm ,keys-set-of-keys-set
+                         (defthm-fi ,keys-set-of-keys-set
                            (equal (,keys-set %set (,keys-set set ,hash-table))
                                   (,keys-set %set ,hash-table))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::keys-set-of-keys-set
-                                  ,@fi-bindings))))))
+                           :theorem lem-hash-table$c::keys-set-of-keys-set
+                           :bindings ,fi-bindings)))
 
                 ;; `FIXER'
                 (defun-inline ,fixer (,hash-table)
@@ -1354,51 +1203,39 @@
                 (in-theory
                   (disable ,fixer))
 
-                (defthm ,fixer-tp
+                (defthm-fi ,fixer-tp
                   (and (consp (,fixer ,hash-table))
                        (true-listp (,fixer ,hash-table)))
                   :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::fixer/copyable-tp
-                              'lem-hash-table$c::fixer/unique-tp)
-                         ,@fi-bindings-with-fixer))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::fixer/copyable-tp
+                                'lem-hash-table$c::fixer/unique-tp)
+                  :bindings ,fi-bindings-with-fixer)
 
-                (defthm ,recognizer-of-fixer
+                (defthm-fi ,recognizer-of-fixer
                   (,recognizer (,fixer ,hash-table))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::recognizer/copyable-of-fixer/copyable
-                              'lem-hash-table$c::recognizer/unique-of-fixer/unique)
-                         ,@fi-bindings-with-fixer))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-fixer/copyable
+                                'lem-hash-table$c::recognizer/unique-of-fixer/unique)
+                  :bindings ,fi-bindings-with-fixer)
 
-                (defthm ,fixer-when-recognizer
+                (defthm-fi ,fixer-when-recognizer
                   (implies (,recognizer ,hash-table)
                            (equal (,fixer ,hash-table)
                                   ,hash-table))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::fixer/copyable-when-recognizer/copyable
-                              'lem-hash-table$c::fixer/unique-when-recognizer/unique)
-                         ,@fi-bindings-with-fixer))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::fixer/copyable-when-recognizer/copyable
+                                'lem-hash-table$c::fixer/unique-when-recognizer/unique)
+                  :bindings ,fi-bindings-with-fixer)
 
-                (defthm ,fixer-when-not-recognizer
+                (defthm-fi ,fixer-when-not-recognizer
                   (implies (not (,recognizer ,hash-table))
                            (equal (,fixer ,hash-table)
                                   (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if copyable
-                              'lem-hash-table$c::fixer/copyable-when-not-recognizer/copyable
-                              'lem-hash-table$c::fixer/unique-when-not-recognizer/unique)
-                         ,@fi-bindings-with-fixer))))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::fixer/copyable-when-not-recognizer/copyable
+                                'lem-hash-table$c::fixer/unique-when-not-recognizer/unique)
+                  :bindings ,fi-bindings-with-fixer)
 
                 ;; `CLEAR'
                 ,@(and copyable
@@ -1408,26 +1245,20 @@
                                   (,hash-table (,keys-set '() ,hash-table)))
                              (,%clear ,hash-table)))
 
-                         (defthm ,clear-tp
+                         (defthm-fi ,clear-tp
                            (implies (,recognizer ,hash-table)
                                     (and (consp (,clear ,hash-table))
                                          (true-listp (,clear ,hash-table))))
                            :rule-classes :type-prescription
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::clear-tp
-                                  ,@fi-bindings-with-fixer-and-clear))))
+                           :theorem lem-hash-table$c::clear-tp
+                           :bindings ,fi-bindings-with-fixer-and-clear)
 
-                         (defthm ,clear-rw
+                         (defthm-fi ,clear-rw
                            (implies (,recognizer ,hash-table)
                                     (equal (,clear ,hash-table)
                                            (,creator)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::clear-rw
-                                  ,@fi-bindings-with-fixer-and-clear))))))
+                           :theorem lem-hash-table$c::clear-rw
+                           :bindings ,fi-bindings-with-fixer-and-clear)))
 
                 ;; `INIT'
                 ,@(and copyable
@@ -1446,26 +1277,20 @@
                                   (,hash-table (,keys-set '() ,hash-table)))
                              (,%init ht-size rehash-size rehash-threshold ,hash-table)))
 
-                         (defthm ,init-tp
+                         (defthm-fi ,init-tp
                            (implies (,recognizer ,hash-table)
                                     (and (consp (,init ht-size rehash-size rehash-threshold ,hash-table))
                                          (true-listp (,init ht-size rehash-size rehash-threshold ,hash-table))))
                            :rule-classes :type-prescription
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::init-tp
-                                  ,@fi-bindings-with-fixer-and-clear-and-init))))
+                           :theorem lem-hash-table$c::init-tp
+                           :bindings ,fi-bindings-with-fixer-and-clear-and-init)
 
-                         (defthm ,init-rw
+                         (defthm-fi ,init-rw
                            (implies (,recognizer ,hash-table)
                                     (equal (,init ht-size rehash-size rehash-threshold ,hash-table)
                                            (,creator)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-hash-table$c::init-rw
-                                  ,@fi-bindings-with-fixer-and-clear-and-init))))))))
+                           :theorem lem-hash-table$c::init-rw
+                           :bindings ,fi-bindings-with-fixer-and-clear-and-init)))))
             (stobj$c-property property))
 
          `(progn
