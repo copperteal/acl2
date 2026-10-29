@@ -407,6 +407,60 @@
     doublets))
 
 
+;;;; `DEFINE-HASH-TABLE$C/MAKE-DEFSTOBJ-FORM'
+(defun define-hash-table$c/make-defstobj-form (tmp property)
+  (declare (xargs :mode :program
+                  :guard (and (alistp tmp)
+                              (hash-table$c-property-p property))))
+  (let ((contents (access hash-table$c-property property :contents))
+        (keys (access hash-table$c-property property :keys))
+        (element-type (access hash-table$c-property property :element-type))
+        (test (access hash-table$c-property property :test))
+        (size (cdr (assoc :size tmp)))
+        (element-stobj-property (cdr (assoc :element-stobj-property tmp)))
+        (default-value-val (cdr (assoc :default-value-val tmp)))
+        (copyable (access hash-table$c-property property :copyable))
+        (doublets (define-hash-table$c/make-defstobj-doublets property))
+        (inline (cdr (assoc :inline tmp)))
+        (memoizable (access hash-table$c-property property :memoizable))
+        (executable (cdr (assoc :executable tmp))))
+    `(defstobj ,(access hash-table$c-property property :name)
+       (,contents :type (acl2::hash-table ,test ,size ,element-type)
+                  ,@(and (not element-stobj-property)
+                         `(:initially ,default-value-val)))
+       ,@(and copyable
+              `((,keys)))
+       :renaming ,doublets
+       :inline ,inline
+       :non-memoizable ,(not memoizable)
+       :non-executable ,(not executable))))
+
+
+;;;; `DEFINE-HASH-TABLE$C/APPLY-FIXER-HACK'
+(defun define-hash-table$c/apply-fixer-hack (property form)
+  (declare (xargs :mode :program))
+  (b* ((pkg-witness (access hash-table$c-property property :pkg-witness))
+       (hash-table (access hash-table$c-property property :name))
+       (copyable (access hash-table$c-property property :copyable))
+       (kvl (list* :congruent-to hash-table
+                   :non-executable t
+                   (remove-keyword :renaming
+                                   (remove-keyword :non-executable
+                                                   (if copyable
+                                                       (cddddr form)
+                                                       (cdddr form))))))
+       (name (symbolicate$ pkg-witness hash-table "/FIXER-HACK"))
+       (contents (access hash-table$c-property property :contents))
+       (field-spec (cons (symbolicate$ pkg-witness contents "/FIXER-HACK")
+                         (cdaddr form)))
+       ((unless copyable)
+        (list* 'defstobj name field-spec kvl))
+       (keys (access hash-table$c-property property :keys))
+       (keys-spec (cons (symbolicate$ pkg-witness keys "/FIXER-HACK")
+                        (cdr (cadddr form)))))
+    (list* 'defstobj name field-spec keys-spec kvl)))
+
+
 ;;;; `DEFINE-HASH-TABLE$C'
 (defmacro define-hash-table$c
     (&whole form
@@ -474,7 +528,6 @@
             (hash-table (access hash-table$c-property property :name))
             (pkg-witness (access hash-table$c-property property :pkg-witness))
             (test (access hash-table$c-property property :test))
-            (size (cdr (assoc :size tmp)))
 
             (element-type (access hash-table$c-property property :element-type))
             (stobj-property (cdr (assoc :element-stobj-property tmp)))
@@ -484,10 +537,6 @@
             (default-value (cdr (assoc :default-value-val tmp)))
             (default-value-name (access hash-table$c-property property :default-value))
             (copyable (access hash-table$c-property property :copyable))
-
-            (inline (cdr (assoc :inline tmp)))
-            (memoizable (access hash-table$c-property property :memoizable))
-            (executable (cdr (assoc :executable tmp)))
 
             (contents (access hash-table$c-property property :contents))
             (contents-recognizer (access hash-table$c-property property :contents-recognizer))
@@ -507,42 +556,21 @@
             (keys (access hash-table$c-property property :keys))
             (keys-set (access hash-table$c-property property :keys-set))
 
-            ;; Make Doublets
-            (doublets (define-hash-table$c/make-defstobj-doublets property))
-
             ;; Prologue
             (hash-table-begin (symbolicate$ pkg-witness hash-table "-BEGIN"))
             (hash-table-end (symbolicate$ pkg-witness hash-table "-END"))
-            (hash-table/fixer-hack (symbolicate$ pkg-witness hash-table "/FIXER-HACK"))
-            (contents/fh (symbolicate$ pkg-witness contents "/FIXER-HACK"))
-            (keys/fh (symbolicate$ pkg-witness keys "/FIXER-HACK"))
+            (defstobj-form (define-hash-table$c/make-defstobj-form tmp property))
+            (fixer-hack-form (define-hash-table$c/apply-fixer-hack property defstobj-form))
+            (fixer-hack (second fixer-hack-form))
             (prologue
              `((deflabel ,hash-table-begin)
 
                ,@(and (not stobj-property)
                       `((defconst ,default-value-name ',default-value)))
 
-               (defstobj ,hash-table
-                 (,contents :type (acl2::hash-table ,test ,size ,element-type)
-                            ,@(and (not stobj-property)
-                                   `(:initially ,default-value)))
-                 ,@(and copyable
-                        `((,keys)))
-                 :renaming ,doublets
-                 :inline ,inline
-                 :non-memoizable ,(not memoizable)
-                 :non-executable ,(not executable))
+               ,defstobj-form
 
-               (defstobj ,hash-table/fixer-hack
-                 (,contents/fh :type (acl2::hash-table ,test ,size ,element-type)
-                               ,@(and (not stobj-property)
-                                      `(:initially ,default-value)))
-                 ,@(and copyable
-                        `((,keys/fh)))
-                 :inline ,inline
-                 :congruent-to ,hash-table
-                 :non-memoizable ,(not memoizable)
-                 :non-executable t)))
+               ,fixer-hack-form))
 
             ;; Theorem Names
             (element-recognizer-of-element-creator (symbolicate$ "ATOMIC-STOBJS" element-recognizer "-OF-" element-creator))
@@ -1310,9 +1338,9 @@
                   (declare (xargs :stobjs ,hash-table))
                   (mbe :logic (if (,recognizer ,hash-table)
                                   ,hash-table
-                                  (with-local-stobj ,hash-table/fixer-hack
-                                    (mv-let (,hash-table ,hash-table/fixer-hack)
-                                            (swap-stobjs ,hash-table ,hash-table/fixer-hack)
+                                  (with-local-stobj ,fixer-hack
+                                    (mv-let (,hash-table ,fixer-hack)
+                                            (swap-stobjs ,hash-table ,fixer-hack)
                                       ,hash-table)))
                        :exec ,hash-table))
 
@@ -1438,32 +1466,7 @@
                              :by (:functional-instance
                                   lem-hash-table$c::init-rw
                                   ,@fi-bindings-with-fixer-and-clear-and-init))))))))
-            (stobj$c-property (make hash-table$c-property
-                                    :name hash-table
-                                    :recognizer recognizer
-                                    :creator creator
-                                    :fixer fixer
-                                    :accessor accessor
-                                    :updater updater
-                                    :boundp boundp
-                                    :getp getp
-                                    :remover remover
-                                    :count count
-                                    :clear clear
-                                    :init init
-                                    :keys keys
-                                    :keys-set keys-set
-                                    :contents contents
-                                    :contents-recognizer contents-recognizer
-                                    :element-type element-type
-                                    :default-value default-value-name
-                                    :copyable copyable
-                                    :test test
-                                    :memoizable memoizable
-                                    :theory theory
-                                    :fi-bindings fi-bindings-with-fixer
-                                    :fi-theorems nil
-                                    :pkg-witness pkg-witness)))
+            (stobj$c-property property))
 
          `(progn
             ,@prologue
