@@ -287,7 +287,13 @@
               :getp getp
               :remover remover
               :count count
+              :%clear (if copyable
+                          (symbolicate$ pkg-witness name "-%CLEAR")
+                          clear)
               :clear clear
+              :%init (if copyable
+                         (symbolicate$ pkg-witness name "-%INIT")
+                         init)
               :init init
               :keys keys
               :keys-set keys-set
@@ -301,6 +307,104 @@
               :theory (symbolicate$ pkg-witness name "-THEORY")
               :fi-theorems (symbolicate$ pkg-witness "*" name "-FI-THEOREMS*")
               :pkg-witness pkg-witness))))
+
+
+;;;; `DEFINE-HASH-TABLE$C/MAKE-DEFSTOBJ-DOUBLETS'
+(defun define-hash-table$c/make-defstobj-doublets (property)
+  (declare (xargs :mode :program
+                  :guard (hash-table$c-property-p property)))
+  (b* ((pkg-witness (access hash-table$c-property property :pkg-witness))
+       (hash-table (access hash-table$c-property property :name))
+       (doublets ())
+       (contents (access hash-table$c-property property :contents))
+       (contents-recognizer (access hash-table$c-property property :contents-recognizer))
+       (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
+       (doublets (if (eq contents-recognizer-stobj-default contents-recognizer)
+                     doublets
+                     (cons (list contents-recognizer-stobj-default
+                                 contents-recognizer)
+                           doublets)))
+       (recognizer (access hash-table$c-property property :recognizer))
+       (recognizer-stobj-default (symbolicate$ pkg-witness hash-table "P"))
+       (doublets (if (eq recognizer-stobj-default recognizer)
+                     doublets
+                     (cons (list recognizer-stobj-default
+                                 recognizer)
+                           doublets)))
+       (creator (access hash-table$c-property property :creator))
+       (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" hash-table))
+       (doublets (if (eq creator-stobj-default creator)
+                     doublets
+                     (cons (list creator-stobj-default
+                                 creator)
+                           doublets)))
+       (accessor (access hash-table$c-property property :accessor))
+       (accessor-stobj-default (symbolicate$ pkg-witness contents "-GET"))
+       (doublets (if (eq accessor-stobj-default accessor)
+                     doublets
+                     (cons (list accessor-stobj-default
+                                 accessor)
+                           doublets)))
+       (updater (access hash-table$c-property property :updater))
+       (updater-stobj-default (symbolicate$ pkg-witness contents "-PUT"))
+       (doublets (if (eq updater-stobj-default updater)
+                     doublets
+                     (cons (list updater-stobj-default
+                                 updater)
+                           doublets)))
+       (boundp (access hash-table$c-property property :boundp))
+       (boundp-stobj-default (symbolicate$ pkg-witness contents "-BOUNDP"))
+       (doublets (if (eq boundp-stobj-default boundp)
+                     doublets
+                     (cons (list boundp-stobj-default
+                                 boundp)
+                           doublets)))
+       (getp (access hash-table$c-property property :getp))
+       (getp-stobj-default (symbolicate$ pkg-witness contents "-GET?"))
+       (doublets (if (eq getp-stobj-default getp)
+                     doublets
+                     (cons (list getp-stobj-default
+                                 getp)
+                           doublets)))
+       (remover (access hash-table$c-property property :remover))
+       (remover-stobj-default (symbolicate$ pkg-witness contents "-REM"))
+       (doublets (if (eq remover-stobj-default remover)
+                     doublets
+                     (cons (list remover-stobj-default
+                                 remover)
+                           doublets)))
+       (count (access hash-table$c-property property :count))
+       (count-stobj-default (symbolicate$ pkg-witness contents "-COUNT"))
+       (doublets (if (eq count-stobj-default count)
+                     doublets
+                     (cons (list count-stobj-default
+                                 count)
+                           doublets)))
+       (%clear (access hash-table$c-property property :%clear))
+       (clear-stobj-default (symbolicate$ pkg-witness contents "-CLEAR"))
+       (doublets (if (eq clear-stobj-default %clear)
+                     doublets
+                     (cons (list clear-stobj-default
+                                 %clear)
+                           doublets)))
+       (%init (access hash-table$c-property property :%init))
+       (init-stobj-default (symbolicate$ pkg-witness contents "-INIT"))
+       (doublets (if (eq init-stobj-default %init)
+                     doublets
+                     (cons (list init-stobj-default
+                                 %init)
+                           doublets)))
+       ((unless (access hash-table$c-property property :copyable))
+        doublets)
+       (keys (access hash-table$c-property property :keys))
+       (keys-set (access hash-table$c-property property :keys-set))
+       (keys-set-stobj-default (symbolicate$ pkg-witness "UPDATE-" keys))
+       (doublets (if (eq keys-set-stobj-default keys-set)
+                     doublets
+                     (cons (list keys-set-stobj-default
+                                 keys-set)
+                           doublets))))
+    doublets))
 
 
 ;;;; `DEFINE-HASH-TABLE$C'
@@ -396,57 +500,15 @@
             (getp (access hash-table$c-property property :getp))
             (remover (access hash-table$c-property property :remover))
             (count (access hash-table$c-property property :count))
+            (%clear (access hash-table$c-property property :%clear))
             (clear (access hash-table$c-property property :clear))
+            (%init (access hash-table$c-property property :%init))
             (init (access hash-table$c-property property :init))
             (keys (access hash-table$c-property property :keys))
             (keys-set (access hash-table$c-property property :keys-set))
 
-            ;; Interface Symbols
-            (contents-recognizer-stobj-default (symbolicate$ pkg-witness contents "P"))
-            (recognizer-stobj-default (symbolicate$ pkg-witness hash-table "P"))
-            (creator-stobj-default (symbolicate$ pkg-witness "CREATE-" hash-table))
-            (accessor-stobj-default (symbolicate$ pkg-witness contents "-GET"))
-            (updater-stobj-default (symbolicate$ pkg-witness contents "-PUT"))
-            (boundp-stobj-default (symbolicate$ pkg-witness contents "-BOUNDP"))
-            (getp-stobj-default (symbolicate$ pkg-witness contents "-GET?"))
-            (remover-stobj-default (symbolicate$ pkg-witness contents "-REM"))
-            (count-stobj-default (symbolicate$ pkg-witness contents "-COUNT"))
-            (clear-stobj-default (symbolicate$ pkg-witness contents "-CLEAR"))
-            (%clear (if copyable
-                        (symbolicate$ pkg-witness hash-table "-%CLEAR")
-                        clear))
-            (init-stobj-default (symbolicate$ pkg-witness contents "-INIT"))
-            (%init (if copyable
-                       (symbolicate$ pkg-witness hash-table "-%INIT")
-                       init))
-            (keys-set-stobj-default (symbolicate$ pkg-witness "UPDATE-" keys))
-
             ;; Make Doublets
-            (doublets (append (and (not (eq contents-recognizer contents-recognizer-stobj-default))
-                                   `((,contents-recognizer-stobj-default ,contents-recognizer)))
-                              (and (not (eq recognizer recognizer-stobj-default))
-                                   `((,recognizer-stobj-default ,recognizer)))
-                              (and (not (eq creator creator-stobj-default))
-                                   `((,creator-stobj-default ,creator)))
-                              (and (not (eq accessor accessor-stobj-default))
-                                   `((,accessor-stobj-default ,accessor)))
-                              (and (not (eq updater updater-stobj-default))
-                                   `((,updater-stobj-default ,updater)))
-                              (and (not (eq boundp boundp-stobj-default))
-                                   `((,boundp-stobj-default ,boundp)))
-                              (and (not (eq getp getp-stobj-default))
-                                   `((,getp-stobj-default ,getp)))
-                              (and (not (eq remover remover-stobj-default))
-                                   `((,remover-stobj-default ,remover)))
-                              (and (not (eq count count-stobj-default))
-                                   `((,count-stobj-default ,count)))
-                              (and (not (eq clear clear-stobj-default))
-                                   `((,clear-stobj-default ,%clear)))
-                              (and (not (eq init init-stobj-default))
-                                   `((,init-stobj-default ,%init)))
-                              (and copyable
-                                   (not (eq keys-set keys-set-stobj-default))
-                                   `((,keys-set-stobj-default ,keys-set)))))
+            (doublets (define-hash-table$c/make-defstobj-doublets property))
 
             ;; Prologue
             (hash-table-begin (symbolicate$ pkg-witness hash-table "-BEGIN"))

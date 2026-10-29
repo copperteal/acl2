@@ -101,8 +101,8 @@
     getp
     remover
     count
-    clear
-    init)
+    (%clear . clear)
+    (%init . init))
    ;; TODO: drop this pair, move keys to previous list
    (keys . keys-set)
    (contents . contents-recognizer)
@@ -123,7 +123,9 @@
        (symbolp (access hash-table$c-property x :getp))
        (symbolp (access hash-table$c-property x :remover))
        (symbolp (access hash-table$c-property x :count))
+       (symbolp (access hash-table$c-property x :%clear))
        (symbolp (access hash-table$c-property x :clear))
+       (symbolp (access hash-table$c-property x :%init))
        (symbolp (access hash-table$c-property x :init))
        (symbolp (access hash-table$c-property x :keys))
        (symbolp (access hash-table$c-property x :keys-set))
