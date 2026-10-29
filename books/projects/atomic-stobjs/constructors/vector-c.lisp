@@ -255,21 +255,13 @@
                (mv-er 2 hard 'define-vector$c
                       "GUARD VIOLATION: ~x0" :initial-element)))
             (mv nil nil)))
-       (element (let ((element (assoc-keyword :element kvl)))
-                  (if element
-                      (if (legal-variablep (cadr element))
-                          (cadr element)
-                          (er hard 'define-vector$c
-                              "~x0 is not a legal variable name." element))
-                      (if element-stobj-property
-                          element-type
-                          (intern-in-package-of-symbol "X" pkg-witness)))))
        (element-absstobj-info (and element-stobj-property
                                    (getpropc element-type 'acl2::absstobj-info)))
        (element-stobj$a-property (and element-stobj-property
                                       (stobj$a-property element-type (w state))))
        (element-recognizer (access stobj$a-property element-stobj$a-property :recognizer))
        (element-creator (access stobj$a-property element-stobj$a-property :creator)))
+
     (mv (list (cons :default-length-val default-length-val)
               (cons :element-stobj-property element-stobj-property)
               (cons :initial-element-val initial-element-val)
@@ -294,7 +286,6 @@
               :updater updater
               :contents contents
               :contents-recognizer contents-recognizer
-              :element element
               :element-type element-type
               :initial-element initial-element
               :default-length default-length
@@ -421,7 +412,6 @@
   (let ((element-recognizer (cdr (assoc :element-recognizer tmp)))
         (element-creator (cdr (assoc :element-creator tmp)))
         (default-length (access vector$c-property property :default-length))
-        (element (access vector$c-property property :element))
         (element-type (access vector$c-property property :element-type))
         (initial-element (access vector$c-property property :initial-element))
         (contents-recognizer (access vector$c-property property :contents-recognizer))
@@ -435,8 +425,8 @@
     `((lem-vector$c::default-length (lambda ()
                                       ,default-length))
       (lem-vector$c::element-recognizer ,(or element-recognizer
-                                             `(lambda (,element)
-                                                ,(typep$transform element element-type))))
+                                             `(lambda (element)
+                                                ,(typep$transform 'element element-type))))
       (lem-vector$c::initial-element ,(or element-creator
                                           `(lambda ()
                                              ,initial-element)))

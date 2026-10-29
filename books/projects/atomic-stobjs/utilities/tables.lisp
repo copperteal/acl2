@@ -65,7 +65,7 @@
    (contents . contents-recognizer)
    ;; TODO: rename `ELEMENT-TYPE' to `ELEMENT-SPEC' because it is a stobj name
    ;; or type-spec, but never an ACL2 type.
-   (element element-type initial-element . default-length)
+   (element-type initial-element . default-length)
    (resizable . memoizable)
    (theory fi-bindings . fi-theorems)
    pkg-witness)
@@ -81,7 +81,6 @@
        (symbolp (access vector$c-property x :updater))
        (symbolp (access vector$c-property x :contents))
        (symbolp (access vector$c-property x :contents-recognizer))
-       (symbolp (access vector$c-property x :element))
        ;; TODO: check it's a valid type-spec or a symbol
        (access vector$c-property x :element-type)
        (symbolp (access vector$c-property x :initial-element))
@@ -108,7 +107,7 @@
    (keys . keys-set)
    (contents . contents-recognizer)
    ;; TODO: drop copyable
-   (value element-type default-value . copyable)
+   (element-type default-value . copyable)
    (test . memoizable)
    (theory fi-bindings . fi-theorems)
    pkg-witness)
@@ -130,7 +129,6 @@
        (symbolp (access hash-table$c-property x :keys-set))
        (symbolp (access hash-table$c-property x :contents))
        (symbolp (access hash-table$c-property x :contents-recognizer))
-       (symbolp (access hash-table$c-property x :value))
        ;; TODO: check it's a valid type-spec or a symbol
        (access hash-table$c-property x :element-type)
        (symbolp (access hash-table$c-property x :default-value))
