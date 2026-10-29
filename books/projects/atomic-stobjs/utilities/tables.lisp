@@ -140,7 +140,7 @@
        (booleanp (access hash-table$c-property x :memoizable))
        (symbolp (access hash-table$c-property x :theory))
        (symbol-doublet-listp (access hash-table$c-property x :fi-bindings))
-       (true-list-listp (access hash-table$c-property x :fi-theorems))
+       (symbolp (access hash-table$c-property x :fi-theorems))
        (pkg-witness-p (access hash-table$c-property x :pkg-witness))))
 
 (defrec frame$c-property

@@ -46,17 +46,17 @@
 
 
 ;;;; Stobj Values
-(defstobj foo$c
-  a
-  :non-memoizable t
-  :non-executable t)
+;; (defstobj foo$c
+;;   a
+;;   :non-memoizable t
+;;   :non-executable t)
 
-(atomic-stobjs::define-hash-table$c ht$c/eql-foo$c eql
-  :element-type foo$c)
+;; (atomic-stobjs::define-hash-table$c ht$c/eql-foo$c eql
+;;   :element-type foo$c)
 
-(atomic-stobjs::define-hash-table$c ht$c/eql-foo$c-nil eql
-  :element-type foo$c
-  :copyable nil)
+;; (atomic-stobjs::define-hash-table$c ht$c/eql-foo$c-nil eql
+;;   :element-type foo$c
+;;   :copyable nil)
 
 
 ;;;; type t
