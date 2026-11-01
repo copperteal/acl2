@@ -46,6 +46,7 @@
 
 ;;;; `DEFTHM-FI'
 (defmacro defthm-fi (name statement &rest kvl)
+  ;; TODO: Allow BINDINGS to be a defined constant or a DOUBLET-LISTP literal.
   (declare (xargs :guard t))
   (let ((theorem (cadr (assoc-keyword :theorem kvl)))
         (bindings (cadr (assoc-keyword :bindings kvl)))

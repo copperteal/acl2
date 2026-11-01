@@ -461,6 +461,72 @@
     (list* 'defstobj name field-spec keys-spec kvl)))
 
 
+;;;; `DEFINE-HASH-TABLE$C/MAKE-FI-BINDINGS'
+(defun define-hash-table$c/make-fi-bindings (tmp property)
+  (declare (xargs :mode :program
+                  :guard (and (alistp tmp)
+                              (hash-table$c-property-p property))))
+  (let ((element-recognizer (cdr (assoc :element-recognizer tmp)))
+        (element-creator (cdr (assoc :element-creator tmp)))
+        (copyable (access hash-table$c-property property :copyable))
+        (test (access hash-table$c-property property :test))
+        (element-type (access hash-table$c-property property :element-type))
+        (default-value-name (access hash-table$c-property property :default-value))
+        (contents-recognizer (access hash-table$c-property property :contents-recognizer))
+        (recognizer (access hash-table$c-property property :recognizer))
+        (creator (access hash-table$c-property property :creator))
+        (fixer (access hash-table$c-property property :fixer))
+        (accessor (access hash-table$c-property property :accessor))
+        (updater (access hash-table$c-property property :updater))
+        (boundp (access hash-table$c-property property :boundp))
+        (getp (access hash-table$c-property property :getp))
+        (remover (access hash-table$c-property property :remover))
+        (count (access hash-table$c-property property :count))
+        (%clear (access hash-table$c-property property :%clear))
+        (clear (access hash-table$c-property property :clear))
+        (%init (access hash-table$c-property property :%init))
+        (init (access hash-table$c-property property :init))
+        (keys (access hash-table$c-property property :keys))
+        (keys-set (access hash-table$c-property property :keys-set)))
+    `((lem-hash-table$c::key-guard ,(case test
+                                      (eq
+                                       'symbolp)
+                                      (eql
+                                       'eqlablep)
+                                      (t
+                                       `(lambda (key)
+                                          t))))
+      (lem-hash-table$c::element-recognizer ,(or element-recognizer
+                                                 `(lambda (value)
+                                                    ,(typep$transform 'value element-type))))
+      (lem-hash-table$c::default-value ,(or element-creator
+                                            `(lambda ()
+                                               ,default-value-name)))
+      (lem-hash-table$c::contents-recognizer ,contents-recognizer)
+      ,(if copyable
+           `(lem-hash-table$c::recognizer/copyable ,recognizer)
+           `(lem-hash-table$c::recognizer/unique ,recognizer))
+      ,(if copyable
+           `(lem-hash-table$c::creator/copyable ,creator)
+           `(lem-hash-table$c::creator/unique ,creator))
+      ,(if copyable
+           `(lem-hash-table$c::fixer/copyable ,fixer)
+           `(lem-hash-table$c::fixer/unique ,fixer))
+      (lem-hash-table$c::accessor ,accessor)
+      (lem-hash-table$c::updater ,updater)
+      (lem-hash-table$c::boundp ,boundp)
+      (lem-hash-table$c::getp ,getp)
+      (lem-hash-table$c::remover ,remover)
+      (lem-hash-table$c::count ,count)
+      (lem-hash-table$c::%clear ,%clear)
+      (lem-hash-table$c::clear ,clear)
+      (lem-hash-table$c::%init ,%init)
+      (lem-hash-table$c::init ,init)
+      ,@(and copyable
+             `((lem-hash-table$c::keys ,keys)
+               (lem-hash-table$c::keys-set ,keys-set))))))
+
+
 ;;;; `DEFINE-HASH-TABLE$C'
 (defmacro define-hash-table$c
     (&whole form
@@ -525,9 +591,11 @@
 
      (make-event
        (b* (((mv tmp property) (define-hash-table$c/parse-form ',form state))
+            (fi-bindings (define-hash-table$c/make-fi-bindings tmp property))
+            (property (change hash-table$c-property property
+                              :fi-bindings fi-bindings))
             (hash-table (access hash-table$c-property property :name))
             (pkg-witness (access hash-table$c-property property :pkg-witness))
-            (test (access hash-table$c-property property :test))
 
             (element-type (access hash-table$c-property property :element-type))
             (stobj-property (cdr (assoc :element-stobj-property tmp)))
@@ -691,53 +759,6 @@
                  (union-theories (current-theory ',hash-table-begin)
                                  (theory ',theory)))))
 
-            ;; Functional Instantiation
-            (fi-bindings
-             (append
-              (list `(lem-hash-table$c::key-guard ,(case test
-                                                     (eq
-                                                      'symbolp)
-                                                     (eql
-                                                      'eqlablep)
-                                                     (t
-                                                      `(lambda (key)
-                                                         t))))
-                    `(lem-hash-table$c::element-recognizer ,(or element-recognizer
-                                                                `(lambda (value)
-                                                                   ,(typep$transform 'value element-type))))
-                    `(lem-hash-table$c::default-value ,(or element-creator
-                                                           `(lambda ()
-                                                              ,default-value-name)))
-                    `(lem-hash-table$c::contents-recognizer ,contents-recognizer)
-                    (if copyable
-                        `(lem-hash-table$c::recognizer/copyable ,recognizer)
-                        `(lem-hash-table$c::recognizer/unique ,recognizer))
-                    (if copyable
-                        `(lem-hash-table$c::creator/copyable ,creator)
-                        `(lem-hash-table$c::creator/unique ,creator))
-                    `(lem-hash-table$c::accessor ,accessor)
-                    `(lem-hash-table$c::updater ,updater)
-                    `(lem-hash-table$c::boundp ,boundp)
-                    `(lem-hash-table$c::getp ,getp)
-                    `(lem-hash-table$c::remover ,remover)
-                    `(lem-hash-table$c::count ,count)
-                    `(lem-hash-table$c::%clear ,%clear)
-                    `(lem-hash-table$c::%init ,%init))
-              (and copyable
-                   (list `(lem-hash-table$c::keys ,keys)
-                         `(lem-hash-table$c::keys-set ,keys-set)))))
-            (fi-bindings-with-fixer
-             (cons (if copyable
-                       `(lem-hash-table$c::fixer/copyable ,fixer)
-                       `(lem-hash-table$c::fixer/unique ,fixer))
-                   fi-bindings))
-            (fi-bindings-with-fixer-and-clear
-             (cons `(lem-hash-table$c::clear ,clear)
-                   fi-bindings-with-fixer))
-            (fi-bindings-with-fixer-and-clear-and-init
-             (cons `(lem-hash-table$c::init ,init)
-                   fi-bindings-with-fixer-and-clear))
-
             (body
              `(encapsulate ()
 
@@ -770,6 +791,118 @@
                 (local
                   (in-theory
                     (enable type-spec-theory)))
+
+                ;; `FIXER'
+                (defun-inline ,fixer (,hash-table)
+                  (declare (xargs :stobjs ,hash-table))
+                  (mbe :logic (if (,recognizer ,hash-table)
+                                  ,hash-table
+                                  (with-local-stobj ,fixer-hack
+                                    (mv-let (,hash-table ,fixer-hack)
+                                            (swap-stobjs ,hash-table ,fixer-hack)
+                                      ,hash-table)))
+                       :exec ,hash-table))
+
+                (defthm ,fixer-def
+                  (equal (,fixer ,hash-table)
+                         (if (,recognizer ,hash-table)
+                             ,hash-table
+                             (,creator)))
+                  :rule-classes :definition)
+
+                (in-theory
+                  (disable ,fixer))
+
+                ,@(and copyable
+                       `((defun ,init (ht-size rehash-size rehash-threshold ,hash-table)
+                           (declare (xargs :stobjs ,hash-table
+                                           :guard (and (or (natp ht-size)
+                                                           (not ht-size))
+                                                       (or (and (rationalp rehash-size)
+                                                                (<= 1 rehash-size))
+                                                           (not rehash-size))
+                                                       (or (and (rationalp rehash-threshold)
+                                                                (<= 0 rehash-threshold)
+                                                                (<= rehash-threshold 1))
+                                                           (not rehash-threshold)))))
+                           (let* ((,hash-table (,fixer ,hash-table))
+                                  (,hash-table (,keys-set '() ,hash-table)))
+                             (,%init ht-size rehash-size rehash-threshold
+                                     ,hash-table)))
+
+                         (defun ,clear (,hash-table)
+                           (declare (xargs :stobjs ,hash-table))
+                           (let* ((,hash-table (,fixer ,hash-table))
+                                  (,hash-table (,keys-set '() ,hash-table)))
+                             (,%clear ,hash-table)))))
+
+                (defthm-fi ,fixer-tp
+                  (and (consp (,fixer ,hash-table))
+                       (true-listp (,fixer ,hash-table)))
+                  :rule-classes :type-prescription
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::fixer/copyable-tp
+                                'lem-hash-table$c::fixer/unique-tp)
+                  :bindings ,fi-bindings)
+
+                (defthm-fi ,recognizer-of-fixer
+                  (,recognizer (,fixer ,hash-table))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::recognizer/copyable-of-fixer/copyable
+                                'lem-hash-table$c::recognizer/unique-of-fixer/unique)
+                  :bindings ,fi-bindings)
+
+                (defthm-fi ,fixer-when-recognizer
+                  (implies (,recognizer ,hash-table)
+                           (equal (,fixer ,hash-table)
+                                  ,hash-table))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::fixer/copyable-when-recognizer/copyable
+                                'lem-hash-table$c::fixer/unique-when-recognizer/unique)
+                  :bindings ,fi-bindings)
+
+                (defthm-fi ,fixer-when-not-recognizer
+                  (implies (not (,recognizer ,hash-table))
+                           (equal (,fixer ,hash-table)
+                                  (,creator)))
+                  :theorem ,(if copyable
+                                'lem-hash-table$c::fixer/copyable-when-not-recognizer/copyable
+                                'lem-hash-table$c::fixer/unique-when-not-recognizer/unique)
+                  :bindings ,fi-bindings)
+
+                ;; `CLEAR'
+                ,@(and copyable
+                       `((defthm-fi ,clear-tp
+                           (implies (,recognizer ,hash-table)
+                                    (and (consp (,clear ,hash-table))
+                                         (true-listp (,clear ,hash-table))))
+                           :rule-classes :type-prescription
+                           :theorem lem-hash-table$c::clear-tp
+                           :bindings ,fi-bindings)
+
+                         (defthm-fi ,clear-rw
+                           (implies (,recognizer ,hash-table)
+                                    (equal (,clear ,hash-table)
+                                           (,creator)))
+                           :theorem lem-hash-table$c::clear-rw
+                           :bindings ,fi-bindings)))
+
+                ;; `INIT'
+                ,@(and copyable
+                       `((defthm-fi ,init-tp
+                           (implies (,recognizer ,hash-table)
+                                    (and (consp (,init ht-size rehash-size rehash-threshold ,hash-table))
+                                         (true-listp (,init ht-size rehash-size rehash-threshold ,hash-table))))
+                           :rule-classes :type-prescription
+                           :theorem lem-hash-table$c::init-tp
+                           :bindings ,fi-bindings)
+
+                         (defthm-fi ,init-rw
+                           (implies (,recognizer ,hash-table)
+                                    (equal (,init ht-size rehash-size rehash-threshold ,hash-table)
+                                           (,creator)))
+                           :theorem lem-hash-table$c::init-rw
+                           :bindings ,fi-bindings)))
 
                 ;; `CONTENTS-RECOGNIZER'
                 (defthm-fi ,contents-recognizer-tp
@@ -1180,117 +1313,7 @@
                            (equal (,keys-set %set (,keys-set set ,hash-table))
                                   (,keys-set %set ,hash-table))
                            :theorem lem-hash-table$c::keys-set-of-keys-set
-                           :bindings ,fi-bindings)))
-
-                ;; `FIXER'
-                (defun-inline ,fixer (,hash-table)
-                  (declare (xargs :stobjs ,hash-table))
-                  (mbe :logic (if (,recognizer ,hash-table)
-                                  ,hash-table
-                                  (with-local-stobj ,fixer-hack
-                                    (mv-let (,hash-table ,fixer-hack)
-                                            (swap-stobjs ,hash-table ,fixer-hack)
-                                      ,hash-table)))
-                       :exec ,hash-table))
-
-                (defthm ,fixer-def
-                  (equal (,fixer ,hash-table)
-                         (if (,recognizer ,hash-table)
-                             ,hash-table
-                             (,creator)))
-                  :rule-classes :definition)
-
-                (in-theory
-                  (disable ,fixer))
-
-                (defthm-fi ,fixer-tp
-                  (and (consp (,fixer ,hash-table))
-                       (true-listp (,fixer ,hash-table)))
-                  :rule-classes :type-prescription
-                  :theorem ,(if copyable
-                                'lem-hash-table$c::fixer/copyable-tp
-                                'lem-hash-table$c::fixer/unique-tp)
-                  :bindings ,fi-bindings-with-fixer)
-
-                (defthm-fi ,recognizer-of-fixer
-                  (,recognizer (,fixer ,hash-table))
-                  :theorem ,(if copyable
-                                'lem-hash-table$c::recognizer/copyable-of-fixer/copyable
-                                'lem-hash-table$c::recognizer/unique-of-fixer/unique)
-                  :bindings ,fi-bindings-with-fixer)
-
-                (defthm-fi ,fixer-when-recognizer
-                  (implies (,recognizer ,hash-table)
-                           (equal (,fixer ,hash-table)
-                                  ,hash-table))
-                  :theorem ,(if copyable
-                                'lem-hash-table$c::fixer/copyable-when-recognizer/copyable
-                                'lem-hash-table$c::fixer/unique-when-recognizer/unique)
-                  :bindings ,fi-bindings-with-fixer)
-
-                (defthm-fi ,fixer-when-not-recognizer
-                  (implies (not (,recognizer ,hash-table))
-                           (equal (,fixer ,hash-table)
-                                  (,creator)))
-                  :theorem ,(if copyable
-                                'lem-hash-table$c::fixer/copyable-when-not-recognizer/copyable
-                                'lem-hash-table$c::fixer/unique-when-not-recognizer/unique)
-                  :bindings ,fi-bindings-with-fixer)
-
-                ;; `CLEAR'
-                ,@(and copyable
-                       `((defun ,clear (,hash-table)
-                           (declare (xargs :stobjs ,hash-table))
-                           (let* ((,hash-table (,fixer ,hash-table))
-                                  (,hash-table (,keys-set '() ,hash-table)))
-                             (,%clear ,hash-table)))
-
-                         (defthm-fi ,clear-tp
-                           (implies (,recognizer ,hash-table)
-                                    (and (consp (,clear ,hash-table))
-                                         (true-listp (,clear ,hash-table))))
-                           :rule-classes :type-prescription
-                           :theorem lem-hash-table$c::clear-tp
-                           :bindings ,fi-bindings-with-fixer-and-clear)
-
-                         (defthm-fi ,clear-rw
-                           (implies (,recognizer ,hash-table)
-                                    (equal (,clear ,hash-table)
-                                           (,creator)))
-                           :theorem lem-hash-table$c::clear-rw
-                           :bindings ,fi-bindings-with-fixer-and-clear)))
-
-                ;; `INIT'
-                ,@(and copyable
-                       `((defun ,init (ht-size rehash-size rehash-threshold ,hash-table)
-                           (declare (xargs :stobjs ,hash-table
-                                           :guard (and (or (natp ht-size)
-                                                           (not ht-size))
-                                                       (or (and (rationalp rehash-size)
-                                                                (<= 1 rehash-size))
-                                                           (not rehash-size))
-                                                       (or (and (rationalp rehash-threshold)
-                                                                (<= 0 rehash-threshold)
-                                                                (<= rehash-threshold 1))
-                                                           (not rehash-threshold)))))
-                           (let* ((,hash-table (,fixer ,hash-table))
-                                  (,hash-table (,keys-set '() ,hash-table)))
-                             (,%init ht-size rehash-size rehash-threshold ,hash-table)))
-
-                         (defthm-fi ,init-tp
-                           (implies (,recognizer ,hash-table)
-                                    (and (consp (,init ht-size rehash-size rehash-threshold ,hash-table))
-                                         (true-listp (,init ht-size rehash-size rehash-threshold ,hash-table))))
-                           :rule-classes :type-prescription
-                           :theorem lem-hash-table$c::init-tp
-                           :bindings ,fi-bindings-with-fixer-and-clear-and-init)
-
-                         (defthm-fi ,init-rw
-                           (implies (,recognizer ,hash-table)
-                                    (equal (,init ht-size rehash-size rehash-threshold ,hash-table)
-                                           (,creator)))
-                           :theorem lem-hash-table$c::init-rw
-                           :bindings ,fi-bindings-with-fixer-and-clear-and-init)))))
+                           :bindings ,fi-bindings)))))
             (stobj$c-property property))
 
          `(progn
