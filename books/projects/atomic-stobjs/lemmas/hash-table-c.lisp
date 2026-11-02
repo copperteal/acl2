@@ -685,3 +685,51 @@
 (defthm keys-set-of-keys-set
   (equal (keys-set %set (keys-set set hash-table))
          (keys-set %set hash-table)))
+
+
+;;;; Constraints
+(defconst *exports/unique* '(element-recognizer
+                             default-value
+                             contents-recognizer
+                             recognizer/unique
+                             creator/unique
+                             fixer/unique
+                             accessor
+                             updater
+                             boundp
+                             getp
+                             remover
+                             count
+                             %clear
+                             %init))
+
+(defconst *exports/copyable* '(element-recognizer
+                               default-value
+                               contents-recognizer
+                               recognizer/copyable
+                               creator/copyable
+                               fixer/copyable
+                               accessor
+                               updater
+                               boundp
+                               getp
+                               remover
+                               count
+                               %clear
+                               %init
+                               keys
+                               keys-set
+                               clear
+                               init))
+
+(encapsulate ()
+  (local
+    (include-book"../utilities/top"))
+
+  (make-event
+    `(defconst *constraints/unique*
+       ',(collect-constraint-info *exports/unique* (w state))))
+
+  (make-event
+    `(defconst *constraints/copyable*
+       ',(collect-constraint-info *exports/copyable* (w state)))))
