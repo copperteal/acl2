@@ -30,7 +30,9 @@
 (in-package "ACL2")
 
 (defpkg "TYPE-SPEC"
-  (union-eq *common-lisp-symbols-from-main-lisp-package*
-            *acl2-exports*
+  (set-difference-eq
+   (union-eq *common-lisp-symbols-from-main-lisp-package*
+             *acl2-exports*
 ; Valid type specifiers outside `*ACL2-EXPORTS*':
-            '(DOUBLE-FLOAT NUMBER REAL)))
+             '(DOUBLE-FLOAT NUMBER REAL))
+   '(THEORY)))

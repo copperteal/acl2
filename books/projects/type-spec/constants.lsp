@@ -37,10 +37,7 @@
 
 (defconst *atomic-real-subtype-specifiers*
   #!ACL2
-  '(integer rational real)
-  ;; TODO: verify these work in stobjs
-  #|'(bit double-float integer ratio rational real
-  signed-byte unsigned-byte)|#)
+  '(bit integer ratio rational real signed-byte unsigned-byte))
 
 (defconst *compound-type-specifier-names*
   #!ACL2
@@ -49,9 +46,7 @@
 
 (defconst *compound-real-type-specifier-names*
   #!ACL2
-  '(integer rational real)
-  ;; TODO: support these types
-  #|'(integer mod rational real signed-byte unsigned-byte)|#)
+  '(integer mod rational real signed-byte unsigned-byte))
 
 (defconst *exports*
   (union-eq '(*atomic-type-specifiers*
@@ -59,15 +54,10 @@
               *compound-type-specifier-names*
               *compound-real-type-specifier-names*
               interval-designator-p
-              memberp$-eq
-              memberp$-eql
-              memberp$-equal
-              memberp$
               acl2-type-spec-p
               typep$runtime
-              typep$transform
-              typep$
-              type-spec-theory)
+              typep$expansion
+              typep$)
             *atomic-type-specifiers*
             *atomic-real-subtype-specifiers*
             *compound-type-specifier-names*

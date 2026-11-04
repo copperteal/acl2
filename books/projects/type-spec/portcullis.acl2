@@ -27,5 +27,7 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
+(include-book "std/portcullis" :dir :system)
+
 (ld "package.lsp")
 (ld "constants.lsp")

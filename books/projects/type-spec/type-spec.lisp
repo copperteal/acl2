@@ -28,15 +28,34 @@
 
 
 (in-package "TYPE-SPEC")
-(set-verify-guards-eagerness 2)
 
 (include-book "projects/apply/top" :dir :system)
+
+#!ACL2
+(encapsulate ()
+  (local
+    (include-book "std/lists/remove-duplicates" :dir :system))
+
+  (local
+    (include-book "std/util/defredundant" :dir :system))
+
+  (make-event
+    `(std::defredundant :names (revappend-without-guard
+                                rev
+                                hons-remove-duplicates1
+                                hons-remove-duplicates))))
 
 
 ;;;; `INTERVAL-DESIGNATOR-P'
 (defun interval-designator-p (designator type-spec)
-  (declare (xargs :guard t))
+; A valid upper or lower bound for a numeric interval compound type specifier as
+; described in the Common Lisp HyperSpec:
+; https://www.lispworks.com/documentation/HyperSpec/Body/12_af.htm
+  (declare (xargs :guard t
+                  :type-prescription
+                  (booleanp (interval-designator-p designator type-spec))))
   (flet ((type-check (designator type-spec)
+; Check that the numeric designator is properly typed
            (case type-spec
              (integer
               (integerp designator))
@@ -45,7 +64,7 @@
              (real
               (real/rationalp designator)))))
     (cond
-      ((not (member type-spec *compound-real-type-specifier-names*))
+      ((not (member-eq type-spec *compound-real-type-specifier-names*))
        'nil)
       ((symbolp designator)
        (eq designator '*))
@@ -55,78 +74,23 @@
       (t
        (type-check designator type-spec)))))
 
-(local
-  (thm ; ensure `INTERVAL-DESIGNATOR-P' is known to return a boolean
-    (booleanp (interval-designator-p designator type-spec))
-    :hints
-    (("Goal"
-      :in-theory '((:d booleanp)
-                   (:t interval-designator-p))))))
-
-
-;;;; `MEMBERP$'
-(defun-inline memberp$-eq (x list)
-  (declare (xargs :guard (and (symbolp x)
-                              (true-listp list))))
-  (and (member x list :test 'eq)
-       t))
-
-(defun-inline memberp$-eql (x list)
-  (declare (xargs :guard (and (eqlablep x)
-                              (true-listp list))))
-  (and (member x list :test 'eql)
-       t))
-
-(defun-inline memberp$-equal (x list)
-  (declare (xargs :guard (true-listp list)))
-  (and (member x list :test 'equal)
-       t))
-
-(defmacro memberp$ (x list)
-  `(memberp$-equal ,x ,list))
-
-(add-macro-fn memberp$ memberp$-equal)
-
-(defthm memberp$-eq-rw
-  (equal (memberp$-eq x list)
-         (memberp$ x list)))
-
-(in-theory
-  (disable memberp$-eq))
-
-(defthm memberp$-eql-rw
-  (equal (memberp$-eql x list)
-         (memberp$ x list)))
-
-(in-theory
-  (disable memberp$-eql))
-
-(defthm memberp$-iff-member
-  (iff (memberp$ x list)
-       (member x list))
-  :rule-classes
-  (:rewrite
-   (:forward-chaining :trigger-terms
-                      ((member x list))
-                      :corollary
-                      (implies (memberp$ x list)
-                               (member x list)))))
-
-(in-theory
-  (disable memberp$-equal))
-
 
 ;;;; `ACL2-TYPE-SPEC-P'
 (defun acl2-type-spec-p (type-spec)
-  (declare (xargs :guard t))
+; Determine if `TYPE-SPEC' is a valid ACL2 type specifier as described on the
+; doc page: https://acl2.org/doc/?topic=ACL2____TYPE-SPEC
+  (declare (xargs :guard t
+                  :type-prescription
+                  (booleanp (acl2-type-spec-p type-spec))))
   (cond
     ((symbolp type-spec)
-     (memberp$-eq type-spec *atomic-type-specifiers*))
+     (and (member-eq type-spec *atomic-type-specifiers*)
+          t))
     ((consp type-spec)
      (let ((name (car type-spec))
            (params (cdr type-spec)))
        (and (symbolp name)
-            (member name *compound-type-specifier-names* :test 'eq)
+            (member-eq name *compound-type-specifier-names*)
             (case name
               ((and or) ; (name . (type1 ... typek))
                (if (consp params)
@@ -139,11 +103,11 @@
                     (null (cdr params))
                     (let ((type-spec (car params)))
                       (or (and (symbolp type-spec)
-                               (memberp$-eq type-spec *atomic-real-subtype-specifiers*))
+                               (and (member-eq type-spec *atomic-real-subtype-specifiers*)
+                                    t))
                           (and (consp type-spec)
                                (symbolp (car type-spec))
-                               (member (car type-spec) *compound-real-type-specifier-names*
-                                       :test 'eq)
+                               (member-eq (car type-spec) *compound-real-type-specifier-names*)
                                (acl2-type-spec-p type-spec))))))
               ((integer real rational) ; (name . (i j))
                (and (consp params)
@@ -167,7 +131,8 @@
                (and (consp params)
                     (null (cdr params))
                     (let ((predicate (car params)))
-                      (symbolp predicate))))
+                      ;; `WORLD' is inaccessible
+                      (acl2::legal-variablep predicate))))
               ((signed-byte unsigned-byte) ; (name . (size))
                (and (consp params)
                     (null (cdr params))
@@ -181,16 +146,6 @@
                       (and (integerp max)
                            (<= 0 max)))))))))))
 
-(defwarrant acl2-type-spec-p)
-
-(local
-  (thm ; ensure `ACL2-TYPE-SPEC-P' is known to return a boolean
-    (booleanp (acl2-type-spec-p type-spec))
-    :hints
-    (("Goal"
-      :in-theory '((:d booleanp)
-                   (:t acl2-type-spec-p))))))
-
 (defthm acl2-type-spec-p-cr
   (implies (acl2-type-spec-p type-spec)
            (or (symbolp type-spec)
@@ -200,13 +155,17 @@
 
 (defthm acl2-type-spec-p-when-atom
   (implies (atom type-spec)
-           (equal (acl2-type-spec-p type-spec)
-                  (memberp$ type-spec *atomic-type-specifiers*))))
+           (iff (acl2-type-spec-p type-spec)
+                (member type-spec *atomic-type-specifiers*))))
+
+(defwarrant acl2-type-spec-p)
 
 
 ;;;; `TYPEP$RUNTIME'
 (defun typep$runtime (object type-spec)
-  (declare (xargs :guard (acl2-type-spec-p type-spec)))
+  (declare (xargs :guard (acl2-type-spec-p type-spec)
+                  :type-prescription
+                  (booleanp (typep$runtime object type-spec))))
   (and (mbt (acl2-type-spec-p type-spec))
        (cond
          ((symbolp type-spec)
@@ -226,8 +185,7 @@
             ((integer signed-byte)
              (integerp object))
             (list
-             (or (consp object)
-                 (null object)))
+             (listp object))
             ;; If `TYPE-SPEC' is `NIL', vacuously return `NIL'.
             (null
              (null object))
@@ -281,19 +239,22 @@
                      (j (second params)))
                  (and (typep$runtime object name)
                       (cond
-                        ((symbolp i))
+                        ((symbolp i)
+                         t)
                         ((consp i)
                          (< (car i) object))
                         (t
                          (<= i object)))
                       (cond
-                        ((symbolp j))
+                        ((symbolp j)
+                         t)
                         ((consp j)
                          (< object (car j)))
                         (t
                          (<= object j))))))
               (member ; (member . (x1 ... xn))
-               (memberp$ object params))
+               (and (member object params)
+                    t))
               (mod ; (mod . (i))
                (and (integerp object)
                     (<= 0 object)
@@ -301,6 +262,7 @@
               (not ; (not . (type-spec))
                (not (typep$runtime object (car params))))
               (satisfies ; (satisfies . (predicate))
+               ;; PREDICATE returns a "generalized boolean"
                (and (apply$ (car params) (list object))
                     t))
               ((signed-byte unsigned-byte) ; (name . (size))
@@ -312,164 +274,174 @@
                     (unsigned-byte-p size object)))))
               (string ; (string . (max))
                (and (stringp object)
-                    (equal (length object) (car params))))))))))
-
-(local
-  (thm ; ensure `TYPEP$RUNTIME' is known to return a boolean
-    (booleanp (typep$runtime object type-spec))
-    :hints
-    (("Goal"
-      :in-theory '((:d booleanp)
-                   (:t typep$runtime))))))
+                    (int= (length object) (car params))))))))))
 
 
-;;;; `TYPEP$TRANSFORM'
-(defun typep$transform (object type-spec)
-  (declare (xargs :guard (acl2-type-spec-p type-spec)))
-  (if (symbolp type-spec)
-      (case type-spec
-        (atom
-         `(atom ,object))
-        (bit
-         `(bitp ,object))
-        (character
-         `(characterp ,object))
-        (complex
-         `(complex/complex-rationalp ,object))
-        (cons
-         `(consp ,object))
-        (double-float
-         `(dfp ,object))
-        ((integer signed-byte)
-         `(integerp ,object))
-        (list
-         `(or (consp ,object)
-              (null ,object)))
-        (null
-         `(null ,object))
-        (number
-         `(acl2-numberp ,object))
-        (ratio
-         `(and (rationalp ,object)
-               (not (integerp ,object))))
-        (rational
-         `(rationalp ,object))
-        (real
-         `(real/rationalp ,object))
-        (standard-char
-         `(and (characterp ,object)
-               (standard-char-p ,object)))
-        (string
-         `(stringp ,object))
-        (symbol
-         `(symbolp ,object))
-        ((t)
-         't)
-        (unsigned-byte
-         `(and (integerp ,object)
-               (<= 0 ,object)))
-        (t
-         'nil))
-      ;; (consp type-spec)
-      (let ((name (car type-spec))
-            (params (cdr type-spec)))
-        (flet ((flatten (name recognizer)
-                 (if (and (consp recognizer)
-                          (eq (car recognizer) name))
-                     (cdr recognizer)
-                     (list recognizer)))
-               (dedup (list)
-                 ;; TODO: Flatten nested ANDs/ORs and remove duplicates
-                 ;; as `HONS-REMOVE-DUPLICATES' but with `EQUAL' instead
-                 ;; of `EQL'.  `DEDUP' runs in quadratic time.
-                 (reverse (remove-duplicates-equal (reverse list)))))
-          (case name
-            ((and or)
-             (cond
-               ;; (name)
-               ((endp params)
-                (case name
-                  (or
-                   'nil)
-                  (and
-                   't)))
-               ;; (name . (type))
-               ((endp (cdr params))
-                (typep$transform object (car params)))
-               ;; (name . (type1 ... typek))
-               (t
-                (dedup
-                 (append (list name)
-                         (flatten name (typep$transform object (car params)))
-                         (flatten name (typep$transform object (cons name (cdr params)))))))))
-            (complex ; (complex . (type-spec))
-             (let ((type-spec (car params)))
-               (append `(and (complex/complex-rationalp ,object))
-                       (flatten 'and (typep$transform `(realpart ,object) type-spec))
-                       (flatten 'and (typep$transform `(imagpart ,object) type-spec)))))
-            ((integer real rational) ; (name . (i j))
-             (let* ((i (first params))
-                    (j (second params))
-                    (recognizer (typep$transform object name))
-                    (lower (and (not (symbolp i))
-                                (if (consp i)
-                                    `(< ,(car i) ,object)
-                                    `(<= ,i ,object))))
-                    (upper (and (not (symbolp j))
-                                (if (consp j)
-                                    `(< ,object ,(car j))
-                                    `(<= ,object ,j)))))
-               (if (or lower upper)
-                   `(and ,recognizer
-                         ,@(and lower (list lower))
-                         ,@(and upper (list upper)))
-                   recognizer)))
-            (member ; (member . (x1 ... xn))
-             `(memberp$ ,object ',params))
-            (mod ; (mod . (i))
-             `(and (integerp ,object)
-                   (<= 0 ,object)
-                   (< ,object ,(car params))))
-            (not ; (not . (type-spec))
-             `(not ,(typep$transform object (car params))))
-            (satisfies ; (satisfies . (predicate))
-             `(and (apply$ ',(car params) (list ,object))
-                   t))
-            ((signed-byte unsigned-byte) ; (name . (size))
-             (let ((size (car params)))
+;;;; `TYPEP$EXPANSION'
+(defun typep$expansion (object type-spec)
+  (declare (xargs :guard (acl2-type-spec-p type-spec)
+                  :type-prescription
+                  (or (booleanp (typep$expansion object type-spec))
+                      (and (consp (typep$expansion object type-spec))
+                           (true-listp (typep$expansion object type-spec))))))
+  (and (mbt (acl2-type-spec-p type-spec))
+       (if (symbolp type-spec)
+           (case type-spec
+             (atom
+              `(atom ,object))
+             (bit
+              `(bitp ,object))
+             (character
+              `(characterp ,object))
+             (complex
+              `(complex/complex-rationalp ,object))
+             (cons
+              `(consp ,object))
+             (double-float
+              `(dfp ,object))
+             ((integer signed-byte)
+              `(integerp ,object))
+             (list
+              `(listp ,object))
+             (null
+              `(null ,object))
+             (number
+              `(acl2-numberp ,object))
+             (ratio
+              `(and (rationalp ,object)
+                    (not (integerp ,object))))
+             (rational
+              `(rationalp ,object))
+             (real
+              `(real/rationalp ,object))
+             (standard-char
+              `(and (characterp ,object)
+                    (standard-char-p ,object)))
+             (string
+              `(stringp ,object))
+             (symbol
+              `(symbolp ,object))
+             ((t)
+              't)
+             (unsigned-byte
+              `(and (integerp ,object)
+                    (<= 0 ,object)))
+             (t
+              'nil))
+           ;; (consp type-spec)
+           (let ((name (car type-spec))
+                 (params (cdr type-spec)))
+             (flet ((flatten (name recognizer)
+                      (declare (type symbol name))
+                      (if (and (consp recognizer)
+                               (eq (car recognizer) name))
+                          (cdr recognizer)
+                          (list recognizer)))
+                    (enforce-boolean (name cod)
+                      ;; `COD' -- conjunction or disjunction
+                      (declare (type symbol name))
+; If we flatten and remove duplicates from a conjunction or disjunction, it is
+; possible that the resulting composite ends in a generalized boolean.  We
+; correct such a conjunction by adding a final term T, and we correct a
+; disjunction by replacing the final TERM with (AND TERM T).
+                      (let ((final (car (last cod))))
+                        (if (and (consp final)
+                                 (member-eq (car final) '(member apply$)))
+                            (case name
+                              (and
+                               (append cod (list 't)))
+                              (or
+                               (append (butlast cod 1)
+                                       (list `(and ,final t)))))
+                            cod))))
                (case name
-                 (signed-byte
-                  `(signed-byte-p ,size ,object))
-                 (unsigned-byte
-                  `(unsigned-byte-p ,size ,object)))))
-            (string ; (string . (max))
-             `(and (stringp ,object)
-                   (equal (length ,object) ',(car params)))))))))
+                 ((and or)
+                  (cond
+                    ;; (name)
+                    ((endp params)
+                     (case name
+                       (or
+                        'nil)
+                       (and
+                        't)))
+                    ;; (name . (type))
+                    ((endp (cdr params))
+                     (typep$expansion object (car params)))
+                    ;; (name . (type1 ... typek))
+                    (t
+                     (enforce-boolean
+                      name
+                      (acl2::hons-remove-duplicates
+                       (append (list name)
+                               (flatten name (typep$expansion object (car params)))
+                               (flatten name (typep$expansion object (cons name (cdr params))))))))))
+                 (complex ; (complex . (type-spec))
+                  (let ((type-spec (car params)))
+                    (append `(and (complex/complex-rationalp ,object))
+                            (flatten 'and (typep$expansion `(realpart ,object) type-spec))
+                            (flatten 'and (typep$expansion `(imagpart ,object) type-spec)))))
+                 ((integer real rational) ; (name . (i j))
+                  (let* ((i (first params))
+                         (j (second params))
+                         (recognizer (typep$expansion object name))
+                         (lower (and (not (symbolp i))
+                                     (if (consp i)
+                                         `(< ,(car i) ,object)
+                                         `(<= ,i ,object))))
+                         (upper (and (not (symbolp j))
+                                     (if (consp j)
+                                         `(< ,object ,(car j))
+                                         `(<= ,object ,j)))))
+                    (if (or lower upper)
+                        `(and ,recognizer
+                              ,@(and lower (list lower))
+                              ,@(and upper (list upper)))
+                        recognizer)))
+                 (member ; (member . (x1 ... xn))
+                  `(and (member ,object ',params)
+                        t))
+                 (mod ; (mod . (i))
+                  `(and (integerp ,object)
+                        (<= 0 ,object)
+                        (< ,object ,(car params))))
+                 (not ; (not . (type-spec))
+                  `(not ,(typep$expansion object (car params))))
+                 (satisfies ; (satisfies . (predicate))
+                  `(and (apply$ ',(car params) (list ,object))
+                        t))
+                 ((signed-byte unsigned-byte) ; (name . (size))
+                  (let ((size (car params)))
+                    (case name
+                      (signed-byte
+                       `(signed-byte-p ,size ,object))
+                      (unsigned-byte
+                       `(unsigned-byte-p ,size ,object)))))
+                 (string ; (string . (max))
+                  `(and (stringp ,object)
+                        (int= (length ,object) ',(car params))))))))))
 
-(defwarrant typep$transform)
-
-(defthm typep$transform-tp
-  (or (booleanp (typep$transform object type-spec))
-      (and (consp (typep$transform object type-spec))
-           (true-listp (typep$transform object type-spec))))
-  :rule-classes :type-prescription)
+(defwarrant typep$expansion)
 
 
 ;;;; `TYPEP$'
 (defmacro typep$ (object type-spec)
   (declare (xargs :guard t))
-  (if (and (consp type-spec)
-           (eq (car type-spec) 'quote)
-           (consp (cdr type-spec))
-           (acl2-type-spec-p (cadr type-spec))
-           (null (cddr type-spec)))
-      (let* ((type-spec (cadr type-spec))
-             (transform (typep$transform 'object type-spec)))
-        (if (and (consp transform)
-                 (member (car transform) '(and or) :test 'eq))
-            `(let ((object ,object))
-               ,transform)
-            (typep$transform object type-spec)))
+; If `TYPE-SPEC' is a quoted constant and `OBJECT' is not, then we macro expand
+; into the appropriate conjunction or disjunction of recognizers applied to
+; `OBJECT'.  Otherwise, we place code for runtime checking.
+  (if (and (quotep type-spec)
+           (acl2-type-spec-p (cadr type-spec)))
+      (if (quotep object)
+          `(typep$runtime ,object ,type-spec)
+; We do a test expansion to see if the result is composite.  If so, we wrap the
+; body in a LET, similar to DEFABBREV.
+          (let* ((type-spec (cadr type-spec))
+                 (expansion (typep$expansion 'object type-spec)))
+            (if (and (consp expansion)
+                     (member-eq (car expansion) '(and or)))
+                `(let ((object ,object))
+                   ,expansion)
+                (typep$expansion object type-spec))))
       `(typep$runtime ,object ,type-spec)))
 
 (add-macro-fn typep$ typep$runtime)
@@ -477,104 +449,84 @@
 
 ;;;; Atomic Specifier Rewrite Theorems
 (defthm typep$-atom
-  (implies (equal type-spec 'atom)
-           (equal (typep$ object type-spec)
-                  (atom object))))
+  (equal (typep$runtime object 'atom)
+         (typep$ object 'atom)))
 
 (defthm typep$-bit
-  (implies (equal type-spec 'bit)
-           (equal (typep$ object type-spec)
-                  (bitp object))))
+  (equal (typep$runtime object 'bit)
+         (typep$ object 'bit)))
 
 (defthm typep$-character
-  (implies (equal type-spec 'character)
-           (equal (typep$ object type-spec)
-                  (characterp object))))
+  (equal (typep$runtime object 'character)
+         (typep$ object 'character)))
 
 (defthm typep$-complex/atomic
-  (implies (equal type-spec 'complex)
-           (equal (typep$ object type-spec)
-                  (complex/complex-rationalp object))))
+  (equal (typep$runtime object 'complex)
+         (typep$ object 'complex)))
 
 (defthm typep$-cons
-  (implies (equal type-spec 'cons)
-           (equal (typep$ object type-spec)
-                  (consp object))))
+  (equal (typep$runtime object 'cons)
+         (typep$ object 'cons)))
 
 (defthm typep$-double-float
-  (implies (equal type-spec 'double-float)
-           (equal (typep$ object type-spec)
-                  (dfp object))))
+  (equal (typep$runtime object 'double-float)
+         (typep$ object 'double-float)))
 
 (defthm typep$-integer/atomic
-  (implies (equal type-spec 'integer)
-           (equal (typep$ object type-spec)
-                  (integerp object))))
+  (equal (typep$runtime object 'integer)
+         (typep$ object 'integer)))
 
 (defthm typep$-list
-  (implies (equal type-spec 'list)
-           (equal (typep$ object type-spec)
-                  (listp object))))
+  (equal (typep$runtime object 'list)
+         (typep$ object 'list)))
 
 (defthm typep$-nil
-  (implies (not type-spec)
-           (not (typep$ object type-spec))))
+  (equal (typep$runtime object 'nil)
+         (typep$ object 'nil)))
 
 (defthm typep$-null
-  (implies (equal type-spec 'null)
-           (equal (typep$ object type-spec)
-                  (null object))))
+  (equal (typep$runtime object 'null)
+         (typep$ object 'null)))
 
 (defthm typep$-number
-  (implies (equal type-spec 'number)
-           (equal (typep$ object type-spec)
-                  (acl2-numberp object))))
+  (equal (typep$runtime object 'number)
+         (typep$ object 'number)))
 
 (defthm typep$-ratio
-  (implies (equal type-spec 'ratio)
-           (equal (typep$ object type-spec)
-                  (and (rationalp object)
-                       (not (integerp object))))))
+  (equal (typep$runtime object 'ratio)
+         (typep$ object 'ratio)))
 
 (defthm typep$-rational/atomic
-  (implies (equal type-spec 'rational)
-           (equal (typep$ object type-spec)
-                  (rationalp object))))
+  (equal (typep$runtime object 'rational)
+         (typep$ object 'rational)))
 
 (defthm typep$-real/atomic
-  (implies (equal type-spec 'real)
-           (equal (typep$ object type-spec)
-                  (real/rationalp object))))
+  (equal (typep$runtime object 'real)
+         (typep$ object 'real)))
 
 (defthm typep$-signed-byte/atomic
-  (implies (equal type-spec 'signed-byte)
-           (equal (typep$ object type-spec)
-                  (integerp object))))
+  (equal (typep$runtime object 'signed-byte)
+         (typep$ object 'signed-byte)))
 
 (defthm typep$-standard-char
-  (implies (equal type-spec 'standard-char)
-           (equal (typep$ object type-spec)
-                  (standard-char-p object))))
+  (equal (typep$runtime object 'standard-char)
+         (typep$ object 'standard-char)))
 
 (defthm typep$-string/atomic
-  (implies (equal type-spec 'string)
-           (equal (typep$ object type-spec)
-                  (stringp object))))
+  (equal (typep$runtime object 'string)
+         (typep$ object 'string)))
 
 (defthm typep$-symbol
-  (implies (equal type-spec 'symbol)
-           (equal (typep$ object type-spec)
-                  (symbolp object))))
+  (equal (typep$runtime object 'symbol)
+         (typep$ object 'symbol)))
 
 (defthm typep$-t
-  (implies (equal type-spec t)
-           (typep$ object type-spec)))
+  (equal (typep$runtime object 't)
+         (typep$ object 't)))
 
 (defthm typep$-unsigned-byte/atomic
-  (implies (equal type-spec 'unsigned-byte)
-           (equal (typep$ object type-spec)
-                  (and (integerp object)
-                       (<= 0 object)))))
+  (equal (typep$runtime object 'unsigned-byte)
+         (typep$ object 'unsigned-byte)))
 
 
 ;;;; Compound Specifier Rewrite Theorems
@@ -589,66 +541,67 @@
 
 (defthm typep$-complex/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'complex)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'complex))
            (equal (typep$ object type-spec)
-                  (let ((type-spec (cadr type-spec)))
-                    (and (complex-rationalp object)
-                         (if (consp type-spec)
-                             (memberp$ (car type-spec) *compound-real-type-specifier-names*)
-                             (memberp$ type-spec *atomic-real-subtype-specifiers*))
-                         (typep$ (realpart object) type-spec)
-                         (typep$ (imagpart object) type-spec))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((type-spec (cadr type-spec)))
+                         (and (complex-rationalp object)
+                              (if (consp type-spec)
+                                  (member (car type-spec) *compound-real-type-specifier-names*)
+                                  (member type-spec *atomic-real-subtype-specifiers*))
+                              (typep$ (realpart object) type-spec)
+                              (typep$ (imagpart object) type-spec)))))))
 
 (defthm typep$-integer/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'integer)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'integer))
            (equal (typep$ object type-spec)
-                  (let ((i (cadr type-spec))
-                        (j (caddr type-spec)))
-                    (and (integerp object)
-                         (interval-designator-p i 'integer)
-                         (interval-designator-p j 'integer)
-                         (cond
-                           ((equal i '*))
-                           ((consp i)
-                            (< (car i) object))
-                           (t
-                            (<= i object)))
-                         (cond
-                           ((equal j '*))
-                           ((consp j)
-                            (< object (car j)))
-                           (t
-                            (<= object j))))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((i (cadr type-spec))
+                             (j (caddr type-spec)))
+                         (and (integerp object)
+                              (interval-designator-p i 'integer)
+                              (interval-designator-p j 'integer)
+                              (cond
+                                ((equal i '*))
+                                ((consp i)
+                                 (< (car i) object))
+                                (t
+                                 (<= i object)))
+                              (cond
+                                ((equal j '*))
+                                ((consp j)
+                                 (< object (car j)))
+                                (t
+                                 (<= object j)))))))))
 
 (defthm typep$-member
   (implies (and (consp type-spec)
                 (equal (car type-spec) 'member))
            (equal (typep$ object type-spec)
                   (and (eqlable-listp (cdr type-spec))
-                       (memberp$ object (cdr type-spec))))))
+                       (member object (cdr type-spec))
+                       t))))
 
 (defthm typep$-mod
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'mod)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'mod))
            (equal (typep$ object type-spec)
-                  (let ((i (cadr type-spec)))
-                    (and (integerp object)
-                         (<= 0 object)
-                         (integerp i)
-                         (< object i))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((i (cadr type-spec)))
+                         (and (integerp object)
+                              (<= 0 object)
+                              (integerp i)
+                              (< object i)))))))
 
 (defthm typep$-not
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'not)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'not))
            (equal (typep$ object type-spec)
-                  (let ((type-spec (cadr type-spec)))
-                    (and (acl2-type-spec-p type-spec)
-                         (not (typep$ object type-spec)))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((type-spec (cadr type-spec)))
+                         (and (acl2-type-spec-p type-spec)
+                              (not (typep$ object type-spec))))))))
 
 (defthm typep$-or
   (implies (and (consp type-spec)
@@ -663,86 +616,86 @@
 
 (defthm typep$-rational/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'rational)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'rational))
            (equal (typep$ object type-spec)
-                  (let ((i (cadr type-spec))
-                        (j (caddr type-spec)))
-                    (and (rationalp object)
-                         (interval-designator-p i 'rational)
-                         (interval-designator-p j 'rational)
-                         (cond
-                           ((equal i '*))
-                           ((consp i)
-                            (< (car i) object))
-                           (t
-                            (<= i object)))
-                         (cond
-                           ((equal j '*))
-                           ((consp j)
-                            (< object (car j)))
-                           (t
-                            (<= object j))))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((i (cadr type-spec))
+                             (j (caddr type-spec)))
+                         (and (rationalp object)
+                              (interval-designator-p i 'rational)
+                              (interval-designator-p j 'rational)
+                              (cond
+                                ((equal i '*))
+                                ((consp i)
+                                 (< (car i) object))
+                                (t
+                                 (<= i object)))
+                              (cond
+                                ((equal j '*))
+                                ((consp j)
+                                 (< object (car j)))
+                                (t
+                                 (<= object j)))))))))
 
 (defthm typep$-real/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'real)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'real))
            (equal (typep$ object type-spec)
-                  (let ((i (cadr type-spec))
-                        (j (caddr type-spec)))
-                    (and (real/rationalp object)
-                         (interval-designator-p i 'real)
-                         (interval-designator-p j 'real)
-                         (cond
-                           ((equal i '*))
-                           ((consp i)
-                            (< (car i) object))
-                           (t
-                            (<= i object)))
-                         (cond
-                           ((equal j '*))
-                           ((consp j)
-                            (< object (car j)))
-                           (t
-                            (<= object j))))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((i (cadr type-spec))
+                             (j (caddr type-spec)))
+                         (and (real/rationalp object)
+                              (interval-designator-p i 'real)
+                              (interval-designator-p j 'real)
+                              (cond
+                                ((equal i '*))
+                                ((consp i)
+                                 (< (car i) object))
+                                (t
+                                 (<= i object)))
+                              (cond
+                                ((equal j '*))
+                                ((consp j)
+                                 (< object (car j)))
+                                (t
+                                 (<= object j)))))))))
 
 (defthm typep$-satisfies
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'satisfies)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'satisfies))
            (equal (typep$ object type-spec)
-                  (let ((predicate (cadr type-spec)))
-                    (and (symbolp predicate)
-                         (apply$ predicate (list object))
-                         t)))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((predicate (cadr type-spec)))
+                         (and (symbolp predicate)
+                              (apply$ predicate (list object))
+                              t))))))
 
 (defthm typep$-signed-byte/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'signed-byte)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'signed-byte))
            (equal (typep$ object type-spec)
-                  (signed-byte-p (cadr type-spec) object))))
+                  (and (acl2-type-spec-p type-spec)
+                       (signed-byte-p (cadr type-spec) object)))))
 
 (defthm typep$-string/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'string)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'string))
            (equal (typep$ object type-spec)
-                  (let ((max (cadr type-spec)))
-                    (and (stringp object)
-                         (integerp max)
-                         (<= 0 max)
-                         (equal (length object) max))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((max (cadr type-spec)))
+                         (and (stringp object)
+                              (integerp max)
+                              (<= 0 max)
+                              (equal (length object) max)))))))
 
 (defthm typep$-unsigned-byte/compound
   (implies (and (consp type-spec)
-                (equal (car type-spec) 'unsigned-byte)
-                (force (acl2-type-spec-p type-spec)))
+                (equal (car type-spec) 'unsigned-byte))
            (equal (typep$ object type-spec)
-                  (let ((i (cadr type-spec)))
-                    (and (unsigned-byte-p i object)
-                         (< 0 i))))))
+                  (and (acl2-type-spec-p type-spec)
+                       (let ((i (cadr type-spec)))
+                         (and (unsigned-byte-p i object)
+                              (< 0 i)))))))
 
 (defthm typep$-is-total
   (implies (not (acl2-type-spec-p type-spec))
@@ -754,33 +707,23 @@
   (disable interval-designator-p
            acl2-type-spec-p
            typep$runtime
-           typep$transform))
+           typep$expansion))
 
-(deftheory type-spec-theory
+(deftheory theory
   '((:e interval-designator-p)
     (:t interval-designator-p)
-    (:e memberp$-eq$inline)
-    (:t memberp$-eq$inline)
-    (:e memberp$-eql$inline)
-    (:t memberp$-eql$inline)
-    (:e memberp$-equal$inline)
-    (:t memberp$-equal$inline)
-    memberp$-eq-rw
-    memberp$-eql-rw
-    memberp$-iff-member
     (:e acl2-type-spec-p)
     (:t acl2-type-spec-p)
-    apply$-warrant-acl2-type-spec-p-necc
-    apply$-acl2-type-spec-p
     acl2-type-spec-p-cr
     acl2-type-spec-p-when-atom
+    apply$-warrant-acl2-type-spec-p-necc
+    apply$-acl2-type-spec-p
     (:e typep$runtime)
     (:t typep$runtime)
-    (:e typep$transform)
-    (:t typep$transform)
-    apply$-warrant-typep$transform-necc
-    apply$-typep$transform
-    (:t typep$transform-tp)
+    (:e typep$expansion)
+    (:t typep$expansion)
+    apply$-warrant-typep$expansion-necc
+    apply$-typep$expansion
     typep$-atom
     typep$-bit
     typep$-character

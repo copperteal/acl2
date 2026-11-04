@@ -25,39 +25,14 @@
                ;; setting the `COMMON-LISP-INDENT-FUNCTION' property of `LOOP$'.
 
 ;;; ACL2 built-ins
-               (eval . (put 'defabsstobj 'common-lisp-indent-function 1))
-               (eval . (put 'defcong 'common-lisp-indent-function 4))
-               (eval . (put 'defequiv 'common-lisp-indent-function 1))
-               (eval . (put 'deflabel 'common-lisp-indent-function 0))
                (eval . (put 'defpkg 'common-lisp-indent-function 1))
-               (eval . (put 'defrec 'common-lisp-indent-function 1))
-               (eval . (put 'defstobj 'common-lisp-indent-function 1))
                (eval . (put 'deftheory 'common-lisp-indent-function 1))
-               (eval . (put 'deftheory-static 'common-lisp-indent-function 1))
                (eval . (put 'defthm 'common-lisp-indent-function 1))
-               (eval . (put 'defthmd 'common-lisp-indent-function 1))
-               (eval . (put 'defxdoc 'common-lisp-indent-function 1))
                (eval . (put 'encapsulate 'common-lisp-indent-function 1))
-               (eval . (put 'er-progn 'common-lisp-indent-function 0))
-               (eval . (put 'exists 'common-lisp-indent-function 1))
-               (eval . (put 'forall 'common-lisp-indent-function 1))
                (eval . (put 'in-theory 'common-lisp-indent-function 0))
                (eval . (put 'include-book 'common-lisp-indent-function 0))
                (eval . (put 'local 'common-lisp-indent-function 0))
                (eval . (put 'make-event 'common-lisp-indent-function 0))
-               (eval . (put 'mv-let 'common-lisp-indent-function '(8 8 &body)))
-               (eval . (put 'stobj-let 'common-lisp-indent-function '(11 11 11 &body)))
-               (eval . (put 'thm 'common-lisp-indent-function 0))
-               (eval . (put 'verify-guards 'common-lisp-indent-function 1))
-               (eval . (put 'with-output 'common-lisp-indent-function 0))
-
-;;; Community Books
-               (eval . (put 'b* 'common-lisp-indent-function 1))
-               (eval . (put 'def-b*-binder 'common-lisp-indent-function 1))
-               (eval . (put 'definition-free-theory 'common-lisp-indent-function '(1)))
-               (eval . (put 'definition-theory 'common-lisp-indent-function '(1)))
-               (eval . (put 'defsection 'common-lisp-indent-function 1))
-               (eval . (put 'defun-theory 'common-lisp-indent-function '(1)))
 
                ))
  (shell-mode . (
