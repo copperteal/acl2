@@ -164,8 +164,7 @@
 ;;;; `TYPEP$RUNTIME'
 (defun typep$runtime (object type-spec)
   (declare (xargs :guard (acl2-type-spec-p type-spec)
-                  :type-prescription
-                  (booleanp (typep$runtime object type-spec))))
+                  :type-prescription :none))
   (and (mbt (acl2-type-spec-p type-spec))
        (cond
          ((symbolp type-spec)
@@ -253,8 +252,7 @@
                         (t
                          (<= object j))))))
               (member ; (member . (x1 ... xn))
-               (and (member object params)
-                    t))
+               (member object params))
               (mod ; (mod . (i))
                (and (integerp object)
                     (<= 0 object)
@@ -262,9 +260,7 @@
               (not ; (not . (type-spec))
                (not (typep$runtime object (car params))))
               (satisfies ; (satisfies . (predicate))
-               ;; PREDICATE returns a "generalized boolean"
-               (and (apply$ (car params) (list object))
-                    t))
+               (apply$ (car params) (list object)))
               ((signed-byte unsigned-byte) ; (name . (size))
                (let ((size (car params)))
                  (case name
@@ -275,6 +271,13 @@
               (string ; (string . (max))
                (and (stringp object)
                     (int= (length object) (car params))))))))))
+
+(defthm typep$runtime-typically-booleanp
+  (implies (or (atom type-spec)
+               (not (member (car type-spec)
+                            '(and or member satisfies))))
+           (booleanp (typep$runtime object type-spec)))
+  :rule-classes nil)
 
 
 ;;;; `TYPEP$EXPANSION'
@@ -336,24 +339,7 @@
                       (if (and (consp recognizer)
                                (eq (car recognizer) name))
                           (cdr recognizer)
-                          (list recognizer)))
-                    (enforce-boolean (name cod)
-                      ;; `COD' -- conjunction or disjunction
-                      (declare (type symbol name))
-; If we flatten and remove duplicates from a conjunction or disjunction, it is
-; possible that the resulting composite ends in a generalized boolean.  We
-; correct such a conjunction by adding a final term T, and we correct a
-; disjunction by replacing the final TERM with (AND TERM T).
-                      (let ((final (car (last cod))))
-                        (if (and (consp final)
-                                 (member-eq (car final) '(member apply$)))
-                            (case name
-                              (and
-                               (append cod (list 't)))
-                              (or
-                               (append (butlast cod 1)
-                                       (list `(and ,final t)))))
-                            cod))))
+                          (list recognizer))))
                (case name
                  ((and or)
                   (cond
@@ -369,12 +355,10 @@
                      (typep$expansion object (car params)))
                     ;; (name . (type1 ... typek))
                     (t
-                     (enforce-boolean
-                      name
-                      (acl2::hons-remove-duplicates
-                       (append (list name)
-                               (flatten name (typep$expansion object (car params)))
-                               (flatten name (typep$expansion object (cons name (cdr params))))))))))
+                     (acl2::hons-remove-duplicates
+                      (append (list name)
+                              (flatten name (typep$expansion object (car params)))
+                              (flatten name (typep$expansion object (cons name (cdr params)))))))))
                  (complex ; (complex . (type-spec))
                   (let ((type-spec (car params)))
                     (append `(and (complex/complex-rationalp ,object))
@@ -398,8 +382,7 @@
                               ,@(and upper (list upper)))
                         recognizer)))
                  (member ; (member . (x1 ... xn))
-                  `(and (member ,object ',params)
-                        t))
+                  `(member ,object ',params))
                  (mod ; (mod . (i))
                   `(and (integerp ,object)
                         (<= 0 ,object)
@@ -407,8 +390,7 @@
                  (not ; (not . (type-spec))
                   `(not ,(typep$expansion object (car params))))
                  (satisfies ; (satisfies . (predicate))
-                  `(and (apply$ ',(car params) (list ,object))
-                        t))
+                  `(apply$ ',(car params) (list ,object)))
                  ((signed-byte unsigned-byte) ; (name . (size))
                   (let ((size (car params)))
                     (case name
@@ -580,8 +562,7 @@
                 (equal (car type-spec) 'member))
            (equal (typep$ object type-spec)
                   (and (eqlable-listp (cdr type-spec))
-                       (member object (cdr type-spec))
-                       t))))
+                       (member object (cdr type-spec))))))
 
 (defthm typep$-mod
   (implies (and (consp type-spec)
@@ -667,8 +648,7 @@
                   (and (acl2-type-spec-p type-spec)
                        (let ((predicate (cadr type-spec)))
                          (and (symbolp predicate)
-                              (apply$ predicate (list object))
-                              t))))))
+                              (apply$ predicate (list object))))))))
 
 (defthm typep$-signed-byte/compound
   (implies (and (consp type-spec)

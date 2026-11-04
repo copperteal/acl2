@@ -151,9 +151,9 @@
       (declare (xargs :guard t))
       (integerp element)))
 
-  (defthm booleanp-of-element-recognizer
-    (booleanp (element-recognizer element))
-    :rule-classes :type-prescription)
+  ;; (defthm booleanp-of-element-recognizer
+  ;;   (booleanp (element-recognizer element))
+  ;;   :rule-classes :type-prescription)
 
   (local
     (defun initial-element ()
@@ -229,16 +229,16 @@
 
 (local
   (defthm contents-recognizer-of-repeat
-    (equal (contents-recognizer (repeat n x))
-           (if (zp n)
-               t
-               (element-recognizer x)))
+    (iff (contents-recognizer (repeat n x))
+         (if (zp n)
+             t
+             (element-recognizer x)))
     :rule-classes
     ((:rewrite :corollary
-               (equal (contents-recognizer (repeat n x))
-                      (if (zp (double-rewrite n))
-                          t
-                          (element-recognizer x)))))
+               (iff (contents-recognizer (repeat n x))
+                    (if (zp (double-rewrite n))
+                        t
+                        (element-recognizer x)))))
     :hints
     (("Goal"
       :in-theory (enable repeat)))))

@@ -34,7 +34,7 @@
 (include-book "std/lists/top" :dir :system)
 |#
 
-(include-book "projects/type-spec/type-spec" :dir :system)
+(include-book "projects/type-spec/top" :dir :system)
 
 (include-book "../utilities/top")
 
@@ -436,7 +436,7 @@
 
                     (local
                       (in-theory
-                        (enable type-spec-theory)))
+                        (enable type-spec::theory)))
 
                     (local
                       (in-theory
@@ -453,7 +453,7 @@
                                         (iff (,recognizer ,field)
                                              ,(if stobj-recognizer
                                                   `(,stobj-recognizer ,field)
-                                                  (typep$transform field element-type)))))
+                                                  (typep$expansion field element-type)))))
 
                     ;; `FIXER'
                     (defun-inline ,fixer (,frame)

@@ -35,7 +35,7 @@
 |#
 
 (include-book "std/util/bstar" :dir :system)
-(include-book "projects/type-spec/type-spec" :dir :system)
+(include-book "projects/type-spec/top" :dir :system)
 
 (include-book "../utilities/top")
 
@@ -498,7 +498,7 @@
                                           t))))
       (lem-hash-table$c::element-recognizer ,(or element-recognizer
                                                  `(lambda (value)
-                                                    ,(typep$transform 'value element-type))))
+                                                    ,(typep$expansion 'value element-type))))
       (lem-hash-table$c::default-value ,(or element-creator
                                             `(lambda ()
                                                ,default-value-name)))
@@ -747,7 +747,7 @@
                       `(and (,recognizer ,hash-table)
                             ,(if element-recognizer
                                  `(,element-recognizer value)
-                                 (typep$transform 'value element-type))))
+                                 (typep$expansion 'value element-type))))
                  (,recognizer (,updater key value ,hash-table)))
         :theorem ,(if copyable
                       'lem-hash-table$c::recognizer/copyable-of-updater
@@ -792,7 +792,7 @@
                  (implies (,recognizer ,hash-table)
                           ,(if element-recognizer
                                `(,element-recognizer (,accessor key ,hash-table))
-                               (typep$transform `(,accessor key ,hash-table) element-type)))
+                               (typep$expansion `(,accessor key ,hash-table) element-type)))
                  :rule-classes
                  (:rewrite
                   :type-prescription)
@@ -1299,7 +1299,7 @@
 
               (local
                 (in-theory
-                  (e/d (type-spec-theory)
+                  (e/d (type-spec::theory)
                        ())))
 
               (local

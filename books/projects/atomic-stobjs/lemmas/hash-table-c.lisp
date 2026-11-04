@@ -83,9 +83,9 @@
       (declare (xargs :guard t))
       (symbolp value)))
 
-  (defthm element-recognizer-constraint
-    (booleanp (element-recognizer value))
-    :rule-classes :type-prescription)
+  ;; (defthm element-recognizer-constraint
+  ;;   (booleanp (element-recognizer value))
+  ;;   :rule-classes :type-prescription)
 
   (local
     (defun default-value ()

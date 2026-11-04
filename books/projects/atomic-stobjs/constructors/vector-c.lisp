@@ -36,7 +36,7 @@
 |#
 
 (include-book "std/util/bstar" :dir :system)
-(include-book "projects/type-spec/type-spec" :dir :system)
+(include-book "projects/type-spec/top" :dir :system)
 
 (include-book "../utilities/top")
 
@@ -426,7 +426,7 @@
                                       ,default-length))
       (lem-vector$c::element-recognizer ,(or element-recognizer
                                              `(lambda (element)
-                                                ,(typep$transform 'element element-type))))
+                                                ,(typep$expansion 'element element-type))))
       (lem-vector$c::initial-element ,(or element-creator
                                           `(lambda ()
                                              ,initial-element)))
@@ -618,7 +618,7 @@
                       ,@(and (not (eq element-type t))
                              (if element-recognizer
                                  `((,element-recognizer element))
-                                 `(,(typep$transform 'element element-type))))
+                                 `(,(typep$expansion 'element element-type))))
                       (,recognizer ,vector))
                  (,recognizer (,updater index element ,vector)))
         :theorem lem-vector$c::recognizer-of-updater
@@ -730,7 +730,7 @@
                                (,recognizer ,vector))
                           ,(if element-recognizer
                                `(,element-recognizer (,accessor index ,vector))
-                               (typep$transform `(,accessor index ,vector) element-type)))
+                               (typep$expansion `(,accessor index ,vector) element-type)))
                  :rule-classes
                  (:rewrite
                   :type-prescription)
@@ -948,7 +948,7 @@
 
               (local
                 (in-theory
-                  (e/d (type-spec-theory)
+                  (e/d (type-spec::theory)
                        (make-list-ac
                         (:e make-list-ac)))))
 
