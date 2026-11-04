@@ -35,7 +35,8 @@
 (include-book "std/lists/top" :dir :system)
 |#
 
-(include-book "../type-spec")
+(include-book "projects/type-spec/type-spec" :dir :system)
+
 (include-book "../utilities/top")
 (include-book "frame-c")
 (include-book "frame-a")

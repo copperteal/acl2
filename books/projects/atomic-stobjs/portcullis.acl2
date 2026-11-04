@@ -27,5 +27,5 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(ld "type-spec.acl2")
+(ld "projects/type-spec/type-spec.acl2" :dir :system)
 (ld "package.lsp")

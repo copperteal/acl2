@@ -36,8 +36,8 @@
 |#
 
 (include-book "std/util/bstar" :dir :system)
+(include-book "projects/type-spec/type-spec" :dir :system)
 
-(include-book "../type-spec")
 (include-book "../utilities/top")
 
 

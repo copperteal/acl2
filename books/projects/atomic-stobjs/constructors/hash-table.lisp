@@ -31,7 +31,8 @@
 (in-package "ATOMIC-STOBJS")
 (set-verify-guards-eagerness 2)
 
-(include-book "../type-spec")
+(include-book "projects/type-spec/type-spec" :dir :system)
+
 (include-book "../utilities/top")
 (include-book "hash-table-c")
 (include-book "hash-table-a")

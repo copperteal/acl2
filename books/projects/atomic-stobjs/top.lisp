@@ -36,6 +36,5 @@
 (include-book "test/top")
 |#
 
-(include-book "type-spec")
 (include-book "utilities/top")
 (include-book "constructors/top")
