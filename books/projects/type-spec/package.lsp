@@ -1,4 +1,4 @@
-;;; Copyright 2025 J. David Taylor
+;;; Copyright 2026 J. David Taylor
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions are met:
@@ -29,44 +29,8 @@
 
 (in-package "ACL2")
 
-
-;;;; Constants
-(defconst *atomic-type-specifiers*
-  '(atom bit character complex cons double-float integer list nil null number
-    ratio rational real signed-byte standard-char string symbol t
-    unsigned-byte))
-
-(defconst *atomic-real-subtype-specifiers*
-  '(integer rational real)
-  ;; TODO: verify these work in stobjs
-  #|'(bit double-float integer ratio rational real
-  signed-byte unsigned-byte)|#)
-
-(defconst *compound-type-specifier-names*
-  '(and complex integer member mod not or rational real satisfies
-    signed-byte string unsigned-byte))
-
-(defconst *compound-real-type-specifier-names*
-  '(integer rational real)
-  ;; TODO: support these types
-  #|'(integer mod rational real signed-byte unsigned-byte)|#)
-
-(defconst *type-spec-exports*
-  (union-eq '(*atomic-type-specifiers*
-              *atomic-real-subtype-specifiers*
-              *compound-type-specifier-names*
-              *compound-real-type-specifier-names*
-              interval-designator-p
-              memberp$-eq
-              memberp$-eql
-              memberp$-equal
-              memberp$
-              acl2-type-spec-p
-              typep$runtime
-              typep$transform
-              typep$
-              type-spec-theory)
-            *atomic-type-specifiers*
-            *atomic-real-subtype-specifiers*
-            *compound-type-specifier-names*
-            *compound-real-type-specifier-names*))
+(defpkg "TYPE-SPEC"
+  (union-eq *common-lisp-symbols-from-main-lisp-package*
+            *acl2-exports*
+; Valid type specifiers outside `*ACL2-EXPORTS*':
+            '(DOUBLE-FLOAT NUMBER REAL)))

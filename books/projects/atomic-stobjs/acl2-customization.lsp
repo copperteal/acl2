@@ -1,5 +1,5 @@
 
-(ld "projects/type-spec/type-spec.acl2" :dir :system)
+(include-book "projects/type-spec/portcullis" :dir :system)
 (ld "package.lsp")
 (set-match-free-error t)
 (set-verify-guards-eagerness 2)

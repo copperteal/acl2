@@ -33,7 +33,7 @@
   (set-difference-eq
    (union-eq *common-lisp-symbols-from-main-lisp-package*
              *acl2-exports*
-             *type-spec-exports*
+             type-spec::*exports*
              '(pkg-witness-p
                pkg-witness-fix
                symbolicate$

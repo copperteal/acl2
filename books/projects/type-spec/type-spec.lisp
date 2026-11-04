@@ -27,7 +27,7 @@
 ;;; POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package "ACL2")
+(in-package "TYPE-SPEC")
 (set-verify-guards-eagerness 2)
 
 (include-book "projects/apply/top" :dir :system)
