@@ -1,4 +1,4 @@
-;;; Copyright 2025 J. David Taylor
+;;; Copyright 2026 J. David Taylor
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions are met:
@@ -281,6 +281,37 @@
 
 
 ;;;; `TYPEP$EXPANSION'
+(defun flatten-cd (name nest)
+; Flatten nest of conjunctions or disjunctions without exponential blowup.
+; `NAME' is `AND' or `OR', and `NEST' is the list of conjoined or disjoined
+; untranslated terms.  `FLATTEN-CD' returns a list of untranslated terms such
+; that evaluating (cons name (flatten-cd name nest)) is logically equivalent to
+; evaluating (cons nest).  However, this is a meta-theorem.
+  (declare (xargs :guard (member-eq name '(and or))
+                  :type-prescription (true-listp (flatten-cd name nest)))
+           (type (member and or) name))
+  (cond
+; Our meta theorem is trivially true here.
+    ((atom nest)
+     nil)
+    ((consp (car nest))
+; We explain our meta reasoning for this case:
+     (let* ((op (caar nest))
+            (forms (if (member-eq op '(and or))
+; We make the inductive assumption of our meta theorem here, that when the
+; `MEMBER' condition holds, the terms obtained from consing `NAME' onto either
+; `IF'-branch are logically equivalent.
+                       (if (eq op name)
+                           (flatten-cd op (cdar nest))
+                           (list (cons op (flatten-cd op (cdar nest)))))
+                       (list (car nest)))))
+; We use a second induction assumption here:
+       (append forms (flatten-cd name (cdr nest)))))
+    (t
+; Our meta theorem is true here by induction.
+     (cons (car nest)
+           (flatten-cd name (cdr nest))))))
+
 (defun typep$expansion (object type-spec)
   (declare (xargs :guard (acl2-type-spec-p type-spec)
                   :type-prescription
@@ -325,82 +356,77 @@
              (symbol
               `(symbolp ,object))
              ((t)
-              't)
+              t)
              (unsigned-byte
               `(and (integerp ,object)
                     (<= 0 ,object)))
              (t
-              'nil))
+              nil))
            ;; (consp type-spec)
            (let ((name (car type-spec))
                  (params (cdr type-spec)))
-             (flet ((flatten (name recognizer)
-                      (declare (type symbol name))
-                      (if (and (consp recognizer)
-                               (eq (car recognizer) name))
-                          (cdr recognizer)
-                          (list recognizer))))
-               (case name
-                 ((and or)
-                  (cond
-                    ;; (name)
-                    ((endp params)
-                     (case name
-                       (or
-                        'nil)
-                       (and
-                        't)))
-                    ;; (name . (type))
-                    ((endp (cdr params))
-                     (typep$expansion object (car params)))
-                    ;; (name . (type1 ... typek))
-                    (t
-                     (acl2::hons-remove-duplicates
-                      (append (list name)
-                              (flatten name (typep$expansion object (car params)))
-                              (flatten name (typep$expansion object (cons name (cdr params)))))))))
-                 (complex ; (complex . (type-spec))
-                  (let ((type-spec (car params)))
-                    (append `(and (complex/complex-rationalp ,object))
-                            (flatten 'and (typep$expansion `(realpart ,object) type-spec))
-                            (flatten 'and (typep$expansion `(imagpart ,object) type-spec)))))
-                 ((integer real rational) ; (name . (i j))
-                  (let* ((i (first params))
-                         (j (second params))
-                         (recognizer (typep$expansion object name))
-                         (lower (and (not (symbolp i))
-                                     (if (consp i)
-                                         `(< ,(car i) ,object)
-                                         `(<= ,i ,object))))
-                         (upper (and (not (symbolp j))
-                                     (if (consp j)
-                                         `(< ,object ,(car j))
-                                         `(<= ,object ,j)))))
-                    (if (or lower upper)
-                        `(and ,recognizer
-                              ,@(and lower (list lower))
-                              ,@(and upper (list upper)))
-                        recognizer)))
-                 (member ; (member . (x1 ... xn))
-                  `(member ,object ',params))
-                 (mod ; (mod . (i))
-                  `(and (integerp ,object)
-                        (<= 0 ,object)
-                        (< ,object ,(car params))))
-                 (not ; (not . (type-spec))
-                  `(not ,(typep$expansion object (car params))))
-                 (satisfies ; (satisfies . (predicate))
-                  `(apply$ ',(car params) (list ,object)))
-                 ((signed-byte unsigned-byte) ; (name . (size))
-                  (let ((size (car params)))
-                    (case name
-                      (signed-byte
-                       `(signed-byte-p ,size ,object))
-                      (unsigned-byte
-                       `(unsigned-byte-p ,size ,object)))))
-                 (string ; (string . (max))
-                  `(and (stringp ,object)
-                        (int= (length ,object) ',(car params))))))))))
+             (case name
+               ((and or)
+                (cond
+                  ;; (name)
+                  ((endp params)
+                   (case name
+                     (or
+                      nil)
+                     (and
+                      t)))
+                  ;; (name . (type))
+                  ((endp (cdr params))
+                   (typep$expansion object (car params)))
+                  ;; (name . (type1 ... typek))
+                  (t
+                   (cons name
+                         (acl2::hons-remove-duplicates
+                          (flatten-cd name
+                                      (list (typep$expansion object (car params))
+                                            (typep$expansion object (cons name (cdr params))))))))))
+               (complex ; (complex . (type-spec))
+                (let ((type-spec (car params)))
+                  (append `(and (complex/complex-rationalp ,object))
+                          (flatten-cd 'and (list (typep$expansion `(realpart ,object) type-spec)))
+                          (flatten-cd 'and (list (typep$expansion `(imagpart ,object) type-spec))))))
+               ((integer real rational) ; (name . (i j))
+                (let* ((i (first params))
+                       (j (second params))
+                       (recognizer (typep$expansion object name))
+                       (lower (and (not (symbolp i))
+                                   (if (consp i)
+                                       `(< ,(car i) ,object)
+                                       `(<= ,i ,object))))
+                       (upper (and (not (symbolp j))
+                                   (if (consp j)
+                                       `(< ,object ,(car j))
+                                       `(<= ,object ,j)))))
+                  (if (or lower upper)
+                      `(and ,recognizer
+                            ,@(and lower (list lower))
+                            ,@(and upper (list upper)))
+                      recognizer)))
+               (member ; (member . (x1 ... xn))
+                `(member ,object ',params))
+               (mod ; (mod . (i))
+                `(and (integerp ,object)
+                      (<= 0 ,object)
+                      (< ,object ,(car params))))
+               (not ; (not . (type-spec))
+                `(not ,(typep$expansion object (car params))))
+               (satisfies ; (satisfies . (predicate))
+                `(apply$ ',(car params) (list ,object)))
+               ((signed-byte unsigned-byte) ; (name . (size))
+                (let ((size (car params)))
+                  (case name
+                    (signed-byte
+                     `(signed-byte-p ,size ,object))
+                    (unsigned-byte
+                     `(unsigned-byte-p ,size ,object)))))
+               (string ; (string . (max))
+                `(and (stringp ,object)
+                      (int= (length ,object) ',(car params)))))))))
 
 (defwarrant typep$expansion)
 
@@ -414,14 +440,16 @@
   (if (and (quotep type-spec)
            (acl2-type-spec-p (cadr type-spec)))
       (if (quotep object)
-          `(typep$runtime ,object ,type-spec)
+          ;; We evaluate at expansion time when both arguments are quoted.
+          (typep$runtime (cadr object) (cadr type-spec))
 ; We do a test expansion to see if the result is composite.  If so, we wrap the
-; body in a LET, similar to DEFABBREV.
+; body in a `LET', similarly to a `DEFABBREV'.
           (let* ((type-spec (cadr type-spec))
-                 (expansion (typep$expansion 'object type-spec)))
+                 ;; UNE means "use nowhere else"
+                 (expansion (typep$expansion 'typep$-une type-spec)))
             (if (and (consp expansion)
                      (member-eq (car expansion) '(and or)))
-                `(let ((object ,object))
+                `(let ((typep$-une ,object))
                    ,expansion)
                 (typep$expansion object type-spec))))
       `(typep$runtime ,object ,type-spec)))
@@ -699,7 +727,8 @@
     apply$-warrant-acl2-type-spec-p-necc
     apply$-acl2-type-spec-p
     (:e typep$runtime)
-    (:t typep$runtime)
+    (:e flatten-cd)
+    (:t flatten-cd)
     (:e typep$expansion)
     (:t typep$expansion)
     apply$-warrant-typep$expansion-necc

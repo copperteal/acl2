@@ -49,7 +49,11 @@
   '(integer mod rational real signed-byte unsigned-byte))
 
 (defconst *exports*
-  (union-eq '(*atomic-type-specifiers*
+  (union-eq *atomic-type-specifiers*
+            *atomic-real-subtype-specifiers*
+            *compound-type-specifier-names*
+            *compound-real-type-specifier-names*
+            '(*atomic-type-specifiers*
               *atomic-real-subtype-specifiers*
               *compound-type-specifier-names*
               *compound-real-type-specifier-names*
@@ -57,8 +61,4 @@
               acl2-type-spec-p
               typep$runtime
               typep$expansion
-              typep$)
-            *atomic-type-specifiers*
-            *atomic-real-subtype-specifiers*
-            *compound-type-specifier-names*
-            *compound-real-type-specifier-names*))
+              typep$)))
