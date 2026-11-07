@@ -74,18 +74,10 @@
       (declare (xargs :guard t))
       (symbolp key)))
 
-  (defthm key-guard-constraint
-    (booleanp (key-guard key))
-    :rule-classes :type-prescription)
-
   (local
     (defun element-recognizer (value)
       (declare (xargs :guard t))
       (symbolp value)))
-
-  ;; (defthm element-recognizer-constraint
-  ;;   (booleanp (element-recognizer value))
-  ;;   :rule-classes :type-prescription)
 
   (local
     (defun default-value ()
@@ -195,12 +187,6 @@
   (defthm contents-recognizer-of-hons-remove-assoc
     (implies (contents-recognizer contents)
              (contents-recognizer (hons-remove-assoc key contents)))))
-
-(local
-  (defthm element-recognizer-of-cdr-of-hons-assoc-equal
-    (implies (and (contents-recognizer contents)
-                  (hons-assoc-equal key contents))
-             (element-recognizer (cdr (hons-assoc-equal key contents))))))
 
 
 ;;;; `RECOGNIZER/UNIQUE'

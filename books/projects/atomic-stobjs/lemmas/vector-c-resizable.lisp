@@ -36,103 +36,6 @@
   (include-book "std/lists/top" :dir :system))
 
 
-;;;; STD Lemmas
-(local
-  (defthm resize-list-of-cons
-    (equal (resize-list (cons a l) i d)
-           (if (zp i)
-               ()
-               (cons a (resize-list l (1- i) d))))
-    :rule-classes
-    ((:rewrite :corollary
-               (equal (resize-list (cons a l) i d)
-                      (if (zp (double-rewrite i))
-                          ()
-                          (cons a (resize-list l (1- i) d))))))
-    :hints
-    (("Goal"
-      :expand (resize-list (cons a l) i d)))))
-
-(local
-  (defthm resize-list-of-repeat
-    ;; TODO: This theorem is a good example of `REPEAT' refusing to expand
-    ;; without a hint.
-    (implies (equal x d)
-             (equal (resize-list (repeat n x) m d)
-                    (repeat m d)))
-    :hints
-    (("Goal"
-      :induct (dec-dec-induct n m)
-      :expand ((repeat m d)
-               (repeat n d))))))
-
-(local
-  (defthm resize-list-of-resize-list
-    (implies (and (equal d e)
-                  (consp lst)
-                  (natp n)
-                  (natp m)
-                  (or (<= m n)
-                      (<= (len lst) n)))
-             (equal (resize-list (resize-list lst n d) m e)
-                    (resize-list lst m e)))
-    :rule-classes
-    ((:rewrite :corollary
-               (implies (and (equal d e)
-                             (consp (double-rewrite lst))
-                             (natp n)
-                             (natp m)
-                             (or (<= m n)
-                                 (<= (len lst) n)))
-                        (equal (resize-list (resize-list lst n d) m e)
-                               (resize-list lst m e)))))
-    :hints
-    (("Goal"
-      :induct (and (nth n lst)
-                   (nth m lst))
-      :in-theory (enable resize-list)))))
-
-(local
-  (defun resize-list-of-update-nth/induction (key l n)
-    (declare (xargs :guard (and (natp key)
-                                (natp n))))
-    (cond
-      ((zp n)
-       (list key l))
-      ((zp key)
-       (list l n))
-      ((atom l)
-       (resize-list-of-update-nth/induction (1- key) l (1- n)))
-      (t
-       (resize-list-of-update-nth/induction (1- key) (cdr l) (1- n))))))
-
-(local
-  (defthm resize-list-of-update-nth-keep
-    (implies (and (natp key)
-                  (natp n)
-                  (< key (len l))
-                  (< key n))
-             (equal (resize-list (update-nth key val l)
-                                 n default-value)
-                    (update-nth key val (resize-list l n default-value))))
-    :hints
-    (("Goal"
-      :induct (resize-list-of-update-nth/induction key l n)))))
-
-(local
-  (defthm resize-list-of-update-nth-drop
-    (implies (and (natp key)
-                  (natp n)
-                  (< key (len l))
-                  (<= n key))
-             (equal (resize-list (update-nth key val l)
-                                 n default-value)
-                    (resize-list l n default-value)))
-    :hints
-    (("Goal"
-      :induct (resize-list-of-update-nth/induction key l n)))))
-
-
 ;;;; Element Constraints
 (encapsulate (((default-length) => *)
               ((element-recognizer *) => *)
@@ -150,10 +53,6 @@
     (defun element-recognizer (element)
       (declare (xargs :guard t))
       (integerp element)))
-
-  ;; (defthm booleanp-of-element-recognizer
-  ;;   (booleanp (element-recognizer element))
-  ;;   :rule-classes :type-prescription)
 
   (local
     (defun initial-element ()
@@ -260,13 +159,6 @@
     :hints
     (("Goal"
       :in-theory (enable update-nth)))))
-
-(local
-  (defthm element-recognizer-of-nth
-    (implies (and (natp index)
-                  (< index (len contents))
-                  (contents-recognizer contents))
-             (element-recognizer (nth index contents)))))
 
 
 ;;;; `RECOGNIZER'
