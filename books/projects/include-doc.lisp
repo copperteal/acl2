@@ -39,6 +39,7 @@
      (include-book "abnf/top")
      (include-book "bls12-377-curves/top")
      (include-book "set-theory/doc")
+     (include-book "type-spec/top")
 
      (defxdoc projects
        :parents (top)

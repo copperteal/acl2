@@ -26,8 +26,10 @@
 
 ;;; ACL2 built-ins
                (eval . (put 'defpkg 'common-lisp-indent-function 1))
+               (eval . (put 'defsection 'common-lisp-indent-function 1))
                (eval . (put 'deftheory 'common-lisp-indent-function 1))
                (eval . (put 'defthm 'common-lisp-indent-function 1))
+               (eval . (put 'defxdoc 'common-lisp-indent-function 1))
                (eval . (put 'encapsulate 'common-lisp-indent-function 1))
                (eval . (put 'in-theory 'common-lisp-indent-function 0))
                (eval . (put 'include-book 'common-lisp-indent-function 0))

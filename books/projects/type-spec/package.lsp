@@ -33,6 +33,7 @@
   (set-difference-eq
    (union-eq *common-lisp-symbols-from-main-lisp-package*
              *acl2-exports*
+             '(legal-variablep tame defxdoc defsection)
 ; Valid type specifiers outside `*ACL2-EXPORTS*':
-             '(DOUBLE-FLOAT NUMBER REAL))
-   '(THEORY)))
+             '(double-float number real))
+   '(theory)))
