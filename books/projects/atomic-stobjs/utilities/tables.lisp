@@ -32,6 +32,7 @@
 
 ; We use property accessors in logic mode `LOOP$'s.
 (include-book "projects/apply/top" :dir :system)
+(include-book "projects/type-spec/top" :dir :system)
 
 (include-book "pkg-witness")
 
@@ -63,8 +64,6 @@
     accessor
     updater)
    (contents . contents-recognizer)
-   ;; TODO: rename `ELEMENT-TYPE' to `ELEMENT-SPEC' because it is a stobj name
-   ;; or type-spec, but never an ACL2 type.
    (element-type initial-element . default-length)
    (resizable . memoizable)
    (theory fi-bindings . fi-theorems)
@@ -81,8 +80,8 @@
        (symbolp (access vector$c-property x :updater))
        (symbolp (access vector$c-property x :contents))
        (symbolp (access vector$c-property x :contents-recognizer))
-       ;; TODO: check it's a valid type-spec or a symbol
-       (access vector$c-property x :element-type)
+       (or (legal-variablep (access vector$c-property x :element-type))
+           (acl2-type-spec-p (access vector$c-property x :element-type)))
        (symbolp (access vector$c-property x :initial-element))
        (symbolp (access vector$c-property x :default-length))
        (booleanp (access vector$c-property x :resizable))
@@ -131,8 +130,8 @@
        (symbolp (access hash-table$c-property x :keys-set))
        (symbolp (access hash-table$c-property x :contents))
        (symbolp (access hash-table$c-property x :contents-recognizer))
-       ;; TODO: check it's a valid type-spec or a symbol
-       (access hash-table$c-property x :element-type)
+       (or (legal-variablep (access hash-table$c-property x :element-type))
+           (acl2-type-spec-p (access hash-table$c-property x :element-type)))
        (symbolp (access hash-table$c-property x :default-value))
        ;; TODO: drop copyable
        (booleanp (access hash-table$c-property x :copyable))
@@ -158,6 +157,14 @@
    pkg-witness)
   nil)
 
+(defun valid-element-types-p (element-types)
+  (declare (xargs :guard t))
+  (if (consp element-types)
+      (and (or (legal-variablep (car element-types))
+               (acl2-type-spec-p (car element-types)))
+           (valid-element-types-p (cdr element-types)))
+      (eq element-types nil)))
+
 (defun frame$c-property-p (x)
   (declare (xargs :guard t))
   (and (weak-frame$c-property-p x)
@@ -166,7 +173,7 @@
        (symbol-listp (access frame$c-property x :accessors))
        (symbol-listp (access frame$c-property x :updaters))
        (symbol-listp (access frame$c-property x :fields))
-       (true-listp (access frame$c-property x :element-types))
+       (valid-element-types-p (access frame$c-property x :element-types))
        (symbol-listp (access frame$c-property x :initial-elements))
        (booleanp (access frame$c-property x :memoizable))
        (symbolp (access frame$c-property x :theory))
