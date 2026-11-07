@@ -218,15 +218,6 @@
 
 
 ;;;; `CONTENTS-RECOGNIZER'
-(defthm contents-recognizer-tp
-  (booleanp (contents-recognizer contents))
-  :rule-classes :type-prescription)
-
-(defthm contents-recognizer-cr
-  (implies (contents-recognizer contents)
-           (true-listp contents))
-  :rule-classes :compound-recognizer)
-
 (local
   (defthm contents-recognizer-of-repeat
     (iff (contents-recognizer (repeat n x))
@@ -279,16 +270,6 @@
 
 
 ;;;; `RECOGNIZER'
-(defthm recognizer-tp
-  (booleanp (recognizer vector))
-  :rule-classes :type-prescription)
-
-(defthm recognizer-cr
-  (implies (recognizer vector)
-           (and (consp vector)
-                (true-listp vector)))
-  :rule-classes :compound-recognizer)
-
 (defthm recognizer-of-creator
   (recognizer (creator)))
 
@@ -307,28 +288,7 @@
            (recognizer (updater index element vector))))
 
 
-;;;; `FIXER'
-(defthm fixer-tp
-  (and (consp (fixer vector))
-       (true-listp (fixer vector)))
-  :rule-classes :type-prescription)
-
-(defthm fixer-when-recognizer
-  (implies (recognizer vector)
-           (equal (fixer vector)
-                  vector)))
-
-(defthm fixer-when-not-recognizer
-  (implies (not (recognizer vector))
-           (equal (fixer vector)
-                  (creator))))
-
-
 ;;;; `LENGTH'
-(defthm length-tp
-  (natp (length vector))
-  :rule-classes :type-prescription)
-
 (defthm length-of-creator
   (equal (length (creator))
          (default-length)))
@@ -345,59 +305,7 @@
                   (length vector))))
 
 
-;;;; `RESIZER'
-(defthm resizer-tp
-  (implies (recognizer vector)
-           (and (consp (resizer length vector))
-                (true-listp (resizer length vector))))
-  :rule-classes :type-prescription)
-
-(defthm resizer-of-creator
-  (implies (equal length (default-length))
-           (equal (resizer length (creator))
-                  (creator))))
-
-(defthm resizer-of-length
-  (implies (recognizer vector)
-           (equal (resizer (length vector) vector)
-                  vector)))
-
-(defthm resizer-of-resizer
-  (implies (and (natp length1)
-                (natp length2)
-                (or (<= length1 length2)
-                    (<= (length vector) length2))
-                (recognizer vector))
-           (equal (resizer length1 (resizer length2 vector))
-                  (resizer length1 vector)))
-  :hints
-  (("Goal"
-    :cases ((atom (car vector))))))
-
-(defthm resizer-of-updater-keep
-  (implies (and (natp index)
-                (natp length)
-                (< index length)
-                (< index (length vector)))
-           (equal (resizer length (updater index element vector))
-                  (updater index element (resizer length vector)))))
-
-(defthm resizer-of-updater-drop
-  (implies (and (natp index)
-                (natp length)
-                (<= length index)
-                (< index (length vector)))
-           (equal (resizer length (updater index element vector))
-                  (resizer length vector))))
-
-
 ;;;; `ACCESSOR'
-(defthm element-recognizer-of-accessor
-  (implies (and (natp index)
-                (< index (length vector))
-                (recognizer vector))
-           (element-recognizer (accessor index vector))))
-
 (defthm accessor-of-creator
   (implies (and (natp index)
                 (< index (default-length)))
@@ -431,61 +339,6 @@
                 (natp index2))
            (equal (accessor index1 (updater index2 element vector))
                   (accessor index1 vector))))
-
-
-;;;; `UPDATER'
-(defthm updater-tp
-  (implies (recognizer vector)
-           (and (consp (updater index element vector))
-                (true-listp (updater index element vector))))
-  :rule-classes :type-prescription)
-
-(defthm updater-of-creator
-  (implies (and (equal element (initial-element))
-                (natp index)
-                (< index (default-length)))
-           (equal (updater index element (creator))
-                  (creator))))
-
-(defthm updater-of-resizer-inner
-  (implies (and (equal element (accessor index vector))
-                (natp index)
-                (natp length)
-                (< index length)
-                (< index (length vector)))
-           (equal (updater index element (resizer length vector))
-                  (resizer length vector))))
-
-(defthm updater-of-resizer-outer
-  (implies (and (equal element (initial-element))
-                (natp index)
-                (natp length)
-                (< index length)
-                (<= (length vector) index))
-           (equal (updater index element (resizer length vector))
-                  (resizer length vector))))
-
-(defthm updater-of-accessor
-  (implies (and (equal index1 index2)
-                (natp index1)
-                (< index1 (length vector))
-                (recognizer vector))
-           (equal (updater index1 (accessor index2 vector) vector)
-                  vector)))
-
-(defthm updater-of-updater-same
-  (implies (equal index1 index2)
-           (equal (updater index1 element1 (updater index2 element2 vector))
-                  (updater index1 element1 vector))))
-
-(defthm updater-of-updater-diff
-  (implies (and (not (equal index1 index2))
-                (natp index1)
-                (natp index2))
-           (equal (updater index1 element1 (updater index2 element2 vector))
-                  (updater index2 element2 (updater index1 element1 vector))))
-  :rule-classes
-  ((:rewrite :loop-stopper ((index1 index2 updater)))))
 
 
 ;;;; Constraints
