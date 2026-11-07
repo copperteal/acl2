@@ -1,4 +1,4 @@
-;;; Copyright 2025 J. David Taylor
+;;; Copyright 2026 J. David Taylor
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions are met:
@@ -1162,68 +1162,13 @@
                  :bindings ,fi-bindings))))))
 
 
-;;;; `DEFINE-HASH-TABLE$C'
-(defmacro define-hash-table$c
-    (&whole form
-       hash-table test
-     &key
-       (size 'nil)
-       (element-type 't)
-       (default-value 'nil)
-       (copyable 't)
-
-       (inline 't)
-       (memoizable 'nil)
-       (executable 'nil)
-
-       (contents 'nil)
-       (contents-recognizer 'nil)
-       (recognizer 'nil)
-       (creator 'nil)
-       (fixer 'nil)
-       (accessor 'nil)
-       (updater 'nil)
-       (boundp 'nil)
-       (getp 'nil)
-       (remover 'nil)
-       (count 'nil)
-       (clear 'nil)
-       (init 'nil)
-       (keys 'nil)
-       (keys-set 'nil)
-
-       (pkg-witness 'nil)
-       (debug 'nil))
-
-  (declare (xargs :guard t)
-           (ignore hash-table test
-                   size element-type
-                   default-value copyable
-
-                   inline memoizable executable
-
-                   contents
-                   contents-recognizer
-                   recognizer
-                   creator
-                   fixer
-                   accessor
-                   updater
-                   boundp
-                   getp
-                   remover
-                   count
-                   clear
-                   init
-                   keys
-                   keys-set
-
-                   pkg-witness))
-
+;;;; `DEFINE-HASH-TABLE$C-FN'
+(defun define-hash-table$c-fn (form debug)
+  (declare (xargs :mode :program
+                  :guard (true-listp form)))
   `(with-output
      ,@(and (not debug)
             *constructor-output*)
-
      (make-event
        (b* (((mv tmp property) (define-hash-table$c/parse-form ',form state))
             (fi-bindings (define-hash-table$c/make-fi-bindings tmp property))
@@ -1308,7 +1253,8 @@
               (make-event
 
 ; The `FI-THEOREMS' constant must be defined inside the local context where
-; `LEM-HASH-TABLE$C::*CONSTRAINTS*' is a defined constant.
+; `LEM-HASH-TABLE$C::*CONSTRAINTS/COPYABLE*' or
+; `LEM-HASH-TABLE$C::*CONSTRAINTS/UNIQUE*' is a defined constant.
 
                 (list 'defconst ',(access hash-table$c-property
                                           property
@@ -1371,3 +1317,62 @@
                               (theory ',theory)))
 
             (table stobj$c ',hash-table ',property))))))
+
+
+;;;; `DEFINE-HASH-TABLE$C'
+(defmacro define-hash-table$c
+    (&whole form
+       hash-table test
+     &key
+       (size 'nil)
+       (element-type 't)
+       (default-value 'nil)
+       (copyable 't)
+
+       (inline 't)
+       (memoizable 'nil)
+       (executable 'nil)
+
+       (contents 'nil)
+       (contents-recognizer 'nil)
+       (recognizer 'nil)
+       (creator 'nil)
+       (fixer 'nil)
+       (accessor 'nil)
+       (updater 'nil)
+       (boundp 'nil)
+       (getp 'nil)
+       (remover 'nil)
+       (count 'nil)
+       (clear 'nil)
+       (init 'nil)
+       (keys 'nil)
+       (keys-set 'nil)
+
+       (pkg-witness 'nil)
+       (debug 'nil))
+  (declare (xargs :guard t)
+           (ignore hash-table test
+                   size element-type
+                   default-value copyable
+
+                   inline memoizable executable
+
+                   contents
+                   contents-recognizer
+                   recognizer
+                   creator
+                   fixer
+                   accessor
+                   updater
+                   boundp
+                   getp
+                   remover
+                   count
+                   clear
+                   init
+                   keys
+                   keys-set
+
+                   pkg-witness))
+  (define-hash-table$c-fn form debug))

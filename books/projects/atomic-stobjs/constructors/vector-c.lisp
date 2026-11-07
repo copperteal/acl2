@@ -925,10 +925,9 @@
                 (deflabel end-of-prologue))
 
               (local
-                (include-book ,(if (access vector$c-property property :resizable)
-                                   "projects/atomic-stobjs/lemmas/vector-c-resizable"
-                                   "projects/atomic-stobjs/lemmas/vector-c-fixed-length")
-                              :dir :system))
+                ,(if (access vector$c-property property :resizable)
+                     '(include-book "projects/atomic-stobjs/lemmas/vector-c-resizable" :dir :system)
+                     '(include-book "projects/atomic-stobjs/lemmas/vector-c-fixed-length" :dir :system)))
 
               (local
                 (table acl2::theory-invariant-table nil nil :clear))
