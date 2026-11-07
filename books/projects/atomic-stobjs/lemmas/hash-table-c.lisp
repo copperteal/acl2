@@ -1,4 +1,4 @@
-;;; Copyright 2025 J. David Taylor
+;;; Copyright 2026 J. David Taylor
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
 ;;; modification, are permitted provided that the following conditions are met:
@@ -191,10 +191,6 @@
 
 
 ;;;; `CONTENTS-RECOGNIZER'
-(defthm contents-recognizer-tp
-  (booleanp (contents-recognizer contents))
-  :rule-classes :type-prescription)
-
 (local
   (defthm contents-recognizer-of-hons-remove-assoc
     (implies (contents-recognizer contents)
@@ -208,16 +204,6 @@
 
 
 ;;;; `RECOGNIZER/UNIQUE'
-(defthm recognizer/unique-tp
-  (booleanp (recognizer/unique hash-table))
-  :rule-classes :type-prescription)
-
-(defthm recognizer/unique-cr
-  (implies (recognizer/unique hash-table)
-           (and (consp hash-table)
-                (true-listp hash-table)))
-  :rule-classes :compound-recognizer)
-
 (defthm recognizer/unique-of-creator/unique
   (recognizer/unique (creator/unique)))
 
@@ -242,28 +228,7 @@
            (recognizer/unique (%init ht-size rehash-size rehash-threshold hash-table))))
 
 
-;;;; `FIXER/UNIQUE'
-(defthm fixer/unique-tp
-  (and (consp (fixer/unique hash-table))
-       (true-listp (fixer/unique hash-table)))
-  :rule-classes :type-prescription)
-
-(defthm fixer/unique-when-recognizer/unique
-  (implies (recognizer/unique hash-table)
-           (equal (fixer/unique hash-table)
-                  hash-table)))
-
-(defthm fixer/unique-when-not-recognizer/unique
-  (implies (not (recognizer/unique hash-table))
-           (equal (fixer/unique hash-table)
-                  (creator/unique))))
-
-
 ;;;; `ACCESSOR'
-(defthm element-recognizer-of-accessor/unique
-  (implies (recognizer/unique hash-table)
-           (element-recognizer (accessor key hash-table))))
-
 (defthm accessor-of-creator/unique
   (equal (accessor key (creator/unique))
          (default-value)))
@@ -289,19 +254,7 @@
                   (accessor %key hash-table))))
 
 
-;;;; `UPDATER'
-(defthm updater/unique-tp
-  (implies (recognizer/unique hash-table)
-           (and (consp (updater key value hash-table))
-                (true-listp (updater key value hash-table))))
-  :rule-classes :type-prescription)
-
-
 ;;;; `BOUNDP'
-(defthm boundp-tp
-  (booleanp (boundp key hash-table))
-  :rule-classes :type-prescription)
-
 (defthm boundp-of-creator/unique
   (not (boundp key (creator/unique))))
 
@@ -326,11 +279,6 @@
 
 
 ;;;; `GETP'
-(defthm getp-tp
-  (and (consp (getp key hash-table))
-       (true-listp (getp key hash-table)))
-  :rule-classes :type-prescription)
-
 (defthm getp-rw
   (mv-let (v0 v1)
           (getp key hash-table)
@@ -338,45 +286,7 @@
          (equal v1 (boundp key hash-table)))))
 
 
-;;;; `REMOVER'
-(defthm remover/unique-tp
-  (implies (recognizer/unique hash-table)
-           (and (consp (remover key hash-table))
-                (true-listp (remover key hash-table))))
-  :rule-classes :type-prescription)
-
-(defthm remover-of-creator/unique
-  (equal (remover key (creator/unique))
-         (creator/unique)))
-
-(defthm remover-of-updater-same
-  (implies (equal %key key)
-           (equal (remover %key (updater key value hash-table))
-                  (remover %key hash-table))))
-
-(defthm remover-of-updater-diff
-  (implies (not (equal %key key))
-           (equal (remover %key (updater key value hash-table))
-                  (updater key value (remover %key hash-table)))))
-
-(defthm remover-of-remover-same
-  (implies (equal %key key)
-           (equal (remover %key (remover key hash-table))
-                  (remover %key hash-table))))
-
-(defthm remover-of-remover-diff
-  (implies (not (equal %key key))
-           (equal (remover %key (remover key hash-table))
-                  (remover key (remover %key hash-table))))
-  :rule-classes
-  ((:rewrite :loop-stopper ((%key key remover)))))
-
-
 ;;;; `COUNT'
-(defthm count-tp
-  (natp (count hash-table))
-  :rule-classes :type-prescription)
-
 (defthm count-of-creator/unique
   (equal (count (creator/unique)) 0))
 
@@ -402,12 +312,6 @@
 
 
 ;;;; `%CLEAR'
-(defthm %clear/unique-tp
-  (implies (recognizer/unique hash-table)
-           (and (consp (%clear hash-table))
-                (true-listp (%clear hash-table))))
-  :rule-classes :type-prescription)
-
 (defthm %clear/unique-rw
   (implies (recognizer/unique hash-table)
            (equal (%clear hash-table)
@@ -417,12 +321,6 @@
 
 
 ;;;; `%INIT'
-(defthm %init/unique-tp
-  (implies (recognizer/unique hash-table)
-           (and (consp (%init ht-size rehash-size rehash-threshold hash-table))
-                (true-listp (%init ht-size rehash-size rehash-threshold hash-table))))
-  :rule-classes :type-prescription)
-
 (defthm %init/unique-rw
   (implies (recognizer/unique hash-table)
            (equal (%init ht-size rehash-size rehash-threshold hash-table)
@@ -480,16 +378,6 @@
 
 
 ;;;; `RECOGNIZER/COPYABLE'
-(defthm recognizer/copyable-tp
-  (booleanp (recognizer/copyable hash-table))
-  :rule-classes :type-prescription)
-
-(defthm recognizer/copyable-cr
-  (implies (recognizer/copyable hash-table)
-           (and (consp hash-table)
-                (true-listp hash-table)))
-  :rule-classes :compound-recognizer)
-
 (defthm recognizer/copyable-of-creator/copyable
   (recognizer/copyable (creator/copyable)))
 
@@ -518,28 +406,7 @@
            (recognizer/copyable (keys-set set hash-table))))
 
 
-;;;; `FIXER/COPYABLE'
-(defthm fixer/copyable-tp
-  (and (consp (fixer/copyable hash-table))
-       (true-listp (fixer/copyable hash-table)))
-  :rule-classes :type-prescription)
-
-(defthm fixer/copyable-when-recognizer/copyable
-  (implies (recognizer/copyable hash-table)
-           (equal (fixer/copyable hash-table)
-                  hash-table)))
-
-(defthm fixer/copyable-when-not-recognizer/copyable
-  (implies (not (recognizer/copyable hash-table))
-           (equal (fixer/copyable hash-table)
-                  (creator/copyable))))
-
-
 ;;;; `ACCESSOR' (copyable adjustments)
-(defthm element-recognizer-of-accessor/copyable
-  (implies (recognizer/copyable hash-table)
-           (element-recognizer (accessor key hash-table))))
-
 (defthm accessor-of-creator/copyable
   (equal (accessor key (creator/copyable))
          (default-value)))
@@ -549,14 +416,6 @@
          (accessor key hash-table)))
 
 
-;;;; `UPDATER' (copyable adjustments)
-(defthm updater/copyable-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (updater key value hash-table))
-                (true-listp (updater key value hash-table))))
-  :rule-classes :type-prescription)
-
-
 ;;;; `BOUNDP' (copyable adjustments)
 (defthm boundp-of-creator/copyable
   (not (boundp key (creator/copyable))))
@@ -564,18 +423,6 @@
 (defthm boundp-of-keys-set
   (equal (boundp key (keys-set set hash-table))
          (boundp key hash-table)))
-
-
-;;;; `REMOVER' (copyable adjustments)
-(defthm remover/copyable-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (remover key hash-table))
-                (true-listp (remover key hash-table))))
-  :rule-classes :type-prescription)
-
-(defthm remover-of-creator/copyable
-  (equal (remover key (creator/copyable))
-         (creator/copyable)))
 
 
 ;;;; `COUNT' (copyable adjustments)
@@ -588,12 +435,6 @@
 
 
 ;;;; `%CLEAR' (copyable adjustments)
-(defthm %clear/copyable-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (%clear hash-table))
-                (true-listp (%clear hash-table))))
-  :rule-classes :type-prescription)
-
 (defthm %clear/copyable-rw
   (implies (recognizer/copyable hash-table)
            (equal (%clear hash-table)
@@ -603,12 +444,6 @@
 
 
 ;;;; `%INIT' (copyable adjustments)
-(defthm %init/copyable-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (%init ht-size rehash-size rehash-threshold hash-table))
-                (true-listp (%init ht-size rehash-size rehash-threshold hash-table))))
-  :rule-classes :type-prescription)
-
 (defthm %init/copyable-rw
   (implies (recognizer/copyable hash-table)
            (equal (%init ht-size rehash-size rehash-threshold hash-table)
@@ -618,12 +453,6 @@
 
 
 ;;;; `CLEAR'
-(defthm clear-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (clear hash-table))
-                (true-listp (clear hash-table))))
-  :rule-classes :type-prescription)
-
 (defthm clear-rw
   (implies (recognizer/copyable hash-table)
            (equal (clear hash-table)
@@ -633,12 +462,6 @@
 
 
 ;;;; `INIT'
-(defthm init-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (init ht-size rehash-size rehash-threshold hash-table))
-                (true-listp (init ht-size rehash-size rehash-threshold hash-table))))
-  :rule-classes :type-prescription)
-
 (defthm init-rw
   (implies (recognizer/copyable hash-table)
            (equal (init ht-size rehash-size rehash-threshold hash-table)
@@ -665,26 +488,6 @@
 (defthm keys-of-keys-set
   (equal (keys (keys-set set hash-table))
          set))
-
-
-;;;; `KEYS-SET'
-(defthm keys-set-tp
-  (implies (recognizer/copyable hash-table)
-           (and (consp (keys-set set hash-table))
-                (true-listp (keys-set set hash-table))))
-  :rule-classes :type-prescription)
-
-(defthm keys-set-of-updater
-  (equal (keys-set set (updater key value hash-table))
-         (updater key value (keys-set set hash-table))))
-
-(defthm keys-set-of-remover
-  (equal (keys-set set (remover key hash-table))
-         (remover key (keys-set set hash-table))))
-
-(defthm keys-set-of-keys-set
-  (equal (keys-set %set (keys-set set hash-table))
-         (keys-set %set hash-table)))
 
 
 ;;;; Constraints

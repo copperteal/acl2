@@ -486,7 +486,6 @@
        (accessor-of-updater-same (symbolicate$ pkg-witness accessor-of-updater "-SAME"))
        (accessor-of-updater-diff (symbolicate$ pkg-witness accessor-of-updater "-DIFF")))
     `(
-      ;; `FIXER'
       (defthm ,fixer-def
         (equal (,fixer ,vector)
                (if (,recognizer ,vector)
