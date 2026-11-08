@@ -249,10 +249,10 @@
                            (eql (char default-value 0) #\*)
                            (eql (char default-value (1- (acl2::length default-value))) #\*))))
                (mv default-value
-                   (cadr (getpropc default-value 'acl2::const))))
+                   (getpropc default-value 'acl2::const)))
               ((typep$ default-value element-type)
                (mv (symbolicate$ pkg-witness "*" name "-DEFAULT-VALUE*")
-                   default-value))
+                   (kwote default-value)))
               (t
                (mv-er 2 hard 'define-hash-table$c
                       "GUARD VIOLATION: ~x0" :default-value)))
@@ -427,7 +427,7 @@
     `(defstobj ,(access hash-table$c-property property :name)
        (,contents :type (acl2::hash-table ,test ,size ,element-type)
                   ,@(and (not element-stobj-property)
-                         `(:initially ,default-value-val)))
+                         `(:initially ,(cadr default-value-val))))
        ,@(and copyable
               `((,keys)))
        :renaming ,doublets
@@ -951,7 +951,7 @@
                     (default-value (cdr (assoc :default-value-val tmp))))
                 (and (not element-stobj-property)
                      (not (getpropc default-value-name 'acl2::const))
-                     `((defconst ,default-value-name ',default-value))))
+                     `((defconst ,default-value-name ,default-value))))
 
             ,defstobj-form
 

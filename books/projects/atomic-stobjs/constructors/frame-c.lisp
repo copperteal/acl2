@@ -169,7 +169,7 @@
              (element-type (if element-type-supplied
                                (cadr element-type-supplied)
                                't))
-             (initial-element (cadr (assoc-keyword :initial-element kvl)))
+             (initial-element (kwote (cadr (assoc-keyword :initial-element kvl))))
              (accessor (cadr (assoc-keyword :accessor kvl)))
              (recognizer (cadr (assoc-keyword :recognizer kvl)))
              (updater (cadr (assoc-keyword :updater kvl))))
@@ -337,7 +337,7 @@
                                       :as initial-element :in initial-elements
                                       :as stobj-property :in stobj-property-list
                                       :when (not stobj-property)
-                                      :collect `(defconst ,initial-element-name ',initial-element)))
+                                      :collect `(defconst ,initial-element-name ,initial-element)))
                 (defstobj-descriptors (loop$ :for accessor :in accessors
                                             :as element-type :in element-types
                                             :as stobj-property :in stobj-property-list
@@ -345,7 +345,7 @@
                                             :collect `(,accessor
                                                        :type ,element-type
                                                        ,@(and (not stobj-property)
-                                                              `(:initially ,initial-element)))))
+                                                              `(:initially ,(cadr initial-element))))))
                 (frame/fixer-hack (symbolicate$ pkg-witness frame "/FIXER-HACK"))
                 (defstobj-descriptors/fh (loop$ :for descriptor :in defstobj-descriptors
                                                :collect (cons (symbolicate$ pkg-witness

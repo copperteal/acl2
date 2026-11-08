@@ -82,16 +82,16 @@
         (cond
           ((natp dimensions)
            (mv (symbolicate$ pkg-witness "*" name "-DEFAULT-LENGTH*")
-               dimensions))
+               (kwote dimensions)))
           ((symbolp dimensions)
            (mv dimensions
-               (cadr (getpropc dimensions 'acl2::const))))
+               (getpropc dimensions 'acl2::const)))
           ((natp (car dimensions))
            (mv (symbolicate$ pkg-witness "*" name "-DEFAULT-LENGTH*")
-               (car dimensions)))
+               (kwote (car dimensions))))
           ((symbolp (car dimensions))
            (mv (car dimensions)
-               (cadr (getpropc (car dimensions) 'acl2::const))))
+               (getpropc (car dimensions) 'acl2::const)))
           (t
            (mv-er 2 hard 'define-vector$c
                   "GUARD VIOLATION: ~x0" :dimensions))))
@@ -247,10 +247,10 @@
                            (eql (char initial-element 0) #\*)
                            (eql (char initial-element (1- (acl2::length initial-element))) #\*))))
                (mv initial-element
-                   (cadr (getpropc initial-element 'acl2::const))))
+                   (getpropc initial-element 'acl2::const)))
               ((typep$ initial-element element-type)
                (mv (symbolicate$ pkg-witness "*" name "-INITIAL-ELEMENT*")
-                   initial-element))
+                   (kwote initial-element)))
               (t
                (mv-er 2 hard 'define-vector$c
                       "GUARD VIOLATION: ~x0" :initial-element)))
@@ -263,8 +263,8 @@
        (element-creator (access stobj$a-property element-stobj$a-property :creator)))
 
     (mv (list (cons :default-length-val default-length-val)
-              (cons :element-stobj-property element-stobj-property)
               (cons :initial-element-val initial-element-val)
+              (cons :element-stobj-property element-stobj-property)
               (cons :specialize-element-type specialize-element-type)
               (cons :element-absstobj-info element-absstobj-info)
               (cons :element-stobj$a-property element-stobj$a-property)
@@ -277,6 +277,7 @@
               (cons :end-label (symbolicate$ pkg-witness name "-END")))
         (make vector$c-property
               :name name
+              :default-length default-length
               :recognizer recognizer
               :creator creator
               :fixer fixer
@@ -288,7 +289,6 @@
               :contents-recognizer contents-recognizer
               :element-type element-type
               :initial-element initial-element
-              :default-length default-length
               :resizable resizable
               :memoizable memoizable
               :theory (symbolicate$ pkg-witness name "-THEORY")
@@ -379,7 +379,7 @@
                            ,(if specialize-element-type
                                 element-type
                                 t)
-                           :initially ,initial-element-val))
+                           :initially ,(cadr initial-element-val)))
                   :resizable ,resizable)
        :renaming ,doublets
        :inline ,inline
@@ -664,7 +664,7 @@
                                                  :default-length))
                     (default-length (cdr (assoc :default-length-val tmp))))
                 (and (not (getpropc default-length-name 'acl2::const))
-                     `((defconst ,default-length-name ',default-length))))
+                     `((defconst ,default-length-name ,default-length))))
 
             ,@(let ((initial-element-name (access vector$c-property
                                                   property
@@ -672,7 +672,7 @@
                     (initial-element (cdr (assoc :initial-element-val tmp))))
                 (and (not element-stobj-property)
                      (not (getpropc initial-element-name 'acl2::const))
-                     `((defconst ,initial-element-name ',initial-element))))
+                     `((defconst ,initial-element-name ,initial-element))))
 
             ,defstobj-form
 

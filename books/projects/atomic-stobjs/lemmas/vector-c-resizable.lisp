@@ -31,8 +31,6 @@
 (set-verify-guards-eagerness 2)
 
 (local
-  (include-book "std/basic/inductions" :dir :system))
-(local
   (include-book "std/lists/top" :dir :system))
 
 
