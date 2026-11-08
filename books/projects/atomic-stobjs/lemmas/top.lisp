@@ -31,6 +31,7 @@
 (set-verify-guards-eagerness 2)
 
 #|
+(include-book "vector/top")
 (include-book "vector-c-fixed-length")
 (include-book "vector-c-resizable")
 (include-book "vector-a")

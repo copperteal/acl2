@@ -1,0 +1,253 @@
+;;; Copyright 2026 J. David Taylor
+;;;
+;;; Redistribution and use in source and binary forms, with or without
+;;; modification, are permitted provided that the following conditions are met:
+;;;
+;;; 1. Redistributions of source code must retain the above copyright notice,
+;;;    this list of conditions and the following disclaimer.
+;;;
+;;; 2. Redistributions in binary form must reproduce the above copyright notice,
+;;;    this list of conditions and the following disclaimer in the documentation
+;;;    and/or other materials provided with the distribution.
+;;;
+;;; 3. Neither the name of the copyright holder nor the names of its
+;;;    contributors may be used to endorse or promote products derived from this
+;;;    software without specific prior written permission.
+;;;
+;;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+;;; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+;;; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+;;; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+;;; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+;;; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+;;; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+;;; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+;;; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+;;; POSSIBILITY OF SUCH DAMAGE.
+
+
+(in-package "LEM/VECTOR$C")
+(set-verify-guards-eagerness 2)
+
+(local
+  (include-book "std/lists/top" :dir :system))
+
+
+;;;; Element Constraints
+(encapsulate (((default-length) => *)
+              ((element-recognizer *) => *)
+              ((initial-element) => *))
+  (local
+    (defun default-length ()
+      (declare (xargs :guard t))
+      0))
+
+  (defthm natp-of-default-length
+    (natp (default-length))
+    :rule-classes :type-prescription)
+
+  (local
+    (defun element-recognizer (element)
+      (declare (xargs :guard t))
+      (integerp element)))
+
+  (local
+    (defun initial-element ()
+      (declare (xargs :guard t))
+      0))
+
+  (defthm element-recognizer-of-initial-element
+    (element-recognizer (initial-element))))
+
+
+;;;; Definitions
+(defun contents-recognizer (contents)
+  (declare (xargs :guard t))
+  (if (atom contents)
+      (equal contents nil)
+      (and (element-recognizer (car contents))
+           (contents-recognizer (cdr contents)))))
+
+(defun recognizer (vector)
+  (declare (xargs :guard t))
+  (and (true-listp vector)
+       (equal (acl2::length vector) 1)
+       (contents-recognizer (nth 0 vector))
+       t))
+
+(defun-nx creator ()
+  (declare (xargs :guard t))
+  (list (make-list (default-length)
+                   :initial-element (initial-element))))
+
+(defun fixer (vector)
+  (declare (xargs :guard (recognizer vector)))
+  (if (recognizer vector)
+      vector
+      (creator)))
+
+(defun length (vector)
+  (declare (xargs :guard (recognizer vector)))
+  (len (nth 0 vector)))
+
+(defun resizer (length vector)
+  (declare (xargs :guard (and (natp length)
+                              (recognizer vector))))
+  (update-nth 0
+              (resize-list (nth 0 vector)
+                           length
+                           (initial-element))
+              vector))
+
+(defun accessor (index vector)
+  (declare (xargs :guard (and (recognizer vector)
+                              (natp index)
+                              (< index (length vector)))))
+  (nth index (nth 0 vector)))
+
+(defun updater (index element vector)
+  (declare (xargs :guard (and (recognizer vector)
+                              (natp index)
+                              (< index (length vector))
+                              (element-recognizer element))))
+  (update-nth-array 0 index element vector))
+
+
+;;;; `CONTENTS-RECOGNIZER'
+(local
+  (defthm contents-recognizer-of-repeat
+    (iff (contents-recognizer (repeat n x))
+         (if (zp n)
+             t
+             (element-recognizer x)))
+    :rule-classes
+    ((:rewrite :corollary
+               (iff (contents-recognizer (repeat n x))
+                    (if (zp (double-rewrite n))
+                        t
+                        (element-recognizer x)))))
+    :hints
+    (("Goal"
+      :in-theory (enable repeat)))))
+
+(local
+  (defthm contents-recognizer-of-resize-list
+    (implies (and (contents-recognizer contents)
+                  (element-recognizer element))
+             (contents-recognizer (resize-list contents length element)))
+    :hints
+    (("Goal"
+      :in-theory (enable resize-list)))))
+
+(local
+  (defthm contents-recognizer-of-update-nth
+    (implies (and (natp index)
+                  (< index (len contents))
+                  (element-recognizer element)
+                  (contents-recognizer contents))
+             (contents-recognizer (update-nth index element contents)))
+    :rule-classes
+    ((:rewrite :corollary
+               (implies (and (natp index)
+                             (< index (len (double-rewrite contents)))
+                             (element-recognizer element)
+                             (contents-recognizer contents))
+                        (contents-recognizer (update-nth index element contents)))))
+    :hints
+    (("Goal"
+      :in-theory (enable update-nth)))))
+
+
+;;;; `RECOGNIZER'
+(defthm recognizer-of-creator
+  (recognizer (creator)))
+
+(defthm recognizer-of-fixer
+  (recognizer (fixer vector)))
+
+(defthm recognizer-of-resizer
+  (implies (recognizer vector)
+           (recognizer (resizer length vector))))
+
+(defthm recognizer-of-updater
+  (implies (and (natp index)
+                (< index (length vector))
+                (element-recognizer element)
+                (recognizer vector))
+           (recognizer (updater index element vector))))
+
+
+;;;; `LENGTH'
+(defthm length-of-creator
+  (equal (length (creator))
+         (default-length)))
+
+(defthm length-of-resizer
+  (implies (natp length)
+           (equal (length (resizer length vector))
+                  length)))
+
+(defthm length-of-updater
+  (implies (and (natp index)
+                (< index (length vector)))
+           (equal (length (updater index element vector))
+                  (length vector))))
+
+
+;;;; `ACCESSOR'
+(defthm accessor-of-creator
+  (implies (and (natp index)
+                (< index (default-length)))
+           (equal (accessor index (creator))
+                  (initial-element))))
+
+(defthm accessor-of-resizer-inner
+  (implies (and (natp index)
+                (natp length)
+                (< index length)
+                (< index (length vector)))
+           (equal (accessor index (resizer length vector))
+                  (accessor index vector))))
+
+(defthm accessor-of-resizer-outer
+  (implies (and (natp index)
+                (natp length)
+                (< index length)
+                (<= (length vector) index))
+           (equal (accessor index (resizer length vector))
+                  (initial-element))))
+
+(defthm accessor-of-updater-same
+  (implies (equal index1 index2)
+           (equal (accessor index1 (updater index2 element vector))
+                  element)))
+
+(defthm accessor-of-updater-diff
+  (implies (and (not (equal index1 index2))
+                (natp index1)
+                (natp index2))
+           (equal (accessor index1 (updater index2 element vector))
+                  (accessor index1 vector))))
+
+
+;;;; Constraints
+(defconst *exports* '(default-length
+                      element-recognizer
+                      initial-element
+                      contents-recognizer
+                      recognizer
+                      creator
+                      fixer
+                      length
+                      resizer
+                      accessor
+                      updater))
+
+(encapsulate ()
+  (local
+    (include-book "../../utilities/top"))
+
+  (make-event
+    `(defconst *constraints*
+       ',(collect-constraint-info *exports* (w state)))))
