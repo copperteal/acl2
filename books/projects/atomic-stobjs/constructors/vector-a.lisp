@@ -336,7 +336,6 @@
             (element1 (symbolicate$ pkg-witness element 1))
             (element2 (symbolicate$ pkg-witness element 2))
             (element-stobj-property (cdr (assoc :element-stobj-property tmp)))
-            (absstobj-info (cdr (assoc :element-absstobj-info tmp)))
             (element-recognizer (access vector$a-property property :element-recognizer))
             (guard-element-recognizer (if element-stobj-property
                                           (access acl2::stobj-property element-stobj-property :recognizer)
@@ -358,15 +357,8 @@
             (updater (access vector$a-property property :updater))
 
             ;; Prologue
-            (vector-begin (cdr (assoc :begin-label tmp)))
-            (vector-end (cdr (assoc :end-label tmp)))
-            (prologue
-             `((deflabel ,vector-begin)
-
-               (defconst ,default-length-name ,default-length)
-
-               ,@(and initial-element-name
-                      `((defconst ,initial-element-name ,initial-element)))))
+            (begin-label (cdr (assoc :begin-label tmp)))
+            (end-label (cdr (assoc :end-label tmp)))
 
             ;; Theorem Names
             (element-recognizer-constraints (symbolicate$ "ATOMIC-STOBJS" element-recognizer "-CONSTRAINTS"))
@@ -456,57 +448,8 @@
             (vector-equal-fc (symbolicate$ pkg-witness vector-equal "-FC"))
 
             ;; Epilogue
-            (vector-theory (symbolicate$ pkg-witness vector "-THEORY"))
+            (theory (symbolicate$ pkg-witness vector "-THEORY"))
             (vector-aggressive (symbolicate$ pkg-witness vector "-AGGRESSIVE"))
-            (epilogue
-             `((deflabel ,vector-end)
-
-               (deftheory-static ,vector-theory
-                 (set-difference-theories
-                  (set-difference-theories
-                   (current-theory ',vector-end)
-                   (current-theory ',vector-begin))
-                  ',(append (and (not resizable)
-                                 element-recognizer
-                                 (list recognizer-aux))
-                            (list recognizer
-                                  creator
-                                  fixer
-                                  equiv
-                                  length
-                                  resizer
-                                  accessor
-                                  updater
-                                  vector-equal))))
-
-               (deftheory-static ,vector-aggressive
-                 ',(append
-                    (list accessor-when-large
-                          accessor-when-not-natp
-                          accessor-when-not-recognizer
-                          accessor-of-updater
-                          updater-when-large
-                          updater-when-not-natp
-                          updater-when-not-recognizer
-                          updater-of-accessor-free
-                          updater-of-updater)
-                    (and element-recognizer
-                         (list updater-when-not-element-recognizer))
-                    (and resizable
-                         (list length-when-not-recognizer
-                               resizer-when-not-natp
-                               resizer-when-not-recognizer
-                               resizer-of-length-free
-                               resizer-of-resizer-split
-                               resizer-of-updater
-                               accessor-of-resizer))))
-
-               (in-theory
-                 (union-theories (current-theory ',vector-begin)
-                                 (theory ',vector-theory)))
-               (in-theory
-                 ;; Ensure `:USE' `VECTOR-EQUAL' automagically works.
-                 (enable ,contents-equal))))
 
             ;; Functional Instantiation
             (fi-bindings
@@ -561,1174 +504,1236 @@
                     (if resizable
                         `(lem-vector$a::contents-equal/resizable-witness ,contents-equal-witness)
                         `(lem-vector$a::contents-equal/fixed-witness ,contents-equal-witness))
-                    fi-bindings))
-
-            (body
-             `(encapsulate ()
-
-                ,@(and element-fixer
-                       element-recognizer
-                       (not (eq element-equiv 'equal))
-                       `((local
-                           (defthm ,element-recognizer-constraints
-                             (and (booleanp (,element-recognizer ,element))
-                                  (,element-recognizer ,initial-element))
-                             :rule-classes
-                             ((:rewrite :corollary
-                                        (booleanp (,element-recognizer ,element)))
-                              ,@(and (not initial-element-name)
-                                     `((:rewrite :corollary
-                                                 (,element-recognizer ,initial-element)))))))
-
-                         (local
-                           (defthm ,element-fixer-constraints
-                             (equal (,element-fixer ,element)
-                                    (if (,element-recognizer ,element)
-                                        ,element
-                                        ,initial-element))))
-
-                         (local
-                           (defthm ,element-equiv-constraints
-                             (equal (,element-equiv ,element1 ,element2)
-                                    (equal (,element-fixer ,element1)
-                                           (,element-fixer ,element2)))
-                             :rule-classes
-                             ((:rewrite :match-free :all))
-                             :hints
-                             (("Goal"
-                               :in-theory (enable ,element-equiv)))))))
-
-                (local
-                  (deflabel end-of-prologue))
-
-                (local
-                  (include-book "projects/atomic-stobjs/lemmas/vector-a" :dir :system))
-
-                (local
-                  (table acl2::theory-invariant-table nil nil :clear))
-
-                (local
-                  (in-theory
-                    (union-theories (current-theory 'acl2::ground-zero)
-                                    (set-difference-theories
-                                     (universal-theory 'end-of-prologue)
-                                     (universal-theory ',vector-begin)))))
-
-                ,@(and absstobj-info
-                       `((local
-                           (in-theory
-                             (enable ,@(strip-cars (cdr absstobj-info)))))))
-
-                (local
-                  (in-theory
-                    (disable make-list-ac
-                             (:e make-list-ac))))
-
-                ,@(and element-recognizer
-                       `((local
-                           (in-theory
-                             (enable (:e ,element-recognizer))))))
-
-                ;; Fixed-length vectors with specialized elements need a
-                ;; predicate to check element-wise validity.
-                ,@(and (not resizable)
-                       element-recognizer
-                       `((defun ,recognizer-aux (,vector)
-                           (declare (xargs :guard t))
-                           (if (consp ,vector)
-                               (and (,element-recognizer (car ,vector))
-                                    (,recognizer-aux (cdr ,vector)))
-                               (null ,vector)))
-
-                         (local
-                           (defthm ,recognizer-aux-tp
-                             (booleanp (,recognizer-aux ,vector))
-                             :rule-classes :type-prescription
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance lem-vector$a::recognizer-aux-tp
-                                                         (lem-vector$a::recognizer-aux ,recognizer-aux)
-                                                         (lem-vector$a::element-recognizer ,element-recognizer))))))
-
-                         (local
-                           (defthm ,recognizer-aux-cr
-                             (implies (,recognizer-aux ,vector)
-                                      (true-listp ,vector))
-                             :rule-classes :compound-recognizer
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance lem-vector$a::recognizer-aux-cr
-                                                         (lem-vector$a::recognizer-aux ,recognizer-aux)
-                                                         (lem-vector$a::element-recognizer ,element-recognizer))))))
-
-                         (local
-                           (defthm ,element-recognizer-of-nth-when-recognizer-aux
-                             (implies (and (,recognizer-aux ,vector)
-                                           (natp ,index)
-                                           (< ,index (len ,vector)))
-                                      (,element-recognizer (nth ,index ,vector)))
-                             :hints
-                             (("Goal"
-                               :by (:functional-instance lem-vector$a::element-recognizer-of-nth-when-recognizer-aux
-                                                         (lem-vector$a::recognizer-aux ,recognizer-aux)
-                                                         (lem-vector$a::element-recognizer ,element-recognizer))))))))
-
-                (defun ,recognizer (,vector)
-                  (declare (xargs :guard t))
-                  ,(if resizable
-                       (if element-recognizer
-                           `(if (consp ,vector)
-                                (and (,element-recognizer (car ,vector))
-                                     (,recognizer (cdr ,vector)))
-                                (null ,vector))
-                           `(true-listp ,vector))
-                       (if element-recognizer
-                           `(and (= (len ,vector) ,default-length-name)
-                                 (,recognizer-aux ,vector))
-                           `(and (= (len ,vector) ,default-length-name)
-                                 (true-listp ,vector)))))
-
-                (defun-nx ,creator ()
-                  ;; We don't want to frequently allocate large list literals
-                  ;; in proofs.
-                  (declare (xargs :guard t))
-                  (make-list ,default-length-name
-                             :initial-element ,initial-element))
-
-                (defun ,fixer (,vector)
-                  (declare (xargs :guard (,recognizer ,vector)))
-                  (if (,recognizer ,vector)
-                      ,vector
-                      (,creator)))
-
-                (defun ,equiv (,%vector ,vector)
-                  (declare (xargs :guard (and (,recognizer ,%vector)
-                                              (,recognizer ,vector))))
-                  (equal (,fixer ,%vector)
-                         (,fixer ,vector)))
-
-                (defun ,length (,vector)
-                  (declare (xargs :guard (,recognizer ,vector))
-                           ,@(and (not resizable)
-                                  `((ignore ,vector))))
-                  ,(if resizable
-                       `(len (,fixer ,vector))
-                       default-length-name))
-
-                (defun ,resizer (length ,vector)
-                  (declare (xargs :guard (and (natp length)
-                                              (,recognizer ,vector)))
-                           ,@(and (not resizable)
-                                  `((ignore length))))
-                  ,(if resizable
-                       `(let ((length (nfix length))
-                              (,vector (,fixer ,vector)))
-                          (resize-list ,vector length ,initial-element))
-                       `(,fixer ,vector)))
-
-                (defun ,accessor (,index ,vector)
-                  (declare (xargs :guard (and (natp ,index)
-                                              (,recognizer ,vector)
-                                              (< ,index ,(if resizable
-                                                             `(,length ,vector)
-                                                             default-length-name)))))
-                  (let ((,index (nfix ,index))
-                        (,vector (,fixer ,vector)))
-                    (if (< ,index ,(if resizable
-                                       `(,length ,vector)
-                                       default-length-name))
-                        ,(if element-fixer
-                             `(,element-fixer (nth ,index ,vector))
-                             `(nth ,index ,vector))
-                        ,initial-element)))
-
-                (defun ,updater (,index ,element ,vector)
-                  (declare (xargs :guard (and (natp ,index)
-                                              ,@(and guard-element-recognizer
-                                                     `((,guard-element-recognizer ,element)))
-                                              (,recognizer ,vector)
-                                              (< ,index ,(if resizable
-                                                             `(,length ,vector)
-                                                             default-length-name)))))
-                  (let ((,index (nfix ,index))
-                        ,@(and element-fixer
-                               `((,element (,element-fixer ,element))))
-                        (,vector (,fixer ,vector)))
-                    (if (< ,index ,(if resizable
-                                       `(,length ,vector)
-                                       default-length-name))
-                        (update-nth ,index ,element ,vector)
-                        ,vector)))
-
-                (local
-                  (defthm ,vector-constraints
-                    (and ,@(and (not resizable)
-                                element-recognizer
-                                `((equal (,recognizer-aux ,vector)
-                                         (if (consp ,vector)
-                                             (if (,element-recognizer (car ,vector))
-                                                 (,recognizer-aux (cdr ,vector))
-                                                 'nil)
-                                             (null ,vector)))))
-                         (equal (,creator)
-                                (make-list-ac ,default-length ,initial-element 'nil))
-                         (equal (,recognizer ,vector)
-                                ,(cond
-                                   ((and (not resizable)
-                                         element-recognizer)
-                                    `(if (equal (len ,vector) ,default-length)
-                                         (,recognizer-aux ,vector)
-                                         'nil))
-                                   ((not resizable)
-                                    `(if (equal (len ,vector) ,default-length)
-                                         (true-listp ,vector)
-                                         'nil))
-                                   (element-recognizer
-                                    `(if (consp ,vector)
-                                         (if (,element-recognizer (car ,vector))
-                                             (,recognizer (cdr ,vector))
-                                             'nil)
-                                         (null ,vector)))
-                                   (t
-                                    `(true-listp ,vector))))
-                         (equal (,fixer ,vector)
-                                (if (,recognizer ,vector)
-                                    ,vector
-                                    (,creator)))
-                         (equal (,equiv ,%vector ,vector)
-                                (equal (,fixer ,%vector)
-                                       (,fixer ,vector)))
-                         (equal (,length ,vector)
-                                ,(if resizable
-                                     `(len (,fixer ,vector))
-                                     default-length-name))
-                         (equal (,resizer length ,vector)
-                                ,(if resizable
-                                     `((lambda (length ,vector)
-                                         (resize-list ,vector length ,initial-element))
-                                       (nfix length)
-                                       (,fixer ,vector))
-                                     `(,fixer ,vector)))
-                         (equal (,accessor ,index ,vector)
-                                ((lambda (,index ,vector)
-                                   (if (< ,index ,(if resizable
-                                                      `(,length ,vector)
-                                                      default-length-name))
-                                       ,(if element-fixer
-                                            `(,element-fixer (nth ,index ,vector))
-                                            `(nth ,index ,vector))
-                                       ,initial-element))
-                                 (nfix ,index)
-                                 (,fixer ,vector)))
-                         (equal (,updater ,index ,element ,vector)
-                                ((lambda (,index ,element ,vector)
-                                   (if (< ,index ,(if resizable
-                                                      `(,length ,vector)
-                                                      default-length-name))
-                                       (update-nth ,index ,element ,vector)
-                                       ,vector))
-                                 (nfix ,index)
-                                 ,(if element-fixer
-                                      `(,element-fixer ,element)
-                                      element)
-                                 (,fixer ,vector))))
-                    :rule-classes ()
-                    :hints
-                    (("Goal"
-                      :do-not-induct t
-                      :use (:functional-instance
-                            ,(if resizable
-                                 'lem-vector$a::vector-constraints/resizable
-                                 'lem-vector$a::vector-constraints/fixed)
-                            ,@fi-bindings)))))
-
-                (local
-                  (in-theory
-                    (disable ,@(and (not resizable)
-                                    element-recognizer
-                                    (list recognizer-aux))
-                             ,recognizer
-                             ,creator
-                             ,fixer
-                             ,equiv
-                             ,length
-                             ,resizer
-                             ,accessor
-                             ,updater)))
-
-                ;; `RECOGNIZER'
-                (defthm ,recognizer-tp
-                  (booleanp (,recognizer ,vector))
-                  :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::recognizer/resizable-tp
-                              'lem-vector$a::recognizer/fixed-tp)
-                         ,@fi-bindings))))
-
-                (defthm ,recognizer-cr
-                  (implies (,recognizer ,vector)
-                           (true-listp ,vector))
-                  :rule-classes :compound-recognizer
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::recognizer/resizable-cr
-                              'lem-vector$a::recognizer/fixed-cr)
-                         ,@fi-bindings))))
-
-                (defthm ,recognizer-of-creator
-                  (,recognizer (,creator))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::recognizer/resizable-of-creator
-                              'lem-vector$a::recognizer/fixed-of-creator)
-                         ,@fi-bindings))))
-
-                (defthm ,recognizer-of-fixer
-                  (,recognizer (,fixer ,vector))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::recognizer/resizable-of-fixer/resizable
-                              'lem-vector$a::recognizer/fixed-of-fixer/fixed)
-                         ,@fi-bindings))))
-
-                ,@(and resizable
-                       ;; The resizer of a fixed-length vector is always rewritten.
-                       `((defthm ,recognizer-of-resizer
-                           (,recognizer (,resizer length ,vector))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$a::recognizer/resizable-of-resizer/resizable
-                                  ,@fi-bindings))))))
-
-                (defthm ,recognizer-of-updater
-                  (,recognizer (,updater ,index ,element ,vector))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::recognizer/resizable-of-updater/resizable
-                              'lem-vector$a::recognizer/fixed-of-updater/fixed)
-                         ,@fi-bindings))))
-
-                ;; `FIXER'
-                (defthm ,fixer-tp
-                  (true-listp (,fixer ,vector))
-                  :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::fixer/resizable-tp
-                              'lem-vector$a::fixer/fixed-tp)
-                         ,@fi-bindings))))
-
-                (defthm ,fixer-when-recognizer
-                  (implies (,recognizer ,vector)
-                           (equal (,fixer ,vector)
-                                  ,vector))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::fixer/resizable-when-recognizer/resizable
-                              'lem-vector$a::fixer/fixed-when-recognizer/fixed)
-                         ,@fi-bindings))))
-
-                (defthm ,fixer-when-not-recognizer
-                  (implies (not (,recognizer ,vector))
-                           (equal (,fixer ,vector)
-                                  (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::fixer/resizable-when-not-recognizer/resizable
-                              'lem-vector$a::fixer/fixed-when-not-recognizer/fixed)
-                         ,@fi-bindings))))
-
-                ;; `EQUIV'
-                (defthm ,equiv-tp
-                  (booleanp (,equiv ,%vector ,vector))
-                  :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equiv/resizable-tp
-                              'lem-vector$a::equiv/fixed-tp)
-                         ,@fi-bindings))))
-
-                (defequiv ,equiv
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equiv/resizable-is-an-equivalence
-                              'lem-vector$a::equiv/fixed-is-an-equivalence)
-                         ,@fi-bindings))))
-
-                (defcong ,equiv equal (,fixer ,vector) 1
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equiv/resizable-implies-equal-fixer/resizable-1
-                              'lem-vector$a::equiv/fixed-implies-equal-fixer/fixed-1)
-                         ,@fi-bindings))))
-
-                (defthm ,fixer-mod-equiv
-                  (,equiv (,fixer ,vector) ,vector)
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::fixer/resizable-mod-equiv/resizable
-                              'lem-vector$a::fixer/fixed-mod-equiv/fixed)
-                         ,@fi-bindings))))
-
-                (defthm ,equiv-when-not-recognizer
-                  (implies (not (,recognizer ,vector))
-                           (,equiv ,vector (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equiv/resizable-when-not-recognizer/resizable
-                              'lem-vector$a::equiv/fixed-when-not-recognizer/fixed)
-                         ,@fi-bindings))))
-
-                ;; `LENGTH'
-                (defthm ,length-tp
-                  (natp (,length ,vector))
-                  :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::length/resizable-tp
-                              'lem-vector$a::length/fixed-tp)
-                         ,@fi-bindings))))
-
-                ,@(if resizable
-                      `((defcong ,equiv equal (,length ,vector) 1
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::equiv/resizable-implies-equal-length/resizable-1
-                                 ,@fi-bindings))))
-
-                        (defthmd ,length-when-not-recognizer
-                          (implies (not (,recognizer ,vector))
-                                   (equal (,length ,vector)
-                                          ,default-length-name))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::length/resizable-when-not-recognizer/resizable
-                                 ,@fi-bindings))))
-
-                        (defthm ,length-of-creator
-                          (equal (,length (,creator))
-                                 ,default-length-name)
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::length/resizable-of-creator
-                                 ,@fi-bindings))))
-
-                        (defthm ,length-of-resizer
-                          (equal (,length (,resizer length ,vector))
-                                 (nfix length))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (equal (,length (,resizer length ,vector))
-                                            (nfix (double-rewrite length)))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::length/resizable-of-resizer/resizable
-                                 ,@fi-bindings))))
-
-                        (defthm ,length-of-updater
-                          (equal (,length (,updater ,index ,element ,vector))
-                                 (,length ,vector))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (equal (,length (,updater ,index ,element ,vector))
-                                            (,length (double-rewrite ,vector)))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::length/resizable-of-updater/resizable
-                                 ,@fi-bindings)))))
-
-                      `((defthm ,length-rw
-                          (equal (,length ,vector)
-                                 ,default-length-name)
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::length/fixed-rw
-                                 ,@fi-bindings))))))
-
-                ;; `RESIZER'
-                (defthm ,resizer-tp
-                  (true-listp (,resizer length ,vector))
-                  :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::resizer/resizable-tp
-                              'lem-vector$a::resizer/fixed-tp)
-                         ,@fi-bindings))))
-
-                ,@(if resizable
-                      ;; TODO: generate `LENGTH' in current package
-                      `((defcong nat-equiv equal (,resizer length ,vector) 1
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::nat-equiv-implies-equal-resizer/resizable-1
-                                 ,@fi-bindings))))
-
-                        (defcong ,equiv equal (,resizer length ,vector) 2
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::equiv/resizable-implies-equal-resizer/resizable-2
-                                 ,@fi-bindings))))
-
-                        (defthmd ,resizer-when-not-natp
-                          (implies (not (natp length))
-                                   (equal (,resizer length ,vector)
-                                          (,resizer 0 ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-when-not-natp
-                                 ,@fi-bindings))))
-
-                        (defthmd ,resizer-when-not-recognizer
-                          (implies (not (,recognizer ,vector))
-                                   (equal (,resizer length ,vector)
-                                          (,resizer length (,creator))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-when-not-recognizer/resizable
-                                 ,@fi-bindings))))
-
-                        (defthm ,resizer-of-creator
-                          (implies (nat-equiv length ,default-length-name)
-                                   (equal (,resizer length (,creator))
-                                          (,creator)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-creator
-                                 ,@fi-bindings))))
-
-                        (defthmd ,resizer-of-length-free
-                          (implies (nat-equiv length (,length ,vector))
-                                   (equal (,resizer length ,vector)
-                                          (,fixer ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-length/resizable-free
-                                 ,@fi-bindings))))
-
-                        (defthm ,resizer-of-length
-                          (implies (,equiv ,%vector ,vector)
-                                   (equal (,resizer (,length ,%vector) ,vector)
-                                          (,fixer ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-length/resizable
-                                 ,@fi-bindings))))
-
-                        (defthmd ,resizer-of-resizer-split
-                          (implies (or (<= (nfix length1) (nfix length2))
-                                       (<= (,length ,vector) (nfix length2)))
-                                   (equal (,resizer length1 (,resizer length2 ,vector))
-                                          (,resizer length1 ,vector)))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (implies (case-split (or (<= (nfix length1) (nfix length2))
-                                                              (<= (,length ,vector) (nfix length2))))
-                                              (equal (,resizer length1 (,resizer length2 ,vector))
-                                                     (,resizer length1 ,vector)))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-resizer/resizable
-                                 ,@fi-bindings))))
-
-                        (defthm ,resizer-of-resizer
-                          (implies (or (<= (nfix length1) (nfix length2))
-                                       (<= (,length ,vector) (nfix length2)))
-                                   (equal (,resizer length1 (,resizer length2 ,vector))
-                                          (,resizer length1 ,vector)))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-resizer/resizable
-                                 ,@fi-bindings))))
-
-                        (defthmd ,resizer-of-updater
-                          (equal (,resizer length (,updater ,index ,element ,vector))
-                                 (if (and (< (nfix ,index) (,length ,vector))
-                                          (< (nfix ,index) (nfix length)))
-                                     (,updater ,index ,element (,resizer length ,vector))
-                                     (,resizer length ,vector)))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (equal (,resizer length (,updater ,index ,element ,vector))
-                                            (if (and (< (nfix (double-rewrite ,index)) (,length (double-rewrite ,vector)))
-                                                     (< (nfix (double-rewrite ,index)) (nfix length)))
-                                                (,updater ,index ,element (,resizer length (double-rewrite ,vector)))
-                                                (,resizer length (double-rewrite ,vector))))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-updater/resizable
-                                 ,@fi-bindings))))
-
-                        (defthm ,resizer-of-updater-keep
-                          (implies (and (< (nfix ,index) (,length ,vector))
-                                        (< (nfix ,index) (nfix length)))
-                                   (equal (,resizer length (,updater ,index ,element ,vector))
-                                          (,updater ,index ,element (,resizer length ,vector))))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (implies (and (< (nfix (double-rewrite ,index)) (,length (double-rewrite ,vector)))
-                                                   (< (nfix (double-rewrite ,index)) (nfix length)))
-                                              (equal (,resizer length (,updater ,index ,element ,vector))
-                                                     (,updater ,index ,element (,resizer length (double-rewrite ,vector)))))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-updater/resizable-keep
-                                 ,@fi-bindings))))
-
-                        (defthm ,resizer-of-updater-drop
-                          (implies (and (< (nfix ,index) (,length ,vector))
-                                        (<= (nfix length) (nfix ,index)))
-                                   (equal (,resizer length (,updater ,index ,element ,vector))
-                                          (,resizer length ,vector)))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (implies (and (< (nfix (double-rewrite ,index)) (,length (double-rewrite ,vector)))
-                                                   (<= (nfix length) (nfix (double-rewrite ,index))))
-                                              (equal (,resizer length (,updater ,index ,element ,vector))
-                                                     (,resizer length (double-rewrite ,vector))))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/resizable-of-updater/resizable-drop
-                                 ,@fi-bindings)))))
-
-                      `((defthm ,resizer-rw
-                          (equal (,resizer length ,vector)
-                                 (,fixer ,vector))
-                          :rule-classes
-                          ((:rewrite :corollary
-                                     (equal (,resizer length ,vector)
-                                            (,fixer (double-rewrite ,vector)))))
-                          :hints
-                          (("Goal"
-                            :by (:functional-instance
-                                 lem-vector$a::resizer/fixed-rw
-                                 ,@fi-bindings))))))
-
-                ;; `ACCESSOR'
-                ,@(and element-recognizer
-                       `((defthm ,element-recognizer-of-accessor
-                           (,element-recognizer (,accessor ,index ,vector))
-                           :rule-classes
-                           (:rewrite
-                            :type-prescription)
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  ,(if resizable
-                                       'lem-vector$a::element-recognizer-of-accessor/resizable
-                                       'lem-vector$a::element-recognizer-of-accessor/fixed)
-                                  ,@fi-bindings))))))
-
-                (defcong nat-equiv equal (,accessor ,index ,vector) 1
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::nat-equiv-implies-equal-accessor/resizable-1
-                              'lem-vector$a::nat-equiv-implies-equal-accessor/fixed-1)
-                         ,@fi-bindings))))
-
-                (defcong ,equiv equal (,accessor ,index ,vector) 2
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equiv/resizable-implies-equal-accessor/resizable-2
-                              'lem-vector$a::equiv/fixed-implies-equal-accessor/fixed-2)
-                         ,@fi-bindings))))
-
-                (defthmd ,accessor-when-large
-                  (implies (<= ,(if resizable
-                                    `(,length ,vector)
-                                    default-length-name)
-                               (nfix ,index))
-                           (equal (,accessor ,index ,vector)
-                                  ,initial-element))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-when-large
-                              'lem-vector$a::accessor/fixed-when-large)
-                         ,@fi-bindings))))
-
-                (defthmd ,accessor-when-not-natp
-                  (implies (not (natp ,index))
-                           (equal (,accessor ,index ,vector)
-                                  (,accessor 0 ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-when-not-natp
-                              'lem-vector$a::accessor/fixed-when-not-natp)
-                         ,@fi-bindings))))
-
-                (defthmd ,accessor-when-not-recognizer
-                  (implies (not (,recognizer ,vector))
-                           (equal (,accessor ,index ,vector)
-                                  ,initial-element))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-when-not-recognizer/resizable
-                              'lem-vector$a::accessor/fixed-when-not-recognizer/fixed)
-                         ,@fi-bindings))))
-
-                (defthm ,accessor-of-creator
-                  (equal (,accessor ,index (,creator))
-                         ,initial-element)
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-of-creator
-                              'lem-vector$a::accessor/fixed-of-creator)
-                         ,@fi-bindings))))
-
-                ,@(and resizable
-                       `((defthmd ,accessor-of-resizer
-                           (equal (,accessor ,index (,resizer length ,vector))
-                                  (if (< (nfix ,index) (nfix length))
-                                      (,accessor ,index ,vector)
-                                      ,initial-element))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$a::accessor/resizable-of-resizer/resizable
-                                  ,@fi-bindings))))
-
-                         (defthm ,accessor-of-resizer-wh
-                           (implies (< (nfix ,index) (nfix length))
-                                    (equal (,accessor ,index (,resizer length ,vector))
-                                           (,accessor ,index ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  lem-vector$a::accessor/resizable-of-resizer/resizable-wh
-                                  ,@fi-bindings))))))
-
-                (defthmd ,accessor-of-updater
-                  (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
-                         (cond
-                           ((<= ,(if resizable
-                                     `(,length ,vector)
-                                     default-length-name)
-                                (nfix ,index1))
-                            ,initial-element)
-                           ((nat-equiv ,index1 ,index2)
-                            ,(if element-fixer
-                                 `(,element-fixer ,element)
-                                 element))
-                           (t
-                            (,accessor ,index1 ,vector))))
-                  :rule-classes
-                  ((:rewrite :corollary
-                             (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
-                                    (cond
-                                      ((<= ,(if resizable
-                                                `(,length (double-rewrite ,vector))
-                                                default-length-name)
-                                           (nfix ,index1))
-                                       ,initial-element)
-                                      ((nat-equiv ,index1 (double-rewrite ,index2))
-                                       ,(if element-fixer
-                                            `(,element-fixer (double-rewrite ,element))
-                                            element))
-                                      (t
-                                       (,accessor ,index1 (double-rewrite ,vector)))))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-of-updater/resizable
-                              'lem-vector$a::accessor/fixed-of-updater/fixed)
-                         ,@fi-bindings))))
-
-                (defthm ,accessor-of-updater-same
-                  (implies (and (nat-equiv ,index1 ,index2)
-                                (< (nfix ,index1)
-                                   ,(if resizable
-                                        `(,length ,vector)
-                                        default-length-name)))
-                           (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
-                                  ,(if element-fixer
-                                       `(,element-fixer ,element)
-                                       element)))
-                  :rule-classes
-                  ((:rewrite :corollary
-                             (implies (and (nat-equiv ,index1 (double-rewrite ,index2))
-                                           (< (nfix ,index1) ,(if resizable
-                                                                  `(,length (double-rewrite ,vector))
-                                                                  default-length-name)))
-                                      (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
-                                             ,(if element-fixer
-                                                  `(,element-fixer (double-rewrite ,element))
-                                                  element)))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-of-updater/resizable-same
-                              'lem-vector$a::accessor/fixed-of-updater/fixed-same)
-                         ,@fi-bindings))))
-
-                (defthm ,accessor-of-updater-diff
-                  (implies (and (not (nat-equiv ,index1 ,index2))
-                                (< (nfix ,index1) ,(if resizable
-                                                       `(,length ,vector)
-                                                       default-length-name)))
-                           (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
-                                  (,accessor ,index1 ,vector)))
-                  :rule-classes
-                  ((:rewrite :corollary
-                             (implies (and (not (nat-equiv ,index1 (double-rewrite ,index2)))
-                                           (< (nfix ,index1) ,(if resizable
-                                                                  `(,length (double-rewrite ,vector))
-                                                                  default-length-name)))
-                                      (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
-                                             (,accessor ,index1 (double-rewrite ,vector))))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::accessor/resizable-of-updater/resizable-diff
-                              'lem-vector$a::accessor/fixed-of-updater/fixed-diff)
-                         ,@fi-bindings))))
-
-                ;; `UPDATER'
-                (defthm ,updater-tp
-                  (true-listp (,updater ,index ,element ,vector))
-                  :rule-classes :type-prescription
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-tp
-                              'lem-vector$a::updater/fixed-tp)
-                         ,@fi-bindings))))
-
-                (defcong nat-equiv equal (,updater ,index ,element ,vector) 1
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::nat-equiv-implies-equal-updater/resizable-1
-                              'lem-vector$a::nat-equiv-implies-equal-updater/fixed-1)
-                         ,@fi-bindings))))
-
-                ,@(and (not (eq element-equiv 'equal))
-                       element-recognizer
-                       element-fixer
-                       `((defcong ,element-equiv equal (,updater ,index ,element ,vector) 2
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  ,(if resizable
-                                       'lem-vector$a::element-equiv-implies-equal-updater/resizable-2
-                                       'lem-vector$a::element-equiv-implies-equal-updater/fixed-2)
-                                  ,@fi-bindings))))))
-
-                (defcong ,equiv equal (,updater ,index ,element ,vector) 3
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equiv/resizable-implies-equal-updater/resizable-3
-                              'lem-vector$a::equiv/fixed-implies-equal-updater/fixed-3)
-                         ,@fi-bindings))))
-
-                (defthmd ,updater-when-large
-                  (implies (<= ,(if resizable
-                                    `(,length ,vector)
-                                    default-length-name)
-                               (nfix ,index))
-                           (equal (,updater ,index ,element ,vector)
-                                  (,fixer ,vector)))
-                  :rule-classes
-                  ((:rewrite :corollary
-                             (implies (<= ,(if resizable
-                                               `(,length (double-rewrite ,vector))
-                                               default-length-name)
-                                          (nfix (double-rewrite ,index)))
-                                      (equal (,updater ,index ,element ,vector)
-                                             (,fixer (double-rewrite ,vector))))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-when-large
-                              'lem-vector$a::updater/fixed-when-large)
-                         ,@fi-bindings))))
-
-                (defthmd ,updater-when-not-natp
-                  (implies (not (natp ,index))
-                           (equal (,updater ,index ,element ,vector)
-                                  (,updater 0 ,element ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-when-not-natp
-                              'lem-vector$a::updater/fixed-when-not-natp)
-                         ,@fi-bindings))))
-
-                ,@(and element-recognizer
-                       `((defthmd ,updater-when-not-element-recognizer
-                           (implies (not (,element-recognizer ,element))
-                                    (equal (,updater ,index ,element ,vector)
-                                           (,updater ,index ,initial-element ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  ,(if resizable
-                                       'lem-vector$a::updater/resizable-when-not-element-recognizer
-                                       'lem-vector$a::updater/fixed-when-not-element-recognizer)
-                                  ,@fi-bindings))))))
-
-                (defthmd ,updater-when-not-recognizer
-                  (implies (not (,recognizer ,vector))
-                           (equal (,updater ,index ,element ,vector)
-                                  (,updater ,index ,element (,creator))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-when-not-recognizer/resizable
-                              'lem-vector$a::updater/fixed-when-not-recognizer/fixed)
-                         ,@fi-bindings))))
-
-                (defthm ,updater-of-creator
-                  (implies (,element-equiv ,element ,initial-element)
-                           (equal (,updater ,index ,element (,creator))
-                                  (,creator)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-of-creator
-                              'lem-vector$a::updater/fixed-of-creator)
-                         ,@fi-bindings))))
-
-                ,@(and resizable
-                       `((defthm ,updater-of-resizer
-                           (implies (,element-equiv ,element (,accessor ,index ,vector))
-                                    (equal (,updater ,index ,element (,resizer length ,vector))
-                                           (,resizer length ,vector)))
-                           :hints
-                           (("Goal"
-                             :by (:functional-instance
-                                  ,(if resizable
-                                       'lem-vector$a::updater/resizable-of-resizer/resizable
-                                       'lem-vector$a::updater/fixed-of-resizer/fixed)
-                                  ,@fi-bindings))))))
-
-                (defthmd ,updater-of-accessor-free
-                  (implies (,element-equiv ,element (,accessor ,index ,vector))
-                           (equal (,updater ,index ,element ,vector)
-                                  (,fixer ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-of-accessor/resizable-free
-                              'lem-vector$a::updater/fixed-of-accessor/fixed-free)
-                         ,@fi-bindings))))
-
-                (defthm ,updater-of-accessor
-                  (implies (and (nat-equiv ,index1 ,index2)
-                                (,equiv ,%vector ,vector))
-                           (equal (,updater ,index1 (,accessor ,index2 ,%vector) ,vector)
-                                  (,fixer ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-of-accessor/resizable
-                              'lem-vector$a::updater/fixed-of-accessor/fixed)
-                         ,@fi-bindings))))
-
-                (defthmd ,updater-of-updater
-                  (equal (,updater ,index1 ,element1 (,updater ,index2 ,element2 ,vector))
-                         (if (nat-equiv ,index1 ,index2)
-                             (,updater ,index1 ,element1 ,vector)
-                             (,updater ,index2 ,element2 (,updater ,index1 ,element1 ,vector))))
-                  :rule-classes
-                  ((:rewrite :loop-stopper ((,index1 ,index2 ,updater))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-of-updater/resizable
-                              'lem-vector$a::updater/fixed-of-updater/fixed)
-                         ,@fi-bindings))))
-
-                (defthm ,updater-of-updater-same
-                  (implies (nat-equiv ,index1 ,index2)
-                           (equal (,updater ,index1 ,element1 (,updater ,index2 ,element2 ,vector))
-                                  (,updater ,index1 ,element1 ,vector)))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-of-updater/resizable-same
-                              'lem-vector$a::updater/fixed-of-updater/fixed-same)
-                         ,@fi-bindings))))
-
-                (defthm ,updater-of-updater-diff
-                  (implies (not (nat-equiv ,index1 ,index2))
-                           (equal (,updater ,index1 ,element1 (,updater ,index2 ,element2 ,vector))
-                                  (,updater ,index2 ,element2 (,updater ,index1 ,element1 ,vector))))
-                  :rule-classes
-                  ((:rewrite :loop-stopper ((,index1 ,index2 ,updater))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::updater/resizable-of-updater/resizable-diff
-                              'lem-vector$a::updater/fixed-of-updater/fixed-diff)
-                         ,@fi-bindings))))
-
-                ;; `VECTOR-EQUAL'
-                (defun-sk ,contents-equal (,%vector ,vector)
-                  (declare (xargs :guard (and (,recognizer ,%vector)
-                                              (,recognizer ,vector))
-                                  :verify-guards nil))
-                  (forall ,index
-                    (equal (,accessor ,index ,%vector)
-                           (,accessor ,index ,vector)))
-                  :rewrite :direct)
-
-                (defun-nx ,vector-equal (,%vector ,vector)
-                  (declare (xargs :guard (and (,recognizer ,%vector)
-                                              (,recognizer ,vector))
-                                  :verify-guards nil))
-                  (and (,recognizer ,%vector)
-                       (,recognizer ,vector)
-                       ,@(and resizable
-                              `((= (,length ,%vector)
-                                   (,length ,vector))))
-                       (,contents-equal ,%vector ,vector)))
-
-                (table equality ',vector ',vector-equal)
-
-                (local
-                  (defthm ,vector-equal-constraints
-                    (and (equal (,contents-equal ,%vector ,vector)
-                                ((lambda (,index ,vector ,%vector)
-                                   (equal (,accessor ,index ,%vector)
-                                          (,accessor ,index ,vector)))
-                                 (,contents-equal-witness ,%vector ,vector)
-                                 ,vector ,%vector))
-                         (implies (,contents-equal ,%vector ,vector)
-                                  (equal (,accessor ,index ,%vector)
-                                         (,accessor ,index ,vector)))
-                         (equal (,vector-equal ,%vector ,vector)
-                                (if (,recognizer ,%vector)
-                                    (if (,recognizer ,vector)
-                                        ,(if resizable
-                                             `(if (equal (,length ,%vector)
-                                                         (,length ,vector))
-                                                  (,contents-equal ,%vector ,vector)
-                                                  'nil)
-                                             `(,contents-equal ,%vector ,vector))
-                                        'nil)
-                                    'nil)))
-                    :rule-classes ()
-                    :hints
-                    (("Goal"
-                      :in-theory (disable ,contents-equal)
-                      :use (:instance (:functional-instance
-                                       ,(if resizable
-                                            'lem-vector$a::equal-constraints/resizable
-                                            'lem-vector$a::equal-constraints/fixed)
-                                       ,@fi-bindings-with-skolem)
-                                      (lem-vector$a::index ,index)
-                                      (lem-vector$a::%vector ,%vector)
-                                      (lem-vector$a::vector ,vector)))
-                     ("Subgoal 1"
-                      :in-theory (enable ,contents-equal)))))
-
-                (local
-                  (in-theory
-                    (disable ,contents-equal
-                             ,vector-equal)))
-
-                (defthm ,vector-equal-fc
-                  (implies (,vector-equal ,%vector ,vector)
-                           (equal ,%vector ,vector))
-                  :rule-classes
-                  ((:forward-chaining :trigger-terms
-                                      ((,vector-equal ,%vector ,vector))
-                                      :corollary
-                                      (implies t
-                                               (implies (,vector-equal ,%vector ,vector)
-                                                        (equal ,%vector ,vector)))))
-                  :hints
-                  (("Goal"
-                    :by (:functional-instance
-                         ,(if resizable
-                              'lem-vector$a::equal/resizable-fc
-                              'lem-vector$a::equal/fixed-fc)
-                         ,@fi-bindings-with-skolem))))))
-
-            (stobj$a-property property))
+                    fi-bindings)))
 
          `(progn
-            ,@prologue
+            (deflabel ,begin-label)
 
-            ,body
+            ,@(let ((default-length-name (access vector$a-property
+                                                 property
+                                                 :default-length))
+                    (default-length (cdr (assoc :default-length-val tmp))))
+                (and (not (getpropc default-length-name 'acl2::const))
+                     `((defconst ,default-length-name ,default-length))))
 
-            ,@epilogue
+            ,@(let ((initial-element-name (access vector$a-property
+                                                  property
+                                                  :initial-element))
+                    (initial-element (cdr (assoc :initial-element-val tmp))))
+                (and (not element-stobj-property)
+                     initial-element-name
+                     `((defconst ,initial-element-name ,initial-element))))
 
-            (table stobj$a ',vector ',stobj$a-property))))))
+            (encapsulate ()
+
+              ,@(and element-fixer
+                     element-recognizer
+                     (not (eq element-equiv 'equal))
+                     `((local
+                         (defthm ,element-recognizer-constraints
+                           (and (booleanp (,element-recognizer ,element))
+                                (,element-recognizer ,initial-element))
+                           :rule-classes
+                           ((:rewrite :corollary
+                                      (booleanp (,element-recognizer ,element)))
+                            ,@(and (not initial-element-name)
+                                   `((:rewrite :corollary
+                                               (,element-recognizer ,initial-element)))))))
+
+                       (local
+                         (defthm ,element-fixer-constraints
+                           (equal (,element-fixer ,element)
+                                  (if (,element-recognizer ,element)
+                                      ,element
+                                      ,initial-element))))
+
+                       (local
+                         (defthm ,element-equiv-constraints
+                           (equal (,element-equiv ,element1 ,element2)
+                                  (equal (,element-fixer ,element1)
+                                         (,element-fixer ,element2)))
+                           :rule-classes
+                           ((:rewrite :match-free :all))
+                           :hints
+                           (("Goal"
+                             :in-theory (enable ,element-equiv)))))))
+
+              (local
+                (deflabel end-of-prologue))
+
+              (local
+                (include-book "projects/atomic-stobjs/lemmas/vector-a" :dir :system))
+
+              (local
+                (table acl2::theory-invariant-table nil nil :clear))
+
+              (local
+                (in-theory
+                  (union-theories (current-theory 'acl2::ground-zero)
+                                  (set-difference-theories
+                                   (universal-theory 'end-of-prologue)
+                                   (universal-theory ',begin-label)))))
+
+              ,@(let ((element-absstobj-info (cdr (assoc :element-absstobj-info tmp))))
+                  (and element-absstobj-info
+                       `((local
+                           (in-theory
+                             (enable ,@(strip-cars (cdr element-absstobj-info))))))))
+
+              (local
+                (in-theory
+                  (e/d ()
+                       (make-list-ac
+                        (:e make-list-ac)))))
+
+              ,@(and element-recognizer
+                     `((local
+                         (in-theory
+                           (enable (:e ,element-recognizer))))))
+
+              (local
+                (deflabel working-theory))
+
+              ;; Fixed-length vectors with specialized elements need a
+              ;; predicate to check element-wise validity.
+              ,@(and (not resizable)
+                     element-recognizer
+                     `((defun ,recognizer-aux (,vector)
+                         (declare (xargs :guard t))
+                         (if (consp ,vector)
+                             (and (,element-recognizer (car ,vector))
+                                  (,recognizer-aux (cdr ,vector)))
+                             (null ,vector)))
+
+                       (local
+                         (defthm ,recognizer-aux-tp
+                           (booleanp (,recognizer-aux ,vector))
+                           :rule-classes :type-prescription
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance lem-vector$a::recognizer-aux-tp
+                                                       (lem-vector$a::recognizer-aux ,recognizer-aux)
+                                                       (lem-vector$a::element-recognizer ,element-recognizer))))))
+
+                       (local
+                         (defthm ,recognizer-aux-cr
+                           (implies (,recognizer-aux ,vector)
+                                    (true-listp ,vector))
+                           :rule-classes :compound-recognizer
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance lem-vector$a::recognizer-aux-cr
+                                                       (lem-vector$a::recognizer-aux ,recognizer-aux)
+                                                       (lem-vector$a::element-recognizer ,element-recognizer))))))
+
+                       (local
+                         (defthm ,element-recognizer-of-nth-when-recognizer-aux
+                           (implies (and (,recognizer-aux ,vector)
+                                         (natp ,index)
+                                         (< ,index (len ,vector)))
+                                    (,element-recognizer (nth ,index ,vector)))
+                           :hints
+                           (("Goal"
+                             :by (:functional-instance lem-vector$a::element-recognizer-of-nth-when-recognizer-aux
+                                                       (lem-vector$a::recognizer-aux ,recognizer-aux)
+                                                       (lem-vector$a::element-recognizer ,element-recognizer))))))))
+
+              (defun ,recognizer (,vector)
+                (declare (xargs :guard t))
+                ,(if resizable
+                     (if element-recognizer
+                         `(if (consp ,vector)
+                              (and (,element-recognizer (car ,vector))
+                                   (,recognizer (cdr ,vector)))
+                              (null ,vector))
+                         `(true-listp ,vector))
+                     (if element-recognizer
+                         `(and (= (len ,vector) ,default-length-name)
+                               (,recognizer-aux ,vector))
+                         `(and (= (len ,vector) ,default-length-name)
+                               (true-listp ,vector)))))
+
+              (defun-nx ,creator ()
+                ;; We don't want to frequently allocate large list literals
+                ;; in proofs.
+                (declare (xargs :guard t))
+                (make-list ,default-length-name
+                           :initial-element ,initial-element))
+
+              (defun ,fixer (,vector)
+                (declare (xargs :guard (,recognizer ,vector)))
+                (if (,recognizer ,vector)
+                    ,vector
+                    (,creator)))
+
+              (defun ,equiv (,%vector ,vector)
+                (declare (xargs :guard (and (,recognizer ,%vector)
+                                            (,recognizer ,vector))))
+                (equal (,fixer ,%vector)
+                       (,fixer ,vector)))
+
+              (defun ,length (,vector)
+                (declare (xargs :guard (,recognizer ,vector))
+                         ,@(and (not resizable)
+                                `((ignore ,vector))))
+                ,(if resizable
+                     `(len (,fixer ,vector))
+                     default-length-name))
+
+              (defun ,resizer (length ,vector)
+                (declare (xargs :guard (and (natp length)
+                                            (,recognizer ,vector)))
+                         ,@(and (not resizable)
+                                `((ignore length))))
+                ,(if resizable
+                     `(let ((length (nfix length))
+                            (,vector (,fixer ,vector)))
+                        (resize-list ,vector length ,initial-element))
+                     `(,fixer ,vector)))
+
+              (defun ,accessor (,index ,vector)
+                (declare (xargs :guard (and (natp ,index)
+                                            (,recognizer ,vector)
+                                            (< ,index ,(if resizable
+                                                           `(,length ,vector)
+                                                           default-length-name)))))
+                (let ((,index (nfix ,index))
+                      (,vector (,fixer ,vector)))
+                  (if (< ,index ,(if resizable
+                                     `(,length ,vector)
+                                     default-length-name))
+                      ,(if element-fixer
+                           `(,element-fixer (nth ,index ,vector))
+                           `(nth ,index ,vector))
+                      ,initial-element)))
+
+              (defun ,updater (,index ,element ,vector)
+                (declare (xargs :guard (and (natp ,index)
+                                            ,@(and guard-element-recognizer
+                                                   `((,guard-element-recognizer ,element)))
+                                            (,recognizer ,vector)
+                                            (< ,index ,(if resizable
+                                                           `(,length ,vector)
+                                                           default-length-name)))))
+                (let ((,index (nfix ,index))
+                      ,@(and element-fixer
+                             `((,element (,element-fixer ,element))))
+                      (,vector (,fixer ,vector)))
+                  (if (< ,index ,(if resizable
+                                     `(,length ,vector)
+                                     default-length-name))
+                      (update-nth ,index ,element ,vector)
+                      ,vector)))
+
+              (local
+                (defthm ,vector-constraints
+                  (and ,@(and (not resizable)
+                              element-recognizer
+                              `((equal (,recognizer-aux ,vector)
+                                       (if (consp ,vector)
+                                           (if (,element-recognizer (car ,vector))
+                                               (,recognizer-aux (cdr ,vector))
+                                               'nil)
+                                           (null ,vector)))))
+                       (equal (,creator)
+                              (make-list-ac ,default-length ,initial-element 'nil))
+                       (equal (,recognizer ,vector)
+                              ,(cond
+                                 ((and (not resizable)
+                                       element-recognizer)
+                                  `(if (equal (len ,vector) ,default-length)
+                                       (,recognizer-aux ,vector)
+                                       'nil))
+                                 ((not resizable)
+                                  `(if (equal (len ,vector) ,default-length)
+                                       (true-listp ,vector)
+                                       'nil))
+                                 (element-recognizer
+                                  `(if (consp ,vector)
+                                       (if (,element-recognizer (car ,vector))
+                                           (,recognizer (cdr ,vector))
+                                           'nil)
+                                       (null ,vector)))
+                                 (t
+                                  `(true-listp ,vector))))
+                       (equal (,fixer ,vector)
+                              (if (,recognizer ,vector)
+                                  ,vector
+                                  (,creator)))
+                       (equal (,equiv ,%vector ,vector)
+                              (equal (,fixer ,%vector)
+                                     (,fixer ,vector)))
+                       (equal (,length ,vector)
+                              ,(if resizable
+                                   `(len (,fixer ,vector))
+                                   default-length-name))
+                       (equal (,resizer length ,vector)
+                              ,(if resizable
+                                   `((lambda (length ,vector)
+                                       (resize-list ,vector length ,initial-element))
+                                     (nfix length)
+                                     (,fixer ,vector))
+                                   `(,fixer ,vector)))
+                       (equal (,accessor ,index ,vector)
+                              ((lambda (,index ,vector)
+                                 (if (< ,index ,(if resizable
+                                                    `(,length ,vector)
+                                                    default-length-name))
+                                     ,(if element-fixer
+                                          `(,element-fixer (nth ,index ,vector))
+                                          `(nth ,index ,vector))
+                                     ,initial-element))
+                               (nfix ,index)
+                               (,fixer ,vector)))
+                       (equal (,updater ,index ,element ,vector)
+                              ((lambda (,index ,element ,vector)
+                                 (if (< ,index ,(if resizable
+                                                    `(,length ,vector)
+                                                    default-length-name))
+                                     (update-nth ,index ,element ,vector)
+                                     ,vector))
+                               (nfix ,index)
+                               ,(if element-fixer
+                                    `(,element-fixer ,element)
+                                    element)
+                               (,fixer ,vector))))
+                  :rule-classes ()
+                  :hints
+                  (("Goal"
+                    :do-not-induct t
+                    :use (:functional-instance
+                          ,(if resizable
+                               'lem-vector$a::vector-constraints/resizable
+                               'lem-vector$a::vector-constraints/fixed)
+                          ,@fi-bindings)))))
+
+              (local
+                (in-theory
+                  (disable ,@(and (not resizable)
+                                  element-recognizer
+                                  (list recognizer-aux))
+                           ,recognizer
+                           ,creator
+                           ,fixer
+                           ,equiv
+                           ,length
+                           ,resizer
+                           ,accessor
+                           ,updater)))
+
+              ;; `RECOGNIZER'
+              (defthm ,recognizer-tp
+                (booleanp (,recognizer ,vector))
+                :rule-classes :type-prescription
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::recognizer/resizable-tp
+                            'lem-vector$a::recognizer/fixed-tp)
+                       ,@fi-bindings))))
+
+              (defthm ,recognizer-cr
+                (implies (,recognizer ,vector)
+                         (true-listp ,vector))
+                :rule-classes :compound-recognizer
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::recognizer/resizable-cr
+                            'lem-vector$a::recognizer/fixed-cr)
+                       ,@fi-bindings))))
+
+              (defthm ,recognizer-of-creator
+                (,recognizer (,creator))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::recognizer/resizable-of-creator
+                            'lem-vector$a::recognizer/fixed-of-creator)
+                       ,@fi-bindings))))
+
+              (defthm ,recognizer-of-fixer
+                (,recognizer (,fixer ,vector))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::recognizer/resizable-of-fixer/resizable
+                            'lem-vector$a::recognizer/fixed-of-fixer/fixed)
+                       ,@fi-bindings))))
+
+              ,@(and resizable
+                     ;; The resizer of a fixed-length vector is always rewritten.
+                     `((defthm ,recognizer-of-resizer
+                         (,recognizer (,resizer length ,vector))
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                lem-vector$a::recognizer/resizable-of-resizer/resizable
+                                ,@fi-bindings))))))
+
+              (defthm ,recognizer-of-updater
+                (,recognizer (,updater ,index ,element ,vector))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::recognizer/resizable-of-updater/resizable
+                            'lem-vector$a::recognizer/fixed-of-updater/fixed)
+                       ,@fi-bindings))))
+
+              ;; `FIXER'
+              (defthm ,fixer-tp
+                (true-listp (,fixer ,vector))
+                :rule-classes :type-prescription
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::fixer/resizable-tp
+                            'lem-vector$a::fixer/fixed-tp)
+                       ,@fi-bindings))))
+
+              (defthm ,fixer-when-recognizer
+                (implies (,recognizer ,vector)
+                         (equal (,fixer ,vector)
+                                ,vector))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::fixer/resizable-when-recognizer/resizable
+                            'lem-vector$a::fixer/fixed-when-recognizer/fixed)
+                       ,@fi-bindings))))
+
+              (defthm ,fixer-when-not-recognizer
+                (implies (not (,recognizer ,vector))
+                         (equal (,fixer ,vector)
+                                (,creator)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::fixer/resizable-when-not-recognizer/resizable
+                            'lem-vector$a::fixer/fixed-when-not-recognizer/fixed)
+                       ,@fi-bindings))))
+
+              ;; `EQUIV'
+              (defthm ,equiv-tp
+                (booleanp (,equiv ,%vector ,vector))
+                :rule-classes :type-prescription
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equiv/resizable-tp
+                            'lem-vector$a::equiv/fixed-tp)
+                       ,@fi-bindings))))
+
+              (defequiv ,equiv
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equiv/resizable-is-an-equivalence
+                            'lem-vector$a::equiv/fixed-is-an-equivalence)
+                       ,@fi-bindings))))
+
+              (defcong ,equiv equal (,fixer ,vector) 1
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equiv/resizable-implies-equal-fixer/resizable-1
+                            'lem-vector$a::equiv/fixed-implies-equal-fixer/fixed-1)
+                       ,@fi-bindings))))
+
+              (defthm ,fixer-mod-equiv
+                (,equiv (,fixer ,vector) ,vector)
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::fixer/resizable-mod-equiv/resizable
+                            'lem-vector$a::fixer/fixed-mod-equiv/fixed)
+                       ,@fi-bindings))))
+
+              (defthm ,equiv-when-not-recognizer
+                (implies (not (,recognizer ,vector))
+                         (,equiv ,vector (,creator)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equiv/resizable-when-not-recognizer/resizable
+                            'lem-vector$a::equiv/fixed-when-not-recognizer/fixed)
+                       ,@fi-bindings))))
+
+              ;; `LENGTH'
+              (defthm ,length-tp
+                (natp (,length ,vector))
+                :rule-classes :type-prescription
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::length/resizable-tp
+                            'lem-vector$a::length/fixed-tp)
+                       ,@fi-bindings))))
+
+              ,@(if resizable
+                    `((defcong ,equiv equal (,length ,vector) 1
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::equiv/resizable-implies-equal-length/resizable-1
+                               ,@fi-bindings))))
+
+                      (defthmd ,length-when-not-recognizer
+                        (implies (not (,recognizer ,vector))
+                                 (equal (,length ,vector)
+                                        ,default-length-name))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::length/resizable-when-not-recognizer/resizable
+                               ,@fi-bindings))))
+
+                      (defthm ,length-of-creator
+                        (equal (,length (,creator))
+                               ,default-length-name)
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::length/resizable-of-creator
+                               ,@fi-bindings))))
+
+                      (defthm ,length-of-resizer
+                        (equal (,length (,resizer length ,vector))
+                               (nfix length))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (equal (,length (,resizer length ,vector))
+                                          (nfix (double-rewrite length)))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::length/resizable-of-resizer/resizable
+                               ,@fi-bindings))))
+
+                      (defthm ,length-of-updater
+                        (equal (,length (,updater ,index ,element ,vector))
+                               (,length ,vector))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (equal (,length (,updater ,index ,element ,vector))
+                                          (,length (double-rewrite ,vector)))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::length/resizable-of-updater/resizable
+                               ,@fi-bindings)))))
+
+                    `((defthm ,length-rw
+                        (equal (,length ,vector)
+                               ,default-length-name)
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::length/fixed-rw
+                               ,@fi-bindings))))))
+
+              ;; `RESIZER'
+              (defthm ,resizer-tp
+                (true-listp (,resizer length ,vector))
+                :rule-classes :type-prescription
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::resizer/resizable-tp
+                            'lem-vector$a::resizer/fixed-tp)
+                       ,@fi-bindings))))
+
+              ,@(if resizable
+                    ;; TODO: generate `LENGTH' in current package
+                    `((defcong nat-equiv equal (,resizer length ,vector) 1
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::nat-equiv-implies-equal-resizer/resizable-1
+                               ,@fi-bindings))))
+
+                      (defcong ,equiv equal (,resizer length ,vector) 2
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::equiv/resizable-implies-equal-resizer/resizable-2
+                               ,@fi-bindings))))
+
+                      (defthmd ,resizer-when-not-natp
+                        (implies (not (natp length))
+                                 (equal (,resizer length ,vector)
+                                        (,resizer 0 ,vector)))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-when-not-natp
+                               ,@fi-bindings))))
+
+                      (defthmd ,resizer-when-not-recognizer
+                        (implies (not (,recognizer ,vector))
+                                 (equal (,resizer length ,vector)
+                                        (,resizer length (,creator))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-when-not-recognizer/resizable
+                               ,@fi-bindings))))
+
+                      (defthm ,resizer-of-creator
+                        (implies (nat-equiv length ,default-length-name)
+                                 (equal (,resizer length (,creator))
+                                        (,creator)))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-creator
+                               ,@fi-bindings))))
+
+                      (defthmd ,resizer-of-length-free
+                        (implies (nat-equiv length (,length ,vector))
+                                 (equal (,resizer length ,vector)
+                                        (,fixer ,vector)))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-length/resizable-free
+                               ,@fi-bindings))))
+
+                      (defthm ,resizer-of-length
+                        (implies (,equiv ,%vector ,vector)
+                                 (equal (,resizer (,length ,%vector) ,vector)
+                                        (,fixer ,vector)))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-length/resizable
+                               ,@fi-bindings))))
+
+                      (defthmd ,resizer-of-resizer-split
+                        (implies (or (<= (nfix length1) (nfix length2))
+                                     (<= (,length ,vector) (nfix length2)))
+                                 (equal (,resizer length1 (,resizer length2 ,vector))
+                                        (,resizer length1 ,vector)))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (implies (case-split (or (<= (nfix length1) (nfix length2))
+                                                            (<= (,length ,vector) (nfix length2))))
+                                            (equal (,resizer length1 (,resizer length2 ,vector))
+                                                   (,resizer length1 ,vector)))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-resizer/resizable
+                               ,@fi-bindings))))
+
+                      (defthm ,resizer-of-resizer
+                        (implies (or (<= (nfix length1) (nfix length2))
+                                     (<= (,length ,vector) (nfix length2)))
+                                 (equal (,resizer length1 (,resizer length2 ,vector))
+                                        (,resizer length1 ,vector)))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-resizer/resizable
+                               ,@fi-bindings))))
+
+                      (defthmd ,resizer-of-updater
+                        (equal (,resizer length (,updater ,index ,element ,vector))
+                               (if (and (< (nfix ,index) (,length ,vector))
+                                        (< (nfix ,index) (nfix length)))
+                                   (,updater ,index ,element (,resizer length ,vector))
+                                   (,resizer length ,vector)))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (equal (,resizer length (,updater ,index ,element ,vector))
+                                          (if (and (< (nfix (double-rewrite ,index)) (,length (double-rewrite ,vector)))
+                                                   (< (nfix (double-rewrite ,index)) (nfix length)))
+                                              (,updater ,index ,element (,resizer length (double-rewrite ,vector)))
+                                              (,resizer length (double-rewrite ,vector))))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-updater/resizable
+                               ,@fi-bindings))))
+
+                      (defthm ,resizer-of-updater-keep
+                        (implies (and (< (nfix ,index) (,length ,vector))
+                                      (< (nfix ,index) (nfix length)))
+                                 (equal (,resizer length (,updater ,index ,element ,vector))
+                                        (,updater ,index ,element (,resizer length ,vector))))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (implies (and (< (nfix (double-rewrite ,index)) (,length (double-rewrite ,vector)))
+                                                 (< (nfix (double-rewrite ,index)) (nfix length)))
+                                            (equal (,resizer length (,updater ,index ,element ,vector))
+                                                   (,updater ,index ,element (,resizer length (double-rewrite ,vector)))))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-updater/resizable-keep
+                               ,@fi-bindings))))
+
+                      (defthm ,resizer-of-updater-drop
+                        (implies (and (< (nfix ,index) (,length ,vector))
+                                      (<= (nfix length) (nfix ,index)))
+                                 (equal (,resizer length (,updater ,index ,element ,vector))
+                                        (,resizer length ,vector)))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (implies (and (< (nfix (double-rewrite ,index)) (,length (double-rewrite ,vector)))
+                                                 (<= (nfix length) (nfix (double-rewrite ,index))))
+                                            (equal (,resizer length (,updater ,index ,element ,vector))
+                                                   (,resizer length (double-rewrite ,vector))))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/resizable-of-updater/resizable-drop
+                               ,@fi-bindings)))))
+
+                    `((defthm ,resizer-rw
+                        (equal (,resizer length ,vector)
+                               (,fixer ,vector))
+                        :rule-classes
+                        ((:rewrite :corollary
+                                   (equal (,resizer length ,vector)
+                                          (,fixer (double-rewrite ,vector)))))
+                        :hints
+                        (("Goal"
+                          :by (:functional-instance
+                               lem-vector$a::resizer/fixed-rw
+                               ,@fi-bindings))))))
+
+              ;; `ACCESSOR'
+              ,@(and element-recognizer
+                     `((defthm ,element-recognizer-of-accessor
+                         (,element-recognizer (,accessor ,index ,vector))
+                         :rule-classes
+                         (:rewrite
+                          :type-prescription)
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                ,(if resizable
+                                     'lem-vector$a::element-recognizer-of-accessor/resizable
+                                     'lem-vector$a::element-recognizer-of-accessor/fixed)
+                                ,@fi-bindings))))))
+
+              (defcong nat-equiv equal (,accessor ,index ,vector) 1
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::nat-equiv-implies-equal-accessor/resizable-1
+                            'lem-vector$a::nat-equiv-implies-equal-accessor/fixed-1)
+                       ,@fi-bindings))))
+
+              (defcong ,equiv equal (,accessor ,index ,vector) 2
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equiv/resizable-implies-equal-accessor/resizable-2
+                            'lem-vector$a::equiv/fixed-implies-equal-accessor/fixed-2)
+                       ,@fi-bindings))))
+
+              (defthmd ,accessor-when-large
+                (implies (<= ,(if resizable
+                                  `(,length ,vector)
+                                  default-length-name)
+                             (nfix ,index))
+                         (equal (,accessor ,index ,vector)
+                                ,initial-element))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-when-large
+                            'lem-vector$a::accessor/fixed-when-large)
+                       ,@fi-bindings))))
+
+              (defthmd ,accessor-when-not-natp
+                (implies (not (natp ,index))
+                         (equal (,accessor ,index ,vector)
+                                (,accessor 0 ,vector)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-when-not-natp
+                            'lem-vector$a::accessor/fixed-when-not-natp)
+                       ,@fi-bindings))))
+
+              (defthmd ,accessor-when-not-recognizer
+                (implies (not (,recognizer ,vector))
+                         (equal (,accessor ,index ,vector)
+                                ,initial-element))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-when-not-recognizer/resizable
+                            'lem-vector$a::accessor/fixed-when-not-recognizer/fixed)
+                       ,@fi-bindings))))
+
+              (defthm ,accessor-of-creator
+                (equal (,accessor ,index (,creator))
+                       ,initial-element)
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-of-creator
+                            'lem-vector$a::accessor/fixed-of-creator)
+                       ,@fi-bindings))))
+
+              ,@(and resizable
+                     `((defthmd ,accessor-of-resizer
+                         (equal (,accessor ,index (,resizer length ,vector))
+                                (if (< (nfix ,index) (nfix length))
+                                    (,accessor ,index ,vector)
+                                    ,initial-element))
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                lem-vector$a::accessor/resizable-of-resizer/resizable
+                                ,@fi-bindings))))
+
+                       (defthm ,accessor-of-resizer-wh
+                         (implies (< (nfix ,index) (nfix length))
+                                  (equal (,accessor ,index (,resizer length ,vector))
+                                         (,accessor ,index ,vector)))
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                lem-vector$a::accessor/resizable-of-resizer/resizable-wh
+                                ,@fi-bindings))))))
+
+              (defthmd ,accessor-of-updater
+                (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
+                       (cond
+                         ((<= ,(if resizable
+                                   `(,length ,vector)
+                                   default-length-name)
+                              (nfix ,index1))
+                          ,initial-element)
+                         ((nat-equiv ,index1 ,index2)
+                          ,(if element-fixer
+                               `(,element-fixer ,element)
+                               element))
+                         (t
+                          (,accessor ,index1 ,vector))))
+                :rule-classes
+                ((:rewrite :corollary
+                           (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
+                                  (cond
+                                    ((<= ,(if resizable
+                                              `(,length (double-rewrite ,vector))
+                                              default-length-name)
+                                         (nfix ,index1))
+                                     ,initial-element)
+                                    ((nat-equiv ,index1 (double-rewrite ,index2))
+                                     ,(if element-fixer
+                                          `(,element-fixer (double-rewrite ,element))
+                                          element))
+                                    (t
+                                     (,accessor ,index1 (double-rewrite ,vector)))))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-of-updater/resizable
+                            'lem-vector$a::accessor/fixed-of-updater/fixed)
+                       ,@fi-bindings))))
+
+              (defthm ,accessor-of-updater-same
+                (implies (and (nat-equiv ,index1 ,index2)
+                              (< (nfix ,index1)
+                                 ,(if resizable
+                                      `(,length ,vector)
+                                      default-length-name)))
+                         (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
+                                ,(if element-fixer
+                                     `(,element-fixer ,element)
+                                     element)))
+                :rule-classes
+                ((:rewrite :corollary
+                           (implies (and (nat-equiv ,index1 (double-rewrite ,index2))
+                                         (< (nfix ,index1) ,(if resizable
+                                                                `(,length (double-rewrite ,vector))
+                                                                default-length-name)))
+                                    (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
+                                           ,(if element-fixer
+                                                `(,element-fixer (double-rewrite ,element))
+                                                element)))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-of-updater/resizable-same
+                            'lem-vector$a::accessor/fixed-of-updater/fixed-same)
+                       ,@fi-bindings))))
+
+              (defthm ,accessor-of-updater-diff
+                (implies (and (not (nat-equiv ,index1 ,index2))
+                              (< (nfix ,index1) ,(if resizable
+                                                     `(,length ,vector)
+                                                     default-length-name)))
+                         (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
+                                (,accessor ,index1 ,vector)))
+                :rule-classes
+                ((:rewrite :corollary
+                           (implies (and (not (nat-equiv ,index1 (double-rewrite ,index2)))
+                                         (< (nfix ,index1) ,(if resizable
+                                                                `(,length (double-rewrite ,vector))
+                                                                default-length-name)))
+                                    (equal (,accessor ,index1 (,updater ,index2 ,element ,vector))
+                                           (,accessor ,index1 (double-rewrite ,vector))))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::accessor/resizable-of-updater/resizable-diff
+                            'lem-vector$a::accessor/fixed-of-updater/fixed-diff)
+                       ,@fi-bindings))))
+
+              ;; `UPDATER'
+              (defthm ,updater-tp
+                (true-listp (,updater ,index ,element ,vector))
+                :rule-classes :type-prescription
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-tp
+                            'lem-vector$a::updater/fixed-tp)
+                       ,@fi-bindings))))
+
+              (defcong nat-equiv equal (,updater ,index ,element ,vector) 1
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::nat-equiv-implies-equal-updater/resizable-1
+                            'lem-vector$a::nat-equiv-implies-equal-updater/fixed-1)
+                       ,@fi-bindings))))
+
+              ,@(and (not (eq element-equiv 'equal))
+                     element-recognizer
+                     element-fixer
+                     `((defcong ,element-equiv equal (,updater ,index ,element ,vector) 2
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                ,(if resizable
+                                     'lem-vector$a::element-equiv-implies-equal-updater/resizable-2
+                                     'lem-vector$a::element-equiv-implies-equal-updater/fixed-2)
+                                ,@fi-bindings))))))
+
+              (defcong ,equiv equal (,updater ,index ,element ,vector) 3
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equiv/resizable-implies-equal-updater/resizable-3
+                            'lem-vector$a::equiv/fixed-implies-equal-updater/fixed-3)
+                       ,@fi-bindings))))
+
+              (defthmd ,updater-when-large
+                (implies (<= ,(if resizable
+                                  `(,length ,vector)
+                                  default-length-name)
+                             (nfix ,index))
+                         (equal (,updater ,index ,element ,vector)
+                                (,fixer ,vector)))
+                :rule-classes
+                ((:rewrite :corollary
+                           (implies (<= ,(if resizable
+                                             `(,length (double-rewrite ,vector))
+                                             default-length-name)
+                                        (nfix (double-rewrite ,index)))
+                                    (equal (,updater ,index ,element ,vector)
+                                           (,fixer (double-rewrite ,vector))))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-when-large
+                            'lem-vector$a::updater/fixed-when-large)
+                       ,@fi-bindings))))
+
+              (defthmd ,updater-when-not-natp
+                (implies (not (natp ,index))
+                         (equal (,updater ,index ,element ,vector)
+                                (,updater 0 ,element ,vector)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-when-not-natp
+                            'lem-vector$a::updater/fixed-when-not-natp)
+                       ,@fi-bindings))))
+
+              ,@(and element-recognizer
+                     `((defthmd ,updater-when-not-element-recognizer
+                         (implies (not (,element-recognizer ,element))
+                                  (equal (,updater ,index ,element ,vector)
+                                         (,updater ,index ,initial-element ,vector)))
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                ,(if resizable
+                                     'lem-vector$a::updater/resizable-when-not-element-recognizer
+                                     'lem-vector$a::updater/fixed-when-not-element-recognizer)
+                                ,@fi-bindings))))))
+
+              (defthmd ,updater-when-not-recognizer
+                (implies (not (,recognizer ,vector))
+                         (equal (,updater ,index ,element ,vector)
+                                (,updater ,index ,element (,creator))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-when-not-recognizer/resizable
+                            'lem-vector$a::updater/fixed-when-not-recognizer/fixed)
+                       ,@fi-bindings))))
+
+              (defthm ,updater-of-creator
+                (implies (,element-equiv ,element ,initial-element)
+                         (equal (,updater ,index ,element (,creator))
+                                (,creator)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-of-creator
+                            'lem-vector$a::updater/fixed-of-creator)
+                       ,@fi-bindings))))
+
+              ,@(and resizable
+                     `((defthm ,updater-of-resizer
+                         (implies (,element-equiv ,element (,accessor ,index ,vector))
+                                  (equal (,updater ,index ,element (,resizer length ,vector))
+                                         (,resizer length ,vector)))
+                         :hints
+                         (("Goal"
+                           :by (:functional-instance
+                                ,(if resizable
+                                     'lem-vector$a::updater/resizable-of-resizer/resizable
+                                     'lem-vector$a::updater/fixed-of-resizer/fixed)
+                                ,@fi-bindings))))))
+
+              (defthmd ,updater-of-accessor-free
+                (implies (,element-equiv ,element (,accessor ,index ,vector))
+                         (equal (,updater ,index ,element ,vector)
+                                (,fixer ,vector)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-of-accessor/resizable-free
+                            'lem-vector$a::updater/fixed-of-accessor/fixed-free)
+                       ,@fi-bindings))))
+
+              (defthm ,updater-of-accessor
+                (implies (and (nat-equiv ,index1 ,index2)
+                              (,equiv ,%vector ,vector))
+                         (equal (,updater ,index1 (,accessor ,index2 ,%vector) ,vector)
+                                (,fixer ,vector)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-of-accessor/resizable
+                            'lem-vector$a::updater/fixed-of-accessor/fixed)
+                       ,@fi-bindings))))
+
+              (defthmd ,updater-of-updater
+                (equal (,updater ,index1 ,element1 (,updater ,index2 ,element2 ,vector))
+                       (if (nat-equiv ,index1 ,index2)
+                           (,updater ,index1 ,element1 ,vector)
+                           (,updater ,index2 ,element2 (,updater ,index1 ,element1 ,vector))))
+                :rule-classes
+                ((:rewrite :loop-stopper ((,index1 ,index2 ,updater))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-of-updater/resizable
+                            'lem-vector$a::updater/fixed-of-updater/fixed)
+                       ,@fi-bindings))))
+
+              (defthm ,updater-of-updater-same
+                (implies (nat-equiv ,index1 ,index2)
+                         (equal (,updater ,index1 ,element1 (,updater ,index2 ,element2 ,vector))
+                                (,updater ,index1 ,element1 ,vector)))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-of-updater/resizable-same
+                            'lem-vector$a::updater/fixed-of-updater/fixed-same)
+                       ,@fi-bindings))))
+
+              (defthm ,updater-of-updater-diff
+                (implies (not (nat-equiv ,index1 ,index2))
+                         (equal (,updater ,index1 ,element1 (,updater ,index2 ,element2 ,vector))
+                                (,updater ,index2 ,element2 (,updater ,index1 ,element1 ,vector))))
+                :rule-classes
+                ((:rewrite :loop-stopper ((,index1 ,index2 ,updater))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::updater/resizable-of-updater/resizable-diff
+                            'lem-vector$a::updater/fixed-of-updater/fixed-diff)
+                       ,@fi-bindings))))
+
+              ;; `VECTOR-EQUAL'
+              (defun-sk ,contents-equal (,%vector ,vector)
+                (declare (xargs :guard (and (,recognizer ,%vector)
+                                            (,recognizer ,vector))
+                                :verify-guards nil))
+                (forall ,index
+                  (equal (,accessor ,index ,%vector)
+                         (,accessor ,index ,vector)))
+                :rewrite :direct)
+
+              (defun-nx ,vector-equal (,%vector ,vector)
+                (declare (xargs :guard (and (,recognizer ,%vector)
+                                            (,recognizer ,vector))
+                                :verify-guards nil))
+                (and (,recognizer ,%vector)
+                     (,recognizer ,vector)
+                     ,@(and resizable
+                            `((= (,length ,%vector)
+                                 (,length ,vector))))
+                     (,contents-equal ,%vector ,vector)))
+
+              (table equality ',vector ',vector-equal)
+
+              (local
+                (defthm ,vector-equal-constraints
+                  (and (equal (,contents-equal ,%vector ,vector)
+                              ((lambda (,index ,vector ,%vector)
+                                 (equal (,accessor ,index ,%vector)
+                                        (,accessor ,index ,vector)))
+                               (,contents-equal-witness ,%vector ,vector)
+                               ,vector ,%vector))
+                       (implies (,contents-equal ,%vector ,vector)
+                                (equal (,accessor ,index ,%vector)
+                                       (,accessor ,index ,vector)))
+                       (equal (,vector-equal ,%vector ,vector)
+                              (if (,recognizer ,%vector)
+                                  (if (,recognizer ,vector)
+                                      ,(if resizable
+                                           `(if (equal (,length ,%vector)
+                                                       (,length ,vector))
+                                                (,contents-equal ,%vector ,vector)
+                                                'nil)
+                                           `(,contents-equal ,%vector ,vector))
+                                      'nil)
+                                  'nil)))
+                  :rule-classes ()
+                  :hints
+                  (("Goal"
+                    :in-theory (disable ,contents-equal)
+                    :use (:instance (:functional-instance
+                                     ,(if resizable
+                                          'lem-vector$a::equal-constraints/resizable
+                                          'lem-vector$a::equal-constraints/fixed)
+                                     ,@fi-bindings-with-skolem)
+                                    (lem-vector$a::index ,index)
+                                    (lem-vector$a::%vector ,%vector)
+                                    (lem-vector$a::vector ,vector)))
+                   ("Subgoal 1"
+                    :in-theory (enable ,contents-equal)))))
+
+              (local
+                (in-theory
+                  (disable ,contents-equal
+                           ,vector-equal)))
+
+              (defthm ,vector-equal-fc
+                (implies (,vector-equal ,%vector ,vector)
+                         (equal ,%vector ,vector))
+                :rule-classes
+                ((:forward-chaining :trigger-terms
+                                    ((,vector-equal ,%vector ,vector))
+                                    :corollary
+                                    (implies t
+                                             (implies (,vector-equal ,%vector ,vector)
+                                                      (equal ,%vector ,vector)))))
+                :hints
+                (("Goal"
+                  :by (:functional-instance
+                       ,(if resizable
+                            'lem-vector$a::equal/resizable-fc
+                            'lem-vector$a::equal/fixed-fc)
+                       ,@fi-bindings-with-skolem)))))
+
+            (deflabel ,end-label)
+
+            (deftheory-static ,theory
+              (set-difference-theories
+               (set-difference-theories
+                (current-theory ',end-label)
+                (current-theory ',begin-label))
+               ',(append (and (not resizable)
+                              element-recognizer
+                              (list recognizer-aux))
+                         (list recognizer
+                               creator
+                               fixer
+                               equiv
+                               length
+                               resizer
+                               accessor
+                               updater
+                               vector-equal))))
+
+            (deftheory-static ,vector-aggressive
+              ',(append
+                 (list accessor-when-large
+                       accessor-when-not-natp
+                       accessor-when-not-recognizer
+                       accessor-of-updater
+                       updater-when-large
+                       updater-when-not-natp
+                       updater-when-not-recognizer
+                       updater-of-accessor-free
+                       updater-of-updater)
+                 (and element-recognizer
+                      (list updater-when-not-element-recognizer))
+                 (and resizable
+                      (list length-when-not-recognizer
+                            resizer-when-not-natp
+                            resizer-when-not-recognizer
+                            resizer-of-length-free
+                            resizer-of-resizer-split
+                            resizer-of-updater
+                            accessor-of-resizer))))
+
+            (in-theory
+              (union-theories (current-theory ',begin-label)
+                              (theory ',theory)))
+            (in-theory
+              ;; Ensure `:USE' `VECTOR-EQUAL' automagically works.
+              (enable ,contents-equal))
+
+            (table stobj$a ',vector ',property))))))
